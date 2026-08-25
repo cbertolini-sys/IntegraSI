@@ -82,8 +82,34 @@ Admin. O visitante não tem conta e nunca precisa de uma.
 ### 4.1 Pessoas e contexto
 
 **Usuario** — user model próprio desde a primeira migração (trocar depois é
-custoso). Campos: e-mail (login), nome completo, `papel`
-(`COORDENADOR`/`PROFESSOR`/`ALUNO`), ativo.
+custoso).
+
+Campos comuns a todos: nome completo, e-mail (é o login, único), CPF (único),
+`papel` (`COORDENADOR`/`PROFESSOR`/`ALUNO`), ativo.
+
+Campos de vínculo, um único modelo com validação condicional em `clean()`:
+
+| Campo | Obrigatório para | Vazio para |
+|---|---|---|
+| `matricula` | `ALUNO` | professor e coordenador |
+| `siape` | `PROFESSOR`, `COORDENADOR` | aluno |
+
+Ambos únicos quando preenchidos. Um só modelo, e não perfis separados por papel:
+a base é pequena, os campos são poucos e um `OneToOne` por papel triplicaria as
+consultas em troca de nenhuma garantia que a validação já não dê.
+
+**CPF, matrícula e SIAPE são normalizados na gravação** — só dígitos, sem ponto,
+traço ou barra. Sem isso, `123.456.789-00` e `12345678900` convivem no banco e a
+restrição de unicidade não serve para nada. O CPF tem os dígitos verificadores
+conferidos; campo digitado à mão erra, e um CPF inválido só aparece anos depois,
+quando alguém precisa dele.
+
+**Finalidade dos dados pessoais (§10).** Nome, e-mail, matrícula e SIAPE identificam
+quem produziu cada material e a quem o sistema se dirige. O CPF **não tem uso dentro
+do módulo de produção**: é coletado para a identificação institucional inequívoca e
+para a emissão de certificado no módulo de execução (§1.1). Está registrado aqui
+justamente porque campo sem finalidade declarada é campo que ninguém sabe explicar
+depois — e a LGPD cobra essa explicação.
 
 **Edicao** — a oferta da disciplina. Campos: código (`2026/2`), descrição,
 data de início, data de fim, ativa. Todo curso pertence a uma edição; é o que
@@ -469,8 +495,15 @@ espalhadas em `if` de template.
 passa pela view de permissão descrita no §8; URL de arquivo vaza com facilidade, e
 material não aprovado não pode circular.
 
-**Dados pessoais de terceiros** entram por solicitantes externos e participantes de
-turma. Consequências: aviso de finalidade no formulário público, acesso restrito ao
+**Dados pessoais entram por três lugares.** Usuários internos (nome, e-mail, CPF,
+matrícula ou SIAPE — §4.1), solicitantes externos e participantes de turma.
+
+O CPF nunca aparece em tela pública, em listagem de equipe ou em página de curso.
+No Django Admin é exibido mascarado na listagem e visível apenas na ficha da pessoa,
+acessível só ao coordenador. Nenhuma tela de aluno ou de professor mostra o CPF de
+outra pessoa.
+
+**Os dados de terceiros** — solicitantes externos e participantes de turma — Consequências: aviso de finalidade no formulário público, acesso restrito ao
 professor da turma e ao coordenador, e retenção declarada. O formulário público é a
 única porta anônima que escreve no banco — recebe validação estrita, limite de
 tamanho de texto, *honeypot* e limite por IP, sem CAPTCHA de terceiro.
@@ -493,7 +526,11 @@ igual:
    (enviar entregável aprovado, submeter curso com entregável pendente, publicar
    curso devolvido).
 2. **Permissões**: as negativas são o que importa (aluno abrindo curso de outra
-   equipe, anônimo baixando anexo não publicado, professor vendo turma alheia).
+   equipe, anônimo baixando anexo não publicado, professor vendo turma alheia, CPF
+   aparecendo em resposta que não seja do coordenador).
+   Também: aluno sem matrícula e professor sem SIAPE são recusados; CPF com dígito
+   verificador inválido é recusado; CPF, matrícula e SIAPE gravam normalizados e a
+   unicidade pega o mesmo número escrito de duas formas.
 3. **Validações do §6**: caderno sem gabarito, card sem referência, 1 ou 4 vídeos,
    competências fora da faixa do referencial, curso sem referencial passando limpo.
 4. **Versionamento**: clone não duplica arquivo em disco; versão anterior segue
@@ -558,6 +595,9 @@ Decidido deliberadamente, para não inflar a entrega:
 | Entrega de arquivo via `X-Accel-Redirect` | 1 GB pelo processo Python derruba o servidor |
 | Fila de e-mail em tabela + cron, sem Celery | Um serviço a menos para manter; SMTP fora do ar não pode travar aprovação |
 | Contas criadas pelo coordenador | Base pequena e controlada; evita dependência do setor de TI para SSO |
+| Um só modelo de usuário com validação condicional, sem perfil por papel | Poucos campos e base pequena; `OneToOne` por papel custaria consultas sem dar garantia nova |
+| CPF, matrícula e SIAPE normalizados e únicos, CPF com dígito conferido | Sem normalizar, a unicidade não vale nada; CPF digitado errado só aparece anos depois |
+| CPF coletado com finalidade declarada e nunca exibido fora do Admin | Não tem uso no módulo de produção; existe para o certificado do módulo de execução |
 | `Turma`/`Participante` mínimos, sem frequência nem certificado | Este é o módulo de produção; execução vem depois e cresce a partir de `turmas` |
 | `turmas` depende de `cursos`, nunca o contrário | Mantém o núcleo de produção intocado quando o módulo de execução for construído |
 | Melhoria de curso publicado gera nova versão, não edição no lugar | A versão no ar continua solicitável durante o trabalho, e a evolução do curso fica registrada |
