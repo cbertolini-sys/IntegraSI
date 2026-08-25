@@ -149,10 +149,17 @@ nenhum deles encontra tudo.
 **`palavras_chave`** — texto livre preenchido pela equipe. Não vira filtro;
 alimenta a busca.
 
-**Busca textual** — `SearchVector` do PostgreSQL com dicionário em português sobre
-título, resumo, palavras-chave e nomes dos temas, com índice GIN e coluna
-persistida. O dicionário português é o que faz "robótica" encontrar "robotica" e
-"robôs"; busca por `LIKE` não faz isso.
+**Busca textual** — coluna `search_vector` (`SearchVectorField`) no `Curso`, com
+índice GIN e dicionário em português. O dicionário é o que faz "robótica" encontrar
+"robotica" e "robôs"; `LIKE` não faz isso.
+
+Como a coluna é mantida, com uma pegadinha que custa uma tarde se descoberta tarde:
+**coluna gerada não faz `JOIN`**. `GeneratedField` (Django 5.0) ou um trigger na
+tabela `curso` cobrem os campos da própria linha — título, resumo, palavras-chave —
+mas **não alcançam os nomes dos temas**, que vivem numa M2M. Então: campos próprios
+por coluna gerada, e os temas incorporados ao vetor por atualização explícita quando
+o vínculo muda. O mesmo vale se um `Tema` for renomeado — os cursos ligados a ele
+precisam ser reindexados.
 
 ### 4.5 Versões de um curso
 
@@ -200,9 +207,15 @@ individuais.
 
 **Secao** — conteúdo em texto rico dentro de um entregável: título, ordem,
 conteúdo (HTML sanitizado no salvamento), quem atualizou, quando. O professor
-monta as seções que quiser; o sistema sugere as usuais no Plano de Ensino
-(ementa, objetivos, conteúdo programático, metodologia, cronograma, avaliação,
-referências).
+monta as seções que quiser.
+
+Na abertura do curso, `criar_curso()` já cria as seções usuais do Plano de Ensino
+vazias (ementa, objetivos, conteúdo programático, metodologia, cronograma,
+avaliação, referências), junto com os cinco entregáveis e na mesma transação. O
+aluno abre e encontra a estrutura pronta para preencher. **Isso não é feito por
+sinal `post_save`**: sinal é invisível no fluxo, difícil de testar e não dispara de
+forma confiável em fixtures e criações em lote — e contraria a regra do §7.2 de que
+só os serviços alteram estado.
 
 **Anexo** — arquivo ou link preso a um entregável, opcionalmente a uma seção:
 
@@ -241,7 +254,8 @@ participantes, período pretendido, mensagem, status
 (`RECEBIDA`/`EM_ANALISE`/`ACEITA`/`RECUSADA`), resposta, data.
 
 **Turma** — a versão do curso que será aplicada, solicitação de origem (opcional),
-professor responsável, data de início, data de fim, local, vagas, status
+professor responsável (designado no aceite da solicitação, §7.2, e obrigatório),
+data de início, data de fim, local, vagas, status
 (`AGENDADA`/`EM_ANDAMENTO`/`CONCLUIDA`/`CANCELADA`), observações.
 
 **Participante** — turma, nome, e-mail, telefone. Deliberadamente simples: sem
@@ -301,9 +315,14 @@ nada acontece.
 Aplicadas quando o aluno envia o entregável para revisão. A mensagem de erro lista
 exatamente o que falta — é ela que evita a ida e volta com o professor.
 
-**A — Plano de Ensino**: ao menos um anexo PDF; público-alvo definido no curso;
-carga horária e formato preenchidos; se houver referencial, número de competências
-dentro da faixa daquele referencial; ao menos uma seção com conteúdo.
+**A — Plano de Ensino**: ao menos um anexo PDF; ao menos uma seção com conteúdo; e
+os dados pedagógicos do **curso** preenchidos — público-alvo, carga horária, formato
+e, se houver referencial, número de competências dentro da faixa dele.
+
+Esses últimos são campos do `Curso`, não do `Entregavel` (§4.3): a validação lê
+`entregavel.curso`. A checagem é repetida em `submeter_ao_coordenador`, porque o
+curso pode ser editado depois que o Plano de Ensino foi aprovado — validar só no
+envio do entregável deixaria passar um curso submetido sem carga horária.
 
 **B — Infográficos e Cards**: ao menos um anexo; **todo** anexo com
 `referencia_bibliografica` preenchida.
@@ -342,7 +361,14 @@ Sem dependências circulares entre apps.
 Toda transição de estado é uma função em `cursos/services.py`:
 `enviar_para_revisao`, `aprovar_entregavel`, `devolver_entregavel`,
 `submeter_ao_coordenador`, `publicar_curso`, `despublicar_curso`,
-`abrir_nova_versao`, `aceitar_solicitacao`. Cada uma valida, muda o estado, grava histórico e enfileira
+`abrir_nova_versao`, `aceitar_solicitacao`.
+
+`aceitar_solicitacao(solicitacao, professor, dados_turma)` **exige o professor
+responsável** e cria a `Turma` na mesma transação, fixando a versão do curso
+publicada naquele momento. É esse ato que responde "como o professor é atribuído a
+uma turma que nasceu de uma solicitação externa": o coordenador o designa ao aceitar,
+e é dessa designação que decorre o acesso dele aos participantes (§10). Solicitação
+aceita sem turma e sem professor não é um estado alcançável. Cada uma valida, muda o estado, grava histórico e enfileira
 notificação, dentro de uma transação.
 
 Views, Admin e comandos chamam essas funções. **Nenhum código fora de `services.py`
@@ -375,7 +401,11 @@ disco por UUID; o nome original é apenas metadado exibido.
 
 **Upload de vídeo é retomável.** O navegador divide o arquivo em blocos e envia um
 a um contra `UploadEmAndamento`, com barra de progresso; queda de conexão retoma de
-onde parou. Um GB no upstream doméstico de um aluno leva perto de meia hora — um
+onde parou. Este é o único ponto do sistema com JavaScript próprio de verdade:
+**HTMX não fatia arquivo**. O fatiamento usa `Blob.slice()` em JS simples — da ordem
+de 150 linhas, sem dependência nova. Se durante a implementação isso se mostrar mais
+espinhoso que o previsto, a alternativa é uma biblioteca minimalista (Resumable.js,
+Uppy), e não esticar o HTMX para o que ele não faz. Um GB no upstream doméstico de um aluno leva perto de meia hora — um
 POST único que falha aos 90% significa entrega perdida.
 
 **Entrega de arquivo nunca passa pelo Django.** A view confere permissão e delega
@@ -383,6 +413,12 @@ ao nginx via `X-Accel-Redirect`. Isso é obrigatório, não otimização: transm
 1 GB pelo processo Python prende um worker por dez minutos e três downloads
 simultâneos derrubam o servidor. O nginx também dá *range requests*, então o vídeo
 abre e navega no player em vez de só baixar.
+
+No nginx, o `location` da mídia é marcado **`internal;`** — sem isso, qualquer
+pessoa acessa o arquivo pela URL direta e a checagem de permissão do Django vira
+decoração. A view define `Content-Disposition: inline` apenas para PDF e vídeo, para
+abrirem no navegador; **todo o resto vai como `attachment`**, porque HTML ou SVG
+servido inline a partir do nosso domínio é vetor de XSS.
 
 **Formato de vídeo**: MP4/H.264 toca no navegador; outros formatos são aceitos mas
 apenas baixados. Sem transcodificação no servidor.
@@ -407,6 +443,12 @@ preciso e-mail para o aluno descobrir que tem trabalho.
 **E-mail não pode derrubar operação.** A ação grava a `Notificacao` e commita; o
 envio acontece depois, por comando de `management` chamado pelo cron, que reprocessa
 falhas. Sem Celery, sem Redis, sem serviço extra para manter.
+
+Duas precauções, porque o comando é sequencial e o SMTP da UFSM pode demorar a
+responder: o comando processa **em lote limitado** (50 notificações por execução) e
+roda sob trava de arquivo (`flock`), para que uma execução lenta não se sobreponha à
+seguinte e envie o mesmo e-mail duas vezes. Tentativas com falha usam recuo
+progressivo e param depois de um limite, em vez de reprocessar para sempre.
 
 ## 10. Permissões e dados pessoais
 
@@ -475,8 +517,15 @@ backup: uma restauração de teste faz parte da entrega.
 
 **Rotinas de cron**: reenvio de notificações pendentes; limpeza de uploads em
 blocos abandonados há mais de 24 h (sem ela, o disco enche de fragmentos de vídeo
-que ninguém reclamou); remoção de `Arquivo` sem nenhum anexo apontando para ele em
-nenhuma versão de curso.
+que ninguém reclamou); remoção de `Arquivo` órfão.
+
+A remoção de órfãos tem uma corrida a evitar: entre o fim do upload e o salvamento
+do `Anexo` existe uma janela em que o arquivo não tem referência nenhuma e não é
+lixo. Por isso a rotina só considera `Arquivo` **sem anexos e criado há mais de
+24 h**, e seleciona com `select_for_update()`. Deliberadamente **não** usamos
+contador de referências: contador denormalizado desanda em exclusão em lote,
+rollback ou clone de versão, e o modo de falha é apagar arquivo que ainda está em
+uso.
 
 **Carga inicial**: fixture da BNCC da Computação (categorias e competências por
 etapa), fixture de temas iniciais, edição corrente, usuário coordenador.
@@ -514,3 +563,7 @@ Decidido deliberadamente, para não inflar a entrega:
 | Melhoria de curso publicado gera nova versão, não edição no lugar | A versão no ar continua solicitável durante o trabalho, e a evolução do curso fica registrada |
 | `Arquivo` separado de `Anexo`, compartilhado entre versões | Clonar curso não pode clonar gigabytes de vídeo |
 | Tema controlado para filtrar, palavra-chave livre para buscar | Filtro com texto livre se fragmenta e para de encontrar as coisas |
+| Seções padrão criadas por serviço, não por sinal `post_save` | Sinal é invisível, mal testável e contraria a regra de que só serviços mudam estado |
+| Limpeza de arquivo órfão por idade + `select_for_update`, sem contador de referências | Contador denormalizado desanda e o modo de falha é apagar arquivo em uso |
+| `location` da mídia `internal;` no nginx | Sem isso a URL direta burla toda a checagem de permissão |
+| JS próprio com `Blob.slice()` para o upload em blocos | HTMX não fatia arquivo; é o único ponto do sistema que precisa de JS de verdade |
