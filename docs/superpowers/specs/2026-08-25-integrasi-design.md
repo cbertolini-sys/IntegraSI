@@ -361,15 +361,15 @@ Sem dependências circulares entre apps.
 Toda transição de estado é uma função em `cursos/services.py`:
 `enviar_para_revisao`, `aprovar_entregavel`, `devolver_entregavel`,
 `submeter_ao_coordenador`, `publicar_curso`, `despublicar_curso`,
-`abrir_nova_versao`, `aceitar_solicitacao`.
+`abrir_nova_versao`, `aceitar_solicitacao`. Cada uma valida, muda o estado, grava
+histórico e enfileira notificação, dentro de uma transação.
 
 `aceitar_solicitacao(solicitacao, professor, dados_turma)` **exige o professor
 responsável** e cria a `Turma` na mesma transação, fixando a versão do curso
 publicada naquele momento. É esse ato que responde "como o professor é atribuído a
 uma turma que nasceu de uma solicitação externa": o coordenador o designa ao aceitar,
 e é dessa designação que decorre o acesso dele aos participantes (§10). Solicitação
-aceita sem turma e sem professor não é um estado alcançável. Cada uma valida, muda o estado, grava histórico e enfileira
-notificação, dentro de uma transação.
+aceita sem turma e sem professor não é um estado alcançável.
 
 Views, Admin e comandos chamam essas funções. **Nenhum código fora de `services.py`
 altera campo de status diretamente.** Sem essa disciplina, em seis meses existem
