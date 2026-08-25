@@ -23,6 +23,27 @@ comunidade solicitam a realização — o que gera uma turma acompanhada no sist
 O sistema é de **produção de cursos**, não de inscrição em cursos. Os alunos
 cadastrados são os produtores do material, não os cursistas.
 
+### 1.1 Este é o módulo de produção
+
+O IntegraSI está planejado em dois módulos. Este documento especifica o primeiro:
+**produção e catalogação**. Um segundo módulo, de **execução dos cursos**
+(frequência, avaliação, certificação, acompanhamento de turma em andamento), será
+construído depois, sobre esta base.
+
+Isso não é uma nota de rodapé — é uma restrição de projeto, e três regras saem dela:
+
+1. **`Turma` e `Participante` existem aqui na forma mínima**: agendamento e lista de
+   presentes na lista, nada mais. São o ponto onde a demanda captada pelo catálogo
+   pousa, e a fundação sobre a qual o módulo de execução será construído. Nenhum
+   campo de frequência, nota ou certificado entra agora.
+2. **A costura é a versão do curso.** A `Turma` aponta para uma versão específica do
+   `Curso`, nunca para a linhagem. É o que permitirá ao módulo de execução dizer,
+   em 2029, exatamente qual material foi aplicado numa turma de 2027 — mesmo que o
+   curso tenha ganhado versões depois.
+3. **`cursos` e `catalogo` não conhecem `turmas`.** A dependência é de mão única:
+   `turmas` lê `cursos`. Assim o módulo de execução cresce a partir de `turmas` sem
+   tocar no núcleo de produção.
+
 ## 2. Atores
 
 | Ator | Quem é | O que faz |
@@ -219,12 +240,17 @@ observação. Responde "por que este curso saiu do ar?" seis meses depois.
 participantes, período pretendido, mensagem, status
 (`RECEBIDA`/`EM_ANALISE`/`ACEITA`/`RECUSADA`), resposta, data.
 
-**Turma** — curso, solicitação de origem (opcional), professor responsável, data
-de início, data de fim, local, vagas, status
+**Turma** — a versão do curso que será aplicada, solicitação de origem (opcional),
+professor responsável, data de início, data de fim, local, vagas, status
 (`AGENDADA`/`EM_ANDAMENTO`/`CONCLUIDA`/`CANCELADA`), observações.
 
 **Participante** — turma, nome, e-mail, telefone. Deliberadamente simples: sem
 conta, sem login.
+
+Ambos param aqui, por decisão de escopo (§1.1): registram o agendamento e quem
+participou. Frequência, avaliação e certificado são do módulo de execução, e
+qualquer campo desses que aparecer neste módulo é sinal de que a fronteira foi
+atravessada sem querer.
 
 ### 4.8 Infraestrutura de dados
 
@@ -459,7 +485,8 @@ etapa), fixture de temas iniciais, edição corrente, usuário coordenador.
 
 Decidido deliberadamente, para não inflar a entrega:
 
-- Certificado e controle de frequência dos participantes de turma
+- Certificado, controle de frequência, avaliação e acompanhamento de turma em
+  andamento — tudo isso é o módulo de execução (§1.1), não corte arbitrário
 - Login institucional / SSO da UFSM
 - Auto-cadastro de usuários
 - Comparação lado a lado entre versões de um curso (o histórico existe; a
@@ -482,6 +509,8 @@ Decidido deliberadamente, para não inflar a entrega:
 | Entrega de arquivo via `X-Accel-Redirect` | 1 GB pelo processo Python derruba o servidor |
 | Fila de e-mail em tabela + cron, sem Celery | Um serviço a menos para manter; SMTP fora do ar não pode travar aprovação |
 | Contas criadas pelo coordenador | Base pequena e controlada; evita dependência do setor de TI para SSO |
+| `Turma`/`Participante` mínimos, sem frequência nem certificado | Este é o módulo de produção; execução vem depois e cresce a partir de `turmas` |
+| `turmas` depende de `cursos`, nunca o contrário | Mantém o núcleo de produção intocado quando o módulo de execução for construído |
 | Melhoria de curso publicado gera nova versão, não edição no lugar | A versão no ar continua solicitável durante o trabalho, e a evolução do curso fica registrada |
 | `Arquivo` separado de `Anexo`, compartilhado entre versões | Clonar curso não pode clonar gigabytes de vídeo |
 | Tema controlado para filtrar, palavra-chave livre para buscar | Filtro com texto livre se fragmenta e para de encontrar as coisas |
