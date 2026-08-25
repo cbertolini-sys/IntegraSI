@@ -53,6 +53,8 @@ Admin. O visitante não tem conta e nunca precisa de uma.
 11. Um visitante solicita o curso pelo formulário público.
 12. Professor e coordenador dão andamento à solicitação; aceita, ela vira turma
     com data, local, vagas e participantes.
+13. Mais tarde, um curso fraco ou incompleto pode ganhar uma nova versão, produzida
+    por outra equipe, sem sair do catálogo enquanto isso (§4.5).
 
 ## 4. Modelo de domínio
 
@@ -85,6 +87,12 @@ Computacional, Mundo Digital, Cultura Digital.
 **Competencia** — referencial, categoria, código (`EF05CO01`), descrição, etapa
 de ensino, ordem. Carregada por fixture.
 
+**Cursos sem referencial são de primeira classe.** Um curso de Arduino, de IA na
+Educação ou de qualquer outro foco nasce com `referencial` vazio, não seleciona
+competência nenhuma e passa por todas as demais regras normalmente. A validação de
+competências (§6-A) só roda quando existe referencial. Nenhuma tela, filtro ou
+relatório pode pressupor BNCC.
+
 ### 4.3 O curso
 
 **Curso** — título, resumo, edição, professor responsável, status.
@@ -100,9 +108,65 @@ Identidade pedagógica, exigida pelo roteiro como dado estruturado e não como p
 - `carga_horaria` em horas, `formato` (`PRESENCIAL`/`HIBRIDO`/`ONLINE`),
   `pre_requisitos`
 
+Descoberta (§4.4): `temas` (M2M) e `palavras_chave` (texto livre).
+
+Versionamento (§4.5): `raiz`, `versao`, `motivo_versao`.
+
 Datas: criado em, atualizado em, publicado em.
 
-### 4.4 As duas camadas da produção
+### 4.4 Temas, palavras-chave e busca
+
+Duas coisas diferentes, que servem a propósitos diferentes.
+
+**Tema** — vocabulário controlado, cadastrado pelo coordenador no Admin
+(Pensamento Computacional, Robótica, Segurança Digital, IA na Educação, Inclusão
+Digital de Adultos…): nome, slug, ativo. Ligado ao curso por M2M e exposto como
+**filtro** no catálogo. É controlado porque filtro com texto livre não funciona:
+"robótica", "Robotica" e "robótica educacional" viram três filtros distintos e
+nenhum deles encontra tudo.
+
+**`palavras_chave`** — texto livre preenchido pela equipe. Não vira filtro;
+alimenta a busca.
+
+**Busca textual** — `SearchVector` do PostgreSQL com dicionário em português sobre
+título, resumo, palavras-chave e nomes dos temas, com índice GIN e coluna
+persistida. O dicionário português é o que faz "robótica" encontrar "robotica" e
+"robôs"; busca por `LIKE` não faz isso.
+
+### 4.5 Versões de um curso
+
+Um curso publicado pode se mostrar fraco ou incompleto, e outra equipe — em outro
+semestre — pode melhorá-lo. Isso **não** é editar o curso publicado: é criar uma
+nova versão dele.
+
+Campos no `Curso`:
+
+- `raiz` — FK para a primeira versão da linhagem (vazio na própria v1). Agrupa toda
+  a história de um curso.
+- `versao` — inteiro sequencial dentro da linhagem.
+- `motivo_versao` — por que esta versão foi aberta. Obrigatório a partir da v2.
+
+Como funciona:
+
+1. Coordenador ou o professor responsável abre nova versão de um curso publicado,
+   informando o motivo.
+2. O sistema clona o curso na edição corrente: dados, entregáveis, seções e anexos.
+   Todos os entregáveis clonados voltam a `RASCUNHO`; o histórico de `Revisao` da
+   versão anterior **não** é copiado — pertence a ela.
+3. O professor monta a nova equipe. Pode ser outra turma inteira.
+4. A versão anterior **continua publicada e solicitável** durante todo o trabalho.
+5. Quando o coordenador publica a nova versão, a anterior passa a `SUBSTITUIDO`,
+   sai do catálogo e permanece consultável como histórico.
+
+Restrições: no máximo uma versão de cada linhagem fora de `PUBLICADO`/`SUBSTITUIDO`
+por vez — duas equipes não reescrevem o mesmo curso em paralelo. O catálogo mostra,
+de cada linhagem, apenas a versão publicada.
+
+**Curso abandonado antes de publicar é outro caso, e mais simples**: não precisa de
+versão nenhuma. O professor troca os membros da equipe e o novo grupo continua de
+onde o anterior parou.
+
+### 4.6 As duas camadas da produção
 
 O roteiro da disciplina fixa **o que** deve ser entregue; o professor decide **como**
 o conteúdo se organiza dentro de cada entrega.
@@ -124,7 +188,7 @@ referências).
 - `tipo_midia`: `ARQUIVO`, `VIDEO` ou `LINK`. Link é material complementar
   (referência externa, atividade em Scratch) e **não satisfaz nenhuma validação
   do §6** — em particular, o entregável de vídeo-aulas exige arquivo enviado
-- arquivo (nome em disco por UUID), nome original, tamanho, mime detectado
+- `arquivo` — FK para `Arquivo`; nome original exibido
 - `url` para links
 - título, descrição
 - `referencia_bibliografica` — obrigatório nos cards
@@ -133,6 +197,15 @@ referências).
 - `duracao_minutos` para vídeos
 - enviado por, enviado em
 
+**Arquivo** — o conteúdo binário, separado do anexo que o referencia: caminho em
+disco (UUID), hash do conteúdo, tamanho, mime detectado, enviado por, enviado em.
+Imutável.
+
+A separação existe por causa do versionamento: clonar um curso não pode clonar 3 GB
+de vídeo. Versões diferentes referenciam o **mesmo** `Arquivo`, e a remoção física
+só acontece quando nenhum anexo de nenhuma versão o referencia — verificação feita
+pela rotina de limpeza, nunca no momento de apagar um anexo.
+
 **Revisao** — registro imutável de cada decisão do professor: entregável, revisor,
 decisão (`APROVADO`/`DEVOLVIDO`), comentário, data. Nunca sobrescrito; é o
 histórico das idas e vindas.
@@ -140,7 +213,7 @@ histórico das idas e vindas.
 **LogTransicaoCurso** — curso, status de origem, status de destino, usuário, data,
 observação. Responde "por que este curso saiu do ar?" seis meses depois.
 
-### 4.5 Demanda e realização
+### 4.7 Demanda e realização
 
 **Solicitacao** — curso, nome, e-mail, telefone, instituição, número estimado de
 participantes, período pretendido, mensagem, status
@@ -153,7 +226,7 @@ de início, data de fim, local, vagas, status
 **Participante** — turma, nome, e-mail, telefone. Deliberadamente simples: sem
 conta, sem login.
 
-### 4.6 Infraestrutura de dados
+### 4.8 Infraestrutura de dados
 
 **Notificacao** — destinatário, assunto, corpo, evento, tentativas, enviado em,
 último erro. Fila persistente de e-mail (ver §9).
@@ -171,7 +244,10 @@ Entregável:  RASCUNHO → EM_REVISAO → APROVADO
 
 Curso:  RASCUNHO → EM_PRODUCAO → AGUARDANDO_COORDENADOR → PUBLICADO
                         ↑                  ↓                   ↓
-                        └──── DEVOLVIDO ───┘              DESPUBLICADO
+                        └──── DEVOLVIDO ───┘         DESPUBLICADO / SUBSTITUIDO
+
+Nova versão:  PUBLICADO --(clona)--> nova v em RASCUNHO
+              nova v PUBLICADO ==> versão anterior vira SUBSTITUIDO
 ```
 
 Regras de transição:
@@ -185,6 +261,11 @@ Regras de transição:
   `APROVADO`.
 - Somente o coordenador publica, devolve ao professor ou despublica.
 - Curso `DESPUBLICADO` sai do catálogo público imediatamente; pode ser republicado.
+- Nova versão só pode ser aberta a partir de curso `PUBLICADO`, e só se nenhuma
+  outra versão da linhagem estiver em produção.
+- Publicar uma versão move automaticamente a anterior para `SUBSTITUIDO`, na mesma
+  transação. `SUBSTITUIDO` é terminal: consultável como histórico, fora do catálogo,
+  não republicável.
 
 Toda transição roda em transação atômica: muda o status e grava o histórico, ou
 nada acontece.
@@ -223,8 +304,8 @@ acesso, e o critério que mais pesa é quem mantém isso daqui a dois anos.
 | `contas` | `Usuario`, papéis, autenticação. Cadastro de pessoas pelo Django Admin |
 | `edicoes` | `Edicao`. Minúsculo, separado porque tudo aponta para ele e nada de volta |
 | `referenciais` | `Referencial`, `Categoria`, `Competencia` + fixture da BNCC da Computação |
-| `cursos` | `Curso`, `MembroEquipe`, `Entregavel`, `Secao`, `Anexo`, `Revisao`, `LogTransicaoCurso`, `services.py`, `permissions.py` |
-| `catalogo` | Páginas públicas e `Solicitacao`. Lê `cursos`, nunca escreve nele |
+| `cursos` | `Curso`, `MembroEquipe`, `Entregavel`, `Secao`, `Anexo`, `Arquivo`, `Tema`, `Revisao`, `LogTransicaoCurso`, `services.py`, `permissions.py` |
+| `catalogo` | Páginas públicas, busca, `Solicitacao`. Lê `cursos`, nunca escreve nele |
 | `turmas` | `Turma`, `Participante` |
 | `notificacoes` | `Notificacao` e o comando de envio |
 
@@ -235,7 +316,7 @@ Sem dependências circulares entre apps.
 Toda transição de estado é uma função em `cursos/services.py`:
 `enviar_para_revisao`, `aprovar_entregavel`, `devolver_entregavel`,
 `submeter_ao_coordenador`, `publicar_curso`, `despublicar_curso`,
-`aceitar_solicitacao`. Cada uma valida, muda o estado, grava histórico e enfileira
+`abrir_nova_versao`, `aceitar_solicitacao`. Cada uma valida, muda o estado, grava histórico e enfileira
 notificação, dentro de uma transação.
 
 Views, Admin e comandos chamam essas funções. **Nenhum código fora de `services.py`
@@ -253,11 +334,12 @@ devolutivas.
 coordenador → minhas turmas.
 
 **Coordenador** — fila de cursos aguardando aprovação → revisar curso completo →
-publicar ou devolver → solicitações recebidas → criar turma → Django Admin para
-pessoas, edições e referenciais.
+publicar ou devolver → abrir nova versão de curso publicado → solicitações
+recebidas → criar turma → Django Admin para pessoas, edições, temas e referenciais.
 
-**Visitante** — catálogo filtrável por público-alvo, referencial, categoria e
-formato → página do curso → formulário de solicitação.
+**Visitante** — catálogo com busca textual e filtros de público-alvo, tema,
+referencial, categoria e formato → página do curso → formulário de solicitação.
+Cada linhagem aparece uma única vez, na versão publicada.
 
 ## 8. Arquivos
 
@@ -307,9 +389,12 @@ espalhadas em `if` de template.
 
 - **Aluno**: só cursos onde é `MembroEquipe`. Edita seções e anexos apenas com o
   entregável em `RASCUNHO` ou `DEVOLVIDO`. Nunca aprova.
-- **Professor**: total sobre os cursos que responde. Não publica, não mexe em curso
-  alheio, não vê participantes de turma alheia.
-- **Coordenador**: acesso total; publica e despublica; Admin.
+- **Professor**: total sobre os cursos que responde, incluindo abrir nova versão
+  deles. Não publica, não mexe em curso alheio, não vê participantes de turma alheia.
+- **Coordenador**: acesso total; publica, despublica e abre nova versão; Admin.
+- **Abrir nova versão**: coordenador ou o professor responsável pelo curso, sempre
+  com motivo registrado. A equipe da nova versão não herda acesso à anterior — ela
+  já está publicada e é pública de qualquer forma.
 - **Visitante**: exclusivamente cursos `PUBLICADO`.
 
 **Anexos de curso em produção não são servidos pelo `MEDIA_URL`.** Todo download
@@ -342,7 +427,10 @@ igual:
 2. **Permissões**: as negativas são o que importa (aluno abrindo curso de outra
    equipe, anônimo baixando anexo não publicado, professor vendo turma alheia).
 3. **Validações do §6**: caderno sem gabarito, card sem referência, 1 ou 4 vídeos,
-   competências fora da faixa do referencial.
+   competências fora da faixa do referencial, curso sem referencial passando limpo.
+4. **Versionamento**: clone não duplica arquivo em disco; versão anterior segue
+   publicada durante o trabalho; publicar a nova substitui a anterior; catálogo
+   mostra uma linhagem uma vez só; segunda versão simultânea é recusada.
 
 Views recebem teste de fumaça. Admin e template trivial não recebem teste.
 Desenvolvimento em TDD: o teste da regra antes da regra.
@@ -361,10 +449,11 @@ backup: uma restauração de teste faz parte da entrega.
 
 **Rotinas de cron**: reenvio de notificações pendentes; limpeza de uploads em
 blocos abandonados há mais de 24 h (sem ela, o disco enche de fragmentos de vídeo
-que ninguém reclamou).
+que ninguém reclamou); remoção de `Arquivo` sem nenhum anexo apontando para ele em
+nenhuma versão de curso.
 
 **Carga inicial**: fixture da BNCC da Computação (categorias e competências por
-etapa), edição corrente, usuário coordenador.
+etapa), fixture de temas iniciais, edição corrente, usuário coordenador.
 
 ## 14. Fora de escopo na primeira versão
 
@@ -373,7 +462,9 @@ Decidido deliberadamente, para não inflar a entrega:
 - Certificado e controle de frequência dos participantes de turma
 - Login institucional / SSO da UFSM
 - Auto-cadastro de usuários
-- Versionamento e comparação de versões de seções e arquivos
+- Comparação lado a lado entre versões de um curso (o histórico existe; a
+  ferramenta de *diff* não)
+- Versionamento de seções e arquivos dentro de uma mesma versão do curso
 - Comentários em thread dentro das seções
 - Relatórios gerenciais e indicadores de extensão
 - Aplicativo móvel ou API pública
@@ -391,3 +482,6 @@ Decidido deliberadamente, para não inflar a entrega:
 | Entrega de arquivo via `X-Accel-Redirect` | 1 GB pelo processo Python derruba o servidor |
 | Fila de e-mail em tabela + cron, sem Celery | Um serviço a menos para manter; SMTP fora do ar não pode travar aprovação |
 | Contas criadas pelo coordenador | Base pequena e controlada; evita dependência do setor de TI para SSO |
+| Melhoria de curso publicado gera nova versão, não edição no lugar | A versão no ar continua solicitável durante o trabalho, e a evolução do curso fica registrada |
+| `Arquivo` separado de `Anexo`, compartilhado entre versões | Clonar curso não pode clonar gigabytes de vídeo |
+| Tema controlado para filtrar, palavra-chave livre para buscar | Filtro com texto livre se fragmenta e para de encontrar as coisas |
