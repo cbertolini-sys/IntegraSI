@@ -59,6 +59,10 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
     objects = UsuarioManager()
 
     USERNAME_FIELD = "email"
+    # siape fica de fora de proposito: clean() exige SIAPE para todo papel != ALUNO, entao
+    # o "manage.py createsuperuser" interativo nunca conseguiria passar por clean() de
+    # qualquer forma. A rota suportada e o comando "criar_coordenador" (Task 4), que chama
+    # create_superuser(..., siape=...) diretamente. Nao "conserte" afrouxando a validacao.
     REQUIRED_FIELDS = ["nome_completo", "cpf"]
 
     class Meta:
