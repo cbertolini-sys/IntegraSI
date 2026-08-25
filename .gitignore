@@ -5,3 +5,4 @@ __pycache__/
 media/
 staticfiles/
 .pytest_cache/
+.DS_Store

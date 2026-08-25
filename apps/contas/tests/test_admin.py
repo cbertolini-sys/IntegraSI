@@ -59,9 +59,6 @@ def test_criar_aluno_pelo_admin_persiste_no_banco(client):
         {
             "email": "aluno@ufsm.br",
             "nome_completo": "Ana Aluna",
-            # O campo do model tem max_length=11: o Admin exige o CPF ja em
-            # digitos (sem pontuacao) porque a normalizacao so acontece no
-            # full_clean() do model, que roda depois da validacao de campo do form.
             "cpf": "12345678909",
             "papel": Usuario.ALUNO,
             "matricula": "2021001234",
@@ -88,3 +85,45 @@ def test_criar_aluno_pelo_admin_persiste_no_banco(client):
         reverse("admin:contas_usuario_change", args=[aluno.pk])
     )
     assert resposta_change.status_code == 200
+
+
+@pytest.mark.django_db
+def test_criar_aluno_pelo_admin_aceita_cpf_e_matricula_com_pontuacao(client):
+    # Regressao: o ModelForm gera um CharField(max_length=11) para `cpf` a
+    # partir do model, e essa validacao de tamanho roda ANTES do
+    # full_clean() do model (onde vive a normalizacao de pontuacao). Sem os
+    # campos declarados explicitamente em UsuarioCreationForm, um CPF
+    # digitado com pontuacao (14 caracteres) era rejeitado por "max 11
+    # caracteres" antes mesmo de chegar la.
+    coordenador = Usuario.objects.create_superuser(
+        email="coord@ufsm.br",
+        nome_completo="Carla Costa",
+        cpf="529.982.247-25",
+        siape="7654321",
+        password="senha-de-teste-123",
+    )
+    client.force_login(coordenador)
+    resposta = client.post(
+        reverse("admin:contas_usuario_add"),
+        {
+            "email": "aluno2@ufsm.br",
+            "nome_completo": "Beatriz Aluna",
+            "cpf": "123.456.789-09",
+            "papel": Usuario.ALUNO,
+            "matricula": "2021.001.234",
+            "siape": "",
+            "usable_password": "true",
+            "password1": "senha-do-aluno-2026",
+            "password2": "senha-do-aluno-2026",
+        },
+    )
+    if resposta.status_code == 200:
+        # Ajuda a diagnosticar falhas de validacao do formulario do Admin.
+        assert not resposta.context["adminform"].form.errors, resposta.context[
+            "adminform"
+        ].form.errors
+    assert resposta.status_code == 302
+
+    aluno = Usuario.objects.get(email="aluno2@ufsm.br")
+    assert aluno.cpf == "12345678909"
+    assert aluno.matricula == "2021001234"
