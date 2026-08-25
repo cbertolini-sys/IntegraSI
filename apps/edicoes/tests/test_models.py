@@ -54,3 +54,17 @@ def test_codigo_duplicado_e_recusado():
 @pytest.mark.django_db
 def test_str_e_o_codigo():
     assert str(criar_edicao()) == "2026/2"
+
+
+@pytest.mark.django_db
+def test_resalvar_edicao_ativa_nao_levanta():
+    edicao = criar_edicao()
+    edicao.descricao = "Descricao alterada"
+    edicao.save()
+    assert Edicao.objects.get(pk=edicao.pk).descricao == "Descricao alterada"
+
+
+@pytest.mark.django_db
+def test_data_fim_igual_data_inicio_e_recusada():
+    with pytest.raises(ValidationError):
+        criar_edicao(data_fim=datetime.date(2026, 8, 1))
