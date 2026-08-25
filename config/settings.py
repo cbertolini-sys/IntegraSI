@@ -61,6 +61,10 @@ AUTH_PASSWORD_VALIDATORS = [
 
 AUTH_USER_MODEL = "contas.Usuario"
 
+LOGIN_URL = "login"
+LOGIN_REDIRECT_URL = "painel"
+LOGOUT_REDIRECT_URL = "login"
+
 LANGUAGE_CODE = "pt-br"
 TIME_ZONE = "America/Sao_Paulo"
 USE_I18N = True
