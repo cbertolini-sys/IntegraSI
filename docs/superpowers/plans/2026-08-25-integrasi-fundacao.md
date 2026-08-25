@@ -1691,7 +1691,7 @@ git commit -m "feat(referenciais): fixture da BNCC e importador de competencias 
 ### Task 9: Temas para filtro do catálogo
 
 **Files:**
-- Create: `apps/cursos/` (app completo, começando pelo `Tema`), `apps/cursos/models.py`, `apps/cursos/admin.py`
+- Create: `apps/cursos/` (app completo, começando pelo `Tema`), `apps/cursos/models.py`, `apps/cursos/admin.py`, `apps/cursos/fixtures/temas_iniciais.json`
 - Modify: `config/settings.py` (INSTALLED_APPS)
 - Test: `apps/cursos/tests/__init__.py`, `apps/cursos/tests/test_tema.py`
 
@@ -1814,7 +1814,47 @@ class TemaAdmin(admin.ModelAdmin):
     prepopulated_fields = {"slug": ("nome",)}
 ```
 
-- [ ] **Step 6: Migrar e rodar a suíte inteira**
+- [ ] **Step 6: Escrever a fixture de temas iniciais**
+
+A spec §13 pede temas na carga inicial, para que o catálogo não nasça sem filtro nenhum. Acrescente o teste ao fim de `apps/cursos/tests/test_tema.py`:
+
+```python
+@pytest.mark.django_db
+def test_fixture_carrega_temas_iniciais_ativos():
+    from django.core.management import call_command
+
+    call_command("loaddata", "temas_iniciais")
+    assert Tema.objects.filter(ativo=True).count() == 5
+    assert Tema.objects.filter(slug="ia-na-educacao").exists()
+```
+
+Rode e veja falhar: `pytest apps/cursos/tests/test_tema.py::test_fixture_carrega_temas_iniciais_ativos -v`
+Expected: FAIL — `CommandError: No fixture named 'temas_iniciais' found`.
+
+Depois crie o arquivo:
+
+```bash
+mkdir -p apps/cursos/fixtures
+```
+
+`apps/cursos/fixtures/temas_iniciais.json`:
+
+```json
+[
+  {"model": "cursos.tema", "pk": 1, "fields": {"nome": "Pensamento Computacional", "slug": "pensamento-computacional", "ativo": true}},
+  {"model": "cursos.tema", "pk": 2, "fields": {"nome": "Robotica Educacional", "slug": "robotica-educacional", "ativo": true}},
+  {"model": "cursos.tema", "pk": 3, "fields": {"nome": "Seguranca Digital", "slug": "seguranca-digital", "ativo": true}},
+  {"model": "cursos.tema", "pk": 4, "fields": {"nome": "IA na Educacao", "slug": "ia-na-educacao", "ativo": true}},
+  {"model": "cursos.tema", "pk": 5, "fields": {"nome": "Inclusao Digital de Adultos", "slug": "inclusao-digital-de-adultos", "ativo": true}}
+]
+```
+
+Rode de novo: `pytest apps/cursos/tests/test_tema.py -v`
+Expected: PASS (6 testes).
+
+Esta lista é ponto de partida, não camisa de força: o coordenador acrescenta e desativa temas pelo Admin conforme os cursos aparecem.
+
+- [ ] **Step 7: Migrar e rodar a suíte inteira**
 
 ```bash
 python manage.py makemigrations cursos
@@ -1823,15 +1863,15 @@ pytest -v
 
 Expected: PASS — todos os testes dos apps `contas`, `edicoes`, `referenciais` e `cursos`, mais os de configuração.
 
-- [ ] **Step 7: Conferir na mão e commitar**
+- [ ] **Step 8: Conferir na mão e commitar**
 
 ```bash
 python manage.py migrate
-python manage.py loaddata bncc_computacao
+python manage.py loaddata bncc_computacao temas_iniciais
 python manage.py runserver
 ```
 
-Entre no Admin como coordenador e confirme que dá para cadastrar uma edição, ver a BNCC da Computação com seus três eixos, e criar um tema. Depois:
+Entre no Admin como coordenador e confirme que dá para cadastrar uma edição, ver a BNCC da Computação com seus três eixos, e ver os cinco temas carregados. Depois:
 
 ```bash
 git add apps/cursos config/settings.py
