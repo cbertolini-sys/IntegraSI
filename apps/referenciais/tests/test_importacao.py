@@ -1,5 +1,6 @@
 import pytest
 from django.core.management import call_command
+from django.core.management.base import CommandError
 
 from apps.referenciais.models import Categoria, Competencia, Referencial
 
@@ -58,6 +59,39 @@ def test_categoria_desconhecida_no_csv_interrompe_a_importacao(bncc, tmp_path):
         "EF05CO09,X,EF05,Eixo Inexistente\n",
         encoding="utf-8",
     )
-    with pytest.raises(Exception):
+    with pytest.raises(CommandError):
+        call_command("importar_competencias", referencial="BNCC-COMP", csv=str(arquivo))
+    assert Competencia.objects.filter(referencial=bncc).count() == 0
+
+
+@pytest.mark.django_db
+def test_etapa_invalida_no_csv_interrompe_a_importacao(bncc, tmp_path):
+    """A CSV e transcrita a mao do PDF da Resolucao: um erro de digitacao na etapa
+    (EF5 em vez de EF05) e o erro esperado, nao uma hipotese remota. Sem validar
+    contra ETAPAS, update_or_create salva silenciosamente -- a habilidade some do
+    ano certo sem nenhum aviso. Antes desta guarda, esta importacao tinha sucesso e
+    deixava uma Competencia com etapa='EF5' no banco."""
+    arquivo = tmp_path / "habilidades.csv"
+    arquivo.write_text(
+        "codigo,descricao,etapa,categoria\n"
+        "EF05CO01,Decompor um problema,EF5,Pensamento Computacional\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(CommandError):
+        call_command("importar_competencias", referencial="BNCC-COMP", csv=str(arquivo))
+    assert Competencia.objects.filter(referencial=bncc).count() == 0
+
+
+@pytest.mark.django_db
+def test_linha_com_campo_faltando_da_erro_tratado_em_vez_de_traceback(bncc, tmp_path):
+    """csv.DictReader preenche campos ausentes com None quando falta uma virgula na
+    linha. Sem tratamento, linha["categoria"].strip() estoura AttributeError -- um
+    traceback cru no terminal do coordenador em vez de uma mensagem util."""
+    arquivo = tmp_path / "habilidades.csv"
+    arquivo.write_text(
+        "codigo,descricao,etapa,categoria\nEF05CO01,Decompor um problema,EF05\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(CommandError):
         call_command("importar_competencias", referencial="BNCC-COMP", csv=str(arquivo))
     assert Competencia.objects.filter(referencial=bncc).count() == 0

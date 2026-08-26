@@ -3,9 +3,11 @@ import csv as csv_lib
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
-from apps.referenciais.models import Categoria, Competencia, Referencial
+from apps.referenciais.choices import ETAPAS
+from apps.referenciais.models import Competencia, Referencial
 
 COLUNAS = {"codigo", "descricao", "etapa", "categoria"}
+ETAPAS_VALIDAS = {codigo for codigo, _ in ETAPAS}
 
 
 class Command(BaseCommand):
@@ -30,18 +32,29 @@ class Command(BaseCommand):
                 raise CommandError(f"O CSV precisa das colunas: {', '.join(sorted(COLUNAS))}.")
             total = 0
             for numero, linha in enumerate(leitor, start=2):
-                categoria = categorias.get(linha["categoria"].strip())
+                valores = {campo: (linha.get(campo) or "").strip() for campo in COLUNAS}
+
+                if not valores["codigo"]:
+                    raise CommandError(f"Linha {numero}: falta o codigo (linha incompleta?).")
+
+                if valores["etapa"] not in ETAPAS_VALIDAS:
+                    raise CommandError(
+                        f"Linha {numero}: etapa '{valores['etapa']}' invalida. "
+                        f"Valores aceitos: {', '.join(sorted(ETAPAS_VALIDAS))}."
+                    )
+
+                categoria = categorias.get(valores["categoria"])
                 if categoria is None:
                     raise CommandError(
-                        f"Linha {numero}: categoria '{linha['categoria']}' nao existe em {referencial.sigla}."
+                        f"Linha {numero}: categoria '{valores['categoria']}' nao existe em {referencial.sigla}."
                     )
                 Competencia.objects.update_or_create(
                     referencial=referencial,
-                    codigo=linha["codigo"].strip(),
+                    codigo=valores["codigo"],
                     defaults={
                         "categoria": categoria,
-                        "descricao": linha["descricao"].strip(),
-                        "etapa": linha["etapa"].strip(),
+                        "descricao": valores["descricao"],
+                        "etapa": valores["etapa"],
                         "ordem": total,
                     },
                 )
