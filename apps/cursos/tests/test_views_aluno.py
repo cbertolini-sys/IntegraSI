@@ -1,4 +1,7 @@
+import os
+
 import pytest
+from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 
@@ -242,3 +245,11 @@ def test_anexar_arquivo_e_link_juntos_e_recusado_sem_quebrar(client, curso_com_e
     conteudo = resposta.content.decode()
     assert "Anexo de arquivo não tem link." in conteudo
     assert not Anexo.objects.filter(titulo="Slides duplos").exists()
+    # A rejeicao nao pode deixar o Arquivo (linha e arquivo em disco) pra tras: o
+    # aluno so tentou de novo, mas sem isso cada tentativa acumularia um registro e
+    # um arquivo orfaos, e limpar_arquivos_orfaos so existe no Plano 4.
+    assert Arquivo.objects.count() == 0
+    arquivos_em_disco = [
+        nome for _, _, nomes in os.walk(settings.MEDIA_ROOT) for nome in nomes
+    ]
+    assert arquivos_em_disco == []

@@ -106,6 +106,15 @@ def anexar(request, pk):
         # que mora em Anexo.clean() (docs/onde-mora-a-validacao.md). Este
         # try/except e o backstop: qualquer coisa que Anexo.clean() rejeitar na
         # instancia ja montada vira mensagem em vez de erro nao tratado.
+        if upload:
+            # O Arquivo (linha + arquivo em disco) ja foi criado acima, antes deste
+            # save() rejeitar o Anexo que apontaria pra ele. Sem isto, cada tentativa
+            # com arquivo E link deixa um Arquivo orfao pra tras - e limpar_arquivos_orfaos
+            # so existe no Plano 4. So acontece no caminho de upload (o de link nunca
+            # cria Arquivo), e nesse ponto nenhum Anexo foi salvo apontando pra ele,
+            # entao nao ha nada mais referenciando este registro.
+            arquivo.arquivo.delete(save=False)
+            arquivo.delete()
         for mensagem in erro.messages:
             messages.error(request, mensagem)
         return redirect("entregavel", pk=obj.pk)
