@@ -22,6 +22,7 @@
 - Nenhum filtro ou tela pode pressupor BNCC; público-alvo é o filtro que sempre funciona (spec §4.2, §4.4).
 - Dados de solicitantes e participantes são de terceiros: finalidade declarada no formulário, acesso restrito ao professor da turma e ao coordenador (spec §10).
 - E-mail nunca é enviado dentro da requisição que muda estado (spec §9).
+- **Enumere as regras da tarefa antes de conferir os testes contra elas**, e prove cada teste de invariante quebrando a guarda que ele prende. Partir dos testes só acha teste fraco; partir das regras também acha regra sem teste. Ver `CLAUDE.md`, seção Testes — o padrão apareceu sete vezes no Plano 2.
 
 ---
 

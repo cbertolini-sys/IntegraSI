@@ -86,9 +86,18 @@ desses aparecendo aqui é sinal de que a fronteira foi atravessada sem querer.
   slugs, códigos) sem acento e nunca alterados por passada de texto.
 
 **Testes**
-- TDD: teste que falha primeiro. Para teste de invariante, prove que ele falha
-  quebrando a invariante de propósito — teste que passa com a invariante quebrada
-  não vale nada, e este projeto já teve dois assim.
+- TDD: teste que falha primeiro.
+- **Enumere as regras antes de conferir os testes, nunca o contrário.** Ao terminar uma
+  tarefa, escreva a lista das regras que ela introduz — lidas do plano e das restrições,
+  não do código que você acabou de escrever. Só então percorra a lista dizendo, para cada
+  regra, qual teste a prende e se apagar a implementação dela faria algum teste falhar.
+  Partir dos testes só encontra teste fraco; partir das regras também encontra regra que
+  ninguém testou. As duas perguntas parecem a mesma e não são.
+- Teste que passa com a invariante quebrada não vale nada. Prove quebrando de propósito:
+  apague a guarda, veja o teste falhar, restaure, veja passar. O padrão "teste com nome
+  que não exercita a regra" apareceu **sete vezes** no Plano 2, em tarefas diferentes e
+  achado por revisores diferentes — entre elas uma regra de segurança e a checagem de
+  que o plano de ensino é PDF, que podia ser apagada inteira sem quebrar nada.
 
 ## Restrições entre planos
 

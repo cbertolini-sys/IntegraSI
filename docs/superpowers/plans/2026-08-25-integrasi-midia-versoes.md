@@ -21,6 +21,7 @@
 - Remoção física de arquivo só quando nenhum anexo de nenhuma versão o referencia, por idade e sob `select_for_update()`, sem contador de referências (spec §13).
 - `SUBSTITUIDO` é terminal: consultável como histórico, fora do catálogo, não republicável (spec §5).
 - Nenhum campo de frequência, nota ou certificado (spec §1.1).
+- **Enumere as regras da tarefa antes de conferir os testes contra elas**, e prove cada teste de invariante quebrando a guarda que ele prende. Partir dos testes só acha teste fraco; partir das regras também acha regra sem teste. Ver `CLAUDE.md`, seção Testes — o padrão apareceu sete vezes no Plano 2.
 
 ---
 
