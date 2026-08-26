@@ -220,3 +220,25 @@ def test_anexar_link_cria_o_anexo_sem_arquivo(client, curso_com_equipe, aluno):
     assert anexo.tipo_midia == TipoMidia.LINK
     assert anexo.arquivo is None
     assert not Arquivo.objects.exists()
+
+
+@pytest.mark.django_db
+def test_anexar_arquivo_e_link_juntos_e_recusado_sem_quebrar(client, curso_com_equipe, aluno):
+    slides = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.SLIDES)
+    upload = SimpleUploadedFile(
+        "slides.pdf", b"%PDF-1.7\n%conteudo de teste\n", content_type="application/pdf"
+    )
+    client.force_login(aluno)
+    resposta = client.post(
+        reverse("anexar", args=[slides.pk]),
+        {
+            "titulo": "Slides duplos", "url": "https://exemplo.org/slides",
+            "rotulo": Rotulo.NENHUM, "tipo_pratica": TipoPratica.NENHUM,
+            "upload": upload,
+        },
+        follow=True,
+    )
+    assert resposta.status_code == 200
+    conteudo = resposta.content.decode()
+    assert "Anexo de arquivo não tem link." in conteudo
+    assert not Anexo.objects.filter(titulo="Slides duplos").exists()

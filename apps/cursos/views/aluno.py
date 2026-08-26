@@ -98,7 +98,17 @@ def anexar(request, pk):
         anexo.tipo_midia = TipoMidia.ARQUIVO
     else:
         anexo.tipo_midia = TipoMidia.LINK
-    anexo.save()
+    try:
+        anexo.save()
+    except ValidationError as erro:
+        # AnexoForm nao rejeita a combinacao arquivo+link (so rejeita nem-um-nem-
+        # outro; ver AnexoForm.clean()) - de proposito, para nao duplicar a regra
+        # que mora em Anexo.clean() (docs/onde-mora-a-validacao.md). Este
+        # try/except e o backstop: qualquer coisa que Anexo.clean() rejeitar na
+        # instancia ja montada vira mensagem em vez de erro nao tratado.
+        for mensagem in erro.messages:
+            messages.error(request, mensagem)
+        return redirect("entregavel", pk=obj.pk)
     messages.success(request, "Material anexado.")
     return redirect("entregavel", pk=obj.pk)
 
