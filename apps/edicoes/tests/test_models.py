@@ -2,6 +2,7 @@ import datetime
 
 import pytest
 from django.core.exceptions import ValidationError
+from django.db import IntegrityError
 
 from apps.edicoes.models import Edicao
 
@@ -68,3 +69,15 @@ def test_resalvar_edicao_ativa_nao_levanta():
 def test_data_fim_igual_data_inicio_e_recusada():
     with pytest.raises(ValidationError):
         criar_edicao(data_fim=datetime.date(2026, 8, 1))
+
+
+@pytest.mark.django_db
+def test_constraint_do_banco_recusa_duas_ativas_mesmo_contornando_clean():
+    """A regra de "só uma edição ativa" vive só em clean(); um .update() em massa
+    não passa por lá. Sem uma UniqueConstraint, este teste conseguiria deixar duas
+    linhas com ativa=True no banco e Edicao.objects.corrente() passaria a devolver
+    uma linha arbitrária."""
+    criar_edicao(codigo="2026/1", ativa=False)
+    criar_edicao(codigo="2026/2", ativa=False)
+    with pytest.raises(IntegrityError):
+        Edicao.objects.all().update(ativa=True)
