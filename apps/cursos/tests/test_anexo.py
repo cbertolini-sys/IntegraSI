@@ -10,6 +10,7 @@ from apps.cursos.models import Anexo
 PDF = b"%PDF-1.7\n%..."
 PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 8
 ZIP = b"PK\x03\x04" + b"\x00" * 8
+JPEG = b"\xff\xd8\xff" + b"\x00" * 8
 
 
 def test_detecta_pdf_png_e_zip():
@@ -78,6 +79,29 @@ def test_pdf_dentro_do_limite_devolve_o_mime():
 def test_imagem_acima_do_limite_e_recusada():
     with pytest.raises(ValidationError):
         valida_upload("card.png", tamanho=11 * 1024 * 1024, cabecalho=PNG)
+
+
+def test_jpeg_acima_do_limite_e_recusado():
+    # Slides sao o entregavel mais provavel de bater um teto (item 10 da revisao de
+    # branco): jpeg e zip tinham limite definido em LIMITES mas nenhum teste os
+    # exercitava - so pdf e png eram testados.
+    with pytest.raises(ValidationError):
+        valida_upload("foto.jpg", tamanho=11 * 1024 * 1024, cabecalho=JPEG)
+
+
+def test_jpeg_dentro_do_limite_devolve_o_mime():
+    assert valida_upload("foto.jpg", tamanho=9 * 1024 * 1024, cabecalho=JPEG) == "image/jpeg"
+
+
+def test_zip_acima_do_limite_e_recusado():
+    # pptx, odp e docx sao zip por baixo (ver EXTENSOES em arquivos.py); .pptx e o
+    # caso mais provavel para slides.
+    with pytest.raises(ValidationError):
+        valida_upload("apostila.pptx", tamanho=51 * 1024 * 1024, cabecalho=ZIP)
+
+
+def test_zip_dentro_do_limite_devolve_o_mime():
+    assert valida_upload("apostila.pptx", tamanho=49 * 1024 * 1024, cabecalho=ZIP) == "application/zip"
 
 
 @pytest.fixture

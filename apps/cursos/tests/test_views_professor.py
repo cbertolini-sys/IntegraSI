@@ -162,14 +162,8 @@ def test_fila_nao_mostra_entregavel_ainda_nao_enviado(client, professor, dados_c
 
 
 @pytest.mark.django_db
-def test_fila_de_outro_professor_esta_vazia(client, slides_em_revisao, db):
-    from apps.contas.models import Usuario
-
-    outro = Usuario.objects.create_user(
-        email="outro.prof@ufsm.br", nome_completo="Elisa Esteves", cpf="111.444.777-35",
-        papel=Usuario.PROFESSOR, siape="9999999", password="senha-de-teste-123",
-    )
-    client.force_login(outro)
+def test_fila_de_outro_professor_esta_vazia(client, slides_em_revisao, outro_professor):
+    client.force_login(outro_professor)
     resposta = client.get(reverse("fila_revisao"))
     assert slides_em_revisao.curso.titulo not in resposta.content.decode()
 
@@ -242,15 +236,9 @@ def test_equipe_rejeita_metodo_nao_suportado(client, professor, dados_curso):
 
 
 @pytest.mark.django_db
-def test_equipe_de_outro_professor_devolve_403(client, dados_curso):
-    from apps.contas.models import Usuario
-
+def test_equipe_de_outro_professor_devolve_403(client, dados_curso, outro_professor):
     curso = services.criar_curso(**dados_curso)
-    outro = Usuario.objects.create_user(
-        email="outro.prof@ufsm.br", nome_completo="Elisa Esteves", cpf="111.444.777-35",
-        papel=Usuario.PROFESSOR, siape="9999999", password="senha-de-teste-123",
-    )
-    client.force_login(outro)
+    client.force_login(outro_professor)
     resposta = client.get(reverse("equipe", args=[curso.pk]))
     assert resposta.status_code == 403
 
@@ -264,14 +252,8 @@ def test_aluno_nao_acessa_equipe(client, dados_curso, aluno):
 
 
 @pytest.mark.django_db
-def test_revisar_de_outro_professor_devolve_403(client, slides_em_revisao):
-    from apps.contas.models import Usuario
-
-    outro = Usuario.objects.create_user(
-        email="outro.prof@ufsm.br", nome_completo="Elisa Esteves", cpf="111.444.777-35",
-        papel=Usuario.PROFESSOR, siape="9999999", password="senha-de-teste-123",
-    )
-    client.force_login(outro)
+def test_revisar_de_outro_professor_devolve_403(client, slides_em_revisao, outro_professor):
+    client.force_login(outro_professor)
     resposta = client.get(reverse("revisar", args=[slides_em_revisao.pk]))
     assert resposta.status_code == 403
 

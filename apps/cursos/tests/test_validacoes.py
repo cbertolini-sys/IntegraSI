@@ -41,8 +41,53 @@ def test_plano_de_ensino_completo_nao_tem_pendencia(curso_criado, aluno, arquivo
 
 
 @pytest.mark.django_db
+def test_plano_de_ensino_com_anexo_que_nao_e_pdf_continua_com_a_pendencia(curso_criado, aluno):
+    """_plano_de_ensino filtra por arquivo__mime="application/pdf"; o unico Arquivo
+    que qualquer teste desta suite cria e um PDF (arquivo_qualquer), entao a regra
+    "precisa ser PDF" nunca tinha como falhar - trocar o filtro por um exists() bare
+    deixaria a suite inteira passando do mesmo jeito (item 10 da revisao de branco,
+    setima instancia deste padrao no projeto). Este teste anexa um arquivo que nao e
+    PDF e confere que a pendencia continua."""
+    from django.core.files.base import ContentFile
+
+    from apps.cursos.models import Arquivo
+
+    arquivo_nao_pdf = Arquivo(
+        nome_original="material.png",
+        tamanho=12,
+        mime="image/png",
+        hash_conteudo="1" * 64,
+        enviado_por=aluno,
+    )
+    arquivo_nao_pdf.arquivo.save("material.png", ContentFile(b"\x89PNG\r\n\x1a\n..."), save=False)
+    arquivo_nao_pdf.save()
+
+    plano = curso_criado.entregaveis.get(tipo=TipoEntregavel.PLANO_ENSINO)
+    anexa(plano, aluno, arquivo_nao_pdf)
+    secao = plano.secoes.first()
+    secao.conteudo = "<p>Ementa</p>"
+    secao.save()
+
+    assert "Anexe o plano de ensino em PDF." in validacoes.pendencias(plano)
+
+
+@pytest.mark.django_db
 def test_cards_sem_nenhum_anexo_e_apontado(curso_criado):
     cards = curso_criado.entregaveis.get(tipo=TipoEntregavel.CARDS)
+    assert validacoes.pendencias(cards) == ["Anexe ao menos um card."]
+
+
+@pytest.mark.django_db
+def test_link_nao_conta_como_card(curso_criado, aluno):
+    # _arquivos() exclui TipoMidia.LINK, mas so test_link_nao_conta_como_video
+    # cravava isso - CARDS, CADERNO e SLIDES passavam pelo mesmo _arquivos() sem
+    # nenhum teste que anexasse so um link (item 10 da revisao de branco). A spec
+    # diz que link nao satisfaz validacao nenhuma.
+    cards = curso_criado.entregaveis.get(tipo=TipoEntregavel.CARDS)
+    Anexo.objects.create(
+        entregavel=cards, tipo_midia=TipoMidia.LINK, titulo="Card por link",
+        url="https://exemplo.org/card", enviado_por=aluno,
+    )
     assert validacoes.pendencias(cards) == ["Anexe ao menos um card."]
 
 
@@ -114,6 +159,30 @@ def test_caderno_completo_passa(curso_criado, aluno, arquivo_qualquer):
     anexa(caderno, aluno, arquivo_qualquer, rotulo=Rotulo.SEM_GABARITO, tipo_pratica=TipoPratica.PLUGADA)
     anexa(caderno, aluno, arquivo_qualquer, rotulo=Rotulo.COM_GABARITO, tipo_pratica=TipoPratica.DESPLUGADA)
     assert validacoes.pendencias(caderno) == []
+
+
+@pytest.mark.django_db
+def test_link_nao_conta_como_caderno(curso_criado, aluno):
+    # Os dois links juntos teriam as duas versoes de gabarito e as duas praticas -
+    # se contassem, pendencias(caderno) viria vazia. So assim o teste realmente
+    # depende da exclusao de LINK em _arquivos(), e nao passa so porque os valores
+    # default (NENHUM) de um unico anexo ja deixam faltas sobrando.
+    caderno = curso_criado.entregaveis.get(tipo=TipoEntregavel.CADERNO)
+    Anexo.objects.create(
+        entregavel=caderno, tipo_midia=TipoMidia.LINK, titulo="Sem gabarito por link",
+        url="https://exemplo.org/caderno-sem-gabarito", enviado_por=aluno,
+        rotulo=Rotulo.SEM_GABARITO, tipo_pratica=TipoPratica.PLUGADA,
+    )
+    Anexo.objects.create(
+        entregavel=caderno, tipo_midia=TipoMidia.LINK, titulo="Com gabarito por link",
+        url="https://exemplo.org/caderno-com-gabarito", enviado_por=aluno,
+        rotulo=Rotulo.COM_GABARITO, tipo_pratica=TipoPratica.DESPLUGADA,
+    )
+    faltas = validacoes.pendencias(caderno)
+    assert "Anexe a versão sem gabarito." in faltas
+    assert "Anexe a versão com gabarito." in faltas
+    assert "Inclua ao menos uma atividade plugada." in faltas
+    assert "Inclua ao menos uma atividade desplugada." in faltas
 
 
 @pytest.mark.django_db
@@ -215,7 +284,7 @@ def test_plano_de_ensino_aponta_falta_de_formato(curso_criado, aluno, arquivo_qu
 
 
 @pytest.mark.django_db
-def test_curso_com_referencial_fora_da_faixa_e_apontado(curso_criado, aluno, arquivo_qualquer, db):
+def test_curso_com_referencial_fora_da_faixa_e_apontado(curso_criado, aluno, arquivo_qualquer):
     from apps.referenciais.models import Categoria, Competencia, Referencial
 
     referencial = Referencial.objects.create(
@@ -241,7 +310,7 @@ def test_curso_com_referencial_fora_da_faixa_e_apontado(curso_criado, aluno, arq
 
 @pytest.mark.django_db
 def test_curso_com_referencial_dentro_da_faixa_nao_tem_pendencia_de_competencias(
-    curso_criado, aluno, arquivo_qualquer, db
+    curso_criado, aluno, arquivo_qualquer
 ):
     from apps.referenciais.models import Categoria, Competencia, Referencial
 
@@ -284,3 +353,13 @@ def test_slides_exigem_ao_menos_um_arquivo(curso_criado, aluno, arquivo_qualquer
     assert validacoes.pendencias(slides) != []
     anexa(slides, aluno, arquivo_qualquer)
     assert validacoes.pendencias(slides) == []
+
+
+@pytest.mark.django_db
+def test_link_nao_conta_como_slides(curso_criado, aluno):
+    slides = curso_criado.entregaveis.get(tipo=TipoEntregavel.SLIDES)
+    Anexo.objects.create(
+        entregavel=slides, tipo_midia=TipoMidia.LINK, titulo="Slides por link",
+        url="https://exemplo.org/slides", enviado_por=aluno,
+    )
+    assert validacoes.pendencias(slides) == ["Anexe ao menos um arquivo de slides."]

@@ -54,6 +54,21 @@ def outro_aluno(db):
 
 
 @pytest.fixture
+def outro_professor(db):
+    # CPF proprio (444.555.666-19), distinto do de outro_aluno (111.444.777-35):
+    # os dois coexistiam sem problema porque nenhum teste usava as duas fixtures
+    # juntas, mas o primeiro que precisasse de ambas colidiria em unicidade por um
+    # motivo que nada tem a ver com o que o teste estaria checando (item 10 da
+    # revisao de branco). Bloco repetido em quatro lugares (test_permissions.py e
+    # tres vezes em test_views_professor.py), lift para uma fixture so.
+    return Usuario.objects.create_user(
+        email="outro.prof@ufsm.br", nome_completo="Elisa Esteves",
+        cpf="444.555.666-19", papel=Usuario.PROFESSOR, siape="9999999",
+        password="senha-de-teste-123",
+    )
+
+
+@pytest.fixture
 def edicao(db):
     return Edicao.objects.create(
         codigo="2026/2", descricao="TICs para Inclusao Digital",

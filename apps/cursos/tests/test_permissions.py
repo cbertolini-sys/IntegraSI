@@ -23,13 +23,7 @@ def test_aluno_de_fora_nao_ve_o_curso(curso_com_equipe, outro_aluno):
 
 
 @pytest.mark.django_db
-def test_professor_de_outro_curso_nao_ve(curso_com_equipe, coordenador, edicao, aluno):
-    from apps.contas.models import Usuario
-
-    outro_professor = Usuario.objects.create_user(
-        email="outro.prof@ufsm.br", nome_completo="Elisa Esteves", cpf="111.444.777-35",
-        papel=Usuario.PROFESSOR, siape="9999999", password="senha-de-teste-123",
-    )
+def test_professor_de_outro_curso_nao_ve(curso_com_equipe, outro_professor):
     assert permissions.pode_ver_curso(outro_professor, curso_com_equipe) is False
 
 
@@ -229,3 +223,15 @@ def test_coordenador_nao_cria_curso_via_servico(dados_curso, coordenador):
 def test_professor_cria_curso_via_servico(dados_curso):
     curso = services.criar_curso(**dados_curso)
     assert curso.pk is not None
+
+
+@pytest.mark.django_db
+def test_outro_aluno_e_outro_professor_convivem_num_mesmo_teste(outro_aluno, outro_professor):
+    """111.444.777-35 era o CPF de outro_aluno E, hand-criado, de outro_professor em
+    quatro lugares (test_permissions.py e tres vezes em test_views_professor.py).
+    Nada falhava porque nenhum teste usava as duas fixtures juntas - o primeiro que
+    precisasse de ambas colidiria em unicidade de CPF por um motivo que nada tem a
+    ver com o que estaria sendo testado (item 10 da revisao de branco). Este teste e
+    exatamente esse "primeiro caso": so pedir as duas fixtures juntas ja bastava
+    para estourar ValidationError de unicidade antes da correcao."""
+    assert outro_aluno.cpf != outro_professor.cpf
