@@ -1,0 +1,7 @@
+[
+  {"model": "cursos.tema", "pk": 1, "fields": {"nome": "Pensamento Computacional", "slug": "pensamento-computacional", "ativo": true}},
+  {"model": "cursos.tema", "pk": 2, "fields": {"nome": "Robótica Educacional", "slug": "robotica-educacional", "ativo": true}},
+  {"model": "cursos.tema", "pk": 3, "fields": {"nome": "Segurança Digital", "slug": "seguranca-digital", "ativo": true}},
+  {"model": "cursos.tema", "pk": 4, "fields": {"nome": "IA na Educação", "slug": "ia-na-educacao", "ativo": true}},
+  {"model": "cursos.tema", "pk": 5, "fields": {"nome": "Inclusão Digital de Adultos", "slug": "inclusao-digital-de-adultos", "ativo": true}}
+]

@@ -1334,6 +1334,8 @@ ETAPAS = [
 
 - [ ] **Step 5: Implementar os modelos**
 
+Sobre os `on_delete`: as tres chaves cascateiam, de modo que apagar um referencial leva junto suas categorias e competencias. Nao ha `PROTECT` aqui de proposito — o guarda real esta no Plano 2, onde `Curso.referencial` e `PROTECT`: um referencial usado por qualquer curso nao pode ser apagado, e so os nao utilizados cascateiam. Um `PROTECT` em `Competencia.categoria` combinado com o `CASCADE` de `Categoria.referencial` cria um impasse: o coletor do Django desce de `Referencial` para `Categoria`, esbarra no `PROTECT` e levanta `ProtectedError` mesmo quando as mesmas competencias ja estavam marcadas para cascatear.
+
 `apps/referenciais/models.py`:
 
 ```python
@@ -1405,7 +1407,7 @@ class Competencia(models.Model):
         Referencial, on_delete=models.CASCADE, related_name="competencias", verbose_name="referencial"
     )
     categoria = models.ForeignKey(
-        Categoria, on_delete=models.PROTECT, related_name="competencias", verbose_name="categoria"
+        Categoria, on_delete=models.CASCADE, related_name="competencias", verbose_name="categoria"
     )
     codigo = models.CharField("codigo", max_length=20)
     descricao = models.TextField("descricao")
@@ -1490,6 +1492,7 @@ Expected: PASS (8 testes).
 ```python
 import pytest
 from django.core.management import call_command
+from django.core.management.base import CommandError
 
 from apps.referenciais.models import Categoria, Competencia, Referencial
 
@@ -1537,9 +1540,17 @@ def test_importar_duas_vezes_nao_duplica_e_atualiza_descricao(bncc, tmp_path):
 
 @pytest.mark.django_db
 def test_categoria_desconhecida_no_csv_interrompe_a_importacao(bncc, tmp_path):
+    """A primeira linha e valida e a segunda nao: sem @transaction.atomic no
+    comando, a primeira sobreviveria e o arquivo ficaria meio importado. Com uma
+    linha ruim apenas, o teste passaria mesmo sem a transacao, e nao testaria nada."""
     arquivo = tmp_path / "habilidades.csv"
-    arquivo.write_text("codigo,descricao,etapa,categoria\nEF05CO09,X,EF05,Eixo Inexistente\n", encoding="utf-8")
-    with pytest.raises(Exception):
+    arquivo.write_text(
+        "codigo,descricao,etapa,categoria\n"
+        "EF05CO01,Decompor um problema,EF05,Pensamento Computacional\n"
+        "EF05CO09,X,EF05,Eixo Inexistente\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(CommandError):
         call_command("importar_competencias", referencial="BNCC-COMP", csv=str(arquivo))
     assert Competencia.objects.filter(referencial=bncc).count() == 0
 ```
@@ -1604,9 +1615,11 @@ import csv as csv_lib
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
-from apps.referenciais.models import Categoria, Competencia, Referencial
+from apps.referenciais.choices import ETAPAS
+from apps.referenciais.models import Competencia, Referencial
 
 COLUNAS = {"codigo", "descricao", "etapa", "categoria"}
+ETAPAS_VALIDAS = {codigo for codigo, _ in ETAPAS}
 
 
 class Command(BaseCommand):
@@ -1631,18 +1644,33 @@ class Command(BaseCommand):
                 raise CommandError(f"O CSV precisa das colunas: {', '.join(sorted(COLUNAS))}.")
             total = 0
             for numero, linha in enumerate(leitor, start=2):
-                categoria = categorias.get(linha["categoria"].strip())
+                # linha.get(campo) or "" cobre a linha curta, em que o DictReader
+                # devolve None e um .strip() direto estouraria com AttributeError
+                # no terminal do coordenador em vez de uma mensagem util.
+                valores = {campo: (linha.get(campo) or "").strip() for campo in COLUNAS}
+                if not valores["codigo"]:
+                    raise CommandError(f"Linha {numero}: codigo vazio.")
+                categoria = categorias.get(valores["categoria"])
                 if categoria is None:
                     raise CommandError(
-                        f"Linha {numero}: categoria '{linha['categoria']}' nao existe em {referencial.sigla}."
+                        f"Linha {numero}: categoria '{valores['categoria']}' nao existe em {referencial.sigla}."
+                    )
+                # O CSV e transcrito a mao a partir do PDF da Resolucao, e
+                # update_or_create nao chama full_clean(): sem esta conferencia uma
+                # etapa digitada errada ("EF5") gravaria em silencio, e a habilidade
+                # sumiria do ano a que deveria pertencer sem erro nenhum.
+                if valores["etapa"] not in ETAPAS_VALIDAS:
+                    raise CommandError(
+                        f"Linha {numero}: etapa '{valores['etapa']}' nao existe. "
+                        f"Use uma de: {', '.join(sorted(ETAPAS_VALIDAS))}."
                     )
                 Competencia.objects.update_or_create(
                     referencial=referencial,
-                    codigo=linha["codigo"].strip(),
+                    codigo=valores["codigo"],
                     defaults={
                         "categoria": categoria,
-                        "descricao": linha["descricao"].strip(),
-                        "etapa": linha["etapa"].strip(),
+                        "descricao": valores["descricao"],
+                        "etapa": valores["etapa"],
                         "ordem": total,
                     },
                 )

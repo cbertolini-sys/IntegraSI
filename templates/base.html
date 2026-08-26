@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}IntegraSI{% endblock %}</title>
+</head>
+<body>
+  <header>
+    <a href="{% url 'painel' %}">IntegraSI</a>
+    {% if user.is_authenticated %}
+      <span>{{ user.nome_completo }} &mdash; {{ user.get_papel_display }}</span>
+      <form method="post" action="{% url 'logout' %}">
+        {% csrf_token %}
+        <button type="submit">Sair</button>
+      </form>
+    {% endif %}
+  </header>
+  <main>
+    {% if messages %}
+      <ul>
+        {% for message in messages %}
+          <li>{{ message }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+    {% block conteudo %}{% endblock %}
+  </main>
+</body>
+</html>

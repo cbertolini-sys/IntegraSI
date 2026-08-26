@@ -1,0 +1,29 @@
+[
+  {
+    "model": "referenciais.referencial",
+    "pk": 1,
+    "fields": {
+      "nome": "BNCC da Computação",
+      "sigla": "BNCC-COMP",
+      "descricao": "Complemento à BNCC - Resolução CNE/CEB nº 1/2022",
+      "min_competencias": 2,
+      "max_competencias": 5,
+      "ativo": true
+    }
+  },
+  {
+    "model": "referenciais.categoria",
+    "pk": 1,
+    "fields": {"referencial": 1, "nome": "Pensamento Computacional", "ordem": 1}
+  },
+  {
+    "model": "referenciais.categoria",
+    "pk": 2,
+    "fields": {"referencial": 1, "nome": "Mundo Digital", "ordem": 2}
+  },
+  {
+    "model": "referenciais.categoria",
+    "pk": 3,
+    "fields": {"referencial": 1, "nome": "Cultura Digital", "ordem": 3}
+  }
+]

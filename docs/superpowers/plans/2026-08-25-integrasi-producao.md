@@ -152,6 +152,15 @@ from apps.cursos.models.tema import Tema
 __all__ = ["Tema"]
 ```
 
+Ao mover o arquivo, acrescente a `Tema.save()` o mesmo guarda de `update_fields` que `contas`, `edicoes` e `referenciais` ja tem — `full_clean()` so quando a gravacao nao e dirigida. `Tema` ficou de fora daquela correcao no Plano 1, e os servicos deste plano gravam com `update_fields`:
+
+```python
+    def save(self, *args, **kwargs):
+        if "update_fields" not in kwargs:
+            self.full_clean()
+        super().save(*args, **kwargs)
+```
+
 - [ ] **Step 5: Rodar a suíte inteira e commitar**
 
 ```bash
