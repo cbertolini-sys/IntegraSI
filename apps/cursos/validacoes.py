@@ -20,6 +20,8 @@ def pendencias(entregavel):
         TipoEntregavel.VIDEOS: _videos,
         TipoEntregavel.SLIDES: _slides,
     }
+    # regras cobre todo TipoEntregavel; um tipo fora do enum e erro de dado, nao de
+    # fluxo, entao o KeyError sobe cru para quem chama (Tasks 7, 9 e 10).
     return regras[entregavel.tipo](entregavel)
 
 
