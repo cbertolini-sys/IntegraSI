@@ -32,7 +32,11 @@ def equipe(request, pk):
     curso = get_object_or_404(Curso, pk=pk)
     permissions.garante(permissions.pode_gerir_equipe(request.user, curso), "Curso de outro professor.")
     if request.method == "POST":
-        aluno = get_object_or_404(Usuario, pk=request.POST["aluno"])
+        aluno_pk = request.POST.get("aluno")
+        if not aluno_pk:
+            messages.error(request, "Selecione um aluno para adicionar.")
+            return redirect("equipe", pk=curso.pk)
+        aluno = get_object_or_404(Usuario, pk=aluno_pk)
         try:
             services.adicionar_membro(curso, aluno, por=request.user)
         except ValidationError as erro:
