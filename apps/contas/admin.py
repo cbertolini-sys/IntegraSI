@@ -19,6 +19,12 @@ class UsuarioAdmin(UserAdmin):
     ordering = ["nome_completo"]
     list_display = ["nome_completo", "email", "papel", "cpf_mascarado", "is_active"]
     list_filter = ["papel", "is_active"]
+    # `cpf` fica de fora de propósito: buscar por CPF no Admin devolveria o
+    # número na URL e nos registros de acesso do servidor. `matricula` e
+    # `siape` ficam dentro, também de propósito -- ao contrário do CPF, são
+    # identificadores internos da instituição, não um documento nacional, e o
+    # coordenador legitimamente precisa achar um aluno pela matrícula. Não
+    # "conserte" isso em nenhuma das duas direções.
     search_fields = ["nome_completo", "email", "matricula", "siape"]
     fieldsets = (
         (None, {"fields": ("email", "password")}),
