@@ -101,9 +101,9 @@ def test_str_mostra_nome_e_nunca_o_cpf():
 
 @pytest.mark.django_db
 def test_dois_usuarios_sem_matricula_coexistem():
-    # matricula e siape sao unique=True, null=True: duas linhas com NULL convivem no
-    # Postgres, mas duas com "" colidiriam (CharField default e "", nao None). Isto prova
-    # que o "or None" da normalizacao em full_clean() esta de fato em vigor.
+    # matricula e siape são unique=True, null=True: duas linhas com NULL convivem no
+    # Postgres, mas duas com "" colidiriam (CharField default é "", não None). Isto prova
+    # que o "or None" da normalização em full_clean() está de fato em vigor.
     criar_professor()
     criar_professor(
         email="coord@ufsm.br",
@@ -118,12 +118,12 @@ def test_dois_usuarios_sem_matricula_coexistem():
 @pytest.mark.django_db
 def test_create_superuser_com_siape_via_extra_cria_coordenador():
     # Task 4's criar_coordenador management command calls create_superuser exactly assim,
-    # com siape chegando por **extra. Se o pass-through quebrar, e aqui que aparece.
+    # com siape chegando por **extra. Se o pass-through quebrar, é aqui que aparece.
     coordenador = Usuario.objects.create_superuser(
         email="raiz@ufsm.br",
         nome_completo="Root Reitor",
         cpf=CPF_C,
-        siape="9876543",
+        siape="98.765-43",
         password="uma-senha-forte",
     )
     coordenador.refresh_from_db()

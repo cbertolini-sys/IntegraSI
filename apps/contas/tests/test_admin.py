@@ -5,6 +5,14 @@ from apps.contas.admin import mascara_cpf
 from apps.contas.models import Usuario
 
 
+def _assert_sem_erros_do_admin(resposta):
+    """Ajuda a diagnosticar falhas de validação do formulário do Admin."""
+    if resposta.status_code == 200:
+        assert not resposta.context["adminform"].form.errors, resposta.context[
+            "adminform"
+        ].form.errors
+
+
 def test_mascara_esconde_os_oito_primeiros_digitos():
     assert mascara_cpf("52998224725") == "***.***.247-25"
 
@@ -68,11 +76,7 @@ def test_criar_aluno_pelo_admin_persiste_no_banco(client):
             "password2": "senha-do-aluno-2026",
         },
     )
-    if resposta.status_code == 200:
-        # Ajuda a diagnosticar falhas de validacao do formulario do Admin.
-        assert not resposta.context["adminform"].form.errors, resposta.context[
-            "adminform"
-        ].form.errors
+    _assert_sem_erros_do_admin(resposta)
     assert resposta.status_code == 302
 
     aluno = Usuario.objects.get(email="aluno@ufsm.br")
@@ -89,12 +93,12 @@ def test_criar_aluno_pelo_admin_persiste_no_banco(client):
 
 @pytest.mark.django_db
 def test_criar_aluno_pelo_admin_aceita_cpf_e_matricula_com_pontuacao(client):
-    # Regressao: o ModelForm gera um CharField(max_length=11) para `cpf` a
-    # partir do model, e essa validacao de tamanho roda ANTES do
-    # full_clean() do model (onde vive a normalizacao de pontuacao). Sem os
+    # Regressão: o ModelForm gera um CharField(max_length=11) para `cpf` a
+    # partir do model, e essa validação de tamanho roda ANTES do
+    # full_clean() do model (onde vive a normalização de pontuação). Sem os
     # campos declarados explicitamente em UsuarioCreationForm, um CPF
-    # digitado com pontuacao (14 caracteres) era rejeitado por "max 11
-    # caracteres" antes mesmo de chegar la.
+    # digitado com pontuação (14 caracteres) era rejeitado por "max 11
+    # caracteres" antes mesmo de chegar lá.
     coordenador = Usuario.objects.create_superuser(
         email="coord@ufsm.br",
         nome_completo="Carla Costa",
@@ -117,11 +121,7 @@ def test_criar_aluno_pelo_admin_aceita_cpf_e_matricula_com_pontuacao(client):
             "password2": "senha-do-aluno-2026",
         },
     )
-    if resposta.status_code == 200:
-        # Ajuda a diagnosticar falhas de validacao do formulario do Admin.
-        assert not resposta.context["adminform"].form.errors, resposta.context[
-            "adminform"
-        ].form.errors
+    _assert_sem_erros_do_admin(resposta)
     assert resposta.status_code == 302
 
     aluno = Usuario.objects.get(email="aluno2@ufsm.br")

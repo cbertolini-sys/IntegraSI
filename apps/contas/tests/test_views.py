@@ -23,7 +23,6 @@ def test_painel_exige_login(client):
     assert reverse("login") in resposta.url
 
 
-@pytest.mark.django_db
 def test_painel_sauda_pelo_nome_e_mostra_o_papel(client, aluno):
     client.force_login(aluno)
     resposta = client.get(reverse("painel"))
@@ -33,14 +32,12 @@ def test_painel_sauda_pelo_nome_e_mostra_o_papel(client, aluno):
     assert "Aluno" in conteudo
 
 
-@pytest.mark.django_db
 def test_painel_nunca_mostra_cpf(client, aluno):
     client.force_login(aluno)
     resposta = client.get(reverse("painel"))
     assert "52998224725" not in resposta.content.decode()
 
 
-@pytest.mark.django_db
 def test_login_com_email_e_senha(client, aluno):
     resposta = client.post(
         reverse("login"),
