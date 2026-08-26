@@ -1,3 +1,4 @@
+import hashlib
 from pathlib import Path
 
 from django.core.exceptions import ValidationError
@@ -53,3 +54,17 @@ def valida_upload(nome, tamanho, cabecalho):
     if tamanho > limite:
         raise ValidationError(f"Arquivo acima do limite de {limite // MEGA} MB para este tipo.")
     return mime
+
+
+def calcula_hash(upload):
+    """SHA-256 do conteudo, lido em pedacos (upload.chunks()) em vez de inteiro na
+    memoria de uma vez: bastava para os 50 MB de hoje, mas e o mesmo caminho que o
+    upload de 1 GB do Plano 4 vai herdar, e a spec exige que 1 GB nunca sente
+    inteiro num worker Python (spec 8; item 8 da revisao de branco). Devolve o
+    ponteiro do upload ao inicio no final, para quem for salvar o conteudo em
+    seguida (ex.: FileField.save())."""
+    hasher = hashlib.sha256()
+    for pedaco in upload.chunks():
+        hasher.update(pedaco)
+    upload.seek(0)
+    return hasher.hexdigest()

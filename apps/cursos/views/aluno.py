@@ -1,5 +1,3 @@
-import hashlib
-
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
@@ -8,6 +6,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from apps.cursos import permissions, services, validacoes
+from apps.cursos.arquivos import calcula_hash
 from apps.cursos.choices import TipoMidia
 from apps.cursos.forms import AnexoForm, SecaoForm
 from apps.cursos.models import Anexo, Arquivo, Curso, Entregavel, Secao
@@ -87,13 +86,11 @@ def anexar(request, pk):
     anexo.entregavel = obj
     anexo.enviado_por = request.user
     if upload:
-        conteudo = upload.read()
-        upload.seek(0)
         arquivo = Arquivo(
             nome_original=upload.name,
             tamanho=upload.size,
             mime=form.cleaned_data["mime"],
-            hash_conteudo=hashlib.sha256(conteudo).hexdigest(),
+            hash_conteudo=calcula_hash(upload),
             enviado_por=request.user,
         )
         arquivo.arquivo.save(upload.name, upload, save=False)

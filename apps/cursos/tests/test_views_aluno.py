@@ -1,3 +1,4 @@
+import hashlib
 import os
 
 import pytest
@@ -266,6 +267,36 @@ def test_anexar_arquivo_cria_o_anexo(client, curso_com_equipe, aluno):
     assert anexo.arquivo.mime == "application/pdf"
     assert len(anexo.arquivo.hash_conteudo) == 64
     assert resposta.content.decode().count("Material anexado.") == 1
+
+
+@pytest.mark.django_db
+def test_anexar_arquivo_grande_preserva_hash_e_conteudo(client, curso_com_equipe, aluno):
+    """conteudo = upload.read() carregava o arquivo inteiro na memoria so para
+    calcular o hash - bastava para os 50 MB de hoje, mas e o mesmo caminho que o
+    upload de 1 GB do Plano 4 vai herdar (item 8 da revisao de branco). A troca para
+    leitura em pedacos (apps.cursos.arquivos.calcula_hash, testada isoladamente em
+    test_anexo.py) precisa devolver o ponteiro do upload ao inicio antes de
+    arquivo.arquivo.save() le-lo de novo - senao o arquivo gravado em disco viria
+    truncado ou vazio mesmo com o hash certo. Usa um conteudo maior que um pedaco
+    para que a leitura em pedacos realmente aconteca mais de uma vez."""
+    conteudo = b"%PDF-1.7\n" + (b"A" * (300 * 1024))
+    upload = SimpleUploadedFile("slides-grandes.pdf", conteudo, content_type="application/pdf")
+
+    slides = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.SLIDES)
+    client.force_login(aluno)
+    resposta = client.post(
+        reverse("anexar", args=[slides.pk]),
+        {
+            "titulo": "Slides grandes", "rotulo": Rotulo.NENHUM, "tipo_pratica": TipoPratica.NENHUM,
+            "upload": upload,
+        },
+        follow=True,
+    )
+    assert resposta.status_code == 200
+    anexo = slides.anexos.get(titulo="Slides grandes")
+    assert anexo.arquivo.hash_conteudo == hashlib.sha256(conteudo).hexdigest()
+    with anexo.arquivo.arquivo.open("rb") as arquivo_salvo:
+        assert arquivo_salvo.read() == conteudo
 
 
 @pytest.mark.django_db

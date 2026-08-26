@@ -1,7 +1,9 @@
+import hashlib
+
 import pytest
 from django.core.exceptions import ValidationError
 
-from apps.cursos.arquivos import detecta_mime, valida_upload
+from apps.cursos.arquivos import calcula_hash, detecta_mime, valida_upload
 from apps.cursos.choices import TipoEntregavel, TipoMidia
 from apps.cursos.models import Anexo
 
@@ -14,6 +16,37 @@ def test_detecta_pdf_png_e_zip():
     assert detecta_mime(PDF) == "application/pdf"
     assert detecta_mime(PNG) == "image/png"
     assert detecta_mime(ZIP) == "application/zip"
+
+
+class _UploadSemRead:
+    """Dublê de upload que so tem chunks() e seek(0) - de proposito sem read()
+    nenhum. calcula_hash so pode passar aqui se nunca tentar ler o arquivo inteiro
+    de uma vez (upload.read()): um AttributeError provaria isso na hora."""
+
+    def __init__(self, pedacos):
+        self._pedacos = pedacos
+        self.posicao_apos_percorrer = None
+
+    def chunks(self):
+        yield from self._pedacos
+        self.posicao_apos_percorrer = "fim"
+
+    def seek(self, posicao):
+        assert posicao == 0
+        self.posicao_apos_percorrer = "inicio"
+
+
+def test_calcula_hash_le_em_pedacos_e_devolve_o_ponteiro_ao_inicio():
+    # O upload de 1 GB do Plano 4 herda este mesmo caminho; o argumento inteiro da
+    # spec e que 1 GB nunca pode sentar inteiro num worker Python (item 8 da revisao
+    # de branco) - dai o dublê nao ter read() para provocar.
+    pedacos = [b"parte um ", b"parte dois ", b"parte tres"]
+    upload = _UploadSemRead(pedacos)
+
+    resultado = calcula_hash(upload)
+
+    assert resultado == hashlib.sha256(b"".join(pedacos)).hexdigest()
+    assert upload.posicao_apos_percorrer == "inicio"
 
 
 def test_conteudo_desconhecido_nao_e_detectado():
