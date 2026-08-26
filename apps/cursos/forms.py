@@ -3,13 +3,23 @@ from django.core.exceptions import ValidationError
 from django.forms.models import construct_instance
 
 from apps.cursos.arquivos import valida_upload
-from apps.cursos.models import Anexo, Secao
+from apps.cursos.models import Anexo, Curso, Secao
 
 
 class SecaoForm(forms.ModelForm):
     class Meta:
         model = Secao
         fields = ["conteudo"]
+
+
+class CursoForm(forms.ModelForm):
+    class Meta:
+        model = Curso
+        fields = [
+            "titulo", "resumo", "edicao", "tipo_publico", "etapa_ano", "publico_descricao",
+            "referencial", "carga_horaria", "formato", "pre_requisitos", "temas", "palavras_chave",
+        ]
+        widgets = {"resumo": forms.Textarea(attrs={"rows": 4})}
 
 
 class AnexoForm(forms.ModelForm):
