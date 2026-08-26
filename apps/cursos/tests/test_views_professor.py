@@ -67,6 +67,14 @@ def test_fila_mostra_o_que_espera_por_mim(client, professor, slides_em_revisao):
 
 
 @pytest.mark.django_db
+def test_fila_nao_mostra_entregavel_ainda_nao_enviado(client, professor, dados_curso):
+    curso = services.criar_curso(**dados_curso)
+    client.force_login(professor)
+    resposta = client.get(reverse("fila_revisao"))
+    assert curso.titulo not in resposta.content.decode()
+
+
+@pytest.mark.django_db
 def test_fila_de_outro_professor_esta_vazia(client, slides_em_revisao, db):
     from apps.contas.models import Usuario
 
