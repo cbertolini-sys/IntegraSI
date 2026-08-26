@@ -3,4 +3,5 @@
 {% block conteudo %}
   <h1>Olá, {{ user.nome_completo }}</h1>
   <p>Você está no IntegraSI como {{ user.get_papel_display }}.</p>
+  <p><a href="{% url 'meus_cursos' %}">Meus cursos</a></p>
 {% endblock %}

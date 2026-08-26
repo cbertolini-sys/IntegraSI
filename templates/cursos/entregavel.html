@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block titulo %}{{ entregavel.get_tipo_display }}{% endblock %}
+{% block conteudo %}
+  <h1>{{ entregavel.get_tipo_display }}</h1>
+  <p><a href="{% url 'curso' entregavel.curso.pk %}">{{ entregavel.curso.titulo }}</a></p>
+  <p>Situação: {{ entregavel.get_status_display }}</p>
+
+  {% for mensagem in messages %}<p class="mensagem">{{ mensagem }}</p>{% endfor %}
+
+  {% if ultima_revisao and ultima_revisao.decisao == "DEVOLVIDO" %}
+    <section class="devolutiva">
+      <h2>Devolvido pelo professor</h2>
+      <p>{{ ultima_revisao.comentario }}</p>
+    </section>
+  {% endif %}
+
+  {% if pendencias %}
+    <section class="pendencias">
+      <h2>O que falta</h2>
+      <ul>{% for falta in pendencias %}<li>{{ falta }}</li>{% endfor %}</ul>
+    </section>
+  {% endif %}
+
+  {% for secao in entregavel.secoes.all %}
+    {% include "cursos/_secao.html" %}
+  {% endfor %}
+
+  <h2>Materiais</h2>
+  <ul>
+    {% for anexo in entregavel.anexos.all %}
+      <li>{{ anexo.titulo }} ({{ anexo.get_tipo_midia_display }})</li>
+    {% empty %}
+      <li>Nenhum material anexado.</li>
+    {% endfor %}
+  </ul>
+
+  {% if pode_editar %}
+    <form method="post" action="{% url 'anexar' entregavel.pk %}" enctype="multipart/form-data">
+      {% csrf_token %}
+      {{ form_anexo.as_p }}
+      <button type="submit">Anexar</button>
+    </form>
+
+    <form method="post" action="{% url 'enviar_entregavel' entregavel.pk %}">
+      {% csrf_token %}
+      <button type="submit">Enviar para revisão</button>
+    </form>
+  {% endif %}
+{% endblock %}
