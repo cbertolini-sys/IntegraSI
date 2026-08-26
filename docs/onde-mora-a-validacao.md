@@ -76,7 +76,8 @@ que já esteja inválida no banco (dado legado, editada direto) ficaria incapaz 
 logar, com um `ValidationError` sem tratamento estourando de dentro do signal.
 
 Por isso todo `save()` que chama `full_clean()` neste projeto (`contas`, `edicoes`,
-`referenciais`) pula a validação quando `update_fields` está presente:
+`referenciais` — `cursos` ainda não, ver as ressalvas ao fim) pula a validação quando
+`update_fields` está presente:
 
 ```python
 if "update_fields" not in kwargs:
@@ -86,3 +87,18 @@ if "update_fields" not in kwargs:
 Os serviços do Plano 2 vão usar `save(update_fields=["status"])` pelo mesmo motivo:
 uma escrita direcionada num objeto já persistido não é o lugar para revalidar o
 objeto inteiro.
+
+## Duas ressalvas conhecidas
+
+**`Tema.save()` ainda valida sem o guarda de `update_fields`.** Em
+`apps/cursos/models.py`, `Tema` chama `full_clean()` incondicionalmente, ao contrário dos
+outros três apps. Hoje nada grava `Tema` com `update_fields`, então não há falha; o
+Plano 2, que transforma `apps/cursos/models.py` em pacote, aplica o mesmo guarda ao mover
+o arquivo.
+
+**`update_or_create` passa `update_fields` no caminho de atualização.** Desde que todos os
+`defaults` sejam campos concretos, o Django chama `save(update_fields=...)` — então o
+`full_clean()` roda na criação, mas não na atualização. É o caso de
+`importar_competencias`. Não há buraco ali, porque a etapa é conferida à mão contra
+`ETAPAS_VALIDAS` e a categoria sai de `referencial.categorias`; mas quem escrever outro
+importador precisa saber que `save()` → `full_clean()` não cobre esse caminho.
