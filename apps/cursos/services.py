@@ -23,6 +23,10 @@ def criar_curso(**dados):
     Feito aqui, e nao por sinal post_save: sinal e invisivel no fluxo, dificil de
     testar e nao dispara de forma confiavel em fixtures e criacoes em lote (spec 4.6).
     """
+    permissions.garante(
+        permissions.pode_criar_curso(dados.get("professor_responsavel")),
+        "Somente professor cria curso.",
+    )
     curso = Curso.objects.create(**dados)
     for tipo in TipoEntregavel:
         entregavel = Entregavel.objects.create(curso=curso, tipo=tipo)

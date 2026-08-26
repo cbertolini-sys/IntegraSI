@@ -192,3 +192,28 @@ def test_coordenador_revisa(curso_com_equipe, coordenador, aluno, arquivo_qualqu
     services.aprovar_entregavel(slides, por=coordenador)
     slides.refresh_from_db()
     assert slides.status == StatusEntregavel.APROVADO
+
+
+@pytest.mark.django_db
+def test_criar_curso_e_o_unico_servico_sem_checagem_propria_ate_aqui(dados_curso, aluno):
+    """criar_curso confiava inteiramente no gate da view (Task 2 da revisao de
+    branco): todo outro servico abre com permissions.garante(...). Um aluno chamando
+    o servico direto - o que a view nunca deixaria acontecer, mas nada no servico
+    impedia - precisa ser barrado aqui, nao so na view."""
+    dados_curso["professor_responsavel"] = aluno
+    with pytest.raises(PermissionDenied) as erro:
+        services.criar_curso(**dados_curso)
+    assert str(erro.value) == "Somente professor cria curso."
+
+
+@pytest.mark.django_db
+def test_coordenador_nao_cria_curso_via_servico(dados_curso, coordenador):
+    dados_curso["professor_responsavel"] = coordenador
+    with pytest.raises(PermissionDenied):
+        services.criar_curso(**dados_curso)
+
+
+@pytest.mark.django_db
+def test_professor_cria_curso_via_servico(dados_curso):
+    curso = services.criar_curso(**dados_curso)
+    assert curso.pk is not None

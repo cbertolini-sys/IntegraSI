@@ -12,6 +12,15 @@ def e_responsavel(usuario, curso):
     return curso.professor_responsavel_id == usuario.id
 
 
+def pode_criar_curso(usuario):
+    """Professor propõe curso (spec 3). Curso.clean() já barra um
+    professor_responsavel que não seja professor, mas essa checagem só dispara
+    dentro de Curso.save() e vira ValidationError - o portão de serviço aqui é quem
+    devolve PermissionDenied antes disso, para quem chamar services.criar_curso
+    direto (sem passar pelo gate da view, que hoje já restringe a professor)."""
+    return usuario is not None and usuario.e_professor
+
+
 def pode_ver_curso(usuario, curso):
     if usuario.e_coordenador:
         return True
