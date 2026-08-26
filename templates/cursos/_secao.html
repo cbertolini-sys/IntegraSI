@@ -1,0 +1,17 @@
+<section id="secao-{{ secao.pk }}">
+  <h3>{{ secao.titulo }}</h3>
+  {% if pode_editar %}
+    {% if salvo %}<p class="mensagem">Salvo.</p>{% endif %}
+    {% if erro %}<p class="mensagem">{{ erro }}</p>{% endif %}
+    <form hx-post="{% url 'salvar_secao' secao.pk %}" hx-target="#secao-{{ secao.pk }}" hx-swap="outerHTML">
+      {% csrf_token %}
+      <textarea name="conteudo" rows="10">{{ secao.conteudo }}</textarea>
+      <button type="submit">Salvar seção</button>
+    </form>
+  {% else %}
+    {# O |safe abaixo e seguro: Secao.save() sanitiza o conteudo com nh3 antes de
+       gravar, incondicionalmente, mesmo em update_fields (Task 4). Depende dessa
+       sanitizacao acontecer antes, nao aqui - ver revisar.html. #}
+    <div class="conteudo-secao">{{ secao.conteudo|safe }}</div>
+  {% endif %}
+</section>

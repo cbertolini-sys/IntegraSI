@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block titulo %}Revisar{% endblock %}
+{% block conteudo %}
+  <h1>{{ entregavel.get_tipo_display }}</h1>
+  <p>{{ entregavel.curso.titulo }}</p>
+
+  {% if pendencias %}
+    <section class="pendencias">
+      <h2>O que falta</h2>
+      <ul>{% for falta in pendencias %}<li>{{ falta }}</li>{% endfor %}</ul>
+    </section>
+  {% endif %}
+
+  {% for secao in entregavel.secoes.all %}
+    {# O |safe abaixo e seguro: Secao.save() sanitiza o conteudo com nh3 antes de
+       gravar, incondicionalmente, mesmo em update_fields (Task 4). E o unico lugar
+       do sistema que renderiza HTML vindo do banco sem escape - depende dessa
+       sanitizacao acontecer antes, nao aqui. #}
+    <section><h3>{{ secao.titulo }}</h3><div>{{ secao.conteudo|safe }}</div></section>
+  {% endfor %}
+
+  <h2>Materiais</h2>
+  <ul>
+    {% for anexo in entregavel.anexos.all %}
+      <li>{{ anexo.titulo }}{% if anexo.referencia_bibliografica %} &mdash; {{ anexo.referencia_bibliografica }}{% endif %}</li>
+    {% endfor %}
+  </ul>
+
+  <form method="post" action="{% url 'decidir' entregavel.pk %}">
+    {% csrf_token %}
+    <label for="comentario">Comentário</label>
+    <textarea id="comentario" name="comentario" rows="5"></textarea>
+    <button type="submit" name="decisao" value="APROVAR">Aprovar</button>
+    <button type="submit" name="decisao" value="DEVOLVER">Devolver</button>
+  </form>
+{% endblock %}

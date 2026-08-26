@@ -25,5 +25,6 @@ class Tema(models.Model):
         super().full_clean(*args, **kwargs)
 
     def save(self, *args, **kwargs):
-        self.full_clean()
+        if "update_fields" not in kwargs:
+            self.full_clean()
         super().save(*args, **kwargs)

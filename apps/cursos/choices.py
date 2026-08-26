@@ -1,0 +1,56 @@
+from django.db import models
+
+
+class StatusCurso(models.TextChoices):
+    RASCUNHO = "RASCUNHO", "Rascunho"
+    EM_PRODUCAO = "EM_PRODUCAO", "Em produção"
+    AGUARDANDO_COORDENADOR = "AGUARDANDO_COORDENADOR", "Aguardando coordenador"
+    DEVOLVIDO = "DEVOLVIDO", "Devolvido pelo coordenador"
+    PUBLICADO = "PUBLICADO", "Publicado"
+    DESPUBLICADO = "DESPUBLICADO", "Despublicado"
+    SUBSTITUIDO = "SUBSTITUIDO", "Substituído por nova versão"
+
+
+class StatusEntregavel(models.TextChoices):
+    RASCUNHO = "RASCUNHO", "Rascunho"
+    EM_REVISAO = "EM_REVISAO", "Em revisão"
+    APROVADO = "APROVADO", "Aprovado"
+    DEVOLVIDO = "DEVOLVIDO", "Devolvido"
+
+
+class TipoEntregavel(models.TextChoices):
+    PLANO_ENSINO = "PLANO_ENSINO", "A - Plano de Ensino e Mapeamento Pedagógico"
+    CARDS = "CARDS", "B - Infográficos e Cards Educativos"
+    CADERNO = "CADERNO", "C - Caderno de Exercícios e Atividades Práticas"
+    VIDEOS = "VIDEOS", "D - Vídeo-Aulas"
+    SLIDES = "SLIDES", "E - Slides e Apresentações"
+
+
+class TipoPublico(models.TextChoices):
+    ESCOLAR = "ESCOLAR", "Etapa escolar"
+    COMUNITARIO = "COMUNITARIO", "Público da comunidade"
+
+
+class Formato(models.TextChoices):
+    PRESENCIAL = "PRESENCIAL", "Presencial"
+    HIBRIDO = "HIBRIDO", "Híbrido"
+    ONLINE = "ONLINE", "Online"
+
+
+class TipoMidia(models.TextChoices):
+    ARQUIVO = "ARQUIVO", "Arquivo"
+    VIDEO = "VIDEO", "Vídeo"
+    LINK = "LINK", "Link externo"
+
+
+class Rotulo(models.TextChoices):
+    NENHUM = "NENHUM", "Sem rótulo"
+    SEM_GABARITO = "SEM_GABARITO", "Versão sem gabarito"
+    COM_GABARITO = "COM_GABARITO", "Versão com gabarito"
+
+
+class TipoPratica(models.TextChoices):
+    NENHUM = "NENHUM", "Não se aplica"
+    PLUGADA = "PLUGADA", "Atividade plugada"
+    DESPLUGADA = "DESPLUGADA", "Atividade desplugada"
+    AMBAS = "AMBAS", "Plugada e desplugada"

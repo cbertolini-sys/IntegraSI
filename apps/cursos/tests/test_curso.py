@@ -1,0 +1,74 @@
+import pytest
+from django.core.exceptions import ValidationError
+
+from apps.cursos.choices import StatusCurso, TipoPublico
+from apps.cursos.models import Curso
+
+
+@pytest.mark.django_db
+def test_curso_nasce_em_rascunho(curso):
+    assert curso.status == StatusCurso.RASCUNHO
+    assert curso.publicado_em is None
+
+
+@pytest.mark.django_db
+def test_publico_escolar_exige_etapa(dados_curso):
+    dados_curso["etapa_ano"] = ""
+    with pytest.raises(ValidationError):
+        Curso.objects.create(**dados_curso)
+
+
+@pytest.mark.django_db
+def test_publico_escolar_nao_aceita_descricao_comunitaria(dados_curso):
+    dados_curso["publico_descricao"] = "Professores da rede"
+    with pytest.raises(ValidationError):
+        Curso.objects.create(**dados_curso)
+
+
+@pytest.mark.django_db
+def test_publico_comunitario_exige_descricao(dados_curso):
+    dados_curso["tipo_publico"] = TipoPublico.COMUNITARIO
+    dados_curso["etapa_ano"] = ""
+    with pytest.raises(ValidationError):
+        Curso.objects.create(**dados_curso)
+
+
+@pytest.mark.django_db
+def test_publico_comunitario_nao_aceita_etapa(dados_curso):
+    dados_curso["tipo_publico"] = TipoPublico.COMUNITARIO
+    dados_curso["publico_descricao"] = "Adultos em vulnerabilidade digital"
+    with pytest.raises(ValidationError):
+        Curso.objects.create(**dados_curso)
+
+
+@pytest.mark.django_db
+def test_publico_alvo_legivel(curso, dados_curso):
+    assert curso.publico_alvo == "5º ano do Ensino Fundamental"
+    dados_curso.update(
+        tipo_publico=TipoPublico.COMUNITARIO,
+        etapa_ano="",
+        publico_descricao="Adultos em vulnerabilidade digital",
+        titulo="Outro curso",
+    )
+    comunitario = Curso.objects.create(**dados_curso)
+    assert comunitario.publico_alvo == "Adultos em vulnerabilidade digital"
+
+
+@pytest.mark.django_db
+def test_carga_horaria_zero_e_recusada(dados_curso):
+    dados_curso["carga_horaria"] = 0
+    with pytest.raises(ValidationError):
+        Curso.objects.create(**dados_curso)
+
+
+@pytest.mark.django_db
+def test_curso_sem_referencial_e_valido(curso):
+    assert curso.referencial is None
+    assert curso.competencias.count() == 0
+
+
+@pytest.mark.django_db
+def test_professor_responsavel_precisa_ser_professor(dados_curso, aluno):
+    dados_curso["professor_responsavel"] = aluno
+    with pytest.raises(ValidationError):
+        Curso.objects.create(**dados_curso)

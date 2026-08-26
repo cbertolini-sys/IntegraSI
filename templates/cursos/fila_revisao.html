@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block titulo %}Revisão{% endblock %}
+{% block conteudo %}
+  <h1>Esperando por você</h1>
+  {% for entregavel in entregaveis %}
+    <article>
+      <h2><a href="{% url 'revisar' entregavel.pk %}">{{ entregavel.get_tipo_display }}</a></h2>
+      <p>{{ entregavel.curso.titulo }} &middot; enviado em {{ entregavel.atualizado_em }}</p>
+    </article>
+  {% empty %}
+    <p>Nada aguardando revisão.</p>
+  {% endfor %}
+{% endblock %}

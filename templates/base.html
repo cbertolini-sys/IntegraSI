@@ -1,9 +1,11 @@
+{% load static %}
 <!doctype html>
 <html lang="pt-br">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block titulo %}IntegraSI{% endblock %}</title>
+  <script src="{% static 'js/htmx.min.js' %}" defer></script>
 </head>
 <body>
   <header>

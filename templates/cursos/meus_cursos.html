@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block titulo %}Meus cursos{% endblock %}
+{% block conteudo %}
+  <h1>Meus cursos</h1>
+  {% for curso in cursos %}
+    <article>
+      <h2><a href="{% url 'curso' curso.pk %}">{{ curso.titulo }}</a></h2>
+      <p>{{ curso.publico_alvo }} &middot; {{ curso.carga_horaria }}h &middot; {{ curso.get_status_display }}</p>
+    </article>
+  {% empty %}
+    <p>Você ainda não participa de nenhum curso.</p>
+  {% endfor %}
+{% endblock %}
