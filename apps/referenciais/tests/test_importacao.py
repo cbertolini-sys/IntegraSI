@@ -47,8 +47,17 @@ def test_importar_duas_vezes_nao_duplica_e_atualiza_descricao(bncc, tmp_path):
 
 @pytest.mark.django_db
 def test_categoria_desconhecida_no_csv_interrompe_a_importacao(bncc, tmp_path):
+    """A primeira linha e valida de proposito: se alguem tirar o @transaction.atomic
+    do comando, essa linha sobrevive a falha da segunda e o count() abaixo vira 1,
+    nao 0. Com uma unica linha invalida o teste passaria mesmo sem a transacao,
+    porque nada teria sido inserido antes do erro -- nao testaria rollback nenhum."""
     arquivo = tmp_path / "habilidades.csv"
-    arquivo.write_text("codigo,descricao,etapa,categoria\nEF05CO09,X,EF05,Eixo Inexistente\n", encoding="utf-8")
+    arquivo.write_text(
+        "codigo,descricao,etapa,categoria\n"
+        "EF05CO01,Decompor um problema,EF05,Pensamento Computacional\n"
+        "EF05CO09,X,EF05,Eixo Inexistente\n",
+        encoding="utf-8",
+    )
     with pytest.raises(Exception):
         call_command("importar_competencias", referencial="BNCC-COMP", csv=str(arquivo))
     assert Competencia.objects.filter(referencial=bncc).count() == 0
