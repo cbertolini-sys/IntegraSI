@@ -3,7 +3,15 @@ from django.urls import reverse
 
 from apps.cursos import services
 from apps.cursos.choices import StatusEntregavel, TipoEntregavel, TipoMidia, TipoPublico
+from apps.cursos.forms import CursoForm
 from apps.cursos.models import Anexo, Curso
+
+
+def test_curso_form_nao_inclui_competencias():
+    # Competencias depende do referencial escolhido e e editada depois que o curso
+    # ja existe (docs/onde-mora-a-validacao.md); resolver isso no mesmo formulario
+    # exigiria campo dependente em JavaScript, que este projeto nao usa.
+    assert "competencias" not in CursoForm().fields
 
 
 @pytest.fixture
