@@ -34,7 +34,12 @@ def pode_gerir_equipe(usuario, curso):
 
 
 def pode_revisar(usuario, curso):
-    return pode_gerir_equipe(usuario, curso)
+    """Quem aprova ou devolve um entregavel (spec 6): coordenador, ou o professor
+    responsavel. Coincide hoje com pode_gerir_equipe, mas as duas sao regras
+    independentes da spec - quem monta a equipe e quem revisa o trabalho. Escrita
+    por extenso, e nao como alias de pode_gerir_equipe, para que o Plano 3 possa
+    mudar uma sem arrastar a outra por acidente (item 7 da revisao de branco)."""
+    return usuario.e_coordenador or (usuario.e_professor and e_responsavel(usuario, curso))
 
 
 def e_membro_da_equipe(usuario, curso):

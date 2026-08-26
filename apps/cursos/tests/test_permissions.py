@@ -65,6 +65,18 @@ def test_professor_responsavel_revisa(curso_com_equipe, professor):
 
 
 @pytest.mark.django_db
+def test_pode_revisar_e_independente_de_pode_gerir_equipe(curso_com_equipe, professor, monkeypatch):
+    """pode_revisar era um alias puro de pode_gerir_equipe: as duas regras da spec
+    sao independentes (quem monta equipe x quem aprova entregavel), mesmo que hoje
+    coincidam. Se o Plano 3 mudar quem monta equipe, isso nao pode arrastar quem
+    revisa so porque uma funcao chamava a outra por baixo (item 7 da revisao de
+    branco). Troca pode_gerir_equipe por uma versao que recusa todo mundo e confere
+    que pode_revisar nao sente nada."""
+    monkeypatch.setattr(permissions, "pode_gerir_equipe", lambda usuario, curso: False)
+    assert permissions.pode_revisar(professor, curso_com_equipe) is True
+
+
+@pytest.mark.django_db
 def test_aluno_de_fora_nao_envia_para_revisao(curso_com_equipe, outro_aluno):
     slides = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.SLIDES)
     with pytest.raises(PermissionDenied) as erro:
