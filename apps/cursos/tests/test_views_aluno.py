@@ -47,6 +47,30 @@ def test_entregavel_mostra_o_que_falta(client, curso_com_equipe, aluno):
 
 
 @pytest.mark.django_db
+def test_entregavel_de_outra_equipe_devolve_403(client, curso_com_equipe, outro_aluno):
+    slides = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.SLIDES)
+    client.force_login(outro_aluno)
+    resposta = client.get(reverse("entregavel", args=[slides.pk]))
+    assert resposta.status_code == 403
+
+
+@pytest.mark.django_db
+def test_anexar_em_entregavel_em_revisao_e_bloqueado(client, curso_com_equipe, aluno, arquivo_qualquer):
+    plano = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.PLANO_ENSINO)
+    secao = plano.secoes.first()
+    secao.conteudo = "<p>Ementa</p>"
+    secao.save()
+    Anexo.objects.create(
+        entregavel=plano, tipo_midia=TipoMidia.ARQUIVO, titulo="Plano",
+        arquivo=arquivo_qualquer, enviado_por=aluno,
+    )
+    services.enviar_para_revisao(plano, por=aluno)
+    client.force_login(aluno)
+    resposta = client.post(reverse("anexar", args=[plano.pk]), {"titulo": "Outro", "url": "https://exemplo.org"})
+    assert resposta.status_code == 403
+
+
+@pytest.mark.django_db
 def test_salvar_secao_guarda_o_conteudo_e_o_autor(client, curso_com_equipe, aluno):
     plano = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.PLANO_ENSINO)
     secao = plano.secoes.first()
