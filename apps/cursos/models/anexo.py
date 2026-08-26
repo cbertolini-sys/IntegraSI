@@ -15,7 +15,9 @@ def caminho_do_arquivo(instance, filename):
 class Arquivo(models.Model):
     """O conteudo binario, separado do anexo que o referencia. Versoes diferentes de
     um curso apontam para o MESMO Arquivo: clonar um curso nao pode clonar 3 GB de
-    video (spec 4.6). Imutavel apos a criacao."""
+    video (spec 4.6). Imutavel apos a criacao - por convencao de quem usa o model
+    (services.py so cria, nunca atualiza), igual Revisao: nao ha guarda no save()
+    que barre uma alteracao posterior."""
 
     identificador = models.UUIDField("identificador", default=uuid.uuid4, unique=True, editable=False)
     arquivo = models.FileField("arquivo", upload_to=caminho_do_arquivo, max_length=255)

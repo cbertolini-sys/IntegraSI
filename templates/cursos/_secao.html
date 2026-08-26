@@ -9,6 +9,9 @@
       <button type="submit">Salvar seção</button>
     </form>
   {% else %}
+    {# O |safe abaixo e seguro: Secao.save() sanitiza o conteudo com nh3 antes de
+       gravar, incondicionalmente, mesmo em update_fields (Task 4). Depende dessa
+       sanitizacao acontecer antes, nao aqui - ver revisar.html. #}
     <div class="conteudo-secao">{{ secao.conteudo|safe }}</div>
   {% endif %}
 </section>

@@ -15,6 +15,6 @@
 
   <h2>Equipe</h2>
   <ul>
-    {% for membro in curso.membros.all %}<li>{{ membro.aluno.nome_completo }}</li>{% endfor %}
+    {% for membro in membros %}<li>{{ membro.aluno.nome_completo }}</li>{% endfor %}
   </ul>
 {% endblock %}

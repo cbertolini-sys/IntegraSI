@@ -44,6 +44,30 @@ def test_painel_do_curso_mostra_os_cinco_entregaveis(client, curso_com_equipe, a
 
 
 @pytest.mark.django_db
+def test_painel_do_curso_nao_cresce_uma_consulta_por_membro(
+    client, curso_com_equipe, aluno, outro_aluno
+):
+    # curso.membros.all no template, sem select_related("aluno"), dispara uma
+    # consulta a mais por membro so para ler membro.aluno.nome_completo -
+    # fila_revisao.html ja faz isto certo (item 9 da revisao de branco). Em vez de
+    # cravar um numero fixo de consultas (fragil a qualquer outra mudanca na tela),
+    # confere que o numero de consultas nao muda ao adicionar um segundo membro.
+    from django.db import connection
+    from django.test.utils import CaptureQueriesContext
+
+    client.force_login(aluno)
+    with CaptureQueriesContext(connection) as consultas_um_membro:
+        client.get(reverse("curso", args=[curso_com_equipe.pk]))
+
+    services.adicionar_membro(curso_com_equipe, outro_aluno, por=curso_com_equipe.professor_responsavel)
+
+    with CaptureQueriesContext(connection) as consultas_dois_membros:
+        client.get(reverse("curso", args=[curso_com_equipe.pk]))
+
+    assert len(consultas_dois_membros) == len(consultas_um_membro)
+
+
+@pytest.mark.django_db
 def test_entregavel_mostra_o_que_falta(client, curso_com_equipe, aluno):
     slides = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.SLIDES)
     client.force_login(aluno)
