@@ -1,10 +1,14 @@
 <section id="secao-{{ secao.pk }}">
   <h3>{{ secao.titulo }}</h3>
-  {% if salvo %}<p class="mensagem">Salvo.</p>{% endif %}
-  {% if erro %}<p class="mensagem">{{ erro }}</p>{% endif %}
-  <form hx-post="{% url 'salvar_secao' secao.pk %}" hx-target="#secao-{{ secao.pk }}" hx-swap="outerHTML">
-    {% csrf_token %}
-    <textarea name="conteudo" rows="10">{{ secao.conteudo }}</textarea>
-    <button type="submit">Salvar seção</button>
-  </form>
+  {% if pode_editar %}
+    {% if salvo %}<p class="mensagem">Salvo.</p>{% endif %}
+    {% if erro %}<p class="mensagem">{{ erro }}</p>{% endif %}
+    <form hx-post="{% url 'salvar_secao' secao.pk %}" hx-target="#secao-{{ secao.pk }}" hx-swap="outerHTML">
+      {% csrf_token %}
+      <textarea name="conteudo" rows="10">{{ secao.conteudo }}</textarea>
+      <button type="submit">Salvar seção</button>
+    </form>
+  {% else %}
+    <div class="conteudo-secao">{{ secao.conteudo|safe }}</div>
+  {% endif %}
 </section>

@@ -5,8 +5,6 @@
   <p><a href="{% url 'curso' entregavel.curso.pk %}">{{ entregavel.curso.titulo }}</a></p>
   <p>Situação: {{ entregavel.get_status_display }}</p>
 
-  {% for mensagem in messages %}<p class="mensagem">{{ mensagem }}</p>{% endfor %}
-
   {% if ultima_revisao and ultima_revisao.decisao == "DEVOLVIDO" %}
     <section class="devolutiva">
       <h2>Devolvido pelo professor</h2>
@@ -22,7 +20,7 @@
   {% endif %}
 
   {% for secao in entregavel.secoes.all %}
-    {% include "cursos/_secao.html" %}
+    {% include "cursos/_secao.html" with pode_editar=pode_editar %}
   {% endfor %}
 
   <h2>Materiais</h2>

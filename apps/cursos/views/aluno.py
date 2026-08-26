@@ -54,11 +54,15 @@ def salvar_secao(request, pk):
     )
     form = SecaoForm(request.POST, instance=secao)
     if not form.is_valid():
-        return render(request, "cursos/_secao.html", {"secao": secao, "erro": "Não foi possível salvar."})
+        return render(
+            request,
+            "cursos/_secao.html",
+            {"secao": secao, "erro": "Não foi possível salvar.", "pode_editar": True},
+        )
     secao = form.save(commit=False)
     secao.atualizado_por = request.user
     secao.save()
-    return render(request, "cursos/_secao.html", {"secao": secao, "salvo": True})
+    return render(request, "cursos/_secao.html", {"secao": secao, "salvo": True, "pode_editar": True})
 
 
 @login_required
@@ -69,7 +73,9 @@ def anexar(request, pk):
     )
     form = AnexoForm(request.POST, request.FILES)
     if not form.is_valid():
-        messages.error(request, "; ".join(m for lista in form.errors.values() for m in lista))
+        for lista in form.errors.values():
+            for mensagem in lista:
+                messages.error(request, mensagem)
         return redirect("entregavel", pk=obj.pk)
 
     upload = form.cleaned_data.get("upload")
