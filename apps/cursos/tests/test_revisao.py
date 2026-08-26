@@ -94,6 +94,46 @@ def test_nao_se_reenvia_entregavel_aprovado(slides_prontos, aluno, professor):
 
 
 @pytest.mark.django_db
+def test_nao_se_reenvia_entregavel_ja_em_revisao(slides_prontos, aluno):
+    services.enviar_para_revisao(slides_prontos, por=aluno)
+    with pytest.raises(ValidationError):
+        services.enviar_para_revisao(slides_prontos, por=aluno)
+    slides_prontos.refresh_from_db()
+    assert slides_prontos.status == StatusEntregavel.EM_REVISAO
+
+
+@pytest.mark.django_db
+def test_nao_se_devolve_entregavel_que_nao_esta_em_revisao(slides_prontos, professor):
+    with pytest.raises(ValidationError):
+        services.devolver_entregavel(slides_prontos, por=professor, comentario="Corrija algo.")
+
+
+@pytest.mark.django_db
+def test_aprovar_sem_comentario_grava_comentario_vazio(slides_prontos, aluno, professor):
+    services.enviar_para_revisao(slides_prontos, por=aluno)
+    services.aprovar_entregavel(slides_prontos, por=professor)
+    revisao = Revisao.objects.get(entregavel=slides_prontos)
+    assert revisao.comentario == ""
+
+
+@pytest.mark.django_db
+def test_aprovar_e_atomico_e_desfaz_o_status_se_a_revisao_falhar(slides_prontos, aluno, professor, monkeypatch):
+    services.enviar_para_revisao(slides_prontos, por=aluno)
+
+    def explode(*args, **kwargs):
+        raise RuntimeError("falha simulada ao gravar a revisao")
+
+    monkeypatch.setattr(Revisao.objects, "create", explode)
+
+    with pytest.raises(RuntimeError):
+        services.aprovar_entregavel(slides_prontos, por=professor)
+
+    slides_prontos.refresh_from_db()
+    assert slides_prontos.status == StatusEntregavel.EM_REVISAO
+    assert not Revisao.objects.filter(entregavel=slides_prontos).exists()
+
+
+@pytest.mark.django_db
 def test_curso_so_fica_pronto_com_os_cinco_aprovados(slides_prontos, aluno, professor):
     curso = slides_prontos.curso
     assert curso.pronto_para_o_coordenador is False
