@@ -8,6 +8,15 @@ from apps.cursos.models import Curso
 from apps.edicoes.models import Edicao
 
 
+@pytest.fixture(autouse=True)
+def media_root_isolado(settings, tmp_path):
+    """Redireciona MEDIA_ROOT para um diretorio temporario durante o teste, para que
+    nenhum arquivo enviado por um FileField (ex.: arquivo_qualquer) caia no media/
+    do repositorio. O Plano 4 sobe videos de ate 1 GB pelo mesmo caminho, entao isto
+    so fica mais importante."""
+    settings.MEDIA_ROOT = tmp_path
+
+
 @pytest.fixture
 def coordenador(db):
     return Usuario.objects.create_user(
@@ -70,3 +79,21 @@ def dados_curso(edicao, professor):
 @pytest.fixture
 def curso(dados_curso):
     return Curso.objects.create(**dados_curso)
+
+
+@pytest.fixture
+def arquivo_qualquer(aluno, db):
+    from django.core.files.base import ContentFile
+
+    from apps.cursos.models import Arquivo
+
+    registro = Arquivo(
+        nome_original="material.pdf",
+        tamanho=12,
+        mime="application/pdf",
+        hash_conteudo="0" * 64,
+        enviado_por=aluno,
+    )
+    registro.arquivo.save("material.pdf", ContentFile(b"%PDF-1.7\n..."), save=False)
+    registro.save()
+    return registro

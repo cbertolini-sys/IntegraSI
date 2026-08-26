@@ -77,4 +77,10 @@ STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_ROOT = BASE_DIR / "media"
 
+# Acima disto o upload vai para arquivo temporario em vez de ficar na memoria.
+FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
+# Teto geral do corpo da requisicao nesta etapa; o Plano 4 sobe o limite so na
+# rota de upload de video em blocos.
+DATA_UPLOAD_MAX_MEMORY_SIZE = 55 * 1024 * 1024
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
