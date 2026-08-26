@@ -45,3 +45,17 @@ def test_login_com_email_e_senha(client, aluno):
     )
     assert resposta.status_code == 302
     assert resposta.url == reverse("painel")
+
+
+def test_login_funciona_de_ponta_a_ponta_e_grava_last_login(client, aluno):
+    # django.contrib.auth grava o login com save(update_fields=["last_login"]);
+    # este teste é a garantia de que o fluxo real (não só a chamada isolada ao
+    # model) segue funcionando depois da guarda de update_fields em Usuario.save().
+    assert aluno.last_login is None
+    resposta = client.post(
+        reverse("login"),
+        {"username": "aluno@ufsm.br", "password": "senha-de-teste-123"},
+    )
+    assert resposta.status_code == 302
+    aluno.refresh_from_db()
+    assert aluno.last_login is not None

@@ -1,5 +1,6 @@
 import pytest
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 from apps.contas.models import Usuario
 
@@ -131,3 +132,29 @@ def test_create_superuser_com_siape_via_extra_cria_coordenador():
     assert coordenador.is_staff is True
     assert coordenador.is_superuser is True
     assert coordenador.siape == "9876543"
+
+
+@pytest.mark.django_db
+def test_save_com_update_fields_nao_valida_o_objeto_inteiro():
+    """django.contrib.auth.models.update_last_login chama
+    user.save(update_fields=["last_login"]) a cada login bem-sucedido. Se isso
+    disparasse full_clean(), uma linha já inválida no banco (dado legado, ou
+    editada direto) travaria o login com um ValidationError não tratado -- um
+    500, não um erro de formulário. O estado inválido é construído via
+    queryset.update(), que contorna save()/full_clean() de propósito."""
+    aluno = criar_aluno()
+    Usuario.objects.filter(pk=aluno.pk).update(matricula=None)
+    aluno.refresh_from_db()
+    aluno.last_login = timezone.now()
+    aluno.save(update_fields=["last_login"])  # não deve levantar ValidationError
+    aluno.refresh_from_db()
+    assert aluno.last_login is not None
+
+
+@pytest.mark.django_db
+def test_save_sem_update_fields_continua_validando():
+    aluno = criar_aluno()
+    Usuario.objects.filter(pk=aluno.pk).update(matricula=None)
+    aluno.refresh_from_db()
+    with pytest.raises(ValidationError):
+        aluno.save()

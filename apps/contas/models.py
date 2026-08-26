@@ -110,5 +110,15 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
             raise ValidationError(erros)
 
     def save(self, *args, **kwargs):
-        self.full_clean()
+        # django.contrib.auth chama user.save(update_fields=["last_login"]) a
+        # cada login bem-sucedido (ver update_last_login em
+        # django.contrib.auth.models). Uma escrita direcionada num objeto já
+        # persistido não é lugar para validar o objeto inteiro: os serviços do
+        # Plano 2 vão usar save(update_fields=["status"]) pelo mesmo motivo, e
+        # sem esta guarda qualquer linha que já esteja inválida no banco (dado
+        # legado, ou editado direto) travaria o login com um ValidationError
+        # não tratado -- um 500, não um erro de formulário. Ver
+        # docs/onde-mora-a-validacao.md.
+        if "update_fields" not in kwargs:
+            self.full_clean()
         super().save(*args, **kwargs)
