@@ -21,6 +21,7 @@ INSTALLED_APPS = [
     "apps.contas",
     "apps.cursos",
     "apps.edicoes",
+    "apps.notificacoes",
     "apps.referenciais",
 ]
 
@@ -77,6 +78,14 @@ STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_ROOT = BASE_DIR / "media"
+
+EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "")
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "True") == "True"
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "integrasi@ufsm.br")
 
 # Acima disto o upload vai para arquivo temporario em vez de ficar na memoria.
 FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024

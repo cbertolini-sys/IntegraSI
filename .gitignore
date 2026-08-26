@@ -6,3 +6,4 @@ media/
 staticfiles/
 .pytest_cache/
 .DS_Store
+enviar_notificacoes.lock
