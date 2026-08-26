@@ -25,6 +25,26 @@ class Command(BaseCommand):
             )
             self.stdout.write(self.style.SUCCESS("Coordenador criado."))
             return
+        if usuario.e_coordenador:
+            usuario.set_password(opcoes["senha"])
+            usuario.save()
+            self.stdout.write(self.style.SUCCESS("Coordenador já existia; senha atualizada."))
+            return
+
+        # O e-mail já pertence a outra conta (aluno ou professor). Este é o único
+        # comando suportado de recuperação de acesso -- roda sob estresse, por
+        # alguém trancado para fora do sistema -- então "o e-mail já tem dono" não
+        # pode virar silenciosamente "resetei a senha de outra pessoa". Promove
+        # essa conta a coordenador explicitamente. Promover implica perder a
+        # matrícula: clean() exige matrícula vazia para todo papel != ALUNO, e
+        # save() (full_clean() por baixo) recusa a gravação caso contrário --
+        # portanto, se a promoção falhar por qualquer outro motivo, ela falha alto
+        # (ValidationError), nunca silenciosamente.
+        usuario.papel = Usuario.COORDENADOR
+        usuario.is_staff = True
+        usuario.is_superuser = True
+        usuario.siape = opcoes["siape"]
+        usuario.matricula = None
         usuario.set_password(opcoes["senha"])
         usuario.save()
-        self.stdout.write(self.style.SUCCESS("Coordenador já existia; senha atualizada."))
+        self.stdout.write(self.style.SUCCESS("Usuário promovido a coordenador."))
