@@ -24,6 +24,12 @@ class CursoForm(forms.ModelForm):
 
 class AnexoForm(forms.ModelForm):
     upload = forms.FileField(label="arquivo", required=False)
+    # Declarado explicitamente (em vez de deixar o ModelForm derivar de Anexo.url)
+    # so para fixar assume_scheme="https": sem isso o Django 5.2 emite
+    # RemovedInDjango60Warning a cada requisicao, porque o padrao de esquema muda
+    # de http para https na proxima versao maior. Continua opcional, como o campo
+    # do modelo (Anexo.url tem blank=True).
+    url = forms.URLField(label="link", required=False, assume_scheme="https")
 
     class Meta:
         model = Anexo
