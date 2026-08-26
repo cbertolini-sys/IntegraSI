@@ -1,3 +1,5 @@
+import fcntl
+import io
 from unittest import mock
 
 import pytest
@@ -5,6 +7,7 @@ from django.core import mail
 from django.core.management import call_command
 
 from apps.notificacoes import services
+from apps.notificacoes.management.commands import enviar_notificacoes as comando
 from apps.notificacoes.models import Notificacao
 
 
@@ -61,8 +64,25 @@ def test_falha_de_envio_registra_o_erro_e_nao_marca_como_enviada(settings):
 
 @pytest.mark.django_db
 def test_notificacao_no_limite_de_tentativas_e_abandonada(settings):
+    assert services.LIMITE_TENTATIVAS == 5
     settings.EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
     services.enfileirar(evento="X", destinatarios=["a@ufsm.br"], assunto="A", corpo="B")
     Notificacao.objects.update(tentativas=services.LIMITE_TENTATIVAS)
     call_command("enviar_notificacoes")
     assert len(mail.outbox) == 0
+
+
+@pytest.mark.django_db
+def test_comando_nao_envia_quando_outra_execucao_esta_em_andamento(settings):
+    settings.EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
+    services.enfileirar(evento="X", destinatarios=["a@ufsm.br"], assunto="A", corpo="B")
+    saida = io.StringIO()
+    with open(comando.TRAVA, "w") as trava:
+        # flock() trava a descricao de arquivo aberta, nao o processo: um segundo
+        # descritor sobre o mesmo arquivo, mesmo neste mesmo processo de teste,
+        # falha ao adquirir a trava exatamente como uma execucao concorrente do
+        # cron falharia.
+        fcntl.flock(trava, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        call_command("enviar_notificacoes", stdout=saida)
+    assert len(mail.outbox) == 0
+    assert "Outra execução" in saida.getvalue()
