@@ -183,6 +183,41 @@ def test_enviar_entregavel_de_outra_equipe_e_bloqueado(client, curso_com_equipe,
 
 
 @pytest.mark.django_db
+def test_enviar_entregavel_via_get_e_rejeitado(client, curso_com_equipe, aluno, arquivo_qualquer):
+    # A vulnerabilidade que este teste crava: sem @require_POST, um GET (por exemplo
+    # <img src="/entregaveis/N/enviar/"> numa pagina qualquer que o aluno logado
+    # visite) bastava para committar RASCUNHO -> EM_REVISAO, porque CSRF nao se
+    # aplica a GET.
+    slides = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.SLIDES)
+    Anexo.objects.create(
+        entregavel=slides, tipo_midia=TipoMidia.ARQUIVO, titulo="Slides",
+        arquivo=arquivo_qualquer, enviado_por=aluno,
+    )
+    client.force_login(aluno)
+    resposta = client.get(reverse("enviar_entregavel", args=[slides.pk]))
+    assert resposta.status_code == 405
+    slides.refresh_from_db()
+    assert slides.status == StatusEntregavel.RASCUNHO
+
+
+@pytest.mark.django_db
+def test_salvar_secao_via_get_e_rejeitado(client, curso_com_equipe, aluno):
+    plano = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.PLANO_ENSINO)
+    secao = plano.secoes.first()
+    client.force_login(aluno)
+    resposta = client.get(reverse("salvar_secao", args=[secao.pk]))
+    assert resposta.status_code == 405
+
+
+@pytest.mark.django_db
+def test_anexar_via_get_e_rejeitado(client, curso_com_equipe, aluno):
+    slides = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.SLIDES)
+    client.force_login(aluno)
+    resposta = client.get(reverse("anexar", args=[slides.pk]))
+    assert resposta.status_code == 405
+
+
+@pytest.mark.django_db
 def test_anexar_arquivo_cria_o_anexo(client, curso_com_equipe, aluno):
     slides = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.SLIDES)
     upload = SimpleUploadedFile(

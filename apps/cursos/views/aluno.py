@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 
 from apps.cursos import permissions, services, validacoes
 from apps.cursos.choices import TipoMidia
@@ -46,6 +47,7 @@ def entregavel(request, pk):
 
 
 @login_required
+@require_POST
 def salvar_secao(request, pk):
     secao = get_object_or_404(Secao, pk=pk)
     permissions.garante(
@@ -66,6 +68,7 @@ def salvar_secao(request, pk):
 
 
 @login_required
+@require_POST
 def anexar(request, pk):
     obj = get_object_or_404(Entregavel, pk=pk)
     permissions.garante(
@@ -123,6 +126,7 @@ def anexar(request, pk):
 
 
 @login_required
+@require_POST
 def enviar_entregavel(request, pk):
     obj = get_object_or_404(Entregavel, pk=pk)
     try:

@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST, require_http_methods
 
 from apps.contas.models import Usuario
 from apps.cursos import permissions, services, validacoes
@@ -11,6 +12,7 @@ from apps.cursos.models import Curso, Entregavel
 
 
 @login_required
+@require_http_methods(["GET", "POST"])
 def nova_proposta(request):
     permissions.garante(
         request.user.e_professor or request.user.e_coordenador,
@@ -28,6 +30,7 @@ def nova_proposta(request):
 
 
 @login_required
+@require_http_methods(["GET", "POST"])
 def equipe(request, pk):
     curso = get_object_or_404(Curso, pk=pk)
     permissions.garante(permissions.pode_gerir_equipe(request.user, curso), "Curso de outro professor.")
@@ -70,6 +73,7 @@ def revisar(request, pk):
 
 
 @login_required
+@require_POST
 def decidir(request, pk):
     entregavel = get_object_or_404(Entregavel, pk=pk)
     comentario = request.POST.get("comentario", "")

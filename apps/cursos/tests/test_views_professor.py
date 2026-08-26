@@ -167,6 +167,26 @@ def test_aluno_nao_decide(client, aluno, slides_em_revisao):
 
 
 @pytest.mark.django_db
+def test_decidir_via_get_e_rejeitado(client, professor, slides_em_revisao):
+    client.force_login(professor)
+    resposta = client.get(reverse("decidir", args=[slides_em_revisao.pk]))
+    assert resposta.status_code == 405
+    slides_em_revisao.refresh_from_db()
+    assert slides_em_revisao.status == StatusEntregavel.EM_REVISAO
+
+
+@pytest.mark.django_db
+def test_equipe_rejeita_metodo_nao_suportado(client, professor, dados_curso):
+    # equipe atende GET (formulario) e POST (adicionar membro) legitimamente, entao
+    # nao pode levar @require_POST na funcao inteira; ainda assim outros verbos
+    # (DELETE, PUT, ...) devem ser recusados, nao cair no ramo de leitura por acaso.
+    curso = services.criar_curso(**dados_curso)
+    client.force_login(professor)
+    resposta = client.delete(reverse("equipe", args=[curso.pk]))
+    assert resposta.status_code == 405
+
+
+@pytest.mark.django_db
 def test_equipe_de_outro_professor_devolve_403(client, dados_curso):
     from apps.contas.models import Usuario
 
