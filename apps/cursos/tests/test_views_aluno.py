@@ -87,6 +87,33 @@ def test_salvar_secao_guarda_o_conteudo_e_o_autor(client, curso_com_equipe, alun
 
 
 @pytest.mark.django_db
+def test_salvar_secao_mostra_o_erro_real_do_formulario(client, curso_com_equipe, aluno, monkeypatch):
+    # salvar_secao descartava os erros do form e sempre mostrava a mesma string fixa
+    # "Não foi possível salvar." (item 6 da revisao de branco). SecaoForm hoje so tem
+    # o campo "conteudo", que e blank=True - nao ha entrada real que o invalide -
+    # entao o form e substituido por um dublê sempre invalido, so para provar que a
+    # view passa adiante os erros de verdade, e nao a string fixa.
+    import apps.cursos.views.aluno as views_aluno
+
+    class FormularioSempreInvalido:
+        def __init__(self, *args, **kwargs):
+            self.errors = {"conteudo": ["Erro fabricado para o teste."]}
+
+        def is_valid(self):
+            return False
+
+    monkeypatch.setattr(views_aluno, "SecaoForm", FormularioSempreInvalido)
+
+    plano = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.PLANO_ENSINO)
+    secao = plano.secoes.first()
+    client.force_login(aluno)
+    resposta = client.post(reverse("salvar_secao", args=[secao.pk]), {"conteudo": "x"})
+    conteudo = resposta.content.decode()
+    assert "Erro fabricado para o teste." in conteudo
+    assert "Não foi possível salvar." not in conteudo
+
+
+@pytest.mark.django_db
 def test_salvar_secao_de_entregavel_em_revisao_e_bloqueado(client, curso_com_equipe, aluno, arquivo_qualquer):
     plano = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.PLANO_ENSINO)
     secao = plano.secoes.first()

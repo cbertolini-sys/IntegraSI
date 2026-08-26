@@ -1,4 +1,5 @@
 import pytest
+from django.core.exceptions import ValidationError
 from django.urls import reverse
 
 from apps.cursos import services
@@ -115,6 +116,28 @@ def test_professor_monta_equipe(client, professor, dados_curso, aluno):
 
 
 @pytest.mark.django_db
+def test_equipe_mostra_todas_as_mensagens_de_erro_do_servico(
+    client, professor, dados_curso, aluno, monkeypatch
+):
+    # MembroEquipe.full_clean() pode levantar mais de uma mensagem; erro.messages[0]
+    # mostrava so a primeira e descartava o resto em silencio (item 6 da revisao de
+    # branco). Simula um ValidationError com duas mensagens para provar que ambas
+    # chegam ao usuario, sem depender de reproduzir as duas condicoes reais que o
+    # model levantaria juntas.
+    curso = services.criar_curso(**dados_curso)
+
+    def sempre_recusa(*args, **kwargs):
+        raise ValidationError(["Primeira mensagem de erro.", "Segunda mensagem de erro."])
+
+    monkeypatch.setattr(services, "adicionar_membro", sempre_recusa)
+    client.force_login(professor)
+    resposta = client.post(reverse("equipe", args=[curso.pk]), {"aluno": aluno.pk}, follow=True)
+    conteudo = resposta.content.decode()
+    assert "Primeira mensagem de erro." in conteudo
+    assert "Segunda mensagem de erro." in conteudo
+
+
+@pytest.mark.django_db
 def test_equipe_sem_aluno_selecionado_nao_quebra(client, professor, dados_curso):
     curso = services.criar_curso(**dados_curso)
     client.force_login(professor)
@@ -186,6 +209,25 @@ def test_decidir_via_get_e_rejeitado(client, professor, slides_em_revisao):
     assert resposta.status_code == 405
     slides_em_revisao.refresh_from_db()
     assert slides_em_revisao.status == StatusEntregavel.EM_REVISAO
+
+
+@pytest.mark.django_db
+def test_decidir_mostra_todas_as_mensagens_de_erro_do_servico(
+    client, professor, slides_em_revisao, monkeypatch
+):
+    def sempre_recusa(*args, **kwargs):
+        raise ValidationError(["Primeira mensagem de erro.", "Segunda mensagem de erro."])
+
+    monkeypatch.setattr(services, "aprovar_entregavel", sempre_recusa)
+    client.force_login(professor)
+    resposta = client.post(
+        reverse("decidir", args=[slides_em_revisao.pk]),
+        {"decisao": "APROVAR", "comentario": ""},
+        follow=True,
+    )
+    conteudo = resposta.content.decode()
+    assert "Primeira mensagem de erro." in conteudo
+    assert "Segunda mensagem de erro." in conteudo
 
 
 @pytest.mark.django_db

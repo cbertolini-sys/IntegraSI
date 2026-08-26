@@ -56,10 +56,11 @@ def salvar_secao(request, pk):
     )
     form = SecaoForm(request.POST, instance=secao)
     if not form.is_valid():
+        mensagens = [mensagem for lista in form.errors.values() for mensagem in lista]
         return render(
             request,
             "cursos/_secao.html",
-            {"secao": secao, "erro": "Não foi possível salvar.", "pode_editar": True},
+            {"secao": secao, "erro": " ".join(mensagens), "pode_editar": True},
         )
     secao = form.save(commit=False)
     secao.atualizado_por = request.user

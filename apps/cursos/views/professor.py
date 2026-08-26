@@ -45,7 +45,8 @@ def equipe(request, pk):
         try:
             services.adicionar_membro(curso, aluno, por=request.user)
         except ValidationError as erro:
-            messages.error(request, erro.messages[0])
+            for mensagem in erro.messages:
+                messages.error(request, mensagem)
         else:
             messages.success(request, f"{aluno.nome_completo} entrou na equipe.")
         return redirect("equipe", pk=curso.pk)
@@ -87,6 +88,7 @@ def decidir(request, pk):
             services.devolver_entregavel(entregavel, por=request.user, comentario=comentario)
             messages.success(request, "Entregável devolvido à equipe.")
     except ValidationError as erro:
-        messages.error(request, erro.messages[0])
+        for mensagem in erro.messages:
+            messages.error(request, mensagem)
         return redirect("revisar", pk=entregavel.pk)
     return redirect("fila_revisao")
