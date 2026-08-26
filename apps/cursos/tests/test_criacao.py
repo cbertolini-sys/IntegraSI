@@ -54,6 +54,27 @@ def test_adicionar_o_primeiro_membro_leva_o_curso_para_producao(dados_curso, alu
 
 
 @pytest.mark.django_db
+def test_adicionar_membro_nao_revalida_o_curso_inteiro(dados_curso, aluno):
+    """curso.save() sem update_fields chama full_clean() sobre o Curso inteiro
+    (docs/onde-mora-a-validacao.md); se um curso ja aprovado tiver ficado invalido
+    por outro caminho (o proprio full_clean, por exemplo, permite formato="" so via
+    .update(), que contorna a validacao), adicionar_membro nao pode falhar por causa
+    disso - a troca de equipe nao tem nada a ver com o campo quebrado, e o usuario
+    nao teria como entender o erro (item 5 da revisao de branco)."""
+    from apps.cursos.models import Curso
+
+    curso = services.criar_curso(**dados_curso)
+    Curso.objects.filter(pk=curso.pk).update(formato="")
+    curso.refresh_from_db()
+
+    services.adicionar_membro(curso, aluno, por=curso.professor_responsavel)
+
+    curso.refresh_from_db()
+    assert curso.status == StatusCurso.EM_PRODUCAO
+    assert curso.formato == ""
+
+
+@pytest.mark.django_db
 def test_entregavel_repetido_no_mesmo_curso_e_recusado(dados_curso):
     curso = services.criar_curso(**dados_curso)
     with pytest.raises(ValidationError):

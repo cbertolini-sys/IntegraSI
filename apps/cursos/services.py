@@ -46,7 +46,10 @@ def adicionar_membro(curso, aluno, por):
     membro = MembroEquipe.objects.create(curso=curso, aluno=aluno)
     if curso.status == StatusCurso.RASCUNHO:
         curso.status = StatusCurso.EM_PRODUCAO
-        curso.save()
+        # atualizado_em precisa estar na lista pelo mesmo motivo de
+        # enviar_para_revisao acima: e auto_now=True, e update_fields so o persiste
+        # se ele estiver nomeado.
+        curso.save(update_fields=["status", "atualizado_em"])
     return membro
 
 
@@ -74,7 +77,11 @@ def enviar_para_revisao(entregavel, por):
     if faltas:
         raise ValidationError(faltas)
     entregavel.status = StatusEntregavel.EM_REVISAO
-    entregavel.save()
+    # atualizado_em e auto_now=True: um save(update_fields=[...]) so o atualiza no
+    # banco se ele estiver na lista (pre_save so roda para quem esta em
+    # update_fields). fila_revisao.html mostra este campo como "enviado em" -
+    # esquece-lo aqui congelaria o rotulo na data de criacao do entregavel.
+    entregavel.save(update_fields=["status", "atualizado_em"])
     return entregavel
 
 
@@ -87,7 +94,7 @@ def aprovar_entregavel(entregavel, por, comentario=""):
     )
     _exige_em_revisao(entregavel)
     entregavel.status = StatusEntregavel.APROVADO
-    entregavel.save()
+    entregavel.save(update_fields=["status", "atualizado_em"])
     Revisao.objects.create(
         entregavel=entregavel, revisor=por, decisao=Revisao.APROVADO, comentario=comentario
     )
@@ -106,7 +113,7 @@ def devolver_entregavel(entregavel, por, comentario):
     if not (comentario or "").strip():
         raise ValidationError("Escreva o que precisa ser corrigido antes de devolver.")
     entregavel.status = StatusEntregavel.DEVOLVIDO
-    entregavel.save()
+    entregavel.save(update_fields=["status", "atualizado_em"])
     Revisao.objects.create(
         entregavel=entregavel, revisor=por, decisao=Revisao.DEVOLVIDO, comentario=comentario
     )

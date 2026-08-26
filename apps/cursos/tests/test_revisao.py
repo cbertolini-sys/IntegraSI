@@ -27,6 +27,20 @@ def test_enviar_para_revisao_muda_o_estado(slides_prontos, aluno):
 
 
 @pytest.mark.django_db
+def test_enviar_para_revisao_atualiza_atualizado_em(slides_prontos, aluno):
+    # fila_revisao.html mostra entregavel.atualizado_em como "enviado em" para o
+    # professor. atualizado_em e auto_now=True: um save(update_fields=[...]) que nao
+    # o nomeie explicitamente NAO o atualiza no banco (o campo fica de fora da
+    # propria instrucao SQL de UPDATE) - so o servico usar update_fields=["status"]
+    # sem incluir atualizado_em congelaria esse rotulo na data de criacao do
+    # entregavel para sempre.
+    antes = slides_prontos.atualizado_em
+    services.enviar_para_revisao(slides_prontos, por=aluno)
+    slides_prontos.refresh_from_db()
+    assert slides_prontos.atualizado_em > antes
+
+
+@pytest.mark.django_db
 def test_enviar_com_pendencia_e_recusado(dados_curso, aluno):
     curso = services.criar_curso(**dados_curso)
     services.adicionar_membro(curso, aluno, por=curso.professor_responsavel)
