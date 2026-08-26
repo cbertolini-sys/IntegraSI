@@ -39,6 +39,14 @@ class Referencial(models.Model):
                 f"{self.max_competencias} competências; foram escolhidas {quantidade}."
             )
 
+    def save(self, *args, **kwargs):
+        # Ver docs/onde-mora-a-validacao.md: uma escrita direcionada
+        # (update_fields) num objeto já persistido não passa por validação do
+        # objeto inteiro.
+        if "update_fields" not in kwargs:
+            self.full_clean()
+        super().save(*args, **kwargs)
+
 
 class Categoria(models.Model):
     """Agrupamento dentro de um referencial. Na BNCC da Computação chama-se eixo."""
@@ -59,6 +67,11 @@ class Categoria(models.Model):
 
     def __str__(self):
         return self.nome
+
+    def save(self, *args, **kwargs):
+        if "update_fields" not in kwargs:
+            self.full_clean()
+        super().save(*args, **kwargs)
 
 
 class Competencia(models.Model):
@@ -88,3 +101,8 @@ class Competencia(models.Model):
         super().clean()
         if self.categoria_id and self.referencial_id and self.categoria.referencial_id != self.referencial_id:
             raise ValidationError({"categoria": "A categoria pertence a outro referencial."})
+
+    def save(self, *args, **kwargs):
+        if "update_fields" not in kwargs:
+            self.full_clean()
+        super().save(*args, **kwargs)

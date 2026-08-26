@@ -37,6 +37,10 @@ class Command(BaseCommand):
                 if not valores["codigo"]:
                     raise CommandError(f"Linha {numero}: falta o código (linha incompleta?).")
 
+                # A validação abaixo duplica as `choices` de Competencia.etapa, que
+                # Competencia.save() -> full_clean() já impõe. Mantida mesmo assim:
+                # ela nomeia a linha do CSV e lista os valores aceitos, uma
+                # mensagem que um ValidationError de model não consegue dar.
                 if valores["etapa"] not in ETAPAS_VALIDAS:
                     raise CommandError(
                         f"Linha {numero}: etapa '{valores['etapa']}' inválida. "

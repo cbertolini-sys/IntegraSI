@@ -54,6 +54,20 @@ def test_maximo_menor_que_minimo_e_recusado(bncc):
 
 
 @pytest.mark.django_db
+def test_criar_com_maximo_menor_que_minimo_e_recusado():
+    """clean() só é alcançável via full_clean(); sem save() -> full_clean(), o
+    .create() abaixo passa direto pelo INSERT e deixa no banco um referencial
+    cuja faixa Curso.valida_quantidade() (Plano 2) nunca consegue satisfazer."""
+    with pytest.raises(ValidationError):
+        Referencial.objects.create(
+            nome="Faixa Invertida",
+            sigla="FAIXA-INV",
+            min_competencias=5,
+            max_competencias=1,
+        )
+
+
+@pytest.mark.django_db
 def test_competencia_de_categoria_de_outro_referencial_e_recusada(bncc, pensamento):
     outro = Referencial.objects.create(
         nome="Curriculo Gaucho", sigla="CG", min_competencias=1, max_competencias=3
