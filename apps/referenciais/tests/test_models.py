@@ -88,3 +88,22 @@ def test_str_da_competencia_mostra_codigo(bncc, pensamento):
         referencial=bncc, categoria=pensamento, codigo="EF05CO01", descricao="Descricao", etapa="EF05", ordem=1
     )
     assert str(competencia).startswith("EF05CO01")
+
+
+@pytest.mark.django_db
+def test_apagar_referencial_apaga_categorias_e_competencias(bncc, pensamento):
+    Competencia.objects.create(
+        referencial=bncc, categoria=pensamento, codigo="EF05CO01", descricao="A", etapa="EF05", ordem=1
+    )
+    bncc.delete()
+    assert Categoria.objects.count() == 0
+    assert Competencia.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_apagar_categoria_apaga_suas_competencias(bncc, pensamento):
+    Competencia.objects.create(
+        referencial=bncc, categoria=pensamento, codigo="EF05CO01", descricao="A", etapa="EF05", ordem=1
+    )
+    pensamento.delete()
+    assert Competencia.objects.count() == 0

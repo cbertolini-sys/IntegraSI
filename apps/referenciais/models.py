@@ -66,7 +66,7 @@ class Competencia(models.Model):
         Referencial, on_delete=models.CASCADE, related_name="competencias", verbose_name="referencial"
     )
     categoria = models.ForeignKey(
-        Categoria, on_delete=models.PROTECT, related_name="competencias", verbose_name="categoria"
+        Categoria, on_delete=models.CASCADE, related_name="competencias", verbose_name="categoria"
     )
     codigo = models.CharField("codigo", max_length=20)
     descricao = models.TextField("descricao")
