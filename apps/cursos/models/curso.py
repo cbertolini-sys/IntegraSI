@@ -85,6 +85,9 @@ class Curso(models.Model):
         if erros:
             raise ValidationError(erros)
 
+    def tem_membro(self, usuario):
+        return self.membros.filter(aluno=usuario).exists()
+
     def save(self, *args, **kwargs):
         if "update_fields" not in kwargs:
             self.full_clean()
