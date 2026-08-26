@@ -48,10 +48,10 @@ def test_importar_duas_vezes_nao_duplica_e_atualiza_descricao(bncc, tmp_path):
 
 @pytest.mark.django_db
 def test_categoria_desconhecida_no_csv_interrompe_a_importacao(bncc, tmp_path):
-    """A primeira linha e valida de proposito: se alguem tirar o @transaction.atomic
-    do comando, essa linha sobrevive a falha da segunda e o count() abaixo vira 1,
-    nao 0. Com uma unica linha invalida o teste passaria mesmo sem a transacao,
-    porque nada teria sido inserido antes do erro -- nao testaria rollback nenhum."""
+    """A primeira linha é válida de propósito: se alguém tirar o @transaction.atomic
+    do comando, essa linha sobrevive à falha da segunda e o count() abaixo vira 1,
+    não 0. Com uma única linha inválida o teste passaria mesmo sem a transação,
+    porque nada teria sido inserido antes do erro -- não testaria rollback nenhum."""
     arquivo = tmp_path / "habilidades.csv"
     arquivo.write_text(
         "codigo,descricao,etapa,categoria\n"
@@ -66,10 +66,10 @@ def test_categoria_desconhecida_no_csv_interrompe_a_importacao(bncc, tmp_path):
 
 @pytest.mark.django_db
 def test_etapa_invalida_no_csv_interrompe_a_importacao(bncc, tmp_path):
-    """A CSV e transcrita a mao do PDF da Resolucao: um erro de digitacao na etapa
-    (EF5 em vez de EF05) e o erro esperado, nao uma hipotese remota. Sem validar
+    """A CSV é transcrita à mão do PDF da Resolução: um erro de digitação na etapa
+    (EF5 em vez de EF05) é o erro esperado, não uma hipótese remota. Sem validar
     contra ETAPAS, update_or_create salva silenciosamente -- a habilidade some do
-    ano certo sem nenhum aviso. Antes desta guarda, esta importacao tinha sucesso e
+    ano certo sem nenhum aviso. Antes desta guarda, esta importação tinha sucesso e
     deixava uma Competencia com etapa='EF5' no banco."""
     arquivo = tmp_path / "habilidades.csv"
     arquivo.write_text(
@@ -84,9 +84,9 @@ def test_etapa_invalida_no_csv_interrompe_a_importacao(bncc, tmp_path):
 
 @pytest.mark.django_db
 def test_linha_com_campo_faltando_da_erro_tratado_em_vez_de_traceback(bncc, tmp_path):
-    """csv.DictReader preenche campos ausentes com None quando falta uma virgula na
+    """csv.DictReader preenche campos ausentes com None quando falta uma vírgula na
     linha. Sem tratamento, linha["categoria"].strip() estoura AttributeError -- um
-    traceback cru no terminal do coordenador em vez de uma mensagem util."""
+    traceback cru no terminal do coordenador em vez de uma mensagem útil."""
     arquivo = tmp_path / "habilidades.csv"
     arquivo.write_text(
         "codigo,descricao,etapa,categoria\nEF05CO01,Decompor um problema,EF05\n",

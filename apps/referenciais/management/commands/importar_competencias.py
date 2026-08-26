@@ -11,7 +11,7 @@ ETAPAS_VALIDAS = {codigo for codigo, _ in ETAPAS}
 
 
 class Command(BaseCommand):
-    help = "Importa competencias de um referencial a partir de um CSV (codigo,descricao,etapa,categoria)."
+    help = "Importa competências de um referencial a partir de um CSV (codigo,descricao,etapa,categoria)."
 
     def add_arguments(self, parser):
         parser.add_argument("--referencial", required=True, help="Sigla do referencial, ex.: BNCC-COMP")
@@ -22,7 +22,7 @@ class Command(BaseCommand):
         try:
             referencial = Referencial.objects.get(sigla=opcoes["referencial"])
         except Referencial.DoesNotExist:
-            raise CommandError(f"Referencial {opcoes['referencial']} nao existe.")
+            raise CommandError(f"Referencial {opcoes['referencial']} não existe.")
 
         categorias = {c.nome: c for c in referencial.categorias.all()}
 
@@ -35,18 +35,18 @@ class Command(BaseCommand):
                 valores = {campo: (linha.get(campo) or "").strip() for campo in COLUNAS}
 
                 if not valores["codigo"]:
-                    raise CommandError(f"Linha {numero}: falta o codigo (linha incompleta?).")
+                    raise CommandError(f"Linha {numero}: falta o código (linha incompleta?).")
 
                 if valores["etapa"] not in ETAPAS_VALIDAS:
                     raise CommandError(
-                        f"Linha {numero}: etapa '{valores['etapa']}' invalida. "
+                        f"Linha {numero}: etapa '{valores['etapa']}' inválida. "
                         f"Valores aceitos: {', '.join(sorted(ETAPAS_VALIDAS))}."
                     )
 
                 categoria = categorias.get(valores["categoria"])
                 if categoria is None:
                     raise CommandError(
-                        f"Linha {numero}: categoria '{valores['categoria']}' nao existe em {referencial.sigla}."
+                        f"Linha {numero}: categoria '{valores['categoria']}' não existe em {referencial.sigla}."
                     )
                 Competencia.objects.update_or_create(
                     referencial=referencial,
@@ -60,4 +60,4 @@ class Command(BaseCommand):
                 )
                 total += 1
 
-        self.stdout.write(self.style.SUCCESS(f"{total} competencias importadas em {referencial.sigla}."))
+        self.stdout.write(self.style.SUCCESS(f"{total} competências importadas em {referencial.sigla}."))

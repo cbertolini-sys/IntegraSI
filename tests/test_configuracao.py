@@ -7,8 +7,8 @@ from django.conf import settings
 
 def _importar_settings_em_subprocesso(remover=()):
     """Importa config.settings num subprocesso com ambiente limpo, fora do
-    alcance de pytest-django (que forca settings.DEBUG = False para toda a
-    sessao de testes via setup_test_environment())."""
+    alcance de pytest-django (que força settings.DEBUG = False para toda a
+    sessão de testes via setup_test_environment())."""
     ambiente = {k: v for k, v in os.environ.items() if k not in remover}
     ambiente["DJANGO_SETTINGS_MODULE"] = "config.settings"
     return subprocess.run(
@@ -24,8 +24,8 @@ def _importar_settings_em_subprocesso(remover=()):
 
 
 def test_debug_desligado_quando_a_variavel_nao_e_definida():
-    """pytest-django forca DEBUG=False durante os testes, entao a unica forma de
-    verificar o padrao de producao e importar as settings fora dele."""
+    """pytest-django força DEBUG=False durante os testes, então a única forma de
+    verificar o padrão de produção é importar as settings fora dele."""
     resultado = _importar_settings_em_subprocesso(remover={"DEBUG"})
     assert resultado.returncode == 0, resultado.stderr
     assert resultado.stdout.strip() == "False"

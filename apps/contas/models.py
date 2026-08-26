@@ -8,7 +8,7 @@ from apps.contas.validators import somente_digitos, valida_cpf
 class UsuarioManager(BaseUserManager):
     def create_user(self, email, nome_completo, cpf, papel, password=None, **extra):
         if not email:
-            raise ValueError("E-mail e obrigatorio.")
+            raise ValueError("E-mail é obrigatório.")
         usuario = self.model(
             email=self.normalize_email(email),
             nome_completo=nome_completo,
@@ -48,7 +48,7 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
     cpf = models.CharField("CPF", max_length=11, unique=True, validators=[valida_cpf])
     papel = models.CharField("papel", max_length=20, choices=PAPEIS)
     matricula = models.CharField(
-        "matricula", max_length=20, unique=True, null=True, blank=True
+        "matrícula", max_length=20, unique=True, null=True, blank=True
     )
     siape = models.CharField("SIAPE", max_length=20, unique=True, null=True, blank=True)
 
@@ -59,15 +59,15 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
     objects = UsuarioManager()
 
     USERNAME_FIELD = "email"
-    # siape fica de fora de proposito: clean() exige SIAPE para todo papel != ALUNO, entao
+    # siape fica de fora de propósito: clean() exige SIAPE para todo papel != ALUNO, então
     # o "manage.py createsuperuser" interativo nunca conseguiria passar por clean() de
-    # qualquer forma. A rota suportada e o comando "criar_coordenador" (Task 4), que chama
-    # create_superuser(..., siape=...) diretamente. Nao "conserte" afrouxando a validacao.
+    # qualquer forma. A rota suportada é o comando "criar_coordenador" (Task 4), que chama
+    # create_superuser(..., siape=...) diretamente. Não "conserte" afrouxando a validação.
     REQUIRED_FIELDS = ["nome_completo", "cpf"]
 
     class Meta:
-        verbose_name = "usuario"
-        verbose_name_plural = "usuarios"
+        verbose_name = "usuário"
+        verbose_name_plural = "usuários"
         ordering = ["nome_completo"]
 
     def __str__(self):
@@ -86,7 +86,7 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
         return self.papel == self.ALUNO
 
     def full_clean(self, *args, **kwargs):
-        # Normaliza antes de qualquer validacao: sem isso a unicidade nao vale nada,
+        # Normaliza antes de qualquer validação: sem isso a unicidade não vale nada,
         # porque 529.982.247-25 e 52998224725 conviveriam no banco (spec 4.1).
         self.cpf = somente_digitos(self.cpf)
         self.matricula = somente_digitos(self.matricula) or None
@@ -98,14 +98,14 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
         erros = {}
         if self.e_aluno:
             if not self.matricula:
-                erros["matricula"] = "Matricula e obrigatoria para aluno."
+                erros["matricula"] = "Matrícula é obrigatória para aluno."
             if self.siape:
-                erros["siape"] = "Aluno nao tem SIAPE."
+                erros["siape"] = "Aluno não tem SIAPE."
         else:
             if not self.siape:
-                erros["siape"] = "SIAPE e obrigatorio para professor e coordenador."
+                erros["siape"] = "SIAPE é obrigatório para professor e coordenador."
             if self.matricula:
-                erros["matricula"] = "Professor e coordenador nao tem matricula."
+                erros["matricula"] = "Professor e coordenador não têm matrícula."
         if erros:
             raise ValidationError(erros)
 

@@ -3,8 +3,8 @@ from django.utils.text import slugify
 
 
 class Tema(models.Model):
-    """Vocabulario controlado usado como filtro no catalogo publico (spec 4.4).
-    E controlado de proposito: com texto livre, 'robotica' e 'Robotica' viram dois
+    """Vocabulário controlado usado como filtro no catálogo público (spec 4.4).
+    É controlado de propósito: com texto livre, 'robótica' e 'Robótica' viram dois
     filtros diferentes e nenhum deles encontra tudo."""
 
     nome = models.CharField("nome", max_length=80, unique=True)

@@ -27,4 +27,4 @@ class Command(BaseCommand):
             return
         usuario.set_password(opcoes["senha"])
         usuario.save()
-        self.stdout.write(self.style.SUCCESS("Coordenador ja existia; senha atualizada."))
+        self.stdout.write(self.style.SUCCESS("Coordenador já existia; senha atualizada."))

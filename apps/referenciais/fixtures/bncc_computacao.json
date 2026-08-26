@@ -3,9 +3,9 @@
     "model": "referenciais.referencial",
     "pk": 1,
     "fields": {
-      "nome": "BNCC da Computacao",
+      "nome": "BNCC da Computação",
       "sigla": "BNCC-COMP",
-      "descricao": "Complemento a BNCC - Resolucao CNE/CEB no 1/2022",
+      "descricao": "Complemento à BNCC - Resolução CNE/CEB nº 1/2022",
       "min_competencias": 2,
       "max_competencias": 5,
       "ativo": true

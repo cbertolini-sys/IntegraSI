@@ -6,7 +6,7 @@ from apps.contas.models import Usuario
 
 
 def mascara_cpf(cpf):
-    """Mostra so os tres ultimos digitos e o verificador (spec 10)."""
+    """Mostra só os três últimos dígitos e o verificador (spec 10)."""
     if not cpf:
         return ""
     return f"***.***.{cpf[6:9]}-{cpf[9:11]}"
@@ -22,7 +22,7 @@ class UsuarioAdmin(UserAdmin):
     search_fields = ["nome_completo", "email", "matricula", "siape"]
     fieldsets = (
         (None, {"fields": ("email", "password")}),
-        ("Identificacao", {"fields": ("nome_completo", "cpf", "papel", "matricula", "siape")}),
+        ("Identificação", {"fields": ("nome_completo", "cpf", "papel", "matricula", "siape")}),
         ("Acesso", {"fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions")}),
     )
     add_fieldsets = (
