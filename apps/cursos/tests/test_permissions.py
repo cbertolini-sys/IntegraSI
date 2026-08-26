@@ -67,21 +67,31 @@ def test_professor_responsavel_revisa(curso_com_equipe, professor):
 @pytest.mark.django_db
 def test_aluno_de_fora_nao_envia_para_revisao(curso_com_equipe, outro_aluno):
     slides = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.SLIDES)
-    with pytest.raises(PermissionDenied):
+    with pytest.raises(PermissionDenied) as erro:
         services.enviar_para_revisao(slides, por=outro_aluno)
+    assert str(erro.value) == "Você não participa da equipe deste curso."
 
 
 @pytest.mark.django_db
 def test_aluno_nao_aprova_o_proprio_entregavel(curso_com_equipe, aluno):
     slides = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.SLIDES)
-    with pytest.raises(PermissionDenied):
+    with pytest.raises(PermissionDenied) as erro:
         services.aprovar_entregavel(slides, por=aluno)
+    assert str(erro.value) == "Somente o professor responsável revisa."
+
+
+@pytest.mark.django_db
+def test_aluno_nao_devolve_o_proprio_entregavel(curso_com_equipe, aluno):
+    slides = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.SLIDES)
+    with pytest.raises(PermissionDenied):
+        services.devolver_entregavel(slides, por=aluno, comentario="Corrija algo.")
 
 
 @pytest.mark.django_db
 def test_aluno_nao_monta_equipe(curso_com_equipe, aluno, outro_aluno):
-    with pytest.raises(PermissionDenied):
+    with pytest.raises(PermissionDenied) as erro:
         services.adicionar_membro(curso_com_equipe, outro_aluno, por=aluno)
+    assert str(erro.value) == "Somente o professor responsável monta a equipe."
 
 
 @pytest.mark.django_db
@@ -107,10 +117,10 @@ def test_aluno_de_fora_recebe_permission_denied_nao_estado_do_entregavel(curso_c
     ValidationError contando o estado do entregavel - vazando a existencia e a
     situacao de um curso que ele nem deveria enxergar - em vez de ser barrado
     por PermissionDenied sem informacao nenhuma."""
-    from django.core.exceptions import ValidationError
+    from apps.cursos.choices import StatusEntregavel
 
     slides = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.SLIDES)
-    slides.status = "em_revisao"
+    slides.status = StatusEntregavel.EM_REVISAO
     slides.save(update_fields=["status"])
 
     with pytest.raises(PermissionDenied):
