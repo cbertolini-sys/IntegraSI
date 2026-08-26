@@ -3,54 +3,54 @@ from django.db import models
 
 class StatusCurso(models.TextChoices):
     RASCUNHO = "RASCUNHO", "Rascunho"
-    EM_PRODUCAO = "EM_PRODUCAO", "Em producao"
+    EM_PRODUCAO = "EM_PRODUCAO", "Em produção"
     AGUARDANDO_COORDENADOR = "AGUARDANDO_COORDENADOR", "Aguardando coordenador"
     DEVOLVIDO = "DEVOLVIDO", "Devolvido pelo coordenador"
     PUBLICADO = "PUBLICADO", "Publicado"
     DESPUBLICADO = "DESPUBLICADO", "Despublicado"
-    SUBSTITUIDO = "SUBSTITUIDO", "Substituido por nova versao"
+    SUBSTITUIDO = "SUBSTITUIDO", "Substituído por nova versão"
 
 
 class StatusEntregavel(models.TextChoices):
     RASCUNHO = "RASCUNHO", "Rascunho"
-    EM_REVISAO = "EM_REVISAO", "Em revisao"
+    EM_REVISAO = "EM_REVISAO", "Em revisão"
     APROVADO = "APROVADO", "Aprovado"
     DEVOLVIDO = "DEVOLVIDO", "Devolvido"
 
 
 class TipoEntregavel(models.TextChoices):
-    PLANO_ENSINO = "PLANO_ENSINO", "A - Plano de Ensino e Mapeamento Pedagogico"
-    CARDS = "CARDS", "B - Infograficos e Cards Educativos"
-    CADERNO = "CADERNO", "C - Caderno de Exercicios e Atividades Praticas"
-    VIDEOS = "VIDEOS", "D - Video-Aulas"
-    SLIDES = "SLIDES", "E - Slides e Apresentacoes"
+    PLANO_ENSINO = "PLANO_ENSINO", "A - Plano de Ensino e Mapeamento Pedagógico"
+    CARDS = "CARDS", "B - Infográficos e Cards Educativos"
+    CADERNO = "CADERNO", "C - Caderno de Exercícios e Atividades Práticas"
+    VIDEOS = "VIDEOS", "D - Vídeo-Aulas"
+    SLIDES = "SLIDES", "E - Slides e Apresentações"
 
 
 class TipoPublico(models.TextChoices):
     ESCOLAR = "ESCOLAR", "Etapa escolar"
-    COMUNITARIO = "COMUNITARIO", "Publico da comunidade"
+    COMUNITARIO = "COMUNITARIO", "Público da comunidade"
 
 
 class Formato(models.TextChoices):
     PRESENCIAL = "PRESENCIAL", "Presencial"
-    HIBRIDO = "HIBRIDO", "Hibrido"
+    HIBRIDO = "HIBRIDO", "Híbrido"
     ONLINE = "ONLINE", "Online"
 
 
 class TipoMidia(models.TextChoices):
     ARQUIVO = "ARQUIVO", "Arquivo"
-    VIDEO = "VIDEO", "Video"
+    VIDEO = "VIDEO", "Vídeo"
     LINK = "LINK", "Link externo"
 
 
 class Rotulo(models.TextChoices):
-    NENHUM = "NENHUM", "Sem rotulo"
-    SEM_GABARITO = "SEM_GABARITO", "Versao sem gabarito"
-    COM_GABARITO = "COM_GABARITO", "Versao com gabarito"
+    NENHUM = "NENHUM", "Sem rótulo"
+    SEM_GABARITO = "SEM_GABARITO", "Versão sem gabarito"
+    COM_GABARITO = "COM_GABARITO", "Versão com gabarito"
 
 
 class TipoPratica(models.TextChoices):
-    NENHUM = "NENHUM", "Nao se aplica"
+    NENHUM = "NENHUM", "Não se aplica"
     PLUGADA = "PLUGADA", "Atividade plugada"
     DESPLUGADA = "DESPLUGADA", "Atividade desplugada"
     AMBAS = "AMBAS", "Plugada e desplugada"
