@@ -1,3 +1,4 @@
+from apps.cursos.models.curso import Curso
 from apps.cursos.models.tema import Tema
 
-__all__ = ["Tema"]
+__all__ = ["Curso", "Tema"]
