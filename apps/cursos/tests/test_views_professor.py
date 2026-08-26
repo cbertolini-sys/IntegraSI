@@ -105,3 +105,55 @@ def test_aluno_nao_decide(client, aluno, slides_em_revisao):
     client.force_login(aluno)
     resposta = client.post(reverse("decidir", args=[slides_em_revisao.pk]), {"decisao": "APROVAR"})
     assert resposta.status_code == 403
+
+
+@pytest.mark.django_db
+def test_equipe_de_outro_professor_devolve_403(client, dados_curso):
+    from apps.contas.models import Usuario
+
+    curso = services.criar_curso(**dados_curso)
+    outro = Usuario.objects.create_user(
+        email="outro.prof@ufsm.br", nome_completo="Elisa Esteves", cpf="111.444.777-35",
+        papel=Usuario.PROFESSOR, siape="9999999", password="senha-de-teste-123",
+    )
+    client.force_login(outro)
+    resposta = client.get(reverse("equipe", args=[curso.pk]))
+    assert resposta.status_code == 403
+
+
+@pytest.mark.django_db
+def test_aluno_nao_acessa_equipe(client, dados_curso, aluno):
+    curso = services.criar_curso(**dados_curso)
+    client.force_login(aluno)
+    resposta = client.get(reverse("equipe", args=[curso.pk]))
+    assert resposta.status_code == 403
+
+
+@pytest.mark.django_db
+def test_revisar_de_outro_professor_devolve_403(client, slides_em_revisao):
+    from apps.contas.models import Usuario
+
+    outro = Usuario.objects.create_user(
+        email="outro.prof@ufsm.br", nome_completo="Elisa Esteves", cpf="111.444.777-35",
+        papel=Usuario.PROFESSOR, siape="9999999", password="senha-de-teste-123",
+    )
+    client.force_login(outro)
+    resposta = client.get(reverse("revisar", args=[slides_em_revisao.pk]))
+    assert resposta.status_code == 403
+
+
+@pytest.mark.django_db
+def test_aluno_nao_acessa_revisar(client, aluno, slides_em_revisao):
+    client.force_login(aluno)
+    resposta = client.get(reverse("revisar", args=[slides_em_revisao.pk]))
+    assert resposta.status_code == 403
+
+
+@pytest.mark.django_db
+def test_revisar_mostra_conteudo_e_materiais(client, professor, slides_em_revisao):
+    client.force_login(professor)
+    resposta = client.get(reverse("revisar", args=[slides_em_revisao.pk]))
+    conteudo = resposta.content.decode()
+    assert resposta.status_code == 200
+    assert "Slides" in conteudo
+    assert slides_em_revisao.curso.titulo in conteudo
