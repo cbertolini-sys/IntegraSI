@@ -4,7 +4,7 @@ from django.urls import reverse
 from apps.cursos import services
 from apps.cursos.choices import StatusEntregavel, TipoEntregavel, TipoMidia, TipoPublico
 from apps.cursos.forms import CursoForm
-from apps.cursos.models import Anexo, Curso
+from apps.cursos.models import Anexo, Curso, Tema
 
 
 def test_curso_form_nao_inclui_competencias():
@@ -52,6 +52,40 @@ def test_professor_cria_proposta(client, professor, edicao):
 
 
 @pytest.mark.django_db
+def test_professor_cria_proposta_com_temas(client, professor, edicao):
+    tema1 = Tema.objects.create(nome="Robotica Educacional")
+    tema2 = Tema.objects.create(nome="Pensamento Computacional")
+    client.force_login(professor)
+    resposta = client.post(
+        reverse("nova_proposta"),
+        {
+            "titulo": "Curso com temas associados",
+            "resumo": "Resumo qualquer para o curso de teste.",
+            "edicao": edicao.pk,
+            "tipo_publico": TipoPublico.ESCOLAR,
+            "etapa_ano": "EF09",
+            "publico_descricao": "",
+            "carga_horaria": 8,
+            "formato": "PRESENCIAL",
+            "palavras_chave": "",
+            "temas": [tema1.pk, tema2.pk],
+        },
+        follow=True,
+    )
+    assert resposta.status_code == 200
+    curso = Curso.objects.get(titulo="Curso com temas associados")
+    assert set(curso.temas.values_list("pk", flat=True)) == {tema1.pk, tema2.pk}
+
+
+@pytest.mark.django_db
+def test_professor_ve_formulario_de_nova_proposta(client, professor):
+    client.force_login(professor)
+    resposta = client.get(reverse("nova_proposta"))
+    assert resposta.status_code == 200
+    assert "Nova proposta de curso" in resposta.content.decode()
+
+
+@pytest.mark.django_db
 def test_aluno_nao_cria_proposta(client, aluno):
     client.force_login(aluno)
     resposta = client.get(reverse("nova_proposta"))
@@ -65,6 +99,15 @@ def test_professor_monta_equipe(client, professor, dados_curso, aluno):
     resposta = client.post(reverse("equipe", args=[curso.pk]), {"aluno": aluno.pk}, follow=True)
     assert resposta.status_code == 200
     assert curso.tem_membro(aluno)
+
+
+@pytest.mark.django_db
+def test_equipe_sem_aluno_selecionado_nao_quebra(client, professor, dados_curso):
+    curso = services.criar_curso(**dados_curso)
+    client.force_login(professor)
+    resposta = client.post(reverse("equipe", args=[curso.pk]), {}, follow=True)
+    assert resposta.status_code == 200
+    assert "Selecione um aluno" in resposta.content.decode()
 
 
 @pytest.mark.django_db
@@ -165,11 +208,46 @@ def test_aluno_nao_acessa_revisar(client, aluno, slides_em_revisao):
     assert resposta.status_code == 403
 
 
+@pytest.fixture
+def plano_em_revisao(dados_curso, aluno, arquivo_qualquer):
+    curso = services.criar_curso(**dados_curso)
+    services.adicionar_membro(curso, aluno, por=curso.professor_responsavel)
+    plano = curso.entregaveis.get(tipo=TipoEntregavel.PLANO_ENSINO)
+    secao = plano.secoes.first()
+    secao.conteudo = "<p>Texto exclusivo da ementa de teste.</p>"
+    secao.save()
+    Anexo.objects.create(
+        entregavel=plano, tipo_midia=TipoMidia.ARQUIVO, titulo="Plano de Ensino Definitivo",
+        arquivo=arquivo_qualquer, enviado_por=aluno,
+    )
+    services.enviar_para_revisao(plano, por=aluno)
+    return plano
+
+
 @pytest.mark.django_db
-def test_revisar_mostra_conteudo_e_materiais(client, professor, slides_em_revisao):
+def test_revisar_mostra_pendencia_que_surgiu_depois_do_envio(client, professor, plano_em_revisao):
+    # Ruling do controller: o curso pode ser editado depois que o entregavel foi
+    # enviado, entao uma pendencia pode aparecer so depois - o professor precisa ver
+    # isso ENQUANTO revisa, nao so depois de aprovar. Contorna o full_clean() de
+    # Curso.save() de proposito (update() nao chama save()) para simular esse dado
+    # que ficou invalido depois do envio, sem reabrir o entregavel.
+    Curso.objects.filter(pk=plano_em_revisao.curso_id).update(formato="")
     client.force_login(professor)
-    resposta = client.get(reverse("revisar", args=[slides_em_revisao.pk]))
+    resposta = client.get(reverse("revisar", args=[plano_em_revisao.pk]))
     conteudo = resposta.content.decode()
     assert resposta.status_code == 200
-    assert "Slides" in conteudo
-    assert slides_em_revisao.curso.titulo in conteudo
+    assert "Informe o formato do curso." in conteudo
+
+
+@pytest.mark.django_db
+def test_revisar_mostra_conteudo_e_materiais(client, professor, plano_em_revisao):
+    # "Slides" nao serve de pista aqui: aparece no <h1> via get_tipo_display mesmo
+    # que a lista de materiais e o loop de secoes quebrem por completo (falso
+    # positivo apontado na revisao). Por isso o fixture usa titulo e conteudo de
+    # secao proprios, que so aparecem se os respectivos loops do template rodarem.
+    client.force_login(professor)
+    resposta = client.get(reverse("revisar", args=[plano_em_revisao.pk]))
+    conteudo = resposta.content.decode()
+    assert resposta.status_code == 200
+    assert "Plano de Ensino Definitivo" in conteudo
+    assert "Texto exclusivo da ementa de teste." in conteudo
