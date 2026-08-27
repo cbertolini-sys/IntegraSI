@@ -17,8 +17,25 @@ def curso_pronto(dados_curso, aluno):
 
 
 @pytest.mark.django_db
-def test_submeter_exige_os_cinco_aprovados(dados_curso, professor):
+def test_submeter_exige_os_cinco_aprovados(dados_curso, aluno, professor):
+    """Isola a guarda dos cinco aprovados: o curso precisa estar em EM_PRODUCAO
+    (adicionar_membro tira do RASCUNHO) para que a guarda de status nao dispare
+    tambem e mascare qual das duas recusou."""
     curso = services.criar_curso(**dados_curso)
+    services.adicionar_membro(curso, aluno, por=professor)
+    curso.refresh_from_db()
+    assert curso.status == StatusCurso.EM_PRODUCAO
+    with pytest.raises(ValidationError):
+        services.submeter_ao_coordenador(curso, por=professor)
+
+
+@pytest.mark.django_db
+def test_submeter_exige_curso_em_producao_ou_devolvido(dados_curso, professor):
+    """Isola a guarda de status: os cinco entregaveis aprovados de proposito,
+    para que so a guarda de status (curso ainda RASCUNHO) possa recusar."""
+    curso = services.criar_curso(**dados_curso)
+    assert curso.status == StatusCurso.RASCUNHO
+    curso.entregaveis.update(status=StatusEntregavel.APROVADO)
     with pytest.raises(ValidationError):
         services.submeter_ao_coordenador(curso, por=professor)
 
@@ -104,6 +121,40 @@ def test_devolver_ao_professor_exige_comentario(curso_pronto, professor, coorden
     services.submeter_ao_coordenador(curso_pronto, por=professor)
     with pytest.raises(ValidationError):
         services.devolver_curso(curso_pronto, por=coordenador, comentario=" ")
+
+
+@pytest.mark.django_db
+def test_devolver_curso_ja_devolvido_e_recusado(curso_pronto, professor, coordenador):
+    """So se devolve curso que esta aguardando aprovacao (spec 5, 11). Sem esta
+    guarda o coordenador poderia devolver de novo um curso ja DEVOLVIDO,
+    reabrindo os cinco entregaveis (R54) e reenfileirando o aviso ao professor
+    uma segunda vez, silenciosamente. comentario preenchido de proposito, para
+    que so a guarda de status possa recusar."""
+    services.submeter_ao_coordenador(curso_pronto, por=professor)
+    services.devolver_curso(curso_pronto, por=coordenador, comentario="Primeira devolucao.")
+    curso_pronto.refresh_from_db()
+    assert curso_pronto.status == StatusCurso.DEVOLVIDO
+    with pytest.raises(ValidationError):
+        services.devolver_curso(curso_pronto, por=coordenador, comentario="Segunda devolucao.")
+
+
+@pytest.mark.django_db
+def test_despublicar_curso_que_nunca_foi_publicado_e_recusado(curso_pronto, coordenador):
+    """Este curso nao esta publicado (spec 5, 11): sem a guarda de status,
+    despublicar_curso aceitaria um curso que nunca chegou a PUBLICADO. motivo
+    preenchido de proposito, para que so a guarda de status possa recusar."""
+    with pytest.raises(ValidationError):
+        services.despublicar_curso(curso_pronto, por=coordenador, motivo="Motivo qualquer.")
+
+
+@pytest.mark.django_db
+def test_despublicar_exige_motivo(curso_pronto, professor, coordenador):
+    """Espelha test_devolver_ao_professor_exige_comentario: despublicar_curso tem
+    a mesma guarda de motivo obrigatorio que devolver_curso tem para comentario."""
+    services.submeter_ao_coordenador(curso_pronto, por=professor)
+    services.publicar_curso(curso_pronto, por=coordenador)
+    with pytest.raises(ValidationError):
+        services.despublicar_curso(curso_pronto, por=coordenador, motivo=" ")
 
 
 @pytest.mark.django_db
