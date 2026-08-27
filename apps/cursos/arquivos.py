@@ -4,6 +4,11 @@ from pathlib import Path
 from django.core.exceptions import ValidationError
 
 MEGA = 1024 * 1024
+GIGA = 1024 * MEGA
+
+# Teto do video (spec 8). Vive aqui, e nao no model, porque quem valida o nome e o
+# tamanho declarados antes de abrir o upload e `valida_upload`.
+LIMITE_VIDEO = 1 * GIGA
 
 # Assinatura no inicio do arquivo -> mime. Conferir o conteudo, e nao a extensao,
 # e o que impede um executavel renomeado para .pdf de entrar no sistema (spec 8).
@@ -13,12 +18,16 @@ ASSINATURAS = [
     (b"\xff\xd8\xff", "image/jpeg"),
     (b"PK\x03\x04", "application/zip"),  # pptx, odp e docx sao zip
 ]
+# MP4 nao entra na tabela acima: nao tem assinatura no inicio. O primeiro campo e
+# o tamanho da caixa, e o tipo ('ftyp') vem nos bytes 4 a 8 — ver `detecta_mime`.
+CAIXA_FTYP = slice(4, 8)
 
 LIMITES = {
     "application/pdf": 20 * MEGA,
     "image/png": 10 * MEGA,
     "image/jpeg": 10 * MEGA,
     "application/zip": 50 * MEGA,
+    "video/mp4": LIMITE_VIDEO,
 }
 
 EXTENSOES = {
@@ -29,6 +38,7 @@ EXTENSOES = {
     ".pptx": "application/zip",
     ".odp": "application/zip",
     ".docx": "application/zip",
+    ".mp4": "video/mp4",
 }
 
 
@@ -37,6 +47,8 @@ def detecta_mime(cabecalho):
     for assinatura, mime in ASSINATURAS:
         if cabecalho.startswith(assinatura):
             return mime
+    if cabecalho[CAIXA_FTYP] == b"ftyp":
+        return "video/mp4"
     return None
 
 
