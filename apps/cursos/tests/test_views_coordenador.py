@@ -66,6 +66,36 @@ def test_professor_nao_entra_na_fila_da_coordenacao(client, professor, curso_sub
 
 
 @pytest.mark.django_db
+def test_fila_da_coordenacao_exclui_curso_em_outro_status(
+    client, coordenador, professor, aluno, dados_curso, curso_submetido
+):
+    # A unica coisa que os testes anteriores provam e que o curso certo aparece.
+    # Um filtro que virasse "todos os cursos" (ou perdesse o status=) passaria em
+    # todos eles sem ser notado - este teste crava a exclusao, nao so a inclusao.
+    # EM_PRODUCAO e o falso positivo realista: e o estado de todo curso com equipe
+    # montada que ainda nao foi submetido. PUBLICADO cobre a outra ponta: um curso
+    # que ja passou pela fila nao deveria voltar a aparecer nela.
+    em_producao = services.criar_curso(**{**dados_curso, "titulo": "Robótica com Sucata"})
+    services.adicionar_membro(em_producao, aluno, por=professor)
+    assert em_producao.status == StatusCurso.EM_PRODUCAO
+
+    publicado = services.criar_curso(**{**dados_curso, "titulo": "Iniciação a Python"})
+    services.adicionar_membro(publicado, aluno, por=professor)
+    publicado.entregaveis.update(status=StatusEntregavel.APROVADO)
+    publicado.refresh_from_db()
+    services.submeter_ao_coordenador(publicado, por=professor)
+    services.publicar_curso(publicado, por=coordenador)
+    assert publicado.status == StatusCurso.PUBLICADO
+
+    client.force_login(coordenador)
+    resposta = client.get(reverse("fila_coordenacao"))
+    conteudo = resposta.content.decode()
+    assert curso_submetido.titulo in conteudo
+    assert em_producao.titulo not in conteudo
+    assert publicado.titulo not in conteudo
+
+
+@pytest.mark.django_db
 def test_professor_nao_acessa_a_analise(client, professor, curso_submetido):
     client.force_login(professor)
     resposta = client.get(reverse("analisar_curso", args=[curso_submetido.pk]))

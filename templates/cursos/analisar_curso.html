@@ -11,8 +11,9 @@
       {% for secao in entregavel.secoes.all %}
         {# O |safe abaixo e seguro: Secao.save() sanitiza o conteudo com nh3 antes de
            gravar, incondicionalmente, mesmo em update_fields (Task 4). E o terceiro
-           lugar do sistema que renderiza HTML vindo do banco sem escape (o primeiro
-           e revisar.html) - depende dessa sanitizacao acontecer antes, nao aqui. #}
+           lugar do sistema que renderiza HTML vindo do banco sem escape (os outros
+           dois sao revisar.html e _secao.html) - depende dessa sanitizacao
+           acontecer antes, nao aqui. #}
         <h3>{{ secao.titulo }}</h3><div>{{ secao.conteudo|safe }}</div>
       {% endfor %}
       <ul>{% for anexo in entregavel.anexos.all %}<li>{{ anexo.titulo }}</li>{% endfor %}</ul>
