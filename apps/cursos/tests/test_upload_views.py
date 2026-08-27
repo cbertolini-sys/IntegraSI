@@ -18,17 +18,25 @@ As regras que este arquivo prende, na ordem em que aparecem:
 11. `upload_concluir` cria Arquivo + Anexo de video e apaga o registro.
 12. `upload_concluir` recusa upload incompleto -> 400, sem Anexo.
 13. `upload_concluir` recusa conteudo que nao bate com a extensao declarada.
+13b. Inclusive no sentido inverso: MP4 declarado como `.pdf`. E o unico caso em
+    que a conferencia de extensao da conclusao aparece sozinha — nos outros a
+    regra "so video" ja teria barrado, e as duas guardas ficariam indistinguiveis.
 14. `upload_concluir` recusa arquivo que nao e video MP4.
 15. `upload_concluir` reconfere `pode_editar_producao`: meia hora de upload cabe
     inteira dentro da janela em que o professor aprova o entregavel.
 16. Duracao ausente ou zero e recusada ANTES de qualquer byte ir para o disco:
     senao a validacao de Anexo derruba a transacao e deixa o arquivo copiado orfao.
+16b. Titulo em branco, pelo mesmo motivo e antes dos mesmos bytes.
 17. O parcial so e apagado depois do commit: uma conclusao desfeita nao pode
     deixar o registro de volta apontando para um arquivo que nao existe mais.
 18. Uma conclusao que commita apaga o parcial.
 19. Corpo que nao e JSON valido -> 400, nunca 500.
+19b. Corpo que e uma lista JSON com os nomes dos campos dentro: passa pela
+    checagem de chave (`"titulo" in ["titulo", ...]` e verdadeiro) e so morre no
+    `dados["titulo"]`. Quem barra e a exigencia de que o corpo seja um objeto.
 20. Chave obrigatoria ausente -> 400, nunca 500.
 21. Campo numerico com lixo -> 400, nunca 500.
+21b. Campo textual com lixo tambem: `Path(["aula.mp4"])` levanta TypeError.
 22. Metodo errado -> 405 nas quatro rotas.
 23. Visitante anonimo vai para o login nas quatro rotas.
 24. A conclusao nunca le o arquivo inteiro de uma vez (spec 8).
@@ -299,6 +307,27 @@ def test_conteudo_que_nao_bate_com_a_extensao_e_recusado_na_conclusao(
     assert Anexo.objects.count() == 0
 
 
+# Regra 13b
+@pytest.mark.django_db
+def test_mp4_declarado_com_extensao_de_pdf_e_recusado_na_conclusao(
+    client, aluno, entregavel_videos
+):
+    """O contrario da regra 13, e o unico caso que separa as duas guardas da
+    conclusao. Conteudo que nao e video morre na regra "so video MP4" mesmo sem
+    conferencia de extensao; MP4 anunciado como `.pdf` atravessa essa regra
+    (o conteudo E video/mp4) e so `valida_upload` o barra. Sem ela, o Anexo
+    entraria com um nome_original que mente sobre o conteudo — e o teto cobrado
+    na abertura teria sido o do PDF, nao o do video."""
+    client.force_login(aluno)
+    identificador = inicia(client, entregavel_videos, nome="aula.pdf").json()["identificador"]
+    envia(client, identificador, MP4)
+
+    resposta = conclui(client, identificador)
+
+    assert resposta.status_code == 400
+    assert not Anexo.objects.exists()
+
+
 # Regra 14
 @pytest.mark.django_db
 def test_arquivo_coerente_que_nao_e_video_e_recusado_na_conclusao(
@@ -348,6 +377,23 @@ def test_duracao_zerada_e_recusada_antes_de_copiar_os_bytes(client, aluno, uploa
     client.force_login(aluno)
 
     resposta = conclui(client, str(upload_completo.identificador), duracao_minutos=0)
+
+    assert resposta.status_code == 400
+    assert not Anexo.objects.exists()
+    assert not Arquivo.objects.exists()
+    assert materiais_em_disco() == []
+
+
+# Regra 16b
+@pytest.mark.django_db
+def test_titulo_em_branco_e_recusado_antes_de_copiar_os_bytes(client, aluno, upload_completo):
+    """Mesma armadilha da regra 16 pelo outro campo obrigatorio do Anexo. So que
+    pior: `"   "` nao esta em `empty_values`, entao `Anexo.full_clean()` ACEITA —
+    sem esta checagem o video entra com titulo em branco. Um `titulo=""` seria
+    recusado no fim, e ainda assim tarde demais: o arquivo ja estaria em disco."""
+    client.force_login(aluno)
+
+    resposta = conclui(client, str(upload_completo.identificador), titulo="   ")
 
     assert resposta.status_code == 400
     assert not Anexo.objects.exists()
@@ -493,6 +539,44 @@ def test_entregavel_que_nao_e_numero_vira_400(client, aluno, entregavel_videos):
     )
 
     assert resposta.status_code == 400
+
+
+# Regra 19b
+@pytest.mark.django_db
+def test_conclusao_com_lista_json_no_lugar_do_objeto_vira_400(client, aluno, upload_completo):
+    """`[1, 2, 3]` nao prova a regra: nenhum nome de campo esta dentro, entao a
+    checagem de chave obrigatoria ja recusa. Uma lista com os NOMES dentro passa
+    por ela (`"titulo" in ["titulo", ...]` e verdadeiro) e chega ao
+    `dados["titulo"]`, que levanta TypeError — 500. Quem a barra e a exigencia de
+    que o corpo decodificado seja um objeto JSON."""
+    client.force_login(aluno)
+
+    resposta = client.post(
+        reverse("upload_concluir", args=[str(upload_completo.identificador)]),
+        data=b'["titulo", "duracao_minutos"]',
+        content_type="application/json",
+    )
+
+    assert resposta.status_code == 400
+    assert not Anexo.objects.exists()
+
+
+# Regra 21b
+@pytest.mark.django_db
+def test_nome_que_nao_e_texto_vira_400(client, aluno, entregavel_videos):
+    """O irmao textual da regra 21. `nome` vai direto para `Path(...)`, que
+    levanta TypeError diante de uma lista — 500 por corpo malformado do cliente."""
+    client.force_login(aluno)
+
+    resposta = client.post(
+        reverse("upload_iniciar"),
+        data=json.dumps({"entregavel": entregavel_videos.pk, "nome": ["aula.mp4"],
+                         "tamanho": len(MP4)}),
+        content_type="application/json",
+    )
+
+    assert resposta.status_code == 400
+    assert not UploadEmAndamento.objects.exists()
 
 
 # --- Regras 22 e 23: metodo e portao de login -----------------------------
