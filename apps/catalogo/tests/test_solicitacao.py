@@ -1,5 +1,8 @@
+import datetime
+
 import pytest
 from django.urls import reverse
+from django.utils import timezone
 
 from apps.catalogo.models import Solicitacao
 from apps.cursos import services
@@ -70,15 +73,29 @@ def test_get_nao_cria_solicitacao(client, curso_publicado):
     resposta = client.get(reverse("solicitar", args=[curso_publicado.pk]))
     assert resposta.status_code == 200
     assert Solicitacao.objects.count() == 0
+    # Pino o motivo de existir o branch de metodo na view (achado da revisao): sem
+    # ele, GET tambem construiria SolicitacaoForm(request.POST) com um QueryDict
+    # vazio - form "bound" e sujo de erro em todo campo obrigatorio na primeira
+    # visita a pagina, nunca a exibicao limpa que um formulario de entrada espera.
+    form = resposta.context["form"]
+    assert not form.is_bound
+    assert not form.errors
 
 
 @pytest.mark.django_db
 def test_honeypot_preenchido_e_descartado_em_silencio(client, curso_publicado):
-    dados = dados_validos()
-    dados["confirmacao"] = "sou um robo"
-    resposta = client.post(reverse("solicitar", args=[curso_publicado.pk]), dados, follow=True)
-    assert resposta.status_code == 200
-    assert Solicitacao.objects.count() == 0
+    resposta_humana = client.post(reverse("solicitar", args=[curso_publicado.pk]), dados_validos(), follow=True)
+
+    dados_robo = dados_validos()
+    dados_robo["confirmacao"] = "sou um robo"
+    resposta_robo = client.post(reverse("solicitar", args=[curso_publicado.pk]), dados_robo, follow=True)
+
+    assert resposta_robo.status_code == 200
+    # Nao basta nao escrever nada: uma pagina de erro distinguivel tambem
+    # cumpriria "nao escreveu", mas ensinaria o robo o que mudar da proxima vez.
+    # A resposta ao robo precisa ser byte a byte a mesma que a pessoa recebeu.
+    assert resposta_robo.content == resposta_humana.content
+    assert Solicitacao.objects.count() == 1  # so a submissao humana
 
 
 @pytest.mark.django_db
@@ -88,9 +105,38 @@ def test_limite_por_ip(client, curso_publicado):
     for _ in range(LIMITE_POR_IP_POR_HORA):
         client.post(reverse("solicitar", args=[curso_publicado.pk]), dados_validos())
     assert Solicitacao.objects.count() == LIMITE_POR_IP_POR_HORA
-    resposta = client.post(reverse("solicitar", args=[curso_publicado.pk]), dados_validos(), follow=True)
-    assert "muitas solicitações" in resposta.content.decode().lower()
+
+    recusada = client.post(reverse("solicitar", args=[curso_publicado.pk]), dados_validos(), follow=True)
+    assert "muitas solicitações" in recusada.content.decode().lower()
     assert Solicitacao.objects.count() == LIMITE_POR_IP_POR_HORA
+
+    # O limite e por IP, nao global: de outro endereco, a solicitacao seguinte
+    # precisa ser aceita mesmo com o primeiro IP esgotado. Um count() sem o
+    # filtro de ip_origem recusaria esta tambem.
+    client.post(
+        reverse("solicitar", args=[curso_publicado.pk]), dados_validos(), REMOTE_ADDR="203.0.113.7"
+    )
+    assert Solicitacao.objects.count() == LIMITE_POR_IP_POR_HORA + 1
+
+
+@pytest.mark.django_db
+def test_limite_por_hora(client, curso_publicado):
+    from apps.catalogo.views import LIMITE_POR_IP_POR_HORA
+
+    for _ in range(LIMITE_POR_IP_POR_HORA):
+        client.post(reverse("solicitar", args=[curso_publicado.pk]), dados_validos())
+    assert Solicitacao.objects.count() == LIMITE_POR_IP_POR_HORA
+
+    # Empurra as solicitacoes existentes para fora da janela de uma hora.
+    # criado_em e auto_now_add: so um update() de queryset (que ignora o
+    # comportamento automatico do campo) consegue reescreve-lo.
+    mais_de_uma_hora_atras = timezone.now() - datetime.timedelta(hours=2)
+    Solicitacao.objects.update(criado_em=mais_de_uma_hora_atras)
+
+    # Com a janela expirada, o mesmo IP volta a poder solicitar. Sem o filtro de
+    # criado_em__gte, o limite valeria para sempre e este POST seguiria recusado.
+    client.post(reverse("solicitar", args=[curso_publicado.pk]), dados_validos())
+    assert Solicitacao.objects.count() == LIMITE_POR_IP_POR_HORA + 1
 
 
 @pytest.mark.django_db
