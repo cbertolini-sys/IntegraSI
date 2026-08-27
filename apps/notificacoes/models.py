@@ -12,6 +12,10 @@ class Notificacao(models.Model):
     tentativas = models.PositiveSmallIntegerField("tentativas", default=0)
     enviado_em = models.DateTimeField("enviado em", null=True, blank=True)
     ultimo_erro = models.TextField("último erro", blank=True)
+    # Recuo progressivo (spec 9): quando uma tentativa falha, o comando grava
+    # aqui o instante a partir do qual vale tentar de novo. Nulo = nunca falhou
+    # ainda, portanto elegivel na primeira passada do cron.
+    proxima_tentativa_em = models.DateTimeField("próxima tentativa em", null=True, blank=True)
     criado_em = models.DateTimeField("criado em", auto_now_add=True)
 
     class Meta:

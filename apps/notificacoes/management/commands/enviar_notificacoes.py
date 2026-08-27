@@ -4,10 +4,11 @@ from pathlib import Path
 from django.conf import settings
 from django.core.mail import send_mail
 from django.core.management.base import BaseCommand
+from django.db.models import Q
 from django.utils import timezone
 
 from apps.notificacoes.models import Notificacao
-from apps.notificacoes.services import LIMITE_TENTATIVAS
+from apps.notificacoes.services import LIMITE_TENTATIVAS, recuo
 
 TRAVA = Path(settings.BASE_DIR) / "enviar_notificacoes.lock"
 
@@ -30,8 +31,17 @@ class Command(BaseCommand):
             self._enviar(opcoes["lote"])
 
     def _enviar(self, lote):
+        agora = timezone.now()
         pendentes = Notificacao.objects.filter(
-            enviado_em__isnull=True, tentativas__lt=LIMITE_TENTATIVAS
+            # enviado_em__isnull=True e o que impede o reenvio: o cron passa a cada
+            # minuto e, sem esta metade do filtro, toda notificacao ja entregue
+            # volta para a fila e e reenviada ate tentativas bater no limite.
+            enviado_em__isnull=True,
+            tentativas__lt=LIMITE_TENTATIVAS,
+        ).filter(
+            # Recuo progressivo (spec 9): quem falhou ha pouco espera a janela
+            # passar. Nulo e quem nunca falhou - entra na primeira passada.
+            Q(proxima_tentativa_em__isnull=True) | Q(proxima_tentativa_em__lte=agora)
         )[:lote]
         enviadas = 0
         for notificacao in pendentes:
@@ -46,7 +56,10 @@ class Command(BaseCommand):
             except Exception as erro:
                 notificacao.tentativas += 1
                 notificacao.ultimo_erro = str(erro)
-                notificacao.save(update_fields=["tentativas", "ultimo_erro"])
+                notificacao.proxima_tentativa_em = agora + recuo(notificacao.tentativas)
+                notificacao.save(
+                    update_fields=["tentativas", "ultimo_erro", "proxima_tentativa_em"]
+                )
                 continue
             notificacao.enviado_em = timezone.now()
             notificacao.tentativas += 1
