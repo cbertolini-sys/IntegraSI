@@ -45,8 +45,15 @@ def test_visitante_solicita_sem_login(client, curso_publicado):
 
 @pytest.mark.django_db
 def test_solicitacao_avisa_professor_e_coordenador(client, curso_publicado, professor, coordenador):
+    # curso_publicado ja enfileira notificacoes para professor e coordenador so
+    # de percorrer o ciclo de vida do curso (CURSO_SUBMETIDO, CURSO_PUBLICADO);
+    # filtrar por evento='SOLICITACAO_RECEBIDA' e o que garante que e a view
+    # deste teste - nao a fixture - quem esta avisando os dois. Sem o filtro o
+    # teste passa mesmo que a view nunca chame enfileirar (achado do self-review).
     client.post(reverse("solicitar", args=[curso_publicado.pk]), dados_validos())
-    destinatarios = set(Notificacao.objects.values_list("destinatario", flat=True))
+    destinatarios = set(
+        Notificacao.objects.filter(evento="SOLICITACAO_RECEBIDA").values_list("destinatario", flat=True)
+    )
     assert {professor.email, coordenador.email} <= destinatarios
 
 
