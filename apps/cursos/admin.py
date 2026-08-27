@@ -44,3 +44,17 @@ class CursoAdmin(admin.ModelAdmin):
 
     def has_add_permission(self, request):
         return False
+
+    def save_related(self, request, form, formsets, change):
+        # save_related, nao save_model: o M2M (inclusive "temas", via
+        # filter_horizontal) so existe depois que o ModelAdmin grava as relacoes
+        # aqui - em save_model o form.instance.temas ainda esta vazio, e
+        # reindexar la reindexaria para nada. Sem este hook, associar um tema a
+        # um curso pelo Admin escreve Curso.temas pelo form.save_m2m() padrao do
+        # Django, a mesma escrita direta que nova_proposta fazia antes do fix
+        # deste mesmo defeito na view - so que por esta porta e o coordenador,
+        # nao o professor, quem fica com o curso invisivel na busca por tema.
+        super().save_related(request, form, formsets, change)
+        from apps.cursos.services import atualizar_vetor_temas
+
+        atualizar_vetor_temas(form.instance)
