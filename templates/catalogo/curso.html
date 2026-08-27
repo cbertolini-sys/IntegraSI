@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block titulo %}{{ curso.titulo }}{% endblock %}
+{% block conteudo %}
+  <h1>{{ curso.titulo }}</h1>
+  <p>{{ curso.publico_alvo }} &middot; {{ curso.carga_horaria }} horas &middot; {{ curso.get_formato_display }}</p>
+  <p>{{ curso.resumo }}</p>
+
+  {% if curso.pre_requisitos %}<h2>Pré-requisitos</h2><p>{{ curso.pre_requisitos }}</p>{% endif %}
+
+  {% if curso.temas.exists %}
+    <h2>Temas</h2>
+    <ul>{% for tema in curso.temas.all %}<li>{{ tema.nome }}</li>{% endfor %}</ul>
+  {% endif %}
+
+  {% if curso.referencial %}
+    <h2>{{ curso.referencial.nome }}</h2>
+    <ul>
+      {% for competencia in curso.competencias.all %}
+        <li>{{ competencia.codigo }} &mdash; {{ competencia.descricao }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endblock %}

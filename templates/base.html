@@ -9,7 +9,7 @@
 </head>
 <body>
   <header>
-    <a href="{% url 'painel' %}">IntegraSI</a>
+    <a href="{% url 'catalogo' %}">IntegraSI</a>
     {% if user.is_authenticated %}
       <span>{{ user.nome_completo }} &mdash; {{ user.get_papel_display }}</span>
       <form method="post" action="{% url 'logout' %}">

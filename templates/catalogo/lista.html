@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block titulo %}Catálogo de cursos de extensão{% endblock %}
+{% block conteudo %}
+  <h1>Cursos de extensão</h1>
+  <p>Cursos e oficinas produzidos pelo curso de Sistemas de Informação da UFSM &mdash; Frederico Westphalen.</p>
+
+  <form method="get">
+    <input type="search" name="q" value="{{ filtros.q }}" placeholder="Buscar por assunto">
+    <select name="etapa">
+      <option value="">Qualquer etapa escolar</option>
+      {% for codigo, nome in etapas %}
+        <option value="{{ codigo }}" {% if filtros.etapa == codigo %}selected{% endif %}>{{ nome }}</option>
+      {% endfor %}
+    </select>
+    <select name="tema">
+      <option value="">Qualquer tema</option>
+      {% for tema in temas %}
+        <option value="{{ tema.slug }}" {% if filtros.tema == tema.slug %}selected{% endif %}>{{ tema.nome }}</option>
+      {% endfor %}
+    </select>
+    <select name="formato">
+      <option value="">Qualquer formato</option>
+      {% for codigo, nome in formatos %}
+        <option value="{{ codigo }}" {% if filtros.formato == codigo %}selected{% endif %}>{{ nome }}</option>
+      {% endfor %}
+    </select>
+    <select name="referencial">
+      <option value="">Qualquer referencial</option>
+      {% for ref in referenciais %}
+        <option value="{{ ref.sigla }}" {% if filtros.referencial == ref.sigla %}selected{% endif %}>{{ ref.nome }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit">Filtrar</button>
+  </form>
+
+  {% for curso in cursos %}
+    <article>
+      <h2><a href="{% url 'catalogo_curso' curso.pk %}">{{ curso.titulo }}</a></h2>
+      <p>{{ curso.publico_alvo }} &middot; {{ curso.carga_horaria }}h &middot; {{ curso.get_formato_display }}</p>
+      <p>{{ curso.resumo|truncatewords:30 }}</p>
+    </article>
+  {% empty %}
+    <p>Nenhum curso encontrado com esses filtros.</p>
+  {% endfor %}
+{% endblock %}

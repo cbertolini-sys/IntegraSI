@@ -1,0 +1,8 @@
+from django.urls import path
+
+from apps.catalogo import views
+
+urlpatterns = [
+    path("", views.catalogo, name="catalogo"),
+    path("cursos/<int:pk>/publico/", views.catalogo_curso, name="catalogo_curso"),
+]
