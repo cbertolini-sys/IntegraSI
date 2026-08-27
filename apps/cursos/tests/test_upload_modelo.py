@@ -22,6 +22,8 @@ As regras que este arquivo prende, na ordem em que aparecem:
 13. Sobra de bloco interrompido nao sobrevive ao reenvio: o arquivo parcial tem
     sempre exatamente `tamanho_recebido` bytes.
 14. `completo` e verdadeiro quando o recebido alcanca o total.
+15. Bytes primeiro, registro depois: se a gravacao falha, o registro nao
+    avanca. Um registro na frente do disco deixaria um buraco no arquivo.
 """
 
 from pathlib import Path
@@ -195,3 +197,24 @@ def test_sobra_de_bloco_interrompido_nao_sobrevive_ao_reenvio(novo_upload):
 
     assert upload.caminho().read_bytes() == b"12345678"
     assert upload.caminho().stat().st_size == upload.tamanho_recebido
+
+
+# Regra 15
+@pytest.mark.django_db
+def test_registro_nao_avanca_quando_a_gravacao_falha(novo_upload, monkeypatch):
+    """Se o registro fosse gravado antes dos bytes, uma escrita que falha deixaria
+    `tamanho_recebido` na frente do arquivo — e o proximo bloco cairia depois de um
+    buraco que nada detecta. O registro pode ficar atras do disco (o reenvio
+    conserta); na frente, nunca."""
+    upload = novo_upload(8)
+    upload.acrescentar(b"1234")
+
+    # MEDIA_ROOT e um diretorio: abrir para escrita levanta IsADirectoryError.
+    monkeypatch.setattr(UploadEmAndamento, "caminho", lambda self: Path(settings.MEDIA_ROOT))
+    with pytest.raises(OSError):
+        upload.acrescentar(b"5678")
+    monkeypatch.undo()
+
+    assert upload.tamanho_recebido == 4
+    assert UploadEmAndamento.objects.get(pk=upload.pk).tamanho_recebido == 4
+    assert upload.caminho().read_bytes() == b"1234"
