@@ -110,9 +110,11 @@ def test_professor_desativado_nao_conduz_turma(solicitacao, outro_professor, coo
 @pytest.mark.django_db
 def test_professor_desativado_fica_fora_do_formulario_de_turma(outro_professor):
     """A tela não é a guarda (essa é Turma.clean), mas oferecer no select alguém
-    que o model vai recusar é um erro de apresentação garantido. Separado da
-    metade `papel` do mesmo queryset de propósito: uma asserção que cobrisse as
-    duas passaria com qualquer uma das duas apagada."""
+    que o model vai recusar é um erro de apresentação garantido.
+
+    Só a metade `is_active` do queryset: a metade `papel` é do teste irmão
+    abaixo. Uma asserção única sobre o queryset passaria com qualquer uma das
+    duas apagada - foi o que a re-revisão pegou nesta própria correção."""
     from apps.turmas.forms import TurmaForm
 
     escolhas = TurmaForm().fields["professor"].queryset
@@ -120,6 +122,19 @@ def test_professor_desativado_fica_fora_do_formulario_de_turma(outro_professor):
     outro_professor.is_active = False
     outro_professor.save()
     assert outro_professor not in TurmaForm().fields["professor"].queryset
+
+
+@pytest.mark.django_db
+def test_quem_nao_e_professor_fica_fora_do_formulario_de_turma(aluno, outro_professor):
+    """A outra metade do mesmo queryset. O aluno está ativo de propósito: assim
+    só o filtro por `papel` pode excluí-lo, e apagar `is_active=True` não derruba
+    este teste (nem o daqui de cima derruba por causa do `papel`)."""
+    from apps.turmas.forms import TurmaForm
+
+    assert aluno.is_active
+    escolhas = TurmaForm().fields["professor"].queryset
+    assert outro_professor in escolhas
+    assert aluno not in escolhas
 
 
 @pytest.mark.django_db

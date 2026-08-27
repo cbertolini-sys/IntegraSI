@@ -31,7 +31,9 @@ class Command(BaseCommand):
             self._enviar(opcoes["lote"])
 
     def _enviar(self, lote):
-        agora = timezone.now()
+        # Instante da montagem do lote: serve para escolher quem entra, e so para
+        # isso. O recuo de quem falhar e contado a partir da falha, la embaixo.
+        inicio_do_lote = timezone.now()
         pendentes = Notificacao.objects.filter(
             # enviado_em__isnull=True e o que impede o reenvio: o cron passa a cada
             # minuto e, sem esta metade do filtro, toda notificacao ja entregue
@@ -41,7 +43,7 @@ class Command(BaseCommand):
         ).filter(
             # Recuo progressivo (spec 9): quem falhou ha pouco espera a janela
             # passar. Nulo e quem nunca falhou - entra na primeira passada.
-            Q(proxima_tentativa_em__isnull=True) | Q(proxima_tentativa_em__lte=agora)
+            Q(proxima_tentativa_em__isnull=True) | Q(proxima_tentativa_em__lte=inicio_do_lote)
         )[:lote]
         enviadas = 0
         for notificacao in pendentes:
@@ -56,7 +58,13 @@ class Command(BaseCommand):
             except Exception as erro:
                 notificacao.tentativas += 1
                 notificacao.ultimo_erro = str(erro)
-                notificacao.proxima_tentativa_em = agora + recuo(notificacao.tentativas)
+                # timezone.now() de novo, e nao o inicio_do_lote: com --lote 50
+                # contra um SMTP pendurado, o proprio lote dura mais que a janela
+                # de 5 minutos, e contar o recuo do inicio deixaria a cabeca do
+                # lote elegivel outra vez antes de a cauda terminar - o recuo se
+                # anularia justamente no cenario que a spec 9 descreve. O caminho
+                # de sucesso ja usava um now() fresco pelo mesmo motivo.
+                notificacao.proxima_tentativa_em = timezone.now() + recuo(notificacao.tentativas)
                 notificacao.save(
                     update_fields=["tentativas", "ultimo_erro", "proxima_tentativa_em"]
                 )

@@ -3,7 +3,7 @@ from django.urls import reverse
 
 from apps.cursos import services
 from apps.cursos.choices import StatusCurso, StatusEntregavel
-from apps.cursos.models import LogTransicaoCurso
+from apps.cursos.models import Curso, LogTransicaoCurso
 
 
 @pytest.fixture
@@ -336,3 +336,56 @@ def test_professor_nao_entra_na_lista_do_catalogo(client, professor, curso_despu
 def test_aluno_nao_entra_na_lista_do_catalogo(client, aluno, curso_despublicado):
     client.force_login(aluno)
     assert client.get(reverse("cursos_no_catalogo")).status_code == 403
+
+
+@pytest.mark.django_db
+def test_aluno_nao_decide_pela_tela(client, aluno, curso_submetido):
+    """A guarda de view de decidir_curso, isolada.
+
+    Este POST leva uma "decisao" desconhecida de propósito: é o único ramo de
+    decidir_curso que não chama serviço nenhum, então a guarda da view carrega o
+    peso sozinha e o 403 só pode vir dela. Nos outros ramos a guarda do serviço
+    também recusaria, e o teste não distinguiria as duas.
+    """
+    client.force_login(aluno)
+    resposta = client.post(
+        reverse("decidir_curso", args=[curso_submetido.pk]),
+        {"decisao": "ARQUIVAR", "comentario": "qualquer coisa"},
+    )
+    assert resposta.status_code == 403
+    curso_submetido.refresh_from_db()
+    assert curso_submetido.status == StatusCurso.AGUARDANDO_COORDENADOR
+
+
+@pytest.mark.django_db
+def test_decidir_curso_nao_revela_se_o_curso_existe(client, aluno, curso_submetido):
+    """A guarda precisa rodar ANTES do get_object_or_404, não depois.
+
+    Com a busca primeiro, quem não é coordenador recebia 302 para um pk que
+    existe e 404 para um que não existe - diferença suficiente para varrer os
+    ids e descobrir quantos cursos há e quais. analisar_curso já devolvia 403
+    nos dois casos; decidir_curso não (achado da re-revisão).
+    """
+    client.force_login(aluno)
+    inexistente = Curso.objects.order_by("-pk").first().pk + 1000
+    existente = client.post(
+        reverse("decidir_curso", args=[curso_submetido.pk]), {"decisao": "ARQUIVAR"}
+    )
+    ausente = client.post(reverse("decidir_curso", args=[inexistente]), {"decisao": "ARQUIVAR"})
+    assert existente.status_code == 403
+    assert ausente.status_code == 403
+
+
+@pytest.mark.django_db
+def test_visitante_anonimo_vai_para_o_login(client, curso_despublicado):
+    """Espelha o portão de login de apps/turmas/tests/test_views.py, que o app
+    cursos não tinha para rota nenhuma.
+
+    permissions.pode_publicar lê usuario.e_coordenador, atributo que
+    AnonymousUser não tem: sem @login_required *antes* da checagem de papel, a
+    resposta seria AttributeError (500), não um redirecionamento. Prende a
+    ordem, não a boa vontade do decorador.
+    """
+    resposta = client.get(reverse("cursos_no_catalogo"))
+    assert resposta.status_code == 302
+    assert resposta.url.startswith(reverse("login"))

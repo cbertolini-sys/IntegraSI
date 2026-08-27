@@ -162,3 +162,100 @@ def test_notificacao_que_falhou_ha_tempo_volta_para_a_fila(settings):
     notificacao = Notificacao.objects.get()
     assert notificacao.enviado_em is not None
     assert notificacao.tentativas == 2
+
+
+@pytest.mark.django_db
+def test_a_janela_de_recuo_cresce_no_proprio_comando(settings):
+    """Prende o crescimento *onde ele roda*, e nao so na funcao pura.
+
+    test_recuo_dobra_a_cada_falha exercita services.recuo direto e nunca passa
+    pelo comando: trocar `recuo(notificacao.tentativas)` por `RECUO_INICIAL` no
+    ponto de chamada deixava a suite inteira verde, com a funcao provada e o uso
+    dela nao. E a versao deste projeto do "teste com nome que nao exercita a
+    regra", desta vez partida numa fronteira de funcao em vez de escondida no
+    nome.
+
+    Mede a janela contra um instante tomado antes da chamada: como o recuo agora
+    conta do momento da falha (e nao do inicio do lote), proxima_tentativa_em cai
+    entre `antes + recuo(n)` e `antes + recuo(n) + duracao da chamada`.
+    """
+    settings.EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
+    services.enfileirar(evento="X", destinatarios=["a@ufsm.br"], assunto="A", corpo="B")
+    smtp_fora_do_ar = mock.patch(
+        "apps.notificacoes.management.commands.enviar_notificacoes.send_mail",
+        side_effect=OSError("smtp fora do ar"),
+    )
+
+    antes_da_primeira = timezone.now()
+    with smtp_fora_do_ar:
+        call_command("enviar_notificacoes")
+    notificacao = Notificacao.objects.get()
+    assert notificacao.tentativas == 1
+    assert notificacao.proxima_tentativa_em >= antes_da_primeira + services.recuo(1)
+    assert notificacao.proxima_tentativa_em < antes_da_primeira + services.recuo(2)
+
+    # Passada a primeira janela, a segunda falha precisa esperar o DOBRO. E esta
+    # asserção que morre se o ponto de chamada usar um recuo fixo.
+    Notificacao.objects.update(proxima_tentativa_em=timezone.now())
+    antes_da_segunda = timezone.now()
+    with smtp_fora_do_ar:
+        call_command("enviar_notificacoes")
+    notificacao.refresh_from_db()
+    assert notificacao.tentativas == 2
+    assert notificacao.proxima_tentativa_em >= antes_da_segunda + services.recuo(2)
+    assert notificacao.proxima_tentativa_em < antes_da_segunda + services.recuo(3)
+
+
+@pytest.mark.django_db
+def test_recuo_conta_do_instante_da_falha_e_nao_do_inicio_do_lote(settings):
+    """Spec 9, no cenario que a motiva: um lote grande contra um SMTP pendurado.
+
+    Cada falha demora, e o lote inteiro pode durar mais que a janela de recuo. Se
+    proxima_tentativa_em fosse contado do inicio do lote, todas as notificacoes
+    do lote sairiam com a MESMA janela, ancorada num instante ja vencido quando o
+    lote termina - o recuo se anularia justamente onde precisa valer.
+
+    Cada notificacao tem de receber a janela contada da *sua* falha. O relogio do
+    comando e mockado para que cada envio custe o dobro da janela; com o recuo
+    ancorado no inicio do lote, as duas notificacoes ficariam com o mesmo
+    proxima_tentativa_em, e as duas primeiras assercoes morrem.
+
+    O que NAO se afirma aqui: que nenhuma notificacao volte a ficar elegivel
+    antes de o lote acabar. Com cada item custando mais que a janela inteira, a
+    cabeca do lote fica elegivel de novo por construcao, e isso esta certo - ja
+    se passou tempo real suficiente. O defeito era a ancora compartilhada, nao a
+    elegibilidade.
+    """
+    settings.EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
+    services.enfileirar(
+        evento="X", destinatarios=["a@ufsm.br", "b@ufsm.br"], assunto="A", corpo="B"
+    )
+    inicio_do_lote = timezone.now()
+    relogio = [inicio_do_lote]
+    falhas = []
+
+    def falha_lenta(*args, **kwargs):
+        # Cada tentativa consome mais tempo de parede que services.recuo(1).
+        relogio[0] += services.recuo(1) * 2
+        falhas.append(relogio[0])
+        raise OSError("smtp pendurado")
+
+    with mock.patch("apps.notificacoes.management.commands.enviar_notificacoes.timezone.now",
+                    side_effect=lambda: relogio[0]):
+        with mock.patch(
+            "apps.notificacoes.management.commands.enviar_notificacoes.send_mail",
+            side_effect=falha_lenta,
+        ):
+            call_command("enviar_notificacoes")
+
+    # Notificacao.Meta.ordering = ["criado_em"], a mesma ordem em que o lote as
+    # percorreu, entao a n-esima notificacao corresponde a n-esima falha.
+    primeira, segunda = Notificacao.objects.all()
+    assert primeira.proxima_tentativa_em == falhas[0] + services.recuo(1)
+    assert segunda.proxima_tentativa_em == falhas[1] + services.recuo(1)
+    # E as duas janelas sao distintas: uma ancora unica no inicio do lote as
+    # tornaria iguais.
+    assert primeira.proxima_tentativa_em != segunda.proxima_tentativa_em
+    # O lote de fato durou mais que a janela - sem isto o cenario nao seria o da
+    # spec 9 e o teste passaria por acidente.
+    assert falhas[-1] > inicio_do_lote + services.recuo(1)
