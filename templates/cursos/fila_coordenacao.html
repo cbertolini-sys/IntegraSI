@@ -2,6 +2,7 @@
 {% block titulo %}Coordenação{% endblock %}
 {% block conteudo %}
   <h1>Cursos aguardando aprovação</h1>
+  <p><a href="{% url 'cursos_no_catalogo' %}">Cursos no catálogo</a></p>
   {% for curso in cursos %}
     <article>
       <h2><a href="{% url 'analisar_curso' curso.pk %}">{{ curso.titulo }}</a></h2>

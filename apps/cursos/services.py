@@ -183,20 +183,59 @@ def submeter_ao_coordenador(curso, por):
     return curso
 
 
+# De onde um curso pode entrar (ou voltar) para o catalogo publico (spec 5).
+# DESPUBLICADO esta aqui porque a spec diz, textualmente, que um curso
+# despublicado "pode ser republicado" - e diz, no mesmo paragrafo, que
+# SUBSTITUIDO e terminal e "nao republicavel". O contraste entre as duas frases
+# nomeia a publicacao como o ato que desfaz a despublicacao.
+#
+# Republicar volta direto a PUBLICADO, sem passar pela fila da coordenacao, por
+# tres razoes lidas da spec 5:
+#   1. O diagrama de estados nao tem seta de DESPUBLICADO para dentro do ciclo de
+#      producao; as unicas setas que chegam em AGUARDANDO_COORDENADOR saem de
+#      EM_PRODUCAO e DEVOLVIDO.
+#   2. "Somente o coordenador publica, devolve ao professor ou despublica", ao
+#      passo que submeter e ato do professor. Mandar a republicacao pela fila
+#      faria a decisao do coordenador so poder ser desfeita pelo professor - um
+#      beco sem saida novo no lugar do antigo, pior ainda se o professor
+#      responsavel tiver deixado a instituicao.
+#   3. Despublicar nao reabre os cinco entregaveis (ao contrario de
+#      devolver_curso, R54): o material continua APROVADO e intocado, entao a
+#      fila seria cerimonia sobre um curso que ninguem editou.
+ORIGENS_DA_PUBLICACAO = (StatusCurso.AGUARDANDO_COORDENADOR, StatusCurso.DESPUBLICADO)
+
+
 @transaction.atomic
 def publicar_curso(curso, por):
-    """Coordenador publica o curso submetido (spec 5, 11); avisa a equipe e o
-    professor, sem enviar e-mail dentro da transacao - enfileirar so grava."""
+    """Coordenador publica o curso submetido, ou republica um despublicado
+    (spec 5, 11); avisa a equipe e o professor, sem enviar e-mail dentro da
+    transacao - enfileirar so grava.
+
+    A republicacao passa por aqui, e nao por um .update() no shell, justamente
+    para que _transicionar grave o LogTransicaoCurso: o historico administrativo
+    da spec 11 nao pode ter buraco em nenhuma das duas voltas.
+    """
     permissions.garante(permissions.pode_publicar(por), "Somente o coordenador publica.")
-    if curso.status != StatusCurso.AGUARDANDO_COORDENADOR:
-        raise ValidationError("Só se publica curso que foi submetido pelo professor.")
+    if curso.status not in ORIGENS_DA_PUBLICACAO:
+        raise ValidationError(
+            "Só se publica curso submetido pelo professor, ou se republica curso despublicado."
+        )
+    republicacao = curso.status == StatusCurso.DESPUBLICADO
     _transicionar(curso, StatusCurso.PUBLICADO, por)
-    enfileirar(
-        evento="CURSO_PUBLICADO",
-        destinatarios=_emails_da_equipe(curso) + [curso.professor_responsavel.email],
-        assunto=f"Curso publicado: {curso.titulo}",
-        corpo=f"O curso {curso.titulo} foi aprovado pela coordenação e está no catálogo público.",
-    )
+    if republicacao:
+        enfileirar(
+            evento="CURSO_REPUBLICADO",
+            destinatarios=_emails_da_equipe(curso) + [curso.professor_responsavel.email],
+            assunto=f"Curso republicado: {curso.titulo}",
+            corpo=f"O curso {curso.titulo} voltou ao catálogo público.",
+        )
+    else:
+        enfileirar(
+            evento="CURSO_PUBLICADO",
+            destinatarios=_emails_da_equipe(curso) + [curso.professor_responsavel.email],
+            assunto=f"Curso publicado: {curso.titulo}",
+            corpo=f"O curso {curso.titulo} foi aprovado pela coordenação e está no catálogo público.",
+        )
     return curso
 
 

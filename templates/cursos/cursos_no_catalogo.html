@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block titulo %}Cursos no catálogo{% endblock %}
+{% block conteudo %}
+  <h1>Cursos no catálogo</h1>
+  <p><a href="{% url 'fila_coordenacao' %}">Voltar à fila de aprovação</a></p>
+  {% for curso in cursos %}
+    <article>
+      <h2><a href="{% url 'analisar_curso' curso.pk %}">{{ curso.titulo }}</a></h2>
+      <p>{{ curso.professor_responsavel.nome_completo }} &middot; {{ curso.edicao }} &middot; {{ curso.get_status_display }}</p>
+    </article>
+  {% empty %}
+    <p>Nenhum curso publicado ou despublicado.</p>
+  {% endfor %}
+{% endblock %}

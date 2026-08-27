@@ -8,6 +8,14 @@ from apps.cursos import permissions, services
 from apps.cursos.choices import StatusCurso
 from apps.cursos.models import Curso
 
+# Valores transmitidos pelo formulario: sem acento e nunca alterados por passada
+# de texto (CLAUDE.md). So os rotulos dos botoes sao portugues acentuado.
+PUBLICAR = "PUBLICAR"
+DEVOLVER = "DEVOLVER"
+DESPUBLICAR = "DESPUBLICAR"
+
+NO_CATALOGO = [StatusCurso.PUBLICADO, StatusCurso.DESPUBLICADO]
+
 
 @login_required
 def fila_coordenacao(request):
@@ -19,13 +27,40 @@ def fila_coordenacao(request):
 
 
 @login_required
+def cursos_no_catalogo(request):
+    """Cursos que ja passaram pela fila: os publicados e os despublicados.
+
+    Sem esta listagem, despublicar e republicar seriam capacidades sem porta -
+    fila_coordenacao mostra so AGUARDANDO_COORDENADOR, entao nao havia de onde
+    partir para um curso publicado (achado Importante 2 da revisao de branch).
+    Tela separada da fila de proposito: a fila e uma caixa de entrada que esvazia,
+    esta e um inventario do catalogo.
+    """
+    permissions.garante(permissions.pode_publicar(request.user), "Área da coordenação.")
+    cursos = Curso.objects.filter(status__in=NO_CATALOGO).select_related(
+        "professor_responsavel", "edicao"
+    )
+    return render(request, "cursos/cursos_no_catalogo.html", {"cursos": cursos})
+
+
+@login_required
 def analisar_curso(request, pk):
     permissions.garante(permissions.pode_publicar(request.user), "Área da coordenação.")
     curso = get_object_or_404(Curso, pk=pk)
     return render(
         request,
         "cursos/analisar_curso.html",
-        {"curso": curso, "entregaveis": curso.entregaveis.prefetch_related("secoes", "anexos")},
+        {
+            "curso": curso,
+            "entregaveis": curso.entregaveis.prefetch_related("secoes", "anexos"),
+            # Quais decisoes cabem neste curso agora. Calculado aqui, e nao
+            # comparando status por string no template: o valor gravado nao
+            # aparece no HTML, e quem manda continua sendo services.py - estes
+            # booleanos so escondem um botao que o servico recusaria.
+            "pode_decidir": curso.status == StatusCurso.AGUARDANDO_COORDENADOR,
+            "pode_despublicar": curso.status == StatusCurso.PUBLICADO,
+            "pode_republicar": curso.status == StatusCurso.DESPUBLICADO,
+        },
     )
 
 
@@ -33,16 +68,32 @@ def analisar_curso(request, pk):
 @require_POST
 def decidir_curso(request, pk):
     curso = get_object_or_404(Curso, pk=pk)
+    decisao = request.POST.get("decisao")
     comentario = request.POST.get("comentario", "")
+    # De onde o curso saiu decide para onde a tela volta - e precisa ser lido
+    # antes de o servico mudar o status.
+    veio_da_fila = curso.status == StatusCurso.AGUARDANDO_COORDENADOR
     try:
-        if request.POST.get("decisao") == "PUBLICAR":
+        if decisao == PUBLICAR:
             services.publicar_curso(curso, por=request.user)
             messages.success(request, "Curso publicado no catálogo.")
-        else:
+        elif decisao == DEVOLVER:
             services.devolver_curso(curso, por=request.user, comentario=comentario)
             messages.success(request, "Curso devolvido ao professor.")
+        elif decisao == DESPUBLICAR:
+            services.despublicar_curso(curso, por=request.user, motivo=comentario)
+            messages.success(request, "Curso retirado do catálogo.")
+        else:
+            # Roteamento explicito, e nao "tudo que nao e publicar e devolver": com
+            # o else como pega-tudo, um POST com decisao ausente ou desconhecida
+            # (botao novo no template, formulario submetido por Enter, requisicao
+            # forjada) devolvia o curso ao professor e reabria os cinco
+            # entregaveis em silencio. Mesmo defeito ja corrigido em
+            # turmas.views.responder_solicitacao.
+            messages.error(request, "Decisão não reconhecida.")
+            return redirect("analisar_curso", pk=curso.pk)
     except ValidationError as erro:
         for mensagem in erro.messages:
             messages.error(request, mensagem)
         return redirect("analisar_curso", pk=curso.pk)
-    return redirect("fila_coordenacao")
+    return redirect("fila_coordenacao" if veio_da_fila else "cursos_no_catalogo")

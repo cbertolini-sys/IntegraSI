@@ -20,11 +20,32 @@
     </section>
   {% endfor %}
 
-  <form method="post" action="{% url 'decidir_curso' curso.pk %}">
-    {% csrf_token %}
-    <label for="comentario">Comentário</label>
-    <textarea id="comentario" name="comentario" rows="5"></textarea>
-    <button type="submit" name="decisao" value="PUBLICAR">Publicar</button>
-    <button type="submit" name="decisao" value="DEVOLVER">Devolver ao professor</button>
-  </form>
+  {# Os valores de "decisao" sao os mesmos de apps/cursos/views/coordenador.py:
+     sem acento e nunca alterados por passada de texto (CLAUDE.md); so os rotulos
+     dos botoes sao portugues acentuado. A view roteia por igualdade explicita, e
+     um valor desconhecido nao decide nada - nao existe mais ramo pega-tudo. #}
+  {% if pode_decidir %}
+    <form method="post" action="{% url 'decidir_curso' curso.pk %}">
+      {% csrf_token %}
+      <label for="comentario">Comentário</label>
+      <textarea id="comentario" name="comentario" rows="5"></textarea>
+      <button type="submit" name="decisao" value="PUBLICAR">Publicar</button>
+      <button type="submit" name="decisao" value="DEVOLVER">Devolver ao professor</button>
+    </form>
+  {% elif pode_despublicar %}
+    <form method="post" action="{% url 'decidir_curso' curso.pk %}">
+      {% csrf_token %}
+      <label for="comentario">Motivo da despublicação</label>
+      <textarea id="comentario" name="comentario" rows="5"></textarea>
+      <button type="submit" name="decisao" value="DESPUBLICAR">Despublicar</button>
+    </form>
+  {% elif pode_republicar %}
+    <p>Este curso foi despublicado e está fora do catálogo público.</p>
+    <form method="post" action="{% url 'decidir_curso' curso.pk %}">
+      {% csrf_token %}
+      <button type="submit" name="decisao" value="PUBLICAR">Republicar</button>
+    </form>
+  {% else %}
+    <p>Este curso não está em nenhuma decisão da coordenação agora.</p>
+  {% endif %}
 {% endblock %}

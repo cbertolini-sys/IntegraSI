@@ -205,3 +205,102 @@ def test_devolver_curso_reabre_os_cinco_entregaveis(curso_pronto, professor, coo
     secao.save()
     secao.refresh_from_db()
     assert "revisado" in secao.conteudo
+
+
+# --- republicacao (spec 5: curso DESPUBLICADO "pode ser republicado") ---------
+
+
+@pytest.fixture
+def curso_despublicado(curso_pronto, professor, coordenador):
+    services.submeter_ao_coordenador(curso_pronto, por=professor)
+    services.publicar_curso(curso_pronto, por=coordenador)
+    services.despublicar_curso(curso_pronto, por=coordenador, motivo="Material desatualizado.")
+    curso_pronto.refresh_from_db()
+    assert curso_pronto.status == StatusCurso.DESPUBLICADO
+    return curso_pronto
+
+
+@pytest.mark.django_db
+def test_curso_despublicado_pode_ser_republicado(curso_despublicado, coordenador):
+    """Spec 5, textualmente: curso DESPUBLICADO "pode ser republicado". Antes
+    deste teste nenhum servico aceitava DESPUBLICADO como de_status - nem
+    publicar_curso nem submeter_ao_coordenador -, e com CursoAdmin.readonly_fields
+    fechando o Admin, a unica recuperacao era um .update() no shell, que pula
+    _transicionar (achado Importante 1 da revisao de branch)."""
+    services.publicar_curso(curso_despublicado, por=coordenador)
+    curso_despublicado.refresh_from_db()
+    assert curso_despublicado.status == StatusCurso.PUBLICADO
+
+
+@pytest.mark.django_db
+def test_republicacao_grava_o_log_da_transicao(curso_despublicado, coordenador):
+    """A republicacao existe para passar pelo servico, nao so para mudar o campo:
+    o historico administrativo (spec 11) precisa registrar a volta ao catalogo
+    com de_status DESPUBLICADO. Um .update() no shell mudaria o status sem isto."""
+    services.publicar_curso(curso_despublicado, por=coordenador)
+    log = LogTransicaoCurso.objects.get(
+        curso=curso_despublicado,
+        de_status=StatusCurso.DESPUBLICADO,
+        para_status=StatusCurso.PUBLICADO,
+    )
+    assert log.usuario == coordenador
+
+
+@pytest.mark.django_db
+def test_republicacao_avisa_a_equipe_com_evento_proprio(
+    curso_despublicado, coordenador, aluno, professor
+):
+    """Evento distinto de CURSO_PUBLICADO: o corpo de CURSO_PUBLICADO diz que o
+    curso "foi aprovado pela coordenacao", o que e falso numa republicacao - o
+    curso nunca deixou de estar aprovado, so saiu do catalogo. Filtra por evento
+    de proposito: sem o filtro, as notificacoes que a propria fixture enfileira
+    (submissao, publicacao) fariam o teste passar mesmo sem aviso nenhum aqui."""
+    services.publicar_curso(curso_despublicado, por=coordenador)
+    destinatarios = set(
+        Notificacao.objects.filter(evento="CURSO_REPUBLICADO").values_list(
+            "destinatario", flat=True
+        )
+    )
+    assert destinatarios == {aluno.email, professor.email}
+
+
+@pytest.mark.django_db
+def test_professor_nao_republica(curso_despublicado, professor):
+    """So o coordenador publica ou republica (spec 5). O curso esta em
+    DESPUBLICADO de proposito - um de_status agora valido -, para que so a guarda
+    de permissao possa recusar, e nao a de status."""
+    with pytest.raises(PermissionDenied):
+        services.publicar_curso(curso_despublicado, por=professor)
+    curso_despublicado.refresh_from_db()
+    assert curso_despublicado.status == StatusCurso.DESPUBLICADO
+
+
+@pytest.mark.django_db
+def test_curso_substituido_nao_pode_ser_republicado(curso_pronto, professor, coordenador):
+    """Spec 5: SUBSTITUIDO e terminal, "nao republicavel" - o contraponto exato
+    da frase que autoriza republicar o DESPUBLICADO. Nenhum servico alcanca
+    SUBSTITUIDO hoje (a substituicao de versao e do Plano 4), entao o status e
+    posto por .update() direto: e a unica forma de cravar, agora, que abrir a
+    republicacao nao abriu a porta errada junto."""
+    from apps.cursos.models import Curso
+
+    services.submeter_ao_coordenador(curso_pronto, por=professor)
+    services.publicar_curso(curso_pronto, por=coordenador)
+    Curso.objects.filter(pk=curso_pronto.pk).update(status=StatusCurso.SUBSTITUIDO)
+    curso_pronto.refresh_from_db()
+    with pytest.raises(ValidationError):
+        services.publicar_curso(curso_pronto, por=coordenador)
+    curso_pronto.refresh_from_db()
+    assert curso_pronto.status == StatusCurso.SUBSTITUIDO
+
+
+@pytest.mark.django_db
+def test_republicar_curso_volta_ao_catalogo_publico(client, curso_despublicado, coordenador):
+    """Costura com o catalogo: republicar nao pode so mudar o campo, tem de
+    devolver o curso as portas publicas - o espelho de
+    test_curso_nao_publicado_fica_fora_das_duas_portas, que ja crava a ida."""
+    from django.urls import reverse
+
+    assert curso_despublicado.titulo not in client.get(reverse("catalogo")).content.decode()
+    services.publicar_curso(curso_despublicado, por=coordenador)
+    assert curso_despublicado.titulo in client.get(reverse("catalogo")).content.decode()

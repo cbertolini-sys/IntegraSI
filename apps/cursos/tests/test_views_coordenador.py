@@ -3,6 +3,7 @@ from django.urls import reverse
 
 from apps.cursos import services
 from apps.cursos.choices import StatusCurso, StatusEntregavel
+from apps.cursos.models import LogTransicaoCurso
 
 
 @pytest.fixture
@@ -171,3 +172,167 @@ def test_analise_mostra_todos_os_entregaveis(client, coordenador, curso_submetid
     client.force_login(coordenador)
     resposta = client.get(reverse("analisar_curso", args=[curso_submetido.pk]))
     assert resposta.content.decode().count("entregavel-analise") == 5
+
+
+# --- despublicar e republicar pela tela ---------------------------------------
+
+
+@pytest.fixture
+def curso_publicado(curso_submetido, coordenador):
+    services.publicar_curso(curso_submetido, por=coordenador)
+    curso_submetido.refresh_from_db()
+    return curso_submetido
+
+
+@pytest.fixture
+def curso_despublicado(curso_publicado, coordenador):
+    services.despublicar_curso(curso_publicado, por=coordenador, motivo="Material desatualizado.")
+    curso_publicado.refresh_from_db()
+    return curso_publicado
+
+
+@pytest.mark.django_db
+def test_despublicar_pela_tela(client, coordenador, curso_publicado):
+    """despublicar_curso existia desde a Task 3 e nao tinha nenhum chamador de
+    producao: a tela do coordenador so oferecia Publicar e Devolver, e a unica
+    forma de tirar um curso do catalogo era o shell (achado Importante 2)."""
+    client.force_login(coordenador)
+    resposta = client.post(
+        reverse("decidir_curso", args=[curso_publicado.pk]),
+        {"decisao": "DESPUBLICAR", "comentario": "Material desatualizado."},
+        follow=True,
+    )
+    curso_publicado.refresh_from_db()
+    assert curso_publicado.status == StatusCurso.DESPUBLICADO
+    assert "Curso retirado do catálogo." in resposta.content.decode()
+
+
+@pytest.mark.django_db
+def test_despublicar_sem_motivo_e_barrado(client, coordenador, curso_publicado):
+    """Espelha test_devolver_sem_comentario_e_barrado: o motivo obrigatorio do
+    servico precisa chegar a tela como mensagem, uma vez so (base.html ja
+    renderiza messages globalmente)."""
+    client.force_login(coordenador)
+    resposta = client.post(
+        reverse("decidir_curso", args=[curso_publicado.pk]),
+        {"decisao": "DESPUBLICAR", "comentario": ""},
+        follow=True,
+    )
+    assert resposta.content.decode().count("Informe o motivo da despublicação.") == 1
+    curso_publicado.refresh_from_db()
+    assert curso_publicado.status == StatusCurso.PUBLICADO
+
+
+@pytest.mark.django_db
+def test_republicar_pela_tela(client, coordenador, curso_despublicado):
+    client.force_login(coordenador)
+    resposta = client.post(
+        reverse("decidir_curso", args=[curso_despublicado.pk]), {"decisao": "PUBLICAR"}, follow=True
+    )
+    curso_despublicado.refresh_from_db()
+    assert curso_despublicado.status == StatusCurso.PUBLICADO
+    assert "Curso publicado no catálogo." in resposta.content.decode()
+
+
+@pytest.mark.django_db
+def test_a_tela_de_analise_oferece_despublicar_ao_curso_publicado(
+    client, coordenador, curso_publicado
+):
+    """A capacidade so existe se a tela a oferecer: o botao e o chamador de
+    producao que faltava. Confere tambem que a tela nao oferece Publicar/Devolver
+    a um curso que ja saiu da fila."""
+    client.force_login(coordenador)
+    conteudo = client.get(reverse("analisar_curso", args=[curso_publicado.pk])).content.decode()
+    assert 'value="DESPUBLICAR"' in conteudo
+    assert 'value="PUBLICAR"' not in conteudo
+    assert 'value="DEVOLVER"' not in conteudo
+
+
+@pytest.mark.django_db
+def test_a_tela_de_analise_oferece_republicar_ao_curso_despublicado(
+    client, coordenador, curso_despublicado
+):
+    client.force_login(coordenador)
+    conteudo = client.get(reverse("analisar_curso", args=[curso_despublicado.pk])).content.decode()
+    assert 'value="PUBLICAR"' in conteudo
+    assert "Republicar" in conteudo
+    assert 'value="DESPUBLICAR"' not in conteudo
+
+
+@pytest.mark.django_db
+def test_decisao_desconhecida_nao_devolve_o_curso(client, coordenador, curso_submetido):
+    """O ramo else de decidir_curso era pega-tudo: qualquer POST cujo "decisao"
+    nao fosse exatamente "PUBLICAR" caia em devolver_curso, devolvia o curso ao
+    professor e reabria os cinco entregaveis (R54) em silencio - o mesmo defeito
+    que a Task 8 corrigiu em turmas.views.responder_solicitacao.
+
+    O comentario vai preenchido de proposito: com ele vazio, a guarda de
+    comentario obrigatorio de devolver_curso recusaria a operacao e o teste
+    passaria mesmo com o pega-tudo de volta, sem provar nada sobre o roteamento.
+    """
+    client.force_login(coordenador)
+    logs_antes = LogTransicaoCurso.objects.filter(curso=curso_submetido).count()
+    resposta = client.post(
+        reverse("decidir_curso", args=[curso_submetido.pk]),
+        {"decisao": "ARQUIVAR", "comentario": "Falta revisar a bibliografia."},
+        follow=True,
+    )
+    curso_submetido.refresh_from_db()
+    assert curso_submetido.status == StatusCurso.AGUARDANDO_COORDENADOR
+    assert LogTransicaoCurso.objects.filter(curso=curso_submetido).count() == logs_antes
+    assert set(curso_submetido.entregaveis.values_list("status", flat=True)) == {
+        StatusEntregavel.APROVADO
+    }
+    assert "Decisão não reconhecida." in resposta.content.decode()
+
+
+@pytest.mark.django_db
+def test_lista_do_catalogo_mostra_publicado_e_despublicado(
+    client, coordenador, professor, aluno, dados_curso, curso_despublicado
+):
+    """Inclusao e exclusao: os dois status do catalogo entram, e o curso ainda na
+    fila fica de fora - senao o filtro por status poderia virar "todos os cursos"
+    sem ninguem notar. Cursos novos a partir de dados_curso, e nao as fixtures
+    encadeadas: curso_despublicado *e* curso_submetido, o mesmo objeto levado
+    adiante, entao compara-los nao provaria nada."""
+    publicado = services.criar_curso(**{**dados_curso, "titulo": "Iniciação a Python"})
+    services.adicionar_membro(publicado, aluno, por=professor)
+    publicado.entregaveis.update(status=StatusEntregavel.APROVADO)
+    publicado.refresh_from_db()
+    services.submeter_ao_coordenador(publicado, por=professor)
+    services.publicar_curso(publicado, por=coordenador)
+
+    na_fila = services.criar_curso(**{**dados_curso, "titulo": "Robótica com Sucata"})
+    services.adicionar_membro(na_fila, aluno, por=professor)
+    na_fila.entregaveis.update(status=StatusEntregavel.APROVADO)
+    na_fila.refresh_from_db()
+    services.submeter_ao_coordenador(na_fila, por=professor)
+
+    client.force_login(coordenador)
+    conteudo = client.get(reverse("cursos_no_catalogo")).content.decode()
+    assert curso_despublicado.titulo in conteudo
+    assert publicado.titulo in conteudo
+    assert na_fila.titulo not in conteudo
+
+
+@pytest.mark.django_db
+def test_lista_do_catalogo_vazia_mostra_mensagem(client, coordenador):
+    client.force_login(coordenador)
+    assert (
+        "Nenhum curso publicado ou despublicado."
+        in client.get(reverse("cursos_no_catalogo")).content.decode()
+    )
+
+
+@pytest.mark.django_db
+def test_professor_nao_entra_na_lista_do_catalogo(client, professor, curso_despublicado):
+    """Pelo GET, onde a guarda da view carrega o peso sozinha: nao ha servico
+    nenhum nesta requisicao para recusar em lugar dela."""
+    client.force_login(professor)
+    assert client.get(reverse("cursos_no_catalogo")).status_code == 403
+
+
+@pytest.mark.django_db
+def test_aluno_nao_entra_na_lista_do_catalogo(client, aluno, curso_despublicado):
+    client.force_login(aluno)
+    assert client.get(reverse("cursos_no_catalogo")).status_code == 403
