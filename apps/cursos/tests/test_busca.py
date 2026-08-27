@@ -100,3 +100,37 @@ def test_renomear_tema_pelo_admin_reindexa_cursos_vinculados(client, curso_robot
     assert resposta.status_code == 302
 
     assert busca.buscar(Curso.objects.all(), "astronomia").count() == 1
+
+
+# Achado da revisao do Task 4: nova_proposta (apps/cursos/views/professor.py) e o
+# caminho real por onde todo curso com tema nasce, e ate agora chamava
+# curso.temas.set(temas) direto no model, sem passar por services.definir_temas.
+# Isso deixava vetor_temas em NULL para todo curso proposto com tema pela tela
+# normal - a busca por tema so "funcionava" se alguem depois renomeasse um Tema
+# pelo Admin e o reindex de TemaAdmin.save_model disparasse por coincidencia. Um
+# teste que chamasse services.definir_temas diretamente teria passado o tempo
+# todo, inclusive com o bug ao vivo - por isso este vai pela view, que e o unico
+# jeito de provar a fiacao (wiring), nao so o servico.
+@pytest.mark.django_db
+def test_proposta_criada_pela_tela_com_tema_aparece_na_busca_por_tema(client, professor, edicao):
+    tema = Tema.objects.create(nome="Robótica Educacional")
+    client.force_login(professor)
+    resposta = client.post(
+        reverse("nova_proposta"),
+        {
+            "titulo": "Curso qualquer",
+            "resumo": "Resumo qualquer, sem a palavra do tema.",
+            "edicao": edicao.pk,
+            "tipo_publico": "ESCOLAR",
+            "etapa_ano": "EF09",
+            "publico_descricao": "",
+            "carga_horaria": 8,
+            "formato": "PRESENCIAL",
+            "palavras_chave": "",
+            "temas": [tema.pk],
+        },
+        follow=True,
+    )
+    assert resposta.status_code == 200
+    curso = Curso.objects.get(titulo="Curso qualquer")
+    assert busca.buscar(Curso.objects.filter(pk=curso.pk), "robotica").count() == 1

@@ -25,7 +25,15 @@ def nova_proposta(request):
         dados = dict(form.cleaned_data)
         temas = dados.pop("temas", [])
         curso = services.criar_curso(professor_responsavel=request.user, **dados)
-        curso.temas.set(temas)
+        # services.definir_temas, nao curso.temas.set() direto: alem de checar
+        # permissao, e quem reindexa vetor_temas (Task 4). Escrever a M2M aqui na
+        # mao deixava todo curso proposto com tema por esta tela invisivel na
+        # busca por tema ate alguem, por coincidencia, renomear um dos temas pelo
+        # Admin - achado da revisao do Task 4. A checagem de permissao dentro do
+        # servico e redundante aqui (quem propos o curso e sempre o responsavel),
+        # mas concentrar a escrita num lugar so e o que evita a proxima tela
+        # repetir o mesmo esquecimento.
+        services.definir_temas(curso, temas, por=request.user)
         messages.success(request, "Proposta criada. Monte a equipe para começar a produção.")
         return redirect("equipe", pk=curso.pk)
     return render(request, "cursos/nova_proposta.html", {"form": form})
