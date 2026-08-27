@@ -94,7 +94,12 @@ desses aparecendo aqui é sinal de que a fronteira foi atravessada sem querer.
   Partir dos testes só encontra teste fraco; partir das regras também encontra regra que
   ninguém testou. As duas perguntas parecem a mesma e não são.
 - Teste que passa com a invariante quebrada não vale nada. Prove quebrando de propósito:
-  apague a guarda, veja o teste falhar, restaure, veja passar. O padrão "teste com nome
+  apague a guarda, veja o teste falhar, restaure, veja passar. **Apague uma guarda de cada
+  vez.** Um teste que falha por dois motivos ao mesmo tempo não prende nenhum dos dois: se
+  o cenário viola duas regras juntas, apagar qualquer uma delas deixa a outra levantando a
+  exceção e o teste segue verde. A pergunta não é "existe teste que exercita esta regra?",
+  e sim "apagar *esta guarda sozinha* faria algum teste falhar?" — a enumeração de regras
+  não detecta isso, só a deleção isolada detecta. O padrão "teste com nome
   que não exercita a regra" apareceu **sete vezes** no Plano 2, em tarefas diferentes e
   achado por revisores diferentes — entre elas uma regra de segurança e a checagem de
   que o plano de ensino é PDF, que podia ser apagada inteira sem quebrar nada.
