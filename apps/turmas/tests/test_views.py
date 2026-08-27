@@ -133,10 +133,30 @@ def test_aluno_nao_responde_solicitacao(client, aluno, solicitacao):
 
 
 @pytest.mark.django_db
+def test_professor_nao_abre_a_solicitacao(client, professor, solicitacao):
+    """Este é o teste que prende a guarda da *view* de responder, e é o GET.
+
+    Nos dois POST abaixo a guarda da view é redundante: mesmo afrouxada para
+    aceitar qualquer professor, services.aceitar_solicitacao e
+    services.recusar_solicitacao levantam PermissionDenied por conta própria e a
+    resposta continua 403 - a mutação sobrevive aos dois. O GET é o único caminho
+    em que a guarda da view carrega o peso sozinha, e o que ela protege é a ficha
+    da solicitação: nome, e-mail, telefone e mensagem de terceiro externo (spec
+    10). Sem esta linha, afrouxar a guarda abriria essa ficha em silêncio.
+    """
+    client.force_login(professor)
+    assert client.get(reverse("responder_solicitacao", args=[solicitacao.pk])).status_code == 403
+    assert solicitacao.email not in client.get(
+        reverse("responder_solicitacao", args=[solicitacao.pk])
+    ).content.decode()
+
+
+@pytest.mark.django_db
 def test_professor_nao_aceita_pela_tela(client, professor, outro_professor, solicitacao):
-    """A tela que muda o mundo (cria turma, marca a solicitação, dispara e-mail)
-    precisa da mesma guarda da tela que só lista - e precisa dela provada contra
-    quem quase pode."""
+    """Prende que a tela passa pelo serviço, e não por um Turma.objects.create
+    escrito na view: o 403 aqui vem do portão de services.aceitar_solicitacao.
+    Quem prende a guarda da própria view é test_professor_nao_abre_a_solicitacao.
+    """
     client.force_login(professor)
     resposta = client.post(
         reverse("responder_solicitacao", args=[solicitacao.pk]),
