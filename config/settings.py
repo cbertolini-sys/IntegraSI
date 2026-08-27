@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     "apps.edicoes",
     "apps.notificacoes",
     "apps.referenciais",
+    "apps.turmas",
 ]
 
 MIDDLEWARE = [
