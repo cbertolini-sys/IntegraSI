@@ -11,7 +11,11 @@ urlpatterns = [
     path("secoes/<int:pk>/salvar/", views.salvar_secao, name="salvar_secao"),
     path("propostas/nova/", views.nova_proposta, name="nova_proposta"),
     path("cursos/<int:pk>/equipe/", views.equipe, name="equipe"),
+    path("cursos/<int:pk>/submeter/", views.submeter_curso, name="submeter_curso"),
     path("revisao/", views.fila_revisao, name="fila_revisao"),
     path("revisao/<int:pk>/", views.revisar, name="revisar"),
     path("revisao/<int:pk>/decidir/", views.decidir, name="decidir"),
+    path("coordenacao/", views.fila_coordenacao, name="fila_coordenacao"),
+    path("coordenacao/<int:pk>/", views.analisar_curso, name="analisar_curso"),
+    path("coordenacao/<int:pk>/decidir/", views.decidir_curso, name="decidir_curso"),
 ]

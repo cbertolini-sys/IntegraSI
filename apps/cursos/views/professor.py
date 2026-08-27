@@ -77,6 +77,20 @@ def revisar(request, pk):
 
 @login_required
 @require_POST
+def submeter_curso(request, pk):
+    curso = get_object_or_404(Curso, pk=pk)
+    try:
+        services.submeter_ao_coordenador(curso, por=request.user)
+    except ValidationError as erro:
+        for mensagem in erro.messages:
+            messages.error(request, mensagem)
+    else:
+        messages.success(request, "Curso enviado para aprovação da coordenação.")
+    return redirect("curso", pk=curso.pk)
+
+
+@login_required
+@require_POST
 def decidir(request, pk):
     entregavel = get_object_or_404(Entregavel, pk=pk)
     comentario = request.POST.get("comentario", "")

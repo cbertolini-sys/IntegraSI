@@ -7,4 +7,7 @@
   {% if user.e_professor or user.e_coordenador %}
     <p><a href="{% url 'nova_proposta' %}">Nova proposta</a> &middot; <a href="{% url 'fila_revisao' %}">Revisão</a></p>
   {% endif %}
+  {% if user.e_coordenador %}
+    <p><a href="{% url 'fila_coordenacao' %}">Fila da coordenação</a></p>
+  {% endif %}
 {% endblock %}

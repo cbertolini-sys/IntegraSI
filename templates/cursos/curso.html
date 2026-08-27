@@ -17,4 +17,11 @@
   <ul>
     {% for membro in membros %}<li>{{ membro.aluno.nome_completo }}</li>{% endfor %}
   </ul>
+
+  {% if curso.pronto_para_o_coordenador and user == curso.professor_responsavel %}
+    <form method="post" action="{% url 'submeter_curso' curso.pk %}">
+      {% csrf_token %}
+      <button type="submit">Submeter à coordenação</button>
+    </form>
+  {% endif %}
 {% endblock %}

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block titulo %}Analisar {{ curso.titulo }}{% endblock %}
+{% block conteudo %}
+  <h1>{{ curso.titulo }}</h1>
+  <p>{{ curso.publico_alvo }} &middot; {{ curso.carga_horaria }}h &middot; {{ curso.get_formato_display }}</p>
+  <p>{{ curso.resumo }}</p>
+
+  {% for entregavel in entregaveis %}
+    <section class="entregavel-analise">
+      <h2>{{ entregavel.get_tipo_display }} &mdash; {{ entregavel.get_status_display }}</h2>
+      {% for secao in entregavel.secoes.all %}
+        {# O |safe abaixo e seguro: Secao.save() sanitiza o conteudo com nh3 antes de
+           gravar, incondicionalmente, mesmo em update_fields (Task 4). E o terceiro
+           lugar do sistema que renderiza HTML vindo do banco sem escape (o primeiro
+           e revisar.html) - depende dessa sanitizacao acontecer antes, nao aqui. #}
+        <h3>{{ secao.titulo }}</h3><div>{{ secao.conteudo|safe }}</div>
+      {% endfor %}
+      <ul>{% for anexo in entregavel.anexos.all %}<li>{{ anexo.titulo }}</li>{% endfor %}</ul>
+    </section>
+  {% endfor %}
+
+  <form method="post" action="{% url 'decidir_curso' curso.pk %}">
+    {% csrf_token %}
+    <label for="comentario">Comentário</label>
+    <textarea id="comentario" name="comentario" rows="5"></textarea>
+    <button type="submit" name="decisao" value="PUBLICAR">Publicar</button>
+    <button type="submit" name="decisao" value="DEVOLVER">Devolver ao professor</button>
+  </form>
+{% endblock %}

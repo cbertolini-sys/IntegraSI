@@ -23,3 +23,14 @@ class CursoAdmin(admin.ModelAdmin):
     list_filter = ["status", "formato", "tipo_publico", "referencial"]
     search_fields = ["titulo"]
     filter_horizontal = ["competencias", "temas"]
+    # R56: so services.py move status de Curso (convencao registrada no CLAUDE.md).
+    # Sem readonly_fields aqui, o formulario do Admin expunha "status" como campo
+    # editavel comum, deixando o coordenador pular publicar_curso/devolver_curso
+    # (e o LogTransicaoCurso e a notificacao que eles gravam) so preenchendo o
+    # select. E sem has_add_permission=False, "Adicionar curso" pelo Admin criava
+    # um Curso sem passar por services.criar_curso - portanto sem os cinco
+    # Entregavel que o resto do sistema pressupoe que todo curso tem.
+    readonly_fields = ["status"]
+
+    def has_add_permission(self, request):
+        return False
