@@ -57,3 +57,10 @@ def pode_editar_producao(usuario, entregavel):
     if not entregavel.editavel:
         return False
     return e_membro_da_equipe(usuario, entregavel.curso)
+
+
+def pode_publicar(usuario):
+    """Quem publica, devolve ou despublica um curso (spec 5, 11): so o
+    coordenador. Distinta de pode_revisar, que e do professor - o portao entre
+    producao e catalogo publico e uma decisao institucional, nao pedagogica."""
+    return usuario.e_coordenador

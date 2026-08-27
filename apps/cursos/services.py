@@ -1,9 +1,11 @@
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.utils import timezone
 
 from apps.cursos import permissions, validacoes
 from apps.cursos.choices import StatusCurso, StatusEntregavel, TipoEntregavel
-from apps.cursos.models import Curso, Entregavel, MembroEquipe, Revisao, Secao
+from apps.cursos.models import Curso, Entregavel, LogTransicaoCurso, MembroEquipe, Revisao, Secao
+from apps.notificacoes.services import enfileirar
 
 SECOES_PLANO_ENSINO = [
     "Ementa",
@@ -123,3 +125,119 @@ def devolver_entregavel(entregavel, por, comentario):
 def _exige_em_revisao(entregavel):
     if entregavel.status != StatusEntregavel.EM_REVISAO:
         raise ValidationError("Só é possível revisar um entregável que foi enviado para revisão.")
+
+
+def _transicionar(curso, para, por, observacao=""):
+    """Muda o status do curso e grava o LogTransicaoCurso na mesma transacao. Ponto
+    unico por onde toda mudanca de situacao do curso passa, para que o historico
+    administrativo (spec 11) nunca fique incompleto."""
+    de = curso.status
+    curso.status = para
+    campos = ["status", "atualizado_em"]
+    if para == StatusCurso.PUBLICADO:
+        curso.publicado_em = timezone.now()
+        campos.append("publicado_em")
+    curso.save(update_fields=campos)
+    LogTransicaoCurso.objects.create(
+        curso=curso, de_status=de, para_status=para, usuario=por, observacao=observacao
+    )
+
+
+def _emails_da_equipe(curso):
+    return [m.aluno.email for m in curso.membros.select_related("aluno")]
+
+
+def _emails_dos_coordenadores():
+    from apps.contas.models import Usuario
+
+    return list(
+        Usuario.objects.filter(papel=Usuario.COORDENADOR, is_active=True).values_list("email", flat=True)
+    )
+
+
+@transaction.atomic
+def submeter_ao_coordenador(curso, por):
+    """Professor manda o curso para a coordenacao (spec 5). So sai de EM_PRODUCAO
+    ou DEVOLVIDO, com os cinco entregaveis aprovados e os dados do curso em dia -
+    o curso pode ser editado depois do Plano de Ensino aprovado, entao a mesma
+    checagem de validacoes.dados_do_curso roda de novo aqui."""
+    permissions.garante(
+        permissions.pode_gerir_equipe(por, curso), "Somente o professor responsável submete."
+    )
+    if curso.status not in (StatusCurso.EM_PRODUCAO, StatusCurso.DEVOLVIDO):
+        raise ValidationError("Este curso não está em produção.")
+    if not curso.pronto_para_o_coordenador:
+        raise ValidationError("Todos os cinco entregáveis precisam estar aprovados.")
+    faltas = validacoes.dados_do_curso(curso)
+    if faltas:
+        raise ValidationError(faltas)
+    _transicionar(curso, StatusCurso.AGUARDANDO_COORDENADOR, por)
+    enfileirar(
+        evento="CURSO_SUBMETIDO",
+        destinatarios=_emails_dos_coordenadores(),
+        assunto=f"Curso aguardando aprovação: {curso.titulo}",
+        corpo=f"O professor {por.nome_completo} submeteu o curso {curso.titulo} para aprovação.",
+    )
+    return curso
+
+
+@transaction.atomic
+def publicar_curso(curso, por):
+    """Coordenador publica o curso submetido (spec 5, 11); avisa a equipe e o
+    professor, sem enviar e-mail dentro da transacao - enfileirar so grava."""
+    permissions.garante(permissions.pode_publicar(por), "Somente o coordenador publica.")
+    if curso.status != StatusCurso.AGUARDANDO_COORDENADOR:
+        raise ValidationError("Só se publica curso que foi submetido pelo professor.")
+    _transicionar(curso, StatusCurso.PUBLICADO, por)
+    enfileirar(
+        evento="CURSO_PUBLICADO",
+        destinatarios=_emails_da_equipe(curso) + [curso.professor_responsavel.email],
+        assunto=f"Curso publicado: {curso.titulo}",
+        corpo=f"O curso {curso.titulo} foi aprovado pela coordenação e está no catálogo público.",
+    )
+    return curso
+
+
+@transaction.atomic
+def devolver_curso(curso, por, comentario):
+    """Coordenador devolve o curso submetido, com comentario obrigatorio (spec 5,
+    11).
+
+    R54: devolver o curso tambem reabre os cinco entregaveis para DEVOLVIDO, na
+    mesma transacao. Sem isso o curso volta para DEVOLVIDO com os cinco
+    entregaveis ainda APROVADO (portanto congelados, ver Entregavel.editavel), e a
+    equipe fica sem como agir sobre o retorno do coordenador - um beco sem saida
+    que a revisao do Plano 2 encontrou. Nao cria Revisao para os entregaveis: quem
+    decidiu foi o coordenador sobre o curso, nao o professor sobre cada entrega, e
+    um registro de Revisao com o coordenador como revisor falsificaria o historico
+    pedagogico que essa tabela existe para preservar. O fato mora so no
+    LogTransicaoCurso."""
+    permissions.garante(permissions.pode_publicar(por), "Somente o coordenador devolve o curso.")
+    if curso.status != StatusCurso.AGUARDANDO_COORDENADOR:
+        raise ValidationError("Só se devolve curso que está aguardando aprovação.")
+    if not (comentario or "").strip():
+        raise ValidationError("Escreva o que precisa ser corrigido antes de devolver.")
+    _transicionar(curso, StatusCurso.DEVOLVIDO, por, observacao=comentario)
+    for entregavel in curso.entregaveis.all():
+        entregavel.status = StatusEntregavel.DEVOLVIDO
+        entregavel.save(update_fields=["status", "atualizado_em"])
+    enfileirar(
+        evento="CURSO_DEVOLVIDO",
+        destinatarios=[curso.professor_responsavel.email],
+        assunto=f"Curso devolvido: {curso.titulo}",
+        corpo=comentario,
+    )
+    return curso
+
+
+@transaction.atomic
+def despublicar_curso(curso, por, motivo):
+    """Coordenador tira o curso do catalogo publico, com motivo obrigatorio para
+    o historico administrativo (spec 11)."""
+    permissions.garante(permissions.pode_publicar(por), "Somente o coordenador despublica.")
+    if curso.status != StatusCurso.PUBLICADO:
+        raise ValidationError("Este curso não está publicado.")
+    if not (motivo or "").strip():
+        raise ValidationError("Informe o motivo da despublicação.")
+    _transicionar(curso, StatusCurso.DESPUBLICADO, por, observacao=motivo)
+    return curso
