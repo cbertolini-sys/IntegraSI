@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block titulo %}Turmas{% endblock %}
+{% block conteudo %}
+  <h1>Turmas</h1>
+  {% for turma in turmas %}
+    <article>
+      <h2>{{ turma.curso.titulo }}</h2>
+      <p>{{ turma.local }} &middot; {{ turma.data_inicio|date:"d/m/Y" }} a {{ turma.data_fim|date:"d/m/Y" }}
+         &middot; {{ turma.vagas }} vagas &middot; {{ turma.get_status_display }}</p>
+      <p>{{ turma.participantes.count }} participantes inscritos</p>
+    </article>
+  {% empty %}
+    <p>Nenhuma turma agendada.</p>
+  {% endfor %}
+{% endblock %}

@@ -10,4 +10,8 @@
   {% if user.e_coordenador %}
     <p><a href="{% url 'fila_coordenacao' %}">Fila da coordenação</a></p>
   {% endif %}
+  {% if user.e_professor or user.e_coordenador %}
+    <p><a href="{% url 'minhas_turmas' %}">Turmas</a>
+    {% if user.e_coordenador %} &middot; <a href="{% url 'solicitacoes' %}">Solicitações</a>{% endif %}</p>
+  {% endif %}
 {% endblock %}

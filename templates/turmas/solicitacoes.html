@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block titulo %}Solicitações{% endblock %}
+{% block conteudo %}
+  <h1>Solicitações recebidas</h1>
+  {% for solicitacao in pendentes %}
+    <article>
+      <h2><a href="{% url 'responder_solicitacao' solicitacao.pk %}">{{ solicitacao.curso.titulo }}</a></h2>
+      <p>{{ solicitacao.nome }} &middot; {{ solicitacao.instituicao }} &middot;
+         {{ solicitacao.num_participantes }} participantes &middot; {{ solicitacao.criado_em|date:"d/m/Y" }}</p>
+    </article>
+  {% empty %}
+    <p>Nenhuma solicitação pendente.</p>
+  {% endfor %}
+
+  <h2>Já respondidas</h2>
+  <ul>
+    {% for solicitacao in respondidas %}
+      <li>{{ solicitacao.curso.titulo }} &mdash; {{ solicitacao.get_status_display }}</li>
+    {% empty %}
+      <li>Nenhuma solicitação respondida ainda.</li>
+    {% endfor %}
+  </ul>
+{% endblock %}

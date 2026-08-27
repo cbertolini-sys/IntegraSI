@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block titulo %}Responder solicitação{% endblock %}
+{% block conteudo %}
+  {# A região de messages é de base.html. Repeti-la aqui mostraria cada aviso duas vezes. #}
+  <h1>{{ solicitacao.curso.titulo }}</h1>
+  <p>{{ solicitacao.nome }} &middot; {{ solicitacao.email }} &middot; {{ solicitacao.telefone }}</p>
+  <p>{{ solicitacao.instituicao }} &middot; {{ solicitacao.num_participantes }} participantes
+     &middot; {{ solicitacao.periodo_pretendido }}</p>
+  <blockquote>{{ solicitacao.mensagem }}</blockquote>
+
+  <h2>Aceitar e agendar a turma</h2>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" name="decisao" value="ACEITAR">Aceitar e agendar</button>
+  </form>
+
+  <h2>Recusar</h2>
+  <form method="post">
+    {% csrf_token %}
+    <label for="resposta">Resposta ao solicitante</label>
+    <textarea id="resposta" name="resposta" rows="4"></textarea>
+    <button type="submit" name="decisao" value="RECUSAR">Recusar</button>
+  </form>
+{% endblock %}
