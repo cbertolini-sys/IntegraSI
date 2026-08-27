@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block titulo %}Solicitar {{ curso.titulo }}{% endblock %}
+{% block conteudo %}
+  <h1>Solicitar o curso {{ curso.titulo }}</h1>
+  {% if erro %}<p class="mensagem">{{ erro }}</p>{% endif %}
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <p class="finalidade">
+      Seus dados serão usados exclusivamente para dar andamento a esta solicitação e
+      organizar a realização do curso, e ficam acessíveis apenas ao professor responsável
+      e à coordenação do curso de Sistemas de Informação.
+    </p>
+    <button type="submit">Enviar solicitação</button>
+  </form>
+{% endblock %}
