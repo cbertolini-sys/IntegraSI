@@ -104,9 +104,22 @@ desses aparecendo aqui é sinal de que a fronteira foi atravessada sem querer.
   é `git checkout <arquivo>` — que também descarta qualquer outra alteração não commitada
   naquele arquivo. Já custou trabalho neste projeto. Comite (ou faça `stash`) antes de
   mutilar a guarda, e restaure com a certeza de não levar mais nada junto. O padrão "teste com nome
-  que não exercita a regra" apareceu **sete vezes** no Plano 2, em tarefas diferentes e
-  achado por revisores diferentes — entre elas uma regra de segurança e a checagem de
-  que o plano de ensino é PDF, que podia ser apagada inteira sem quebrar nada.
+  que não exercita a regra" apareceu **sete vezes** no Plano 2 e mais duas no Plano 3, em
+  tarefas diferentes e achado por revisores diferentes — entre elas uma regra de segurança,
+  a checagem de que o plano de ensino é PDF (apagável inteira sem quebrar nada) e a cerca da
+  fronteira do módulo, que comparava seis nomes exatos e deixou passar calados três campos
+  de nomes mais longos.
+- **Duas guardas para a mesma coisa não se distinguem por teste de POST.** Quando a view
+  chama um serviço que também confere permissão, afrouxar a guarda da view não quebra nada:
+  o serviço recusa igual e o teste vê o mesmo 403. Ambas *existem*, ambas *têm* teste, e
+  mesmo assim uma delas não está presa. Só o GET — ou qualquer caminho que não chame o
+  serviço — isola a guarda da view. Ao pôr guarda numa view, pergunte por onde ela responde
+  sozinha; se não houver caminho assim, ou o teste passa por ele ou a guarda não está presa.
+- **A regra pode estar provada de um lado da fronteira de função e solta do outro.** Um teste
+  da função pura prova a aritmética; não prova que o chamador a usa. No Plano 3, `recuo()`
+  tinha teste de que dobra a cada falha, e trocar `recuo(tentativas)` por `RECUO_INICIAL` no
+  ponto de chamada deixava a suíte verde. O nome do teste não mentia — a regra estava provada
+  onde não roda e desprovada onde roda. Prenda no ponto de chamada, não só na função.
 
 ## Restrições entre planos
 
