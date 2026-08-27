@@ -1,8 +1,13 @@
 from django.conf import settings
+from django.contrib.postgres.indexes import GinIndex
+from django.contrib.postgres.search import SearchVector, SearchVectorField
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.db.models import F, Value
+from django.db.models.functions import Coalesce
 
+from apps.cursos.busca import CONFIG_TEXTO
 from apps.cursos.choices import Formato, StatusCurso, TipoPublico
 from apps.referenciais.choices import ETAPAS
 
@@ -52,10 +57,32 @@ class Curso(models.Model):
     atualizado_em = models.DateTimeField("atualizado em", auto_now=True)
     publicado_em = models.DateTimeField("publicado em", null=True, blank=True)
 
+    # Coluna gerada: cobre os campos da propria linha. Coluna gerada nao faz JOIN,
+    # entao os temas NAO cabem aqui e vivem em vetor_temas (spec 4.4).
+    search_vector = models.GeneratedField(
+        expression=SearchVector(
+            # output_field explicito: titulo/palavras_chave sao CharField e resumo
+            # e TextField - sem isto, Coalesce nao sabe resolver um output_field
+            # unico para os tres e o Django recusa a expressao (FieldError: mixed
+            # types) antes mesmo de chegar no banco.
+            Coalesce(F("titulo"), Value(""), output_field=models.TextField()),
+            Coalesce(F("resumo"), Value(""), output_field=models.TextField()),
+            Coalesce(F("palavras_chave"), Value(""), output_field=models.TextField()),
+            config=CONFIG_TEXTO,
+        ),
+        output_field=SearchVectorField(),
+        db_persist=True,
+    )
+    vetor_temas = SearchVectorField("vetor dos temas", null=True, editable=False)
+
     class Meta:
         verbose_name = "curso"
         verbose_name_plural = "cursos"
         ordering = ["-criado_em"]
+        indexes = [
+            GinIndex(fields=["search_vector"], name="curso_busca_idx"),
+            GinIndex(fields=["vetor_temas"], name="curso_busca_temas_idx"),
+        ]
 
     def __str__(self):
         return self.titulo

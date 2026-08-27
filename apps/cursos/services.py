@@ -1,8 +1,10 @@
+from django.contrib.postgres.search import SearchVector
 from django.core.exceptions import ValidationError
-from django.db import transaction
+from django.db import models, transaction
 from django.utils import timezone
 
 from apps.cursos import permissions, validacoes
+from apps.cursos.busca import CONFIG_TEXTO
 from apps.cursos.choices import StatusCurso, StatusEntregavel, TipoEntregavel
 from apps.cursos.models import Curso, Entregavel, LogTransicaoCurso, MembroEquipe, Revisao, Secao
 from apps.notificacoes.services import enfileirar
@@ -241,3 +243,24 @@ def despublicar_curso(curso, por, motivo):
         raise ValidationError("Informe o motivo da despublicação.")
     _transicionar(curso, StatusCurso.DESPUBLICADO, por, observacao=motivo)
     return curso
+
+
+@transaction.atomic
+def definir_temas(curso, temas, por):
+    """Troca os temas do curso e reindexa. A reindexacao e explicita porque coluna
+    gerada nao alcanca M2M (spec 4.4)."""
+    permissions.garante(permissions.pode_gerir_equipe(por, curso), "Curso de outro professor.")
+    curso.temas.set(temas)
+    atualizar_vetor_temas(curso)
+    return curso
+
+
+def atualizar_vetor_temas(curso):
+    """Recalcula vetor_temas a partir dos nomes dos temas ligados hoje ao curso.
+    Chamada tanto por definir_temas quanto por TemaAdmin.save_model quando um
+    Tema e renomeado - nos dois casos o vetor antigo ficaria com um nome que o
+    tema nao tem mais."""
+    nomes = " ".join(curso.temas.values_list("nome", flat=True))
+    Curso.objects.filter(pk=curso.pk).update(
+        vetor_temas=SearchVector(models.Value(nomes), config=CONFIG_TEXTO)
+    )

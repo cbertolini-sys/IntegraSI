@@ -10,6 +10,16 @@ class TemaAdmin(admin.ModelAdmin):
     search_fields = ["nome"]
     prepopulated_fields = {"slug": ("nome",)}
 
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        from apps.cursos.services import atualizar_vetor_temas
+
+        # Renomear um Tema muda o texto que vetor_temas guarda para cada curso
+        # ligado a ele; sem reindexar aqui, a busca continuaria encontrando os
+        # cursos pelo nome antigo do tema (ou deixaria de encontrar pelo novo).
+        for curso in obj.cursos.all():
+            atualizar_vetor_temas(curso)
+
 
 @admin.register(Curso)
 class CursoAdmin(admin.ModelAdmin):
