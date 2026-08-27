@@ -84,6 +84,45 @@ def test_quem_nao_e_professor_nao_conduz_turma(solicitacao, aluno, coordenador):
 
 
 @pytest.mark.django_db
+def test_professor_desativado_nao_conduz_turma(solicitacao, outro_professor, coordenador):
+    """Desativar a conta é como este sistema desliga alguém (Usuario não é
+    apagado, por causa dos PROTECT). Turma.clean não olhava is_active, então uma
+    turma podia ser designada a quem não entra mais no sistema - e o professor
+    designado é justamente quem passa a enxergar os participantes (spec 7.2, 10).
+
+    outro_professor, e não `professor`: `professor` é o responsável do curso
+    publicado da fixture, e desativá-lo mexeria no cenário por outro lado.
+    e_professor continua verdadeiro aqui de propósito, para que só a guarda de
+    is_active possa recusar.
+    """
+    outro_professor.is_active = False
+    outro_professor.save()
+    assert outro_professor.e_professor
+    with pytest.raises(ValidationError):
+        services.aceitar_solicitacao(
+            solicitacao, professor=outro_professor, dados_turma=dados_turma(), por=coordenador
+        )
+    assert Turma.objects.count() == 0
+    solicitacao.refresh_from_db()
+    assert solicitacao.status == Solicitacao.RECEBIDA
+
+
+@pytest.mark.django_db
+def test_professor_desativado_fica_fora_do_formulario_de_turma(outro_professor):
+    """A tela não é a guarda (essa é Turma.clean), mas oferecer no select alguém
+    que o model vai recusar é um erro de apresentação garantido. Separado da
+    metade `papel` do mesmo queryset de propósito: uma asserção que cobrisse as
+    duas passaria com qualquer uma das duas apagada."""
+    from apps.turmas.forms import TurmaForm
+
+    escolhas = TurmaForm().fields["professor"].queryset
+    assert outro_professor in escolhas
+    outro_professor.is_active = False
+    outro_professor.save()
+    assert outro_professor not in TurmaForm().fields["professor"].queryset
+
+
+@pytest.mark.django_db
 def test_aluno_nao_aceita_solicitacao(solicitacao, professor, aluno):
     with pytest.raises(PermissionDenied):
         services.aceitar_solicitacao(

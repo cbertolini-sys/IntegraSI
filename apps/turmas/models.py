@@ -64,8 +64,19 @@ class Turma(models.Model):
         erros = {}
         if self.data_inicio and self.data_fim and self.data_fim < self.data_inicio:
             erros["data_fim"] = "O fim não pode ser anterior ao início."
-        if self.professor_id and not self.professor.e_professor:
-            erros["professor"] = "Somente professor conduz turma."
+        if self.professor_id:
+            # Duas regras distintas, escritas como if/elif para que cada uma possa
+            # ser apagada sozinha e derrubar o proprio teste: um aluno (ativo) so
+            # aciona a primeira, um professor desativado so aciona a segunda.
+            if not self.professor.e_professor:
+                erros["professor"] = "Somente professor conduz turma."
+            elif not self.professor.is_active:
+                # Mora aqui, e nao so no queryset de TurmaForm: desativar uma conta
+                # e como este sistema desliga alguem (Usuario nao e apagado, por
+                # causa dos PROTECT), e a tela nao e a guarda - services.py, o
+                # Admin e o shell tambem criam Turma. Regra que cruza campos do
+                # mesmo objeto => Model.clean() (docs/onde-mora-a-validacao.md, 2).
+                erros["professor"] = "Professor desativado não conduz turma."
         if erros:
             raise ValidationError(erros)
 
