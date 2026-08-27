@@ -19,4 +19,8 @@ urlpatterns = [
     path("coordenacao/catalogo/", views.cursos_no_catalogo, name="cursos_no_catalogo"),
     path("coordenacao/<int:pk>/", views.analisar_curso, name="analisar_curso"),
     path("coordenacao/<int:pk>/decidir/", views.decidir_curso, name="decidir_curso"),
+    path("uploads/iniciar/", views.upload_iniciar, name="upload_iniciar"),
+    path("uploads/<uuid:identificador>/bloco/", views.upload_bloco, name="upload_bloco"),
+    path("uploads/<uuid:identificador>/estado/", views.upload_estado, name="upload_estado"),
+    path("uploads/<uuid:identificador>/concluir/", views.upload_concluir, name="upload_concluir"),
 ]

@@ -13,10 +13,17 @@ from apps.cursos.views.coordenador import (
     fila_coordenacao,
 )
 from apps.cursos.views.professor import decidir, equipe, fila_revisao, nova_proposta, revisar, submeter_curso
+from apps.cursos.views.upload import (
+    upload_bloco,
+    upload_concluir,
+    upload_estado,
+    upload_iniciar,
+)
 
 __all__ = [
     "analisar_curso", "anexar", "curso", "cursos_no_catalogo", "decidir", "decidir_curso",
     "entregavel",
     "enviar_entregavel", "equipe", "fila_coordenacao", "fila_revisao", "meus_cursos",
     "nova_proposta", "revisar", "salvar_secao", "submeter_curso",
+    "upload_bloco", "upload_concluir", "upload_estado", "upload_iniciar",
 ]

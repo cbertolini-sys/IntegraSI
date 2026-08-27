@@ -52,6 +52,37 @@ def detecta_mime(cabecalho):
     return None
 
 
+def _confere_limite(mime, tamanho):
+    """Teto por tipo (spec 8). Vive numa funcao so porque os dois lados do upload em
+    blocos precisam dele: o declarado, na abertura, e o real, na conclusao."""
+    limite = LIMITES[mime]
+    if tamanho > limite:
+        raise ValidationError(f"Arquivo acima do limite de {limite // MEGA} MB para este tipo.")
+
+
+def valida_declaracao(nome, tamanho):
+    """Confere o que da para conferir antes do primeiro byte: a extensao e o tamanho
+    que o cliente declara. Devolve o mime que a extensao promete.
+
+    Existe porque `valida_upload` precisa do cabecalho e so pode rodar no fim. Sem
+    ela o teto por tipo ficava sem dono no caminho da abertura: um `.pdf` declarado
+    com 900 MB nascia (900 MB cabem no unico teto que o modelo conhece, o do video),
+    passava meia hora enchendo o disco e so entao ouvia que PDF para em 20 MB.
+
+    O que ela NAO faz e conferir conteudo: nome declarado nao prova nada sobre os
+    bytes que vao chegar. Essa parte continua obrigatoria em `valida_upload`.
+    """
+    mime = EXTENSOES.get(Path(nome).suffix.lower())
+    if mime is None:
+        raise ValidationError("Tipo de arquivo não reconhecido ou não permitido.")
+    if tamanho <= 0:
+        # Um upload de 0 byte nasceria `completo` sem nunca tocar o disco, e a
+        # conclusao iria stat() um arquivo parcial que nao existe.
+        raise ValidationError("Arquivo vazio.")
+    _confere_limite(mime, tamanho)
+    return mime
+
+
 def valida_upload(nome, tamanho, cabecalho):
     """Confere tipo e tamanho e devolve o mime. Levanta ValidationError se recusar."""
     mime = detecta_mime(cabecalho)
@@ -62,9 +93,7 @@ def valida_upload(nome, tamanho, cabecalho):
         raise ValidationError(
             f"O conteúdo do arquivo não corresponde à extensão {Path(nome).suffix}."
         )
-    limite = LIMITES[mime]
-    if tamanho > limite:
-        raise ValidationError(f"Arquivo acima do limite de {limite // MEGA} MB para este tipo.")
+    _confere_limite(mime, tamanho)
     return mime
 
 

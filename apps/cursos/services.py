@@ -1,13 +1,33 @@
+import hashlib
+
 from django.contrib.postgres.search import SearchVector
 from django.core.exceptions import ValidationError
+from django.core.files import File
 from django.db import models, transaction
 from django.utils import timezone
 
 from apps.cursos import permissions, validacoes
+from apps.cursos.arquivos import MEGA, valida_upload
 from apps.cursos.busca import CONFIG_TEXTO
-from apps.cursos.choices import StatusCurso, StatusEntregavel, TipoEntregavel
-from apps.cursos.models import Curso, Entregavel, LogTransicaoCurso, MembroEquipe, Revisao, Secao
+from apps.cursos.choices import StatusCurso, StatusEntregavel, TipoEntregavel, TipoMidia
+from apps.cursos.models import (
+    Anexo,
+    Arquivo,
+    Curso,
+    Entregavel,
+    LogTransicaoCurso,
+    MembroEquipe,
+    Revisao,
+    Secao,
+)
 from apps.notificacoes.services import enfileirar
+
+# Cabecalho suficiente para todas as assinaturas de `arquivos.ASSINATURAS` e para a
+# caixa `ftyp` do MP4 (bytes 4:8).
+TAMANHO_CABECALHO = 16
+# Pedaco de leitura da conclusao. O arquivo pode ter 1 GB e nunca pode sentar
+# inteiro na memoria de um worker (spec 8).
+BLOCO_LEITURA = MEGA
 
 SECOES_PLANO_ENSINO = [
     "Ementa",
@@ -303,3 +323,70 @@ def atualizar_vetor_temas(curso):
     Curso.objects.filter(pk=curso.pk).update(
         vetor_temas=SearchVector(models.Value(nomes), config=CONFIG_TEXTO)
     )
+
+
+@transaction.atomic
+def concluir_upload(upload, titulo, duracao_minutos):
+    """Transforma o arquivo parcial de um upload em blocos em Arquivo + Anexo de video.
+
+    Le o parcial sempre em pedacos de `BLOCO_LEITURA` pelo `open` do modulo: um
+    `parcial.read()` sem argumento carregaria 1 GB na memoria do worker (spec 8).
+    """
+    permissions.garante(
+        permissions.pode_editar_producao(upload.usuario, upload.entregavel),
+        "Este entregável não está aberto para edição.",
+    )
+    # Reconferido aqui, e nao so na abertura: 1 GB no upstream domestico leva perto
+    # de meia hora, e a janela em que o professor aprova o entregavel cabe inteira
+    # dentro dela. O portao da abertura ja tinha expirado quando os bytes chegaram.
+    if not upload.completo:
+        raise ValidationError("O upload ainda não terminou.")
+    # Titulo e duracao sao exigidos por Anexo.clean(), mas conferidos AQUI, antes de
+    # qualquer byte ir para o disco: descobrir no `Anexo.objects.create()` da ultima
+    # linha significaria o arquivo ja copiado para MEDIA_ROOT: a transacao desfaz a
+    # linha, nao o arquivo em disco. E o orfao que `anexar` teve que consertar.
+    if not (titulo or "").strip():
+        raise ValidationError("Informe o título do vídeo.")
+    if not duracao_minutos:
+        raise ValidationError("Informe a duração do vídeo em minutos.")
+
+    caminho = upload.caminho()
+    tamanho = caminho.stat().st_size
+    digest = hashlib.sha256()
+    with open(caminho, "rb") as parcial:
+        cabecalho = parcial.read(TAMANHO_CABECALHO)
+        # O nome declarado na abertura nao prova nada sobre os bytes que chegaram:
+        # a conferencia de conteudo e obrigatoria aqui, com o cabecalho real.
+        mime = valida_upload(upload.nome_original, tamanho, cabecalho)
+        if mime != "video/mp4":
+            raise ValidationError("Este entregável aceita apenas vídeo MP4.")
+        parcial.seek(0)
+        for pedaco in iter(lambda: parcial.read(BLOCO_LEITURA), b""):
+            digest.update(pedaco)
+
+        arquivo = Arquivo(
+            nome_original=upload.nome_original,
+            tamanho=tamanho,
+            mime=mime,
+            hash_conteudo=digest.hexdigest(),
+            enviado_por=upload.usuario,
+        )
+        # File.chunks() volta ao inicio sozinho e copia de 64 KB em 64 KB.
+        arquivo.arquivo.save(upload.nome_original, File(parcial), save=False)
+    arquivo.save()
+
+    anexo = Anexo.objects.create(
+        entregavel=upload.entregavel,
+        tipo_midia=TipoMidia.VIDEO,
+        titulo=titulo,
+        arquivo=arquivo,
+        duracao_minutos=duracao_minutos,
+        enviado_por=upload.usuario,
+    )
+    # Fora da transacao de proposito. Um `unlink()` aqui dentro e a inversao classica:
+    # se a transacao volta atras depois dele, a linha de UploadEmAndamento ressuscita
+    # apontando para um arquivo que ja nao existe, e o dono nao consegue nem retomar
+    # nem concluir. O disco so pode ser mexido depois que o banco confirmou.
+    transaction.on_commit(lambda: caminho.unlink(missing_ok=True))
+    upload.delete()
+    return anexo
