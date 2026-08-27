@@ -99,7 +99,11 @@ desses aparecendo aqui é sinal de que a fronteira foi atravessada sem querer.
   o cenário viola duas regras juntas, apagar qualquer uma delas deixa a outra levantando a
   exceção e o teste segue verde. A pergunta não é "existe teste que exercita esta regra?",
   e sim "apagar *esta guarda sozinha* faria algum teste falhar?" — a enumeração de regras
-  não detecta isso, só a deleção isolada detecta. O padrão "teste com nome
+  não detecta isso, só a deleção isolada detecta.
+- **Comite antes de quebrar de propósito.** A deleção é temporária e o reflexo para desfazer
+  é `git checkout <arquivo>` — que também descarta qualquer outra alteração não commitada
+  naquele arquivo. Já custou trabalho neste projeto. Comite (ou faça `stash`) antes de
+  mutilar a guarda, e restaure com a certeza de não levar mais nada junto. O padrão "teste com nome
   que não exercita a regra" apareceu **sete vezes** no Plano 2, em tarefas diferentes e
   achado por revisores diferentes — entre elas uma regra de segurança e a checagem de
   que o plano de ensino é PDF, que podia ser apagada inteira sem quebrar nada.
