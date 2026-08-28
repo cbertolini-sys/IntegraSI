@@ -37,6 +37,10 @@ As regras, todas do lado do navegador:
 17. A barra de progresso acompanha o envio.
 18. Servidor que aceita bloco sem avancar nao vira laco infinito.
 19. A conclusao leva titulo e duracao do formulario.
+20. O `submit` do formulario de video e interceptado: sem isso o formulario
+    faria um POST comum para a propria pagina e NADA do upload.js rodaria,
+    com a suite inteira verde.
+20b. E o `submit` dos outros formularios da tela passa direto.
 """
 
 import json
@@ -73,6 +77,8 @@ CENARIOS = [
     "a_barra_de_progresso_acompanha_o_envio",
     "servidor_que_nao_avanca_nao_vira_laco_infinito",
     "conclui_com_titulo_e_duracao_do_formulario",
+    "o_submit_do_formulario_de_video_e_interceptado",
+    "submit_de_outro_formulario_nao_e_interceptado",
 ]
 
 sem_node = pytest.mark.skipif(

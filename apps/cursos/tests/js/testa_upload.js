@@ -26,9 +26,10 @@ const ROTAS = {
 
 // `document` existe so para que um JS que buscasse o token CSRF no documento
 // inteiro (em vez de dentro do formulario) encontrasse ALGO — e o token errado.
+let ouvinteDeSubmit = null;
 globalThis.document = {
   querySelector: () => ({ value: 'token-de-outro-formulario' }),
-  addEventListener: () => {},
+  addEventListener: (tipo, fn) => { if (tipo === 'submit') ouvinteDeSubmit = fn; },
 };
 
 const upload = require(CAMINHO);
@@ -68,6 +69,7 @@ function formulario(arquivo, dataset) {
       dataset || {}
     ),
     querySelector: (seletor) => nos[seletor],
+    matches: (seletor) => seletor === '[data-upload-video]',
     nos,
   };
 }
@@ -127,8 +129,8 @@ function conta(chamadas, sufixo) {
 }
 
 /** Roda `iniciarUpload` com globais de mentira e devolve o que foi observado. */
-async function rodar({ responder, arquivo, memoria, dataset }) {
-  const registro = { esperas: [], recargas: 0, progresso: [], pedidos: [] };
+async function rodar({ responder, arquivo, memoria, dataset, viaSubmit, alvo }) {
+  const registro = { esperas: [], recargas: 0, progresso: [], pedidos: [], barrou: false };
   const guardado = new Map(Object.entries(memoria || {}));
 
   const originais = {
@@ -160,7 +162,20 @@ async function rodar({ responder, arquivo, memoria, dataset }) {
   });
 
   try {
-    await upload.iniciarUpload(form);
+    if (viaSubmit) {
+      // Caminho de verdade do navegador: o ouvinte de `submit` do documento.
+      // Sem ele o formulario faria um POST comum para a propria pagina e NADA
+      // do resto do arquivo rodaria — com a suite inteira verde.
+      const evento = {
+        target: alvo || form,
+        preventDefault: () => { registro.barrou = true; },
+      };
+      ouvinteDeSubmit(evento);
+      // O ouvinte nao espera a promessa; drena as microtarefas ate o fim.
+      for (let i = 0; i < 500; i += 1) await Promise.resolve();
+    } else {
+      await upload.iniciarUpload(form);
+    }
   } finally {
     Object.assign(globalThis, originais);
   }
@@ -435,6 +450,28 @@ cenario('conclui_com_titulo_e_duracao_do_formulario', async () => {
   const est = novoEstado();
   await rodar({ responder: servidor(est) });
   afirmaIgual(est.concluido, { titulo: 'Aula 1', duracao_minutos: '7' }, 'corpo da conclusão');
+});
+
+// Regra: o `submit` do formulario de video e interceptado pelo ouvinte do
+// documento, que impede o POST comum e chama o envio em blocos.
+cenario('o_submit_do_formulario_de_video_e_interceptado', async () => {
+  const est = novoEstado();
+  const r = await rodar({ responder: servidor(est), viaSubmit: true });
+  afirma(r.barrou, 'o POST comum do formulário precisava ser impedido');
+  afirma(est.concluido !== null, 'o envio em blocos precisava rodar pelo submit');
+});
+
+// Regra: o ouvinte e do documento inteiro, entao precisa deixar passar o submit
+// dos OUTROS formularios da tela (anexar, enviar para revisao).
+cenario('submit_de_outro_formulario_nao_e_interceptado', async () => {
+  const est = novoEstado();
+  const r = await rodar({
+    responder: servidor(est),
+    viaSubmit: true,
+    alvo: { matches: () => false },
+  });
+  afirma(!r.barrou, 'não podia impedir o submit de outro formulário');
+  afirmaIgual(r.pedidos.length, 0, 'não podia falar com o servidor');
 });
 
 // --- execucao --------------------------------------------------------------
