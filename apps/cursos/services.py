@@ -225,6 +225,41 @@ def submeter_ao_coordenador(curso, por):
 ORIGENS_DA_PUBLICACAO = (StatusCurso.AGUARDANDO_COORDENADOR, StatusCurso.DESPUBLICADO)
 
 
+def _substituir_versoes_anteriores(curso, por):
+    """Move para SUBSTITUIDO as outras versoes da linhagem que ja estiveram no
+    catalogo, mantendo a invariante "no maximo uma versao publicada por linhagem"
+    (spec 4.5) - e ela que deixa o catalogo ser um filter(status=PUBLICADO) sem
+    DISTINCT ON.
+
+    Alcanca PUBLICADO e tambem DESPUBLICADO. A spec 5 diz "publicar uma versao
+    move automaticamente a anterior para SUBSTITUIDO", e ser superada e fato da
+    linhagem, nao do estado do catalogo no instante da publicacao: se a versao
+    velha estivesse apenas despublicada e assim continuasse, ela seguiria
+    republicavel para sempre (spec 5: DESPUBLICADO "pode ser republicado") e
+    voltaria ao catalogo ao lado da nova. Pior: a republicacao da velha e que
+    substituiria a nova, invertendo a unica seta que a spec 5 desenha
+    ("nova v PUBLICADO ==> versao anterior vira SUBSTITUIDO") e matando de forma
+    terminal a versao mais recente. Fechar isso aqui, na publicacao da nova, e o
+    que torna a inversao inalcancavel - a velha ja e terminal quando alguem
+    pensar em republica-la.
+
+    Nao alcanca versao em producao (RASCUNHO, EM_PRODUCAO, AGUARDANDO_COORDENADOR,
+    DEVOLVIDO): republicar um curso despublicado nao pode jogar fora o trabalho da
+    equipe que esta montando a proxima versao dele.
+    """
+    anteriores = Curso.objects.filter(
+        models.Q(pk=curso.linhagem_id) | models.Q(raiz_id=curso.linhagem_id),
+        status__in=(StatusCurso.PUBLICADO, StatusCurso.DESPUBLICADO),
+    ).exclude(pk=curso.pk)
+    for anterior in anteriores:
+        _transicionar(
+            anterior,
+            StatusCurso.SUBSTITUIDO,
+            por,
+            observacao=f"Substituído pela versão {curso.versao}.",
+        )
+
+
 @transaction.atomic
 def publicar_curso(curso, por):
     """Coordenador publica o curso submetido, ou republica um despublicado
@@ -241,6 +276,13 @@ def publicar_curso(curso, por):
             "Só se publica curso submetido pelo professor, ou se republica curso despublicado."
         )
     republicacao = curso.status == StatusCurso.DESPUBLICADO
+    # Substitui ANTES de publicar, e nao depois: entre as duas escritas a
+    # linhagem teria duas linhas PUBLICADO, e o indice unico parcial
+    # (uma_versao_publicada_por_linhagem) e conferido a cada comando, nao no
+    # commit - indice parcial nao pode ser DEFERRABLE no Postgres. Nesta ordem a
+    # invariante nunca chega a ser violada, nem por um instante dentro da
+    # transacao.
+    _substituir_versoes_anteriores(curso, por)
     _transicionar(curso, StatusCurso.PUBLICADO, por)
     if republicacao:
         enfileirar(
@@ -390,3 +432,103 @@ def concluir_upload(upload, titulo, duracao_minutos):
     transaction.on_commit(lambda: caminho.unlink(missing_ok=True))
     upload.delete()
     return anexo
+
+
+@transaction.atomic
+def abrir_nova_versao(curso, por, motivo):
+    """Clona um curso publicado numa nova versao, na edicao corrente (spec 4.5).
+
+    A versao anterior continua publicada e solicitavel durante todo o trabalho;
+    ela so vira SUBSTITUIDO quando a nova for publicada.
+
+    O que NAO vem junto, de proposito:
+      - a equipe. "O professor monta a nova equipe. Pode ser outra turma inteira"
+        (spec 4.5, passo 3): copiar os membros daria acesso de edicao a alunos de
+        outro semestre e faria a versao nova nascer sem que ninguem a assumisse.
+      - o historico de Revisao. Pertence a versao que o produziu; um parecer do
+        professor sobre um material que ja mudou seria historico falso.
+      - os bytes. Os anexos clonados apontam para o MESMO Arquivo (spec 4.6).
+    """
+    permissions.garante(
+        permissions.pode_abrir_versao(por, curso),
+        "Somente o professor responsável ou a coordenação abre nova versão.",
+    )
+    if curso.status != StatusCurso.PUBLICADO:
+        raise ValidationError("Só se abre nova versão de curso publicado.")
+    if not (motivo or "").strip():
+        raise ValidationError("Informe o motivo da nova versão.")
+
+    linhagem = curso.linhagem_id
+    versoes = Curso.objects.filter(models.Q(pk=linhagem) | models.Q(raiz_id=linhagem))
+    em_producao = versoes.exclude(
+        status__in=(StatusCurso.PUBLICADO, StatusCurso.SUBSTITUIDO, StatusCurso.DESPUBLICADO)
+    )
+    if em_producao.exists():
+        raise ValidationError("Já existe uma versão deste curso em produção.")
+
+    from apps.edicoes.models import Edicao
+
+    ultima = versoes.order_by("-versao").first()
+    nova = Curso.objects.create(
+        titulo=curso.titulo,
+        resumo=curso.resumo,
+        # Outro semestre, outra equipe (spec 4.5). Sem edicao corrente aberta,
+        # herda a do curso de origem: `edicao` e obrigatorio no Curso, e abrir
+        # versao nao pode depender de o coordenador ter lembrado da proxima edicao.
+        edicao=Edicao.objects.corrente() or curso.edicao,
+        professor_responsavel=curso.professor_responsavel,
+        tipo_publico=curso.tipo_publico,
+        etapa_ano=curso.etapa_ano,
+        publico_descricao=curso.publico_descricao,
+        referencial=curso.referencial,
+        carga_horaria=curso.carga_horaria,
+        formato=curso.formato,
+        pre_requisitos=curso.pre_requisitos,
+        palavras_chave=curso.palavras_chave,
+        raiz_id=linhagem,
+        versao=ultima.versao + 1,
+        motivo_versao=motivo,
+    )
+    nova.competencias.set(curso.competencias.all())
+    # definir_temas, e nao um temas.set() aqui: coluna gerada nao alcanca M2M
+    # (spec 4.4), e e esse service que mantem juntos o vinculo e a reindexacao.
+    # Foi uma tela escrevendo `temas` direto, sem reindexar, que sumiu com cursos
+    # da busca no Plano 2.
+    definir_temas(nova, curso.temas.all(), por=por)
+
+    for entregavel in curso.entregaveis.prefetch_related("secoes", "anexos"):
+        copia = Entregavel.objects.create(curso=nova, tipo=entregavel.tipo)
+        secoes_clonadas = {}
+        for secao in entregavel.secoes.all():
+            secoes_clonadas[secao.pk] = Secao.objects.create(
+                entregavel=copia, titulo=secao.titulo, ordem=secao.ordem, conteudo=secao.conteudo
+            )
+        for anexo in entregavel.anexos.all():
+            Anexo.objects.create(
+                entregavel=copia,
+                # A secao CLONADA. Repetir anexo.secao apontaria o material da
+                # versao nova para dentro da versao velha: editar uma mexeria na
+                # outra, e apagar a nova arrastaria o anexo por CASCADE.
+                secao=secoes_clonadas.get(anexo.secao_id),
+                tipo_midia=anexo.tipo_midia,
+                # Mesmo Arquivo: clonar um curso nao pode clonar gigabytes de
+                # video (spec 4.6).
+                arquivo=anexo.arquivo,
+                url=anexo.url,
+                titulo=anexo.titulo,
+                descricao=anexo.descricao,
+                referencia_bibliografica=anexo.referencia_bibliografica,
+                rotulo=anexo.rotulo,
+                tipo_pratica=anexo.tipo_pratica,
+                duracao_minutos=anexo.duracao_minutos,
+                enviado_por=anexo.enviado_por,
+            )
+
+    LogTransicaoCurso.objects.create(
+        curso=nova,
+        de_status=StatusCurso.RASCUNHO,
+        para_status=StatusCurso.RASCUNHO,
+        usuario=por,
+        observacao=f"Versão {nova.versao} aberta a partir da versão {curso.versao}: {motivo}",
+    )
+    return nova

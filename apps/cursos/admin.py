@@ -40,7 +40,13 @@ class CursoAdmin(admin.ModelAdmin):
     # select. E sem has_add_permission=False, "Adicionar curso" pelo Admin criava
     # um Curso sem passar por services.criar_curso - portanto sem os cinco
     # Entregavel que o resto do sistema pressupoe que todo curso tem.
-    readonly_fields = ["status"]
+    # Mesmo motivo do status, estendido pelo Plano 4: raiz/versao/motivo_versao sao
+    # a linhagem (spec 4.5), e quem os escreve e services.abrir_nova_versao. Soltos
+    # no formulario, um POST do Admin podia mudar a versao de linhagem, criar uma
+    # segunda raiz ou renumerar a v2 para v1 - e a invariante "uma versao publicada
+    # por linhagem", que o catalogo usa para dispensar DISTINCT ON, sai do ar sem
+    # que nenhum service tenha sido chamado.
+    readonly_fields = ["status", "raiz", "versao", "motivo_versao"]
 
     def has_add_permission(self, request):
         return False

@@ -66,6 +66,15 @@ def pode_publicar(usuario):
     return usuario.e_coordenador
 
 
+def pode_abrir_versao(usuario, curso):
+    """Quem abre nova versao de um curso publicado (spec 4.5, passo 1): o
+    coordenador ou o professor responsavel pela versao atual. Coincide hoje com
+    pode_gerir_equipe, e esta escrita por extenso pelo mesmo motivo de
+    pode_revisar: sao regras diferentes da spec (montar equipe x decidir que o
+    curso precisa de outra versao) e uma pode mudar sem a outra."""
+    return usuario.e_coordenador or (usuario.e_professor and e_responsavel(usuario, curso))
+
+
 def pode_baixar_arquivo(usuario, arquivo):
     """Pode baixar quem enxerga ALGUM curso que anexa este arquivo.
 
@@ -77,6 +86,15 @@ def pode_baixar_arquivo(usuario, arquivo):
     ver, dependendo so da ordenacao do Anexo.
 
     Arquivo sem anexo nenhum nao tem curso por onde autorizar: ninguem baixa.
+
+    Consequencia deliberada a partir do Plano 4 (versoes), respondendo a pergunta
+    que a Task 4 deixou em aberto: quando a v2 publica e a v1 vira SUBSTITUIDO,
+    a equipe da v1 continua baixando o material da v1 - "permanece consultavel
+    como historico" (spec 4.5), e substituicao e fato do catalogo, nao revogacao
+    de acesso de quem produziu o trabalho. A equipe NOVA alcanca os mesmos bytes
+    pelo anexo clonado na v2, nunca pela v1 (ela nao e membro de la): se ela
+    apagar o anexo da v2, perde o arquivo junto, como qualquer outra equipe. A
+    coordenacao enxerga as duas. Testes em test_versoes.py, regra 23.
     """
     return any(
         pode_ver_curso(usuario, anexo.entregavel.curso)

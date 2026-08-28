@@ -41,6 +41,18 @@ def _leva_status(curso, status, membro_equipe, professor, coordenador):
     services.publicar_curso(curso, por=coordenador)
     if status == StatusCurso.DESPUBLICADO:
         services.despublicar_curso(curso, por=coordenador, motivo="Desatualizado.")
+    if status == StatusCurso.SUBSTITUIDO:
+        # O Plano 4 abriu o caminho real ate SUBSTITUIDO: publicar a versao
+        # seguinte da linhagem. Titulo diferente de proposito - a v2 fica no
+        # catalogo, e o teste confere que o titulo da v1 sumiu de la.
+        nova = services.abrir_nova_versao(curso, por=coordenador, motivo="Refazer o caderno.")
+        nova.titulo = "Segunda versao, outro titulo"
+        nova.save()
+        services.adicionar_membro(nova, membro_equipe, por=professor)
+        nova.entregaveis.update(status=StatusEntregavel.APROVADO)
+        nova.refresh_from_db()
+        services.submeter_ao_coordenador(nova, por=professor)
+        services.publicar_curso(nova, por=coordenador)
     return curso
 
 
@@ -196,6 +208,7 @@ STATUS_NAO_PUBLICOS = [
     StatusCurso.AGUARDANDO_COORDENADOR,
     StatusCurso.DEVOLVIDO,
     StatusCurso.DESPUBLICADO,
+    StatusCurso.SUBSTITUIDO,
 ]
 
 
@@ -206,8 +219,9 @@ def test_curso_nao_publicado_fica_fora_das_duas_portas(client, dados_curso, alun
     precisa ficar de fora tanto da listagem quanto do detalhe - a guarda e a
     mesma (cursos_publicados()) para as duas portas, mas nada garante que uma
     tarefa futura (ex.: Plano 4 tratando SUBSTITUIDO como caso especial) nao
-    abra uma delas sem passar pela outra. SUBSTITUIDO fica de fora desta lista:
-    ver test_curso_substituido_nao_e_alcancavel_ainda."""
+    abra uma delas sem passar pela outra. SUBSTITUIDO entrou na lista no Plano 4,
+    Task 5, que abriu o caminho real ate ele - `_leva_status` chega la publicando
+    a versao seguinte, nunca por .update()."""
     curso = services.criar_curso(**dados_curso)
     _leva_status(curso, status, aluno, professor, coordenador)
     curso.refresh_from_db()
@@ -219,12 +233,3 @@ def test_curso_nao_publicado_fica_fora_das_duas_portas(client, dados_curso, alun
     resposta_detalhe = client.get(reverse("catalogo_curso", args=[curso.pk]))
     assert resposta_detalhe.status_code == 404
 
-
-@pytest.mark.skip(
-    reason="SUBSTITUIDO nao e alcancavel por nenhum service hoje - o Plano 4 e quem "
-    "introduz a substituicao de versao (CLAUDE.md, planos executados em ordem). "
-    "Sem um caminho real ate esse status, um teste aqui so fingiria cobertura; "
-    "quando o Plano 4 abrir esse caminho, mova SUBSTITUIDO para STATUS_NAO_PUBLICOS."
-)
-def test_curso_substituido_nao_e_alcancavel_ainda():
-    pass

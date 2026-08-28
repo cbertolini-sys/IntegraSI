@@ -276,22 +276,31 @@ def test_professor_nao_republica(curso_despublicado, professor):
 
 
 @pytest.mark.django_db
-def test_curso_substituido_nao_pode_ser_republicado(curso_pronto, professor, coordenador):
+def test_curso_substituido_nao_pode_ser_republicado(curso_pronto, aluno, professor, coordenador):
     """Spec 5: SUBSTITUIDO e terminal, "nao republicavel" - o contraponto exato
-    da frase que autoriza republicar o DESPUBLICADO. Nenhum servico alcanca
-    SUBSTITUIDO hoje (a substituicao de versao e do Plano 4), entao o status e
-    posto por .update() direto: e a unica forma de cravar, agora, que abrir a
-    republicacao nao abriu a porta errada junto."""
-    from apps.cursos.models import Curso
+    da frase que autoriza republicar o DESPUBLICADO.
 
+    O status chega aqui pelo caminho de verdade desde o Plano 4, Task 5:
+    publicar a versao seguinte da linhagem. Ate entao era um .update() direto,
+    porque nenhum service alcancava SUBSTITUIDO."""
     services.submeter_ao_coordenador(curso_pronto, por=professor)
     services.publicar_curso(curso_pronto, por=coordenador)
-    Curso.objects.filter(pk=curso_pronto.pk).update(status=StatusCurso.SUBSTITUIDO)
-    curso_pronto.refresh_from_db()
-    with pytest.raises(ValidationError):
-        services.publicar_curso(curso_pronto, por=coordenador)
+    nova = services.abrir_nova_versao(curso_pronto, por=coordenador, motivo="Refazer o caderno.")
+    services.adicionar_membro(nova, aluno, por=professor)
+    nova.entregaveis.update(status=StatusEntregavel.APROVADO)
+    nova.refresh_from_db()
+    services.submeter_ao_coordenador(nova, por=professor)
+    services.publicar_curso(nova, por=coordenador)
     curso_pronto.refresh_from_db()
     assert curso_pronto.status == StatusCurso.SUBSTITUIDO
+
+    with pytest.raises(ValidationError):
+        services.publicar_curso(curso_pronto, por=coordenador)
+
+    curso_pronto.refresh_from_db()
+    nova.refresh_from_db()
+    assert curso_pronto.status == StatusCurso.SUBSTITUIDO
+    assert nova.status == StatusCurso.PUBLICADO
 
 
 @pytest.mark.django_db

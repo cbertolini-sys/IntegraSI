@@ -4,7 +4,7 @@ from django.contrib.postgres.search import SearchVector, SearchVectorField
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
-from django.db.models import F, Value
+from django.db.models import F, Q, Value
 from django.db.models.functions import Coalesce
 
 from apps.cursos.busca import CONFIG_TEXTO
@@ -53,6 +53,20 @@ class Curso(models.Model):
     status = models.CharField(
         "situação", max_length=30, choices=StatusCurso.choices, default=StatusCurso.RASCUNHO
     )
+
+    # Versionamento (spec 4.5). `raiz` fica vazia na propria v1 - e ela a raiz -,
+    # entao a linhagem inteira e COALESCE(raiz_id, id): ver linhagem_id abaixo e a
+    # constraint no Meta, que dependem os dois dessa mesma expressao.
+    raiz = models.ForeignKey(
+        "self",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="versoes",
+        verbose_name="primeira versão desta linhagem",
+    )
+    versao = models.PositiveSmallIntegerField("versão", default=1)
+    motivo_versao = models.TextField("motivo desta versão", blank=True)
     criado_em = models.DateTimeField("criado em", auto_now_add=True)
     atualizado_em = models.DateTimeField("atualizado em", auto_now=True)
     publicado_em = models.DateTimeField("publicado em", null=True, blank=True)
@@ -83,9 +97,34 @@ class Curso(models.Model):
             GinIndex(fields=["search_vector"], name="curso_busca_idx"),
             GinIndex(fields=["vetor_temas"], name="curso_busca_temas_idx"),
         ]
+        constraints = [
+            # No maximo UMA versao publicada por linhagem (spec 4.5: "o catalogo
+            # mostra, de cada linhagem, apenas a versao publicada"). E essa
+            # invariante que deixa o catalogo ser um filter(status=PUBLICADO)
+            # simples, sem DISTINCT ON: quem a quebrar poe o mesmo curso duas
+            # vezes na listagem publica, em silencio.
+            #
+            # Quem a mantem no dia a dia e o laco de substituicao de
+            # services.publicar_curso; esta constraint e a rede embaixo dele, para
+            # um comando, uma migracao de dados ou um .update() futuro que passe
+            # ao largo do service. Indexa COALESCE(raiz_id, id) e nao raiz_id: na
+            # v1 raiz e NULL, e no Postgres NULL nunca colide com nada - um indice
+            # parcial sobre raiz_id deixaria a v1 e a v2 publicadas lado a lado,
+            # que e exatamente o caso que precisa ser barrado.
+            models.UniqueConstraint(
+                Coalesce(F("raiz_id"), F("id")),
+                condition=Q(status=StatusCurso.PUBLICADO),
+                name="uma_versao_publicada_por_linhagem",
+            )
+        ]
 
     def __str__(self):
         return self.titulo
+
+    @property
+    def linhagem_id(self):
+        """Identifica a linhagem: a v1 e a propria raiz das demais (spec 4.5)."""
+        return self.raiz_id or self.pk
 
     @property
     def publico_alvo(self):

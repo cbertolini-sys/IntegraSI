@@ -3,7 +3,7 @@ from django.urls import reverse
 
 from apps.cursos import services, validacoes
 from apps.cursos.admin import CursoAdmin
-from apps.cursos.choices import StatusCurso, TipoEntregavel
+from apps.cursos.choices import StatusCurso, StatusEntregavel, TipoEntregavel
 from apps.referenciais.models import Categoria, Competencia, Referencial
 
 
@@ -74,6 +74,61 @@ def test_coordenador_anexa_competencias_pelo_admin_libera_a_pendencia_do_plano(
 
 def test_curso_admin_declara_status_somente_leitura():
     assert "status" in CursoAdmin.readonly_fields
+
+
+@pytest.mark.django_db
+def test_curso_admin_nao_aceita_remendar_a_linhagem_pelo_formulario(
+    client, dados_curso, aluno, professor, coordenador
+):
+    """Plano 4: raiz/versao/motivo_versao so sao escritos por
+    services.abrir_nova_versao. Soltos no formulario do Admin, este POST
+    renumeraria a v2 para v1 e a soltaria da raiz - duas raizes na mesma
+    linhagem, e a invariante "uma versao publicada por linhagem" (que o catalogo
+    usa para dispensar DISTINCT ON) quebrada sem service nenhum no caminho."""
+    curso = services.criar_curso(**dados_curso)
+    services.adicionar_membro(curso, aluno, por=professor)
+    curso.entregaveis.update(status=StatusEntregavel.APROVADO)
+    curso.refresh_from_db()
+    services.submeter_ao_coordenador(curso, por=professor)
+    services.publicar_curso(curso, por=coordenador)
+    nova = services.abrir_nova_versao(curso, por=coordenador, motivo="Refazer o caderno.")
+
+    coordenador.is_staff = True
+    coordenador.is_superuser = True
+    coordenador.save(update_fields=["is_staff", "is_superuser"])
+    client.force_login(coordenador)
+
+    resposta = client.post(
+        reverse("admin:cursos_curso_change", args=[nova.pk]),
+        {
+            "titulo": nova.titulo,
+            "resumo": nova.resumo,
+            "edicao": nova.edicao_id,
+            "professor_responsavel": nova.professor_responsavel_id,
+            "tipo_publico": nova.tipo_publico,
+            "etapa_ano": nova.etapa_ano,
+            "publico_descricao": nova.publico_descricao,
+            "carga_horaria": nova.carga_horaria,
+            "formato": nova.formato,
+            "pre_requisitos": nova.pre_requisitos,
+            "temas": [],
+            "competencias": [],
+            "palavras_chave": nova.palavras_chave,
+            "raiz": "",
+            "versao": 1,
+            "motivo_versao": "Motivo trocado por fora.",
+        },
+    )
+    if resposta.status_code == 200:
+        assert not resposta.context["adminform"].form.errors, resposta.context[
+            "adminform"
+        ].form.errors
+    assert resposta.status_code == 302
+
+    nova.refresh_from_db()
+    assert nova.versao == 2
+    assert nova.raiz_id == curso.pk
+    assert nova.motivo_versao == "Refazer o caderno."
 
 
 @pytest.mark.django_db
