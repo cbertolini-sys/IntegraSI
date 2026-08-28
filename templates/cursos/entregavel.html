@@ -27,7 +27,15 @@
   <h2>Materiais</h2>
   <ul>
     {% for anexo in entregavel.anexos.all %}
-      <li>{{ anexo.titulo }} ({{ anexo.get_tipo_midia_display }})</li>
+      <li>
+        {% if anexo.arquivo %}
+          <a href="{% url 'baixar' anexo.arquivo.identificador %}">{{ anexo.titulo }}</a>
+        {% else %}
+          <a href="{{ anexo.url }}" rel="noopener noreferrer" target="_blank">{{ anexo.titulo }}</a>
+        {% endif %}
+        {% if anexo.duracao_minutos %} ({{ anexo.duracao_minutos }} min){% endif %}
+        {% if anexo.referencia_bibliografica %} &mdash; {{ anexo.referencia_bibliografica }}{% endif %}
+      </li>
     {% empty %}
       <li>Nenhum material anexado.</li>
     {% endfor %}

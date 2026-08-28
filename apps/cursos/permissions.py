@@ -64,3 +64,21 @@ def pode_publicar(usuario):
     coordenador. Distinta de pode_revisar, que e do professor - o portao entre
     producao e catalogo publico e uma decisao institucional, nao pedagogica."""
     return usuario.e_coordenador
+
+
+def pode_baixar_arquivo(usuario, arquivo):
+    """Pode baixar quem enxerga ALGUM curso que anexa este arquivo.
+
+    A pergunta e "existe algum anexo cujo curso esta pessoa pode ver?", e nao "o
+    que diz o primeiro anexo": `Arquivo.anexos` e FK reversa, e a partir do Plano
+    4 (versoes de curso) o mesmo Arquivo e compartilhado por varias versoes em vez
+    de ter os bytes clonados (spec 4.6). Olhar so o primeiro recusaria quem tem
+    acesso por outra versao — e liberaria por uma versao que a pessoa nao deveria
+    ver, dependendo so da ordenacao do Anexo.
+
+    Arquivo sem anexo nenhum nao tem curso por onde autorizar: ninguem baixa.
+    """
+    return any(
+        pode_ver_curso(usuario, anexo.entregavel.curso)
+        for anexo in arquivo.anexos.select_related("entregavel__curso")
+    )

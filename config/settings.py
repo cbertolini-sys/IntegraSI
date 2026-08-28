@@ -81,6 +81,10 @@ STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_ROOT = BASE_DIR / "media"
+# Em producao quem transmite arquivo e o nginx (X-Accel-Redirect); em
+# desenvolvimento, o proprio Django. O padrao segue DEBUG para que esquecer a
+# variavel no servidor nao deixe 1 GB de video passando por um worker Python.
+USAR_X_ACCEL = os.environ.get("USAR_X_ACCEL", "True" if not DEBUG else "False") == "True"
 
 EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
 EMAIL_HOST = os.environ.get("EMAIL_HOST", "")
