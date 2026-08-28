@@ -6,10 +6,11 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from apps.cursos import permissions, services, validacoes
-from apps.cursos.arquivos import calcula_hash
+from apps.cursos.arquivos import TAMANHO_BLOCO, calcula_hash
 from apps.cursos.choices import TipoMidia
 from apps.cursos.forms import AnexoForm, SecaoForm
 from apps.cursos.models import Anexo, Arquivo, Curso, Entregavel, Secao
+from apps.cursos.views.upload import UUID_MODELO
 
 
 @login_required
@@ -47,6 +48,13 @@ def entregavel(request, pk):
             "form_anexo": AnexoForm(),
             "pode_editar": permissions.pode_editar_producao(request.user, obj),
             "ultima_revisao": obj.revisoes.last(),
+            # O formulario de upload em blocos (so em VIDEOS) precisa levar ao JS o
+            # tamanho do bloco e a marca que ele troca pelo identificador nas URLs
+            # revertidas — nenhum dos dois pode estar escrito de novo dentro do JS.
+            "tamanho_bloco": TAMANHO_BLOCO,
+            "uuid_modelo": UUID_MODELO,
+            "duracao_minima": validacoes.DURACAO_MINIMA,
+            "duracao_maxima": validacoes.DURACAO_MAXIMA,
         },
     )
 

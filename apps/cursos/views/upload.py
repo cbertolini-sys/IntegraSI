@@ -19,6 +19,13 @@ from apps.cursos import permissions, services
 from apps.cursos.arquivos import valida_declaracao
 from apps.cursos.models import Entregavel, UploadEmAndamento
 
+# UUID de enfeite para o template reverter, com `{% url %}`, as tres rotas que
+# dependem do identificador; o JS troca esta marca pelo identificador de verdade
+# assim que o tem. E o que mantem `urls.py` como unica fonte das URLs: sem isto o
+# JS montaria "/uploads/<id>/bloco/" na mao e uma mudanca de rota quebraria o
+# navegador com a suite inteira verde.
+UUID_MODELO = "00000000-0000-0000-0000-000000000000"
+
 
 def _corpo_json(request):
     """Corpo da requisicao como dicionario.

@@ -10,6 +10,15 @@ GIGA = 1024 * MEGA
 # tamanho declarados antes de abrir o upload e `valida_upload`.
 LIMITE_VIDEO = 1 * GIGA
 
+# Tamanho do bloco que o navegador manda por requisicao no upload fatiado. Vive
+# aqui, no Python, e chega ao `static/js/upload.js` pelo `data-tamanho-bloco` do
+# formulario: uma segunda copia dentro do JS divergiria em silencio da primeira,
+# e um comentario dizendo "precisa ser o mesmo valor" nao e mecanismo nenhum.
+#
+# Precisa caber em DATA_UPLOAD_MAX_MEMORY_SIZE — acima do teto o Django recusa o
+# corpo antes de a view rodar (test_upload_integracao prende a relacao).
+TAMANHO_BLOCO = 5 * MEGA
+
 # Assinatura no inicio do arquivo -> mime. Conferir o conteudo, e nao a extensao,
 # e o que impede um executavel renomeado para .pdf de entrar no sistema (spec 8).
 ASSINATURAS = [

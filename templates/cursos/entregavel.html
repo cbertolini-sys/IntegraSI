@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 {% block titulo %}{{ entregavel.get_tipo_display }}{% endblock %}
 {% block conteudo %}
   <h1>{{ entregavel.get_tipo_display }}</h1>
@@ -38,6 +39,32 @@
       {{ form_anexo.as_p }}
       <button type="submit">Anexar</button>
     </form>
+
+    {% if entregavel.tipo == "VIDEOS" %}
+      {# Upload fatiado e retomavel: e o unico ponto do sistema com JS proprio,
+         porque HTMX nao fatia arquivo (spec 8). Tudo o que o JS precisa saber sobre
+         o servidor sai daqui — as quatro rotas revertidas pelo Django e o tamanho
+         do bloco vindo do Python —, para que nada disso viva duplicado no .js. #}
+      <form data-upload-video
+            data-entregavel="{{ entregavel.pk }}"
+            data-tamanho-bloco="{{ tamanho_bloco }}"
+            data-uuid-modelo="{{ uuid_modelo }}"
+            data-url-iniciar="{% url 'upload_iniciar' %}"
+            data-url-bloco="{% url 'upload_bloco' uuid_modelo %}"
+            data-url-estado="{% url 'upload_estado' uuid_modelo %}"
+            data-url-concluir="{% url 'upload_concluir' uuid_modelo %}">
+        {% csrf_token %}
+        <label>Vídeo-aula (MP4, até 1 GB) <input type="file" accept="video/mp4"></label>
+        <label>Título <input type="text" name="titulo" required></label>
+        <label>Duração em minutos
+          <input type="number" name="duracao_minutos"
+                 min="{{ duracao_minima }}" max="{{ duracao_maxima }}" required></label>
+        <progress value="0" max="100"></progress>
+        <p class="aviso"></p>
+        <button type="submit">Enviar vídeo</button>
+      </form>
+      <script src="{% static 'js/upload.js' %}" defer></script>
+    {% endif %}
 
     <form method="post" action="{% url 'enviar_entregavel' entregavel.pk %}">
       {% csrf_token %}
