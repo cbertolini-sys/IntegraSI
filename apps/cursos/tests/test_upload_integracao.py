@@ -202,6 +202,19 @@ def test_formulario_oferece_a_faixa_de_duracao_que_as_validacoes_cobram(
     assert f'max="{validacoes.DURACAO_MAXIMA}"' in conteudo
 
 
+def formulario_de_video(conteudo):
+    """Recorta so o `<form data-upload-video>`.
+
+    Afirmar sobre a pagina inteira nao serve aqui: o `AnexoForm` renderizado logo
+    acima e um ModelForm do mesmo `Anexo`, e o Django ja poe `maxlength="200"` no
+    campo `titulo` dele. A primeira versao deste teste passava com o `maxlength`
+    apagado do formulario de video — a campanha de delecao pegou; a enumeracao de
+    regras nao pegaria.
+    """
+    inicio = conteudo.index("data-upload-video")
+    return conteudo[inicio : conteudo.index("</form>", inicio)]
+
+
 # Regra 7b
 @pytest.mark.django_db
 def test_formulario_limita_o_titulo_ao_que_o_anexo_aceita(client, aluno, entregavel_videos):
@@ -211,7 +224,7 @@ def test_formulario_limita_o_titulo_ao_que_o_anexo_aceita(client, aluno, entrega
     client.force_login(aluno)
     limite = Anexo._meta.get_field("titulo").max_length
 
-    assert f'maxlength="{limite}"' in tela(client, entregavel_videos)
+    assert f'maxlength="{limite}"' in formulario_de_video(tela(client, entregavel_videos))
 
 
 # --- Regras 8 e 9: o contrato do servidor com blocos de verdade ------------
