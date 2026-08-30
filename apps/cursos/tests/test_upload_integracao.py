@@ -25,6 +25,9 @@ As regras que este arquivo prende:
     recusa o corpo antes da view, e nenhum teste de view veria o problema.
  7. A faixa de duracao oferecida no formulario e a que `validacoes` cobra; nada de
     numero inventado no HTML.
+ 7b. O `maxlength` do titulo sai do proprio campo do Anexo, pelo mesmo motivo. Sem
+    ele o aluno so descobria o limite depois de meia hora de upload, e o servidor
+    devolvia um 400 opaco — a UX do vazamento que a revisao de branco achou.
  8. iniciar -> bloco -> bloco -> concluir funciona com blocos do tamanho que o JS
     envia de verdade.
  9. Depois de uma queda no meio, `upload_estado` diz onde parou e os blocos que
@@ -197,6 +200,18 @@ def test_formulario_oferece_a_faixa_de_duracao_que_as_validacoes_cobram(
     conteudo = tela(client, entregavel_videos)
     assert f'min="{validacoes.DURACAO_MINIMA}"' in conteudo
     assert f'max="{validacoes.DURACAO_MAXIMA}"' in conteudo
+
+
+# Regra 7b
+@pytest.mark.django_db
+def test_formulario_limita_o_titulo_ao_que_o_anexo_aceita(client, aluno, entregavel_videos):
+    """O numero sai de `Anexo._meta`, nao de um `200` escrito no HTML: escrito a
+    mao, ele divergiria do model no dia em que o campo mudasse, e a divergencia
+    reapareceria como um 400 no fim de um upload de 1 GB."""
+    client.force_login(aluno)
+    limite = Anexo._meta.get_field("titulo").max_length
+
+    assert f'maxlength="{limite}"' in tela(client, entregavel_videos)
 
 
 # --- Regras 8 e 9: o contrato do servidor com blocos de verdade ------------
