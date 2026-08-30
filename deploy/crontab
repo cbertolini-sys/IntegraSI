@@ -9,6 +9,12 @@
 # ninguem le. Trocar o endereco abaixo faz parte da instalacao.
 MAILTO=integrasi-ops@ufsm.br
 
+# O cron NAO herda o ambiente de login, e `backup.sh` abre com
+# `${RESTIC_REPOSITORY:?...}`. Sem esta linha o backup da midia falha toda noite —
+# depois de o `pg_dump` do dia ja ter rodado, o que faz o operador achar que "o
+# backup rodou". Trocar o endereco abaixo faz parte da instalacao, como o MAILTO.
+RESTIC_REPOSITORY=sftp:integrasi@backup.exemplo.ufsm.br:/srv/restic/integrasi
+
 */5 * * * * cd /srv/integrasi && .venv/bin/python manage.py enviar_notificacoes >> /var/log/integrasi/cron.log
 17 3 * * * cd /srv/integrasi && .venv/bin/python manage.py limpar_uploads >> /var/log/integrasi/cron.log
 32 3 * * * cd /srv/integrasi && .venv/bin/python manage.py limpar_arquivos_orfaos >> /var/log/integrasi/cron.log

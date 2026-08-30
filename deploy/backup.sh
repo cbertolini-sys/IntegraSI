@@ -16,6 +16,10 @@ pg_dump --no-owner integrasi | gzip > "$ARQUIVO"
 find "$DESTINO_SQL" -name 'integrasi-*.sql.gz' -mtime +30 -delete
 
 restic backup "$MEDIA" "$DESTINO_SQL" --tag integrasi
-restic forget --keep-daily 7 --keep-weekly 5 --keep-monthly 12 --prune
+# `--tag integrasi`, a mesma da linha acima: sem ela esta politica de retencao
+# apaga TODO snapshot do repositorio, inclusive os de outra maquina que o
+# compartilhe. `docs/operacao.md` pressupoe repositorio dedicado, mas a tag ja
+# esta escrita uma linha acima e sai de graca.
+restic forget --tag integrasi --keep-daily 7 --keep-weekly 5 --keep-monthly 12 --prune
 
 echo "Backup concluido em $(date --iso-8601=seconds)"

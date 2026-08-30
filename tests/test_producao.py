@@ -1,15 +1,26 @@
 """Testes dos artefatos de produção.
 
-**O que estes testes provam e o que não provam.** Todos eles leem arquivos do
+**O que estes testes provam e o que não provam.** Quase todos leem arquivos do
 repositório. Eles garantem que o `deploy/` versionado está certo — não que o
-servidor no ar esteja rodando esses arquivos. As duas conferências que só um
-servidor de verdade dá (o `internal;` do nginx e a restauração do backup) estão
-em `docs/operacao.md` como passos que o operador executa, e não têm, nem podem
-ter, teste aqui.
+servidor no ar esteja rodando esses arquivos. A conferência que só um servidor de
+verdade dá (o `internal;` do nginx, com um `curl` de fora) está em
+`docs/operacao.md` como passo do operador, e não tem, nem pode ter, teste aqui.
+
+A exceção é o drill de restauração: os testes do fim deste arquivo **executam**
+`deploy/restaurar-teste.sh`, com `psql`, `dropdb`, `createdb` e `restic` de
+mentira no PATH. Grep não enxerga SIGPIPE nem `trap`, e era exatamente disso que
+o script morria: até a revisão de branco ele abortava no meio em qualquer
+instalação com mais de três arquivos de mídia, deixando um banco e uma cópia da
+mídia para trás, enquanto o teste que o cobria — um grep por `restic restore` —
+passava. O que continua sem teste é o outro lado: que o dump e o repositório
+restic do servidor de verdade contenham o que deveriam.
 """
 
+import gzip
 import os
 import re
+import subprocess
+import time
 from pathlib import Path
 
 import pytest
@@ -162,11 +173,13 @@ def crontab():
 
 def tarefas(crontab):
     """Só as linhas de tarefa: o comentário do arquivo cita as rotinas pelo nome,
-    e um grep no arquivo inteiro continuaria verde com a linha do cron apagada."""
+    e um grep no arquivo inteiro continuaria verde com a linha do cron apagada.
+    As atribuições de ambiente (MAILTO, RESTIC_REPOSITORY) também saem — elas são
+    configuração do cron, não tarefa, e têm testes próprios."""
     return [
         linha
         for linha in sem_comentarios(crontab).splitlines()
-        if linha.strip() and "MAILTO" not in linha
+        if linha.strip() and not re.match(r"^[A-Z_]+=", linha.strip())
     ]
 
 
@@ -210,6 +223,26 @@ def test_backup_cobre_banco_e_midia():
     assert re.search(r"(?m)^restic backup\b", script)
 
 
+def test_o_cron_leva_o_repositorio_restic_no_ambiente():
+    """`backup.sh` abre com `${RESTIC_REPOSITORY:?...}` e o cron não herda o
+    ambiente de login: sem a atribuição no crontab, o backup da mídia falha toda
+    noite — depois de o `pg_dump` do dia já ter rodado, que é o que faz o operador
+    achar que "o backup rodou". Como linha de atribuição, não como menção no
+    comentário que a explica."""
+    crontab = (DEPLOY / "crontab").read_text()
+    assert re.search(r"(?m)^RESTIC_REPOSITORY=\S+", crontab)
+    assert "${RESTIC_REPOSITORY:?" in (DEPLOY / "backup.sh").read_text()
+
+
+def test_o_forget_so_apaga_os_snapshots_desta_instalacao():
+    """Sem `--tag`, esta política de retenção apaga todo snapshot do repositório,
+    inclusive os de outra máquina que o compartilhe. A tag já está no `restic
+    backup` da linha de cima."""
+    script = sem_comentarios((DEPLOY / "backup.sh").read_text())
+    forget = re.search(r"(?m)^restic forget\b.*$", script).group(0)
+    assert "--tag integrasi" in forget, forget
+
+
 def test_o_repositorio_da_midia_nao_cresce_para_sempre():
     """Sem `restic forget`, o repositório externo acumula todo instantâneo já
     feito e um dia o backup para por falta de espaço lá."""
@@ -244,6 +277,195 @@ def test_a_restauracao_de_teste_confere_banco_e_midia():
 def test_os_scripts_sao_executaveis(script):
     """O cron chama backup.sh direto, sem `bash` na frente."""
     assert os.access(DEPLOY / script, os.X_OK), f"{script} sem bit de execução"
+
+
+# --- o drill de restauração, executado de verdade -----------------------------
+# Estes são os únicos testes deste arquivo que rodam o artefato em vez de lê-lo.
+
+DRILL = DEPLOY / "restaurar-teste.sh"
+
+STUB_DROPDB = """#!/usr/bin/env bash
+echo "$@" >> "$REGISTRO_DROPDB"
+"""
+
+STUB_CREATEDB = """#!/usr/bin/env bash
+exit 0
+"""
+
+# Finge o psql inclusive no defeito que importa: sem `-v ON_ERROR_STOP=1` ele sai
+# 0 mesmo com erro de SQL no meio do dump. É esse comportamento que faz o teste do
+# dump quebrado morrer quando a opção some do script.
+STUB_PSQL = """#!/usr/bin/env bash
+for arg in "$@"; do
+  case "$arg" in
+    "select count(*) from cursos_curso") echo "${STUB_CURSOS:-3}"; exit 0;;
+    "select count(*) from contas_usuario") echo "${STUB_USUARIOS:-7}"; exit 0;;
+  esac
+done
+cat > /dev/null
+if [ "${STUB_DUMP_QUEBRADO:-0}" = 1 ]; then
+  echo "ERROR: syntax error at or near" >&2
+  for arg in "$@"; do
+    if [ "$arg" = "ON_ERROR_STOP=1" ]; then exit 1; fi
+  done
+fi
+exit 0
+"""
+
+# Restaura MILHARES de arquivos de propósito: é o que faz `find ... | head -3`
+# levar SIGPIPE. Com três arquivos o bug original não aparece.
+STUB_RESTIC = """#!/usr/bin/env bash
+alvo=""
+anterior=""
+for arg in "$@"; do
+  if [ "$anterior" = "--target" ]; then alvo="$arg"; fi
+  anterior="$arg"
+done
+mkdir -p "$alvo"
+if [ "${STUB_RESTIC_VAZIO:-0}" != 1 ]; then
+  destino="$alvo/srv/integrasi/media/materiais/ab"
+  mkdir -p "$destino"
+  ( cd "$destino" && touch arquivo-de-midia-restaurado-{1..3000} )
+fi
+exit 0
+"""
+
+
+@pytest.fixture
+def drill(tmp_path):
+    """Devolve um executor do `restaurar-teste.sh` num mundo de mentira.
+
+    Trinta dias de retenção diária são poucos arquivos; os 2000 dumps aqui são o
+    que faz o `ls -t | head -1` da primeira linha do script chegar a levar
+    SIGPIPE. O dump de verdade (gzip real, gunzip real) é o mais recente.
+    """
+    binarios = tmp_path / "bin"
+    binarios.mkdir()
+    for nome, corpo in [
+        ("dropdb", STUB_DROPDB),
+        ("createdb", STUB_CREATEDB),
+        ("psql", STUB_PSQL),
+        ("restic", STUB_RESTIC),
+    ]:
+        stub = binarios / nome
+        stub.write_text(corpo)
+        stub.chmod(0o755)
+
+    dumps = tmp_path / "sql"
+    dumps.mkdir()
+    antigo = time.time() - 86400
+    for i in range(2000):
+        velho = dumps / f"integrasi-2026{i:04d}.sql.gz"
+        velho.write_bytes(b"")
+        os.utime(velho, (antigo, antigo))
+    with gzip.open(dumps / "integrasi-20260830.sql.gz", "wb") as saida:
+        saida.write(b"-- dump do integrasi\nSELECT 1;\n")
+
+    restauracao = tmp_path / "restauracao"
+    registro = tmp_path / "dropdb.log"
+
+    def executar(**extra):
+        ambiente = {
+            **os.environ,
+            "PATH": f"{binarios}:{os.environ['PATH']}",
+            "INTEGRASI_BANCO_TESTE": "integrasi_restauracao",
+            "INTEGRASI_BACKUP_SQL": str(dumps),
+            "INTEGRASI_MEDIA": "/srv/integrasi/media",
+            "INTEGRASI_RESTAURACAO": str(restauracao),
+            "REGISTRO_DROPDB": str(registro),
+            **extra,
+        }
+        return subprocess.run(
+            ["bash", str(DRILL)], capture_output=True, text=True, env=ambiente
+        )
+
+    executar.restauracao = restauracao
+    executar.registro = registro
+    executar.dumps = dumps
+    executar.tmp = tmp_path
+    return executar
+
+
+def test_o_drill_chega_ao_fim_e_diz_que_deu_certo(drill):
+    """O achado da revisão: `find ... | head -3` sob `pipefail` matava o script
+    com 141 antes da mensagem final, do `dropdb` e do `rm -rf`. O operador via o
+    drill FALHAR justamente na entrega que a spec 13 chama de obrigatória."""
+    resultado = drill()
+
+    assert resultado.returncode == 0, resultado.stderr
+    assert "concluida com sucesso" in resultado.stdout
+
+
+def test_o_drill_apaga_o_banco_e_a_midia_de_teste(drill):
+    """Sem isto, cada semestre deixa um `integrasi_restauracao` e uma cópia da
+    mídia no /tmp do servidor."""
+    drill()
+
+    assert not drill.restauracao.exists()
+    assert "integrasi_restauracao" in drill.registro.read_text()
+
+
+def test_o_drill_limpa_mesmo_quando_reprova(drill):
+    """Falhar no meio é o desfecho normal de um drill que está fazendo o trabalho
+    dele: é justamente aí que a limpeza não pode ser pulada."""
+    resultado = drill(STUB_RESTIC_VAZIO="1")
+
+    assert resultado.returncode != 0
+    assert not drill.restauracao.exists()
+    assert "integrasi_restauracao" in drill.registro.read_text()
+
+
+def test_restic_que_nao_traz_arquivo_nenhum_reprova(drill):
+    """Repositório vazio, `--include` errado ou snapshot de outra máquina: em
+    todos, `restic restore` sai 0 sem trazer arquivo. O script antigo teria dito
+    "concluida com sucesso"."""
+    resultado = drill(STUB_RESTIC_VAZIO="1")
+
+    assert resultado.returncode != 0
+    assert "concluida com sucesso" not in resultado.stdout
+    assert "nao trouxe arquivo nenhum" in resultado.stderr
+
+
+def test_banco_restaurado_vazio_reprova(drill):
+    """As contagens eram impressas e nunca conferidas: `0 cursos, 0 usuarios`
+    terminava com "concluida com sucesso". Backup que nunca foi restaurado não é
+    backup, e restauração que ninguém confere é a mesma coisa (spec 13)."""
+    resultado = drill(STUB_USUARIOS="0")
+
+    assert resultado.returncode != 0
+    assert "concluida com sucesso" not in resultado.stdout
+    assert "Restauracao vazia" in resultado.stderr
+
+
+def test_dump_com_erro_de_sql_no_meio_reprova(drill):
+    """`psql` sem `-v ON_ERROR_STOP=1` sai 0 com o dump quebrado, e nem `set -e`
+    nem `pipefail` veem nada: a restauração parcial passava por completa."""
+    resultado = drill(STUB_DUMP_QUEBRADO="1")
+
+    assert resultado.returncode != 0
+    assert "concluida com sucesso" not in resultado.stdout
+
+
+def test_sem_dump_nenhum_o_drill_reprova(drill):
+    """Proteger o `ls | head` do SIGPIPE com `|| true` não pode virar silêncio:
+    sem dump, o script tem que dizer isso e sair."""
+    vazio = drill.tmp / "sem-dumps"
+    vazio.mkdir()
+
+    resultado = drill(INTEGRASI_BACKUP_SQL=str(vazio))
+
+    assert resultado.returncode != 0
+    assert "nao ha o que restaurar" in resultado.stderr
+
+
+def test_o_drill_nunca_derruba_o_banco_de_producao(drill):
+    """A promessa do cabeçalho do script. Um `dropdb` com o nome errado num drill
+    semestral é a pior forma possível de descobrir que o backup funciona."""
+    drill()
+
+    for linha in drill.registro.read_text().splitlines():
+        alvo = linha.split()[-1]
+        assert alvo == "integrasi_restauracao", f"dropdb em {alvo!r}"
 
 
 # --- .env.example ------------------------------------------------------------
