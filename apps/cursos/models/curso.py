@@ -115,7 +115,28 @@ class Curso(models.Model):
                 Coalesce(F("raiz_id"), F("id")),
                 condition=Q(status=StatusCurso.PUBLICADO),
                 name="uma_versao_publicada_por_linhagem",
-            )
+            ),
+            # Numero de versao unico dentro da linhagem. `services.abrir_nova_versao`
+            # calcula `ultima.versao + 1` depois de um `exists()` sem trava: duas
+            # chamadas simultaneas na mesma linhagem - o coordenador e o professor
+            # clicando junto, ou um duplo-submit - leem a mesma "ultima" e criam duas
+            # "v2" em RASCUNHO. A constraint de cima nao pega: as duas nascem em
+            # RASCUNHO e o indice parcial dela so olha PUBLICADO.
+            #
+            # Mesma expressao COALESCE(raiz_id, id) e pelo mesmo motivo: na v1 raiz e
+            # NULL, e NULL nunca colide com nada no Postgres. Sobre COALESCE, a v1 de
+            # cada linhagem cai no proprio id, entao duas linhagens diferentes podem
+            # perfeitamente ter as duas a versao 1.
+            #
+            # Nao ha `select_for_update` na linhagem alem disto, de proposito: ele
+            # daria a mensagem amigavel no lugar do IntegrityError, mas so a constraint
+            # vale para quem escreve por fora do service (admin, shell, migracao de
+            # dados), e um lock que so o service respeita nao e invariante nenhuma.
+            models.UniqueConstraint(
+                Coalesce(F("raiz_id"), F("id")),
+                "versao",
+                name="uma_numeracao_por_linhagem",
+            ),
         ]
 
     def __str__(self):

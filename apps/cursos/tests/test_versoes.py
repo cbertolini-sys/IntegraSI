@@ -44,6 +44,12 @@ As regras que este arquivo prende, na ordem em que aparecem:
     profundidade da invariante que faz o catalogo dispensar DISTINCT ON), e nao
     atrapalha duas linhagens diferentes publicadas ao mesmo tempo - nem a
     substituicao, que so alcanca a propria linhagem.
+22b. O banco recusa dois cursos com o MESMO numero de versao na mesma linhagem.
+    `abrir_nova_versao` calcula `ultima.versao + 1` depois de um `exists()` sem
+    trava: duas chamadas simultaneas na mesma linhagem criam duas "v2" em
+    RASCUNHO, e a constraint da regra 22 nao pega (as duas nascem em RASCUNHO, e
+    o indice parcial dela so olha PUBLICADO). Duas linhagens diferentes continuam
+    podendo ter, cada uma, a sua v1.
 24. A raiz de uma linhagem nao pode ser apagada enquanto houver versao
     apontando para ela (`raiz` e PROTECT): apagar a v1 em cascata levaria a
     historia inteira do curso junto, em silencio.
@@ -574,6 +580,41 @@ def test_banco_aceita_duas_linhagens_publicadas_ao_mesmo_tempo(
     segundo.refresh_from_db()
     assert primeiro.status == StatusCurso.PUBLICADO
     assert segundo.status == StatusCurso.PUBLICADO
+
+
+@pytest.mark.django_db
+def test_banco_recusa_duas_versoes_com_o_mesmo_numero_na_linhagem(
+    curso_publicado, coordenador
+):
+    """A outra metade da defesa em profundidade da linhagem. A constraint da regra
+    22 e parcial em PUBLICADO e nao ve duas "v2" em RASCUNHO — que e exatamente o
+    que a corrida entre duas aberturas simultaneas produz.
+
+    Renumerar a v2 para 1 e a forma mais direta de forjar a colisao, e de quebra
+    exercita a metade NULL da expressao: a v1 tem `raiz` NULL e cai no proprio id
+    pelo COALESCE. Uma constraint sobre `raiz_id` cru deixaria a colisao passar,
+    porque NULL nunca colide com nada no Postgres.
+
+    Escreve por `.update()` de proposito: e o caminho que nao passa por service
+    nenhum, nem pelo `full_clean()` do `save()`."""
+    nova = services.abrir_nova_versao(curso_publicado, por=coordenador, motivo="Atualizar.")
+    assert nova.versao == 2
+
+    with pytest.raises(IntegrityError):
+        with transaction.atomic():
+            Curso.objects.filter(pk=nova.pk).update(versao=curso_publicado.versao)
+
+
+@pytest.mark.django_db
+def test_banco_aceita_a_versao_1_em_cada_linhagem(dados_curso, professor):
+    """O contraponto da 22b: a chave e a linhagem, e nao o numero solto. Uma
+    constraint desatenta sobre `versao` sozinha deixaria existir um unico curso
+    v1 no sistema inteiro."""
+    primeiro = services.criar_curso(**dados_curso)
+    segundo = services.criar_curso(**{**dados_curso, "titulo": "Outro curso"})
+
+    assert (primeiro.versao, primeiro.raiz_id) == (1, None)
+    assert (segundo.versao, segundo.raiz_id) == (1, None)
 
 
 @pytest.mark.django_db
