@@ -6,6 +6,10 @@ As regras que este arquivo prende, na ordem em que aparecem:
  2. `upload_iniciar` exige `pode_editar_producao`: aluno de fora da equipe -> 403.
  3. `upload_iniciar` exige `pode_editar_producao`: entregavel congelado -> 403.
  4. A extensao declarada precisa mapear para um tipo conhecido -> 400 sem registro.
+ 4b. E a lista de extensoes e fechada tambem para video: `.mov`, `.webm` e `.avi`
+    ficam de fora do sistema inteiro. E uma DIVERGENCIA REGISTRADA da spec 8, que
+    pede "aceitos mas apenas baixados" — a justificativa esta anotada na propria
+    frase da spec e em `apps/cursos/arquivos.py`.
  5. O tamanho declarado tem que caber no teto DAQUELE tipo, na abertura, nao so na
     conclusao: um `.pdf` de 900 MB nao pode passar meia hora enchendo o disco para
     so entao ouvir que PDF para em 20 MB.
@@ -168,6 +172,24 @@ def test_nao_inicia_upload_em_entregavel_congelado(client, aluno, entregavel_vid
 def test_extensao_desconhecida_e_recusada_na_abertura(client, aluno, entregavel_videos):
     client.force_login(aluno)
     resposta = inicia(client, entregavel_videos, nome="agenda.exe")
+
+    assert resposta.status_code == 400
+    assert not UploadEmAndamento.objects.exists()
+
+
+# Regra 4b
+@pytest.mark.django_db
+@pytest.mark.parametrize("nome", ["aula.mov", "aula.webm", "aula.avi"])
+def test_video_que_nao_e_mp4_fica_de_fora_do_sistema(client, aluno, entregavel_videos, nome):
+    """Divergencia registrada da spec 8 ("outros formatos sao aceitos mas apenas
+    baixados"). Como o upload em blocos e o unico caminho que cria
+    `TipoMidia.VIDEO`, recusar aqui e recusar no sistema inteiro — nao so no
+    player. A decisao e a razao dela estao anotadas na spec, na propria frase, e
+    em `apps/cursos/arquivos.py`; este teste existe para que reabri-la seja um ato
+    deliberado e nao um efeito colateral."""
+    client.force_login(aluno)
+
+    resposta = inicia(client, entregavel_videos, nome=nome)
 
     assert resposta.status_code == 400
     assert not UploadEmAndamento.objects.exists()

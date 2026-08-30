@@ -449,6 +449,21 @@ servido inline a partir do nosso domínio é vetor de XSS.
 **Formato de vídeo**: MP4/H.264 toca no navegador; outros formatos são aceitos mas
 apenas baixados. Sem transcodificação no servidor.
 
+> **Divergência registrada (Plano 4, decidida na revisão de branch).** O sistema
+> implementado **recusa** vídeo que não seja MP4, em vez de aceitá-lo como
+> download-only. A metade "download-only" já existe e continua valendo para todo o
+> resto (`views/midia.INLINE` só tem PDF e MP4); o que não existe é a aceitação de
+> outros contêineres de vídeo. Três razões, todas em `apps/cursos/arquivos.py`:
+> a validação é por **assinatura de conteúdo**, e um contêiner que o sistema não
+> sabe reconhecer é um contêiner dentro do qual ele não sabe recusar um executável;
+> a recusa por extensão em `valida_declaracao` acontece **antes do primeiro byte**,
+> e um upload de 1 GB só pode ser recusado cedo contra uma lista fechada; e sem
+> transcodificação um `.mov` chegaria como um vídeo que o professor **não consegue
+> assistir** na revisão — recusar no envio, dizendo "converta para MP4", é uma
+> falha melhor do que aceitar um arquivo que ninguém pode revisar. Reabrir a
+> decisão é acrescentar a assinatura e o teto do contêiner em `ASSINATURAS`,
+> `LIMITES` e `EXTENSOES`, e nada mais.
+
 **Volume esperado**: até 3 GB de vídeo por curso; com ~8 equipes por edição, ~24 GB
 por semestre e ~240 GB em cinco anos. Isso dimensiona disco e estratégia de backup.
 

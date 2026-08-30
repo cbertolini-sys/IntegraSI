@@ -463,7 +463,9 @@ def test_o_drill_nunca_derruba_o_banco_de_producao(drill):
     semestral é a pior forma possível de descobrir que o backup funciona."""
     drill()
 
-    for linha in drill.registro.read_text().splitlines():
+    linhas = drill.registro.read_text().splitlines()
+    assert linhas, "o drill não chamou dropdb nenhuma vez"
+    for linha in linhas:
         alvo = linha.split()[-1]
         assert alvo == "integrasi_restauracao", f"dropdb em {alvo!r}"
 

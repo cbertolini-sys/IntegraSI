@@ -39,6 +39,19 @@ LIMITES = {
     "video/mp4": LIMITE_VIDEO,
 }
 
+# DIVERGENCIA REGISTRADA da spec 8, decidida na revisao de branch do Plano 4. A
+# spec diz "outros formatos [de video] sao aceitos mas apenas baixados"; aqui so
+# `.mp4` entra, e `.mov`/`.webm`/`.avi` sao recusados no sistema inteiro (o upload
+# em blocos e o unico caminho que cria `TipoMidia.VIDEO`). A metade "download-only"
+# da frase continua valendo — `views/midia.INLINE` tem so PDF e MP4, e todo o resto
+# ja sai como `attachment`. O que foi decidido nao implementar e a aceitacao dos
+# outros conteineres. A justificativa esta na spec, anotada na propria frase; em
+# resumo: a validacao e por assinatura, e conteiner que nao sabemos reconhecer e
+# conteiner dentro do qual nao sabemos recusar um executavel; a recusa por extensao
+# acontece antes do primeiro byte, o que so uma lista fechada permite; e sem
+# transcodificacao um `.mov` chega como um video que o professor nao consegue
+# assistir na revisao. Reabrir a decisao e acrescentar assinatura, teto e extensao
+# do conteiner nos tres dicionarios deste modulo, e nada mais.
 EXTENSOES = {
     ".pdf": "application/pdf",
     ".png": "image/png",
