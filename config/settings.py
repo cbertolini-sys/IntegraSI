@@ -86,6 +86,39 @@ MEDIA_ROOT = BASE_DIR / "media"
 # variavel no servidor nao deixe 1 GB de video passando por um worker Python.
 USAR_X_ACCEL = os.environ.get("USAR_X_ACCEL", "True" if not DEBUG else "False") == "True"
 
+# --- Producao atras do nginx (spec 13) ---------------------------------------
+# As duas chaves abaixo nascem ligadas quando DEBUG esta desligado, pelo mesmo
+# motivo de USAR_X_ACCEL: esquecer a variavel no servidor nao pode produzir a
+# configuracao insegura. Quem desenvolve continua sem nenhuma delas.
+
+# Existe um proxy na frente e o que ele diz sobre a requisicao vale. Atras do
+# nginx, REMOTE_ADDR e sempre 127.0.0.1: sem esta chave, o limite por IP do
+# formulario publico (spec 10) viraria um limite global, e um visitante
+# fecharia o formulario para todo mundo. Sem proxy nenhum na frente, ao
+# contrario, X-Forwarded-For e texto escrito pelo cliente e nao vale nada -- por
+# isso a leitura e condicional, e nao incondicional. Quem servir o gunicorn
+# exposto direto na rede tem que deixar isto em False.
+CONFIAR_NO_PROXY = os.environ.get("CONFIAR_NO_PROXY", "True" if not DEBUG else "False") == "True"
+
+# HTTPS obrigatorio (spec 13, e a divida que o Plano 1 registrou no CLAUDE.md:
+# "Seguranca de producao (HTTPS, cookies seguros, HSTS) e do Plano 4").
+SEGURANCA_HTTPS = os.environ.get("SEGURANCA_HTTPS", "True" if not DEBUG else "False") == "True"
+SECURE_SSL_REDIRECT = SEGURANCA_HTTPS
+SESSION_COOKIE_SECURE = SEGURANCA_HTTPS
+CSRF_COOKIE_SECURE = SEGURANCA_HTTPS
+# Um ano, com subdominios e apto a preload: HSTS curto so adia o problema, e
+# meia-boca ele nao protege o primeiro acesso de subdominio nenhum.
+SECURE_HSTS_SECONDS = 31_536_000 if SEGURANCA_HTTPS else 0
+SECURE_HSTS_INCLUDE_SUBDOMAINS = SEGURANCA_HTTPS
+SECURE_HSTS_PRELOAD = SEGURANCA_HTTPS
+# O gunicorn so ve http; quem termina o TLS e o nginx, que repassa o esquema
+# neste cabecalho (deploy/nginx.conf). Sem isto, SECURE_SSL_REDIRECT devolve 301
+# para https, o nginx repassa em http de novo, e o navegador entra em laco.
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https") if CONFIAR_NO_PROXY else None
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SESSION_COOKIE_HTTPONLY = True
+X_FRAME_OPTIONS = "DENY"
+
 EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
 EMAIL_HOST = os.environ.get("EMAIL_HOST", "")
 EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))

@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Erro no sistema &mdash; IntegraSI</title>
+</head>
+<body>
+  <!-- HTML puro, sem herdar de base.html e sem nenhuma tag de template, de
+       proposito: o 500 e renderizado justamente quando algo de baixo (banco,
+       context processor, arquivo estatico) parou de funcionar. Um template que
+       dependa de qualquer um deles falha de novo, e o visitante recebe a pagina
+       branca do servidor. Por isso ate o link abaixo e escrito a mao, sem
+       resolver rota. O Django renderiza este arquivo sem request nenhum. -->
+  <h1>Algo deu errado</h1>
+  <p>O sistema encontrou um erro inesperado. O problema foi registrado nos logs
+     do servidor; se ele se repetir, avise a coordenação.</p>
+  <p><a href="/">Voltar ao início</a></p>
+</body>
+</html>

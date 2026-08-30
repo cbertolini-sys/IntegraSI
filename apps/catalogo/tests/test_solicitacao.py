@@ -152,3 +152,95 @@ def test_formulario_declara_a_finalidade_dos_dados(client, curso_publicado):
     resposta = client.get(reverse("solicitar", args=[curso_publicado.pk]))
     conteudo = resposta.content.decode().lower()
     assert "finalidade" in conteudo or "seus dados" in conteudo
+
+
+# --- Quem é o cliente, atrás do proxy ----------------------------------------
+# O limite por IP (spec 10) só vale se o IP não puder ser escolhido por quem
+# está sendo limitado. Em produção o Django não fala com o visitante: fala com o
+# nginx, e o endereço real chega em X-Forwarded-For.
+
+
+@pytest.mark.django_db
+def test_cabecalho_forjado_nao_ganha_cota_nova(client, curso_publicado):
+    """X-Forwarded-For é uma lista onde cada proxy ACRESCENTA ao fim: o último
+    elemento é o que o nosso nginx escreveu, os anteriores são texto do cliente.
+    Lendo o primeiro, `X-Forwarded-For: 9.9.9.9` diferente a cada requisição dá
+    cota nova toda vez e o limite nunca dispara."""
+    from apps.catalogo.views import LIMITE_POR_IP_POR_HORA
+
+    url = reverse("solicitar", args=[curso_publicado.pk])
+    for _ in range(LIMITE_POR_IP_POR_HORA):
+        client.post(url, dados_validos(), HTTP_X_FORWARDED_FOR="198.51.100.9")
+    assert Solicitacao.objects.count() == LIMITE_POR_IP_POR_HORA
+
+    # A mesma pessoa, agora forjando uma origem diferente na frente da lista --
+    # exatamente o que o nginx produziria com $proxy_add_x_forwarded_for.
+    recusada = client.post(
+        url,
+        dados_validos(),
+        HTTP_X_FORWARDED_FOR="9.9.9.9, 198.51.100.9",
+        follow=True,
+    )
+    assert "muitas solicitações" in recusada.content.decode().lower()
+    assert Solicitacao.objects.count() == LIMITE_POR_IP_POR_HORA
+
+
+@pytest.mark.django_db
+def test_atras_do_proxy_o_limite_continua_sendo_por_ip(client, curso_publicado):
+    """O nginx entrega toda requisição com REMOTE_ADDR 127.0.0.1. Se o Django
+    olhasse só para ele, o limite viraria global e um visitante fecharia o
+    formulário para toda a comunidade."""
+    from apps.catalogo.views import LIMITE_POR_IP_POR_HORA
+
+    url = reverse("solicitar", args=[curso_publicado.pk])
+    for _ in range(LIMITE_POR_IP_POR_HORA):
+        client.post(url, dados_validos(), REMOTE_ADDR="127.0.0.1", HTTP_X_FORWARDED_FOR="198.51.100.9")
+    assert Solicitacao.objects.count() == LIMITE_POR_IP_POR_HORA
+
+    client.post(url, dados_validos(), REMOTE_ADDR="127.0.0.1", HTTP_X_FORWARDED_FOR="203.0.113.4")
+    assert Solicitacao.objects.count() == LIMITE_POR_IP_POR_HORA + 1
+
+
+@pytest.mark.django_db
+def test_sem_proxy_o_cabecalho_e_ignorado(client, curso_publicado, settings):
+    """Sem nginx na frente, X-Forwarded-For é texto escrito pelo cliente e não
+    vale nada: quem serve o gunicorn exposto direto na rede desliga
+    CONFIAR_NO_PROXY e volta a contar por REMOTE_ADDR."""
+    from apps.catalogo.views import LIMITE_POR_IP_POR_HORA
+
+    settings.CONFIAR_NO_PROXY = False
+    url = reverse("solicitar", args=[curso_publicado.pk])
+    for _ in range(LIMITE_POR_IP_POR_HORA):
+        client.post(url, dados_validos(), REMOTE_ADDR="198.51.100.9", HTTP_X_FORWARDED_FOR="1.1.1.1")
+    assert Solicitacao.objects.count() == LIMITE_POR_IP_POR_HORA
+
+    recusada = client.post(
+        url,
+        dados_validos(),
+        REMOTE_ADDR="198.51.100.9",
+        HTTP_X_FORWARDED_FOR="2.2.2.2",
+        follow=True,
+    )
+    assert "muitas solicitações" in recusada.content.decode().lower()
+    assert Solicitacao.objects.count() == LIMITE_POR_IP_POR_HORA
+
+
+@pytest.mark.django_db
+def test_ip_gravado_e_o_do_proxy_e_nao_o_forjado(client, curso_publicado):
+    """O IP fica guardado na solicitação (spec 10): registrar o valor forjado
+    envenenaria o histórico de quem pediu o quê."""
+    url = reverse("solicitar", args=[curso_publicado.pk])
+    client.post(url, dados_validos(), HTTP_X_FORWARDED_FOR="9.9.9.9, 198.51.100.9")
+    assert Solicitacao.objects.get().ip_origem == "198.51.100.9"
+
+
+@pytest.mark.django_db
+def test_cabecalho_que_nao_e_ip_nao_derruba_o_formulario(client, curso_publicado):
+    """ip_origem é um inet no PostgreSQL: lixo no cabeçalho viraria DataError e um
+    500 na única porta anônima que escreve no banco."""
+    url = reverse("solicitar", args=[curso_publicado.pk])
+    resposta = client.post(
+        url, dados_validos(), REMOTE_ADDR="198.51.100.9", HTTP_X_FORWARDED_FOR="nao-e-um-ip"
+    )
+    assert resposta.status_code == 200
+    assert Solicitacao.objects.get().ip_origem == "198.51.100.9"

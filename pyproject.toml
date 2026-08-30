@@ -8,6 +8,8 @@ dependencies = [
     "python-dotenv>=1.0",
     "dj-database-url>=2.1",
     "nh3>=0.2",
+    # Servidor de aplicacao em producao (spec 13); nao e usado em desenvolvimento.
+    "gunicorn>=23.0",
 ]
 
 [project.optional-dependencies]

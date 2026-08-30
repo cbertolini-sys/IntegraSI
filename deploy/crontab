@@ -1,0 +1,15 @@
+# IntegraSI - instalar com: crontab -u integrasi deploy/crontab
+#
+# MAILTO e a decisao de alerta desta instalacao (ver docs/operacao.md).
+# Cada linha manda o stdout para o log e DEIXA o stderr em paz: cron envia por
+# e-mail tudo que a rotina escrever em stderr. E o unico aviso que existe para o
+# vazamento que a Task 7 descreveu -- um PermissionError dentro do on_commit
+# apaga as linhas e nao apaga os bytes, que ficam no disco sem ninguem
+# apontando para eles. Com `2>&1` esse traceback iria para um arquivo que
+# ninguem le. Trocar o endereco abaixo faz parte da instalacao.
+MAILTO=integrasi-ops@ufsm.br
+
+*/5 * * * * cd /srv/integrasi && .venv/bin/python manage.py enviar_notificacoes >> /var/log/integrasi/cron.log
+17 3 * * * cd /srv/integrasi && .venv/bin/python manage.py limpar_uploads >> /var/log/integrasi/cron.log
+32 3 * * * cd /srv/integrasi && .venv/bin/python manage.py limpar_arquivos_orfaos >> /var/log/integrasi/cron.log
+5 2 * * * /srv/integrasi/deploy/backup.sh >> /var/log/integrasi/backup.log
