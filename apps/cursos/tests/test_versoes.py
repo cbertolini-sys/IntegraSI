@@ -10,8 +10,14 @@ As regras que este arquivo prende, na ordem em que aparecem:
  4. A nova versao aponta para a raiz da linhagem e recebe `versao` = ultima + 1.
  5. O motivo informado fica gravado em `motivo_versao` da nova versao.
  6. Motivo em branco e recusado (spec 4.5: obrigatorio a partir da v2).
- 7. So se abre nova versao de curso PUBLICADO.
- 8. So o coordenador ou o professor responsavel abre versao.
+ 7. So se abre nova versao de curso PUBLICADO - e isso inclui recusar
+    DESPUBLICADO e SUBSTITUIDO, que escapam da trava da regra 9 (a "versao em
+    producao") e so sao barrados por esta.
+ 8. So o coordenador ou o professor responsavel abre versao, e a recusa vem
+    DESTA guarda: `definir_temas`, la dentro da clonagem, tambem levanta
+    PermissionDenied para os mesmos usuarios, entao os testes conferem a
+    mensagem - sem isso a guarda de entrada podia ser apagada inteira sem
+    quebrar nada.
  9. Uma versao em producao por linhagem: duas equipes nao reescrevem o mesmo
     curso em paralelo (spec 4.5).
 10. Os anexos clonados apontam para o MESMO `Arquivo`: clonar curso nao clona
@@ -31,11 +37,16 @@ As regras que este arquivo prende, na ordem em que aparecem:
 19. Por causa de 18, uma versao velha nao volta ao ar depois que a nova
     publicou - SUBSTITUIDO e terminal (spec 5).
 20. Republicar um curso despublicado nao atropela uma versao da mesma linhagem
-    que esteja em producao.
+    que esteja em producao - nem marca o proprio curso republicado como
+    SUBSTITUIDO no caminho.
 21. A abertura da versao fica no LogTransicaoCurso.
 22. O banco recusa duas versoes PUBLICADO na mesma linhagem (defesa em
     profundidade da invariante que faz o catalogo dispensar DISTINCT ON), e nao
-    atrapalha duas linhagens diferentes publicadas ao mesmo tempo.
+    atrapalha duas linhagens diferentes publicadas ao mesmo tempo - nem a
+    substituicao, que so alcanca a propria linhagem.
+24. A raiz de uma linhagem nao pode ser apagada enquanto houver versao
+    apontando para ela (`raiz` e PROTECT): apagar a v1 em cascata levaria a
+    historia inteira do curso junto, em silencio.
 23. Depois que a substituicao acontece, o material da v1 continua acessivel a
     quem a produziu e a coordenacao; a equipe NOVA chega ao mesmo arquivo pela
     propria versao, e nao pela versao substituida; quem nao tem vinculo com
@@ -50,6 +61,7 @@ publicacao.
 import pytest
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import IntegrityError, transaction
+from django.db.models import ProtectedError
 from django.urls import reverse
 
 from apps.cursos import services
@@ -295,21 +307,72 @@ def test_motivo_e_obrigatorio(curso_publicado, coordenador):
 
 @pytest.mark.django_db
 def test_so_se_abre_versao_de_curso_publicado(dados_curso, coordenador):
+    """Um curso ainda em producao e recusado - mas por DUAS guardas ao mesmo
+    tempo (a de status e a de "ja existe versao em producao", que enxerga o
+    proprio curso em RASCUNHO). Os dois testes abaixo isolam a guarda de status
+    com entradas que a trava de producao deixa passar."""
     curso = services.criar_curso(**dados_curso)
     with pytest.raises(ValidationError):
         services.abrir_nova_versao(curso, por=coordenador, motivo="Ainda nao publicado.")
 
 
 @pytest.mark.django_db
+def test_nao_se_abre_versao_de_curso_despublicado(curso_publicado, coordenador):
+    """DESPUBLICADO esta fora da trava de "versao em producao" - de proposito,
+    pela regra 20. Entao quem recusa aqui e so a guarda de status, sozinha: sem
+    ela, despublicar um curso viraria um atalho para clonar o que a spec 4.5 so
+    autoriza clonar a partir do catalogo."""
+    services.despublicar_curso(curso_publicado, por=coordenador, motivo="Erro na ementa.")
+
+    with pytest.raises(ValidationError):
+        services.abrir_nova_versao(curso_publicado, por=coordenador, motivo="Aproveitar.")
+
+    assert Curso.objects.count() == 1
+
+
+@pytest.mark.django_db
+def test_nao_se_abre_versao_de_versao_ja_substituida(
+    curso_publicado, coordenador, professor, outro_aluno
+):
+    """SUBSTITUIDO tambem escapa da trava de producao: na linhagem inteira, a v1
+    esta SUBSTITUIDO e a v2 PUBLICADO, e nenhuma das duas conta como "em
+    producao". Sem a guarda de status, a v1 morta geraria uma v3 - duas versoes
+    vivas na mesma linhagem, cada uma partindo de um ponto da historia."""
+    nova = services.abrir_nova_versao(curso_publicado, por=coordenador, motivo="Atualizar.")
+    _publica(nova, outro_aluno, professor, coordenador)
+    curso_publicado.refresh_from_db()
+
+    with pytest.raises(ValidationError):
+        services.abrir_nova_versao(curso_publicado, por=coordenador, motivo="Ressuscitar a v1.")
+
+    assert Curso.objects.count() == 2
+
+
+@pytest.mark.django_db
 def test_aluno_nao_abre_versao(curso_publicado, aluno):
-    with pytest.raises(PermissionDenied):
+    """Confere a MENSAGEM, e nao so o tipo da excecao: `definir_temas`, chamado
+    la dentro da clonagem, tambem levanta PermissionDenied para um aluno
+    ("Curso de outro professor."). Um `pytest.raises(PermissionDenied)` pelado
+    passaria verde com a guarda de entrada apagada - o curso seria criado, os
+    cinco entregaveis tambem, e so no fim a transacao voltaria atras com o erro
+    errado na tela."""
+    with pytest.raises(PermissionDenied, match="abre nova versão"):
         services.abrir_nova_versao(curso_publicado, por=aluno, motivo="Quero mexer.")
+
+    assert Curso.objects.count() == 1
 
 
 @pytest.mark.django_db
 def test_outro_professor_nao_abre_versao(curso_publicado, outro_professor):
-    with pytest.raises(PermissionDenied):
+    """Mesmo motivo do teste acima. Aqui a mensagem prende tambem a metade
+    `e_responsavel` de `pode_abrir_versao`: um `pode_abrir_versao` que
+    devolvesse True para qualquer professor cairia no PermissionDenied de
+    `definir_temas`, com outra mensagem, e um teste sem `match` nao veria
+    diferenca."""
+    with pytest.raises(PermissionDenied, match="abre nova versão"):
         services.abrir_nova_versao(curso_publicado, por=outro_professor, motivo="Quero mexer.")
+
+    assert Curso.objects.count() == 1
 
 
 @pytest.mark.django_db
@@ -450,6 +513,25 @@ def test_republicar_nao_atropela_a_versao_em_producao(curso_publicado, coordenad
     assert curso_publicado.status == StatusCurso.PUBLICADO
 
 
+@pytest.mark.django_db
+def test_republicar_nao_substitui_o_proprio_curso(curso_publicado, coordenador):
+    """Na republicacao o curso chega a `_substituir_versoes_anteriores` com
+    status DESPUBLICADO - ou seja, ele se encaixa no proprio filtro. Sem o
+    `.exclude(pk=curso.pk)`, ele se marcaria SUBSTITUIDO antes de se publicar: o
+    status final sairia certo, e o LogTransicaoCurso ficaria com um "substituido
+    pela versao 1" que nunca aconteceu. O historico da spec 11 e o unico lugar
+    onde essa mentira apareceria, seis meses depois."""
+    services.despublicar_curso(curso_publicado, por=coordenador, motivo="Erro na ementa.")
+
+    services.publicar_curso(curso_publicado, por=coordenador)
+
+    curso_publicado.refresh_from_db()
+    assert curso_publicado.status == StatusCurso.PUBLICADO
+    assert not LogTransicaoCurso.objects.filter(
+        curso=curso_publicado, para_status=StatusCurso.SUBSTITUIDO
+    ).exists()
+
+
 # --- Regra 22: a invariante tambem no banco -------------------------------
 
 
@@ -475,15 +557,37 @@ def test_banco_aceita_duas_linhagens_publicadas_ao_mesmo_tempo(
 ):
     """O contraponto: a chave da constraint e a linhagem, nao o status. Uma
     constraint desatenta (unica por status, ou por `raiz` cru - que e NULL na v1)
-    ou fecharia o catalogo inteiro ou nao fecharia nada."""
+    ou fecharia o catalogo inteiro ou nao fecharia nada.
+
+    O `refresh_from_db` no fim nao e cerimonia: sem ele o teste lia o status que
+    `_publica` deixou em memoria antes da segunda publicacao, e uma substituicao
+    que perdesse o recorte de linhagem (varrendo todo curso publicado, e nao so
+    a linhagem do que esta publicando) passaria despercebida bem aqui, no teste
+    escrito para isso."""
     primeiro = _publica(services.criar_curso(**dados_curso), aluno, professor, coordenador)
     segundo = _publica(
         services.criar_curso(**{**dados_curso, "titulo": "Outro curso"}),
         outro_aluno, professor, coordenador,
     )
 
+    primeiro.refresh_from_db()
+    segundo.refresh_from_db()
     assert primeiro.status == StatusCurso.PUBLICADO
     assert segundo.status == StatusCurso.PUBLICADO
+
+
+@pytest.mark.django_db
+def test_nao_se_apaga_a_raiz_de_uma_linhagem(curso_publicado, coordenador):
+    """`raiz` e PROTECT (regra 24). Com CASCADE, apagar a v1 - uma linha so, no
+    Admin ou num shell - levaria junto todas as versoes seguintes, com os
+    entregaveis, as secoes e os anexos delas, sem nenhum aviso. PROTECT
+    transforma isso num erro na cara de quem tentou."""
+    services.abrir_nova_versao(curso_publicado, por=coordenador, motivo="Atualizar.")
+
+    with pytest.raises(ProtectedError):
+        curso_publicado.delete()
+
+    assert Curso.objects.count() == 2
 
 
 # --- Regra 23: quem alcanca o material da versao substituida --------------
