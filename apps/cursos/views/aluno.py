@@ -7,7 +7,7 @@ from django.views.decorators.http import require_POST
 
 from apps.cursos import permissions, services, validacoes
 from apps.cursos.arquivos import TAMANHO_BLOCO, calcula_hash
-from apps.cursos.choices import TipoMidia
+from apps.cursos.choices import StatusCurso, TipoMidia
 from apps.cursos.forms import AnexoForm, SecaoForm
 from apps.cursos.models import Anexo, Arquivo, Curso, Entregavel, Secao
 from apps.cursos.views.upload import UUID_MODELO
@@ -31,7 +31,23 @@ def curso(request, pk):
     # ja faz isto certo).
     membros = obj.membros.select_related("aluno")
     return render(
-        request, "cursos/curso.html", {"curso": obj, "entregaveis": entregaveis, "membros": membros}
+        request,
+        "cursos/curso.html",
+        {
+            "curso": obj,
+            "entregaveis": entregaveis,
+            "membros": membros,
+            # Um booleano, e nao a condicao composta do plano
+            # (`status == "PUBLICADO" and user.e_coordenador or status ==
+            # "PUBLICADO" and user == curso.professor_responsavel`): aquela
+            # repetia o status literal duas vezes no HTML, dependia da precedencia
+            # entre `and` e `or` do template e reescrevia a mao a regra que
+            # permissions.pode_abrir_versao ja diz. Calculado aqui, as duas
+            # metades sao apagaveis uma de cada vez - e o valor gravado nao
+            # aparece no template (mesmo padrao de analisar_curso).
+            "pode_abrir_versao": obj.status == StatusCurso.PUBLICADO
+            and permissions.pode_abrir_versao(request.user, obj),
+        },
     )
 
 

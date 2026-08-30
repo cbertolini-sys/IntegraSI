@@ -2,7 +2,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404, redirect, render
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_http_methods, require_POST
 
 from apps.cursos import permissions, services
 from apps.cursos.choices import StatusCurso
@@ -108,3 +108,39 @@ def decidir_curso(request, pk):
             messages.error(request, mensagem)
         return redirect("analisar_curso", pk=curso.pk)
     return redirect("fila_coordenacao" if veio_da_fila else "cursos_no_catalogo")
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def nova_versao(request, pk):
+    """Abre a proxima versao de um curso publicado (spec 4.5, passo 1).
+
+    A guarda vale na entrada, e nao so no POST: o GET nao chama servico nenhum,
+    entao sem ela qualquer pessoa logada abria a pagina e lia o titulo de um curso
+    de outra equipe - o plano deixava esse caminho descoberto. No POST ela e a
+    primeira de duas (o servico repete a checagem para quem o chama direto), por
+    isso quem prende a guarda do servico continua sendo test_versoes.py, com a
+    mensagem, e nao um 403 de tela.
+    """
+    curso = get_object_or_404(Curso, pk=pk)
+    permissions.garante(
+        permissions.pode_abrir_versao(request.user, curso),
+        "Somente o professor responsável ou a coordenação abre nova versão.",
+    )
+    if request.method == "POST":
+        try:
+            nova = services.abrir_nova_versao(
+                curso, por=request.user, motivo=request.POST.get("motivo", "")
+            )
+        except ValidationError as erro:
+            # Todas as mensagens, e nao erro.messages[0]: uma recusa com duas
+            # razoes mandaria a pessoa corrigir a primeira so para esbarrar na
+            # segunda. Mesmo tratamento de decidir_curso, acima.
+            for mensagem in erro.messages:
+                messages.error(request, mensagem)
+            return redirect("curso", pk=curso.pk)
+        messages.success(request, f"Versão {nova.versao} aberta. Monte a equipe para começar.")
+        # Para a equipe DA NOVA versao: ela nasce sem membros de proposito (spec
+        # 4.5, passo 3), e sem equipe ninguem produz nada.
+        return redirect("equipe", pk=nova.pk)
+    return render(request, "cursos/nova_versao.html", {"curso": curso})

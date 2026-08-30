@@ -4,6 +4,9 @@
   <h1>{{ curso.titulo }}</h1>
   <p>{{ curso.publico_alvo }} &middot; {{ curso.carga_horaria }}h &middot; {{ curso.get_formato_display }}</p>
   <p>Situação: {{ curso.get_status_display }}</p>
+  {% if curso.versao > 1 %}
+    <p>Versão {{ curso.versao }} &mdash; {{ curso.motivo_versao }}</p>
+  {% endif %}
 
   <h2>Entregáveis</h2>
   {% for entregavel in entregaveis %}
@@ -17,6 +20,10 @@
   <ul>
     {% for membro in membros %}<li>{{ membro.aluno.nome_completo }}</li>{% endfor %}
   </ul>
+
+  {% if pode_abrir_versao %}
+    <p><a href="{% url 'nova_versao' curso.pk %}">Abrir nova versão</a></p>
+  {% endif %}
 
   {% if curso.pronto_para_o_coordenador and user == curso.professor_responsavel %}
     <form method="post" action="{% url 'submeter_curso' curso.pk %}">
