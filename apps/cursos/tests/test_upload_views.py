@@ -10,6 +10,10 @@ As regras que este arquivo prende, na ordem em que aparecem:
     conclusao: um `.pdf` de 900 MB nao pode passar meia hora enchendo o disco para
     so entao ouvir que PDF para em 20 MB.
  6. Arquivo declarado vazio (0 bytes) e recusado na abertura.
+ 6b. `upload_iniciar` so abre upload no entregavel de VIDEOS: a conclusao cria um
+    Anexo de tipo VIDEO, e num entregavel de SLIDES ele contaria como material de
+    slides. Recusado ANTES do primeiro byte, como toda regra que nao precisa ver
+    conteudo.
  7. `upload_bloco` remonta os blocos em sequencia e devolve o recebido.
  8. `upload_bloco` recusa bloco que ultrapasse o declarado -> 400.
  9. `upload_estado` devolve recebido/total, que e o que permite retomar.
@@ -22,11 +26,20 @@ As regras que este arquivo prende, na ordem em que aparecem:
     que a conferencia de extensao da conclusao aparece sozinha — nos outros a
     regra "so video" ja teria barrado, e as duas guardas ficariam indistinguiveis.
 14. `upload_concluir` recusa arquivo que nao e video MP4.
+14b. `upload_concluir` reconfere que o entregavel e o de VIDEOS. Nao e a mesma
+    guarda da regra 6b: aqui o registro nasce por fora da view, que e a unica
+    forma de a guarda do servico aparecer sozinha.
 15. `upload_concluir` reconfere `pode_editar_producao`: meia hora de upload cabe
     inteira dentro da janela em que o professor aprova o entregavel.
 16. Duracao ausente ou zero e recusada ANTES de qualquer byte ir para o disco:
     senao a validacao de Anexo derruba a transacao e deixa o arquivo copiado orfao.
 16b. Titulo em branco, pelo mesmo motivo e antes dos mesmos bytes.
+16c. E a regra geral da qual 16 e 16b sao casos particulares: NENHUMA recusa do
+    Anexo acontece depois da copia. Titulo acima de `max_length` nao era pre-
+    validado por linha nenhuma e vazava os bytes para sempre — sem linha de
+    Arquivo apontando para eles, `limpar_arquivos_orfaos` nunca os acharia.
+16d. Rede embaixo de 16c: uma falha inesperada depois da copia (a que a pre-
+    validacao nao soube prever) apaga os bytes copiados.
 17. O parcial so e apagado depois do commit: uma conclusao desfeita nao pode
     deixar o registro de volta apontando para um arquivo que nao existe mais.
 18. Uma conclusao que commita apaga o parcial.
@@ -50,9 +63,10 @@ from pathlib import Path
 import pytest
 from django.conf import settings
 from django.db import transaction
+from django.db.models.fields.files import FieldFile
 from django.urls import reverse
 
-from apps.cursos import services
+from apps.cursos import services, validacoes
 from apps.cursos.arquivos import MEGA
 from apps.cursos.choices import StatusEntregavel, TipoEntregavel, TipoMidia
 from apps.cursos.models import Anexo, Arquivo, UploadEmAndamento
@@ -181,6 +195,22 @@ def test_arquivo_vazio_e_recusado_na_abertura(client, aluno, entregavel_videos):
     conclusao iria stat() um arquivo que nao existe."""
     client.force_login(aluno)
     resposta = inicia(client, entregavel_videos, tamanho=0)
+
+    assert resposta.status_code == 400
+    assert not UploadEmAndamento.objects.exists()
+
+
+# Regra 6b
+@pytest.mark.django_db
+def test_upload_em_blocos_so_abre_no_entregavel_de_videos(client, aluno, entregavel_videos):
+    """A conclusao cria `Anexo(tipo_midia=VIDEO)`, e so o entregavel D o comporta.
+    Enquanto isso morava so no `{% if entregavel.tipo == "VIDEOS" %}` do template,
+    a UI era a unica aplicacao da regra: um POST direto punha um .mp4 dentro de
+    SLIDES. Recusado na abertura para nao gastar meia hora de upload antes."""
+    slides = entregavel_videos.curso.entregaveis.get(tipo=TipoEntregavel.SLIDES)
+    client.force_login(aluno)
+
+    resposta = inicia(client, slides)
 
     assert resposta.status_code == 400
     assert not UploadEmAndamento.objects.exists()
@@ -348,6 +378,29 @@ def test_arquivo_coerente_que_nao_e_video_e_recusado_na_conclusao(
     assert Anexo.objects.count() == 0
 
 
+# Regra 14b
+@pytest.mark.django_db
+def test_conclusao_recusa_entregavel_que_nao_e_o_de_videos(client, aluno, entregavel_videos):
+    """O registro e criado por fora da view de propósito: a guarda da regra 6b
+    barraria a abertura e as duas ficariam indistinguiveis. O dano que esta guarda
+    evita nao e o anexo torto — e `validacoes.pendencias(slides)` voltar vazia com
+    um .mp4 e mais nada dentro: `_slides` conta arquivos, e video e arquivo. O
+    roteiro se declararia satisfeito pelo artefato errado."""
+    slides = entregavel_videos.curso.entregaveis.get(tipo=TipoEntregavel.SLIDES)
+    upload = UploadEmAndamento.objects.create(
+        usuario=aluno, entregavel=slides, nome_original="aula.mp4", tamanho_total=len(MP4)
+    )
+    upload.acrescentar(MP4)
+    client.force_login(aluno)
+
+    resposta = conclui(client, str(upload.identificador))
+
+    assert resposta.status_code == 400
+    assert not Anexo.objects.exists()
+    assert materiais_em_disco() == []
+    assert validacoes.pendencias(slides), "o entregável de slides ficou satisfeito"
+
+
 # Regra 15
 @pytest.mark.django_db
 def test_conclusao_reconfere_se_o_entregavel_ainda_esta_aberto(
@@ -398,6 +451,61 @@ def test_titulo_em_branco_e_recusado_antes_de_copiar_os_bytes(client, aluno, upl
     assert resposta.status_code == 400
     assert not Anexo.objects.exists()
     assert not Arquivo.objects.exists()
+    assert materiais_em_disco() == []
+
+
+# Regra 16c
+@pytest.mark.django_db
+def test_titulo_longo_demais_e_recusado_antes_de_copiar_os_bytes(
+    client, aluno, upload_completo, monkeypatch
+):
+    """`titulo` e `CharField(max_length=200)`. A pre-validacao conferia dois campos
+    a mao (16 e 16b) e essa regra nao estava entre eles: os bytes iam para
+    MEDIA_ROOT e so entao `Anexo.full_clean()` recusava. A transacao desfaz as
+    linhas, nao o arquivo — e sem linha de `Arquivo` apontando para ele,
+    `limpar_arquivos_orfaos` (que varre `Arquivo.objects`) nunca o encontraria.
+
+    O espiao em `FieldFile.save` e o que separa esta guarda da rede da regra 16d:
+    com a rede sozinha os bytes tambem sumiriam do disco, mas depois de terem sido
+    copiados — 1 GB por tentativa, e o aluno tenta de novo."""
+    copias = []
+    original = FieldFile.save
+
+    def espiao(self, name, content, save=True):
+        copias.append(name)
+        return original(self, name, content, save=save)
+
+    monkeypatch.setattr(FieldFile, "save", espiao)
+    client.force_login(aluno)
+
+    resposta = conclui(client, str(upload_completo.identificador), titulo="x" * 201)
+
+    assert resposta.status_code == 400
+    assert not Anexo.objects.exists()
+    assert not Arquivo.objects.exists()
+    assert copias == [], "os bytes foram copiados antes da recusa"
+    assert materiais_em_disco() == []
+
+
+# Regra 16d
+@pytest.mark.django_db
+def test_falha_inesperada_depois_da_copia_nao_deixa_bytes_orfaos(
+    upload_completo, monkeypatch
+):
+    """A pre-validacao da regra 16c cobre o que da para prever. Esta rede cobre o
+    que nao da: um erro de banco entre a copia e o `Anexo`. Sem ela o arquivo fica
+    em MEDIA_ROOT sem nenhuma linha apontando para ele, invisivel para
+    `limpar_arquivos_orfaos` e sem alerta nenhum, porque do lado do cron nada
+    falhou. E o mesmo `delete(save=False)` que `views/aluno.anexar` ja fazia."""
+
+    def explode(self, *args, **kwargs):
+        raise RuntimeError("banco caiu depois da cópia")
+
+    monkeypatch.setattr(Arquivo, "save", explode)
+
+    with pytest.raises(RuntimeError):
+        services.concluir_upload(upload_completo, titulo="Aula 1", duracao_minutos=7)
+
     assert materiais_em_disco() == []
 
 

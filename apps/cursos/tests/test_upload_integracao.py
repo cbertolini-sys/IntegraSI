@@ -11,7 +11,11 @@ As regras que este arquivo prende:
     aberta.
  2. Nao aparece nos outros quatro entregaveis: o upload em blocos e da rota de
     video, e concluir cria um Anexo de tipo VIDEO — em CARDS ou SLIDES o formulario
-    prometeria algo que a conclusao recusa.
+    prometeria algo que a abertura e a conclusao recusam. Quem prende essa recusa
+    sao as regras 6b e 14b de `test_upload_views.py`; este teste so afirma que a
+    tela nao a oferece. Ate a revisao de branco a frase acima era falsa: nada no
+    Python conferia o tipo do entregavel, e um POST direto punha um .mp4 dentro do
+    entregavel de Slides.
  3. Nao aparece com o entregavel congelado, pelo mesmo motivo que o formulario de
     anexar tambem some: a conclusao reconfere `pode_editar_producao` e recusaria.
  4. As quatro URLs saem de `urls.py` pelo `{% url %}`, e nao escritas a mao no JS.

@@ -367,6 +367,52 @@ def atualizar_vetor_temas(curso):
     )
 
 
+def _prevalida_anexo_de_video(upload, titulo, duracao_minutos):
+    """Roda `Anexo.full_clean()` num espelho desligado, ANTES de a copia comecar.
+
+    E a regra geral da qual a checagem de titulo em branco (em `concluir_upload`) e
+    apenas um caso particular: *nenhuma recusa do Anexo pode acontecer depois da
+    copia dos bytes*. `titulo` e `CharField(max_length=200)` e `duracao_minutos` e
+    `PositiveSmallIntegerField`; violar qualquer um dos dois so estourava no
+    `Anexo.objects.create()` da ultima linha, com o arquivo ja escrito em
+    MEDIA_ROOT. A transacao desfaz as linhas, nao os bytes — e `limpar_arquivos_orfaos`
+    parte de `Arquivo.objects`, que nesse ponto ja nao tem linha nenhuma apontando
+    para eles: ninguem mais os encontraria, e nenhum alerta de cron dispararia,
+    porque do lado do cron nada falhou.
+
+    Conferir campo a campo aqui seria repetir `Anexo` numa segunda lista que
+    divergiria dele na primeira mudanca; quem sabe o que o Anexo recusa e o
+    proprio Anexo.
+    """
+    espelho = Anexo(
+        entregavel=upload.entregavel,
+        tipo_midia=TipoMidia.VIDEO,
+        titulo=titulo,
+        duracao_minutos=duracao_minutos,
+        enviado_por=upload.usuario,
+    )
+    try:
+        # `arquivo` fica de fora porque o Arquivo so nasce depois da copia — e a
+        # copia e exatamente o que esta funcao existe para nao desperdicar.
+        # `validate_unique`/`validate_constraints` desligados porque `Anexo` nao tem
+        # nem unique nem constraint: ligados, custariam uma ida ao banco por upload
+        # sem recusar nada. Se algum dia houver uma, ela precisa voltar para ca.
+        espelho.full_clean(
+            exclude=["arquivo"], validate_unique=False, validate_constraints=False
+        )
+    except ValidationError as erro:
+        # `exclude` do `full_clean` nao alcanca o que `clean()` levanta (ele so filtra
+        # `clean_fields`): a ausencia do arquivo chega aqui como erro do campo
+        # `arquivo`, e e a unica que esperamos — as proximas linhas a resolvem.
+        erros = {
+            campo: mensagens
+            for campo, mensagens in erro.message_dict.items()
+            if campo != "arquivo"
+        }
+        if erros:
+            raise ValidationError(erros)
+
+
 @transaction.atomic
 def concluir_upload(upload, titulo, duracao_minutos):
     """Transforma o arquivo parcial de um upload em blocos em Arquivo + Anexo de video.
@@ -383,14 +429,23 @@ def concluir_upload(upload, titulo, duracao_minutos):
     # dentro dela. O portao da abertura ja tinha expirado quando os bytes chegaram.
     if not upload.completo:
         raise ValidationError("O upload ainda não terminou.")
+    # Este servico cria um Anexo de tipo VIDEO, e so o entregavel D o comporta. Sem
+    # esta linha um .mp4 pousa em SLIDES e `validacoes.pendencias` da o entregavel
+    # por satisfeito — `_slides` conta arquivos, e video e arquivo. A restricao
+    # existia so no `{% if %}` do template, ou seja, so na tela.
+    if upload.entregavel.tipo != TipoEntregavel.VIDEOS:
+        raise ValidationError("Vídeo-aula só entra no entregável de vídeo-aulas.")
     # Titulo e duracao sao exigidos por Anexo.clean(), mas conferidos AQUI, antes de
     # qualquer byte ir para o disco: descobrir no `Anexo.objects.create()` da ultima
     # linha significaria o arquivo ja copiado para MEDIA_ROOT: a transacao desfaz a
     # linha, nao o arquivo em disco. E o orfao que `anexar` teve que consertar.
     if not (titulo or "").strip():
+        # `"   "` nao esta em `empty_values`, entao o `full_clean` do espelho abaixo
+        # ACEITA um titulo so de espacos. Esta linha e a unica que o recusa.
         raise ValidationError("Informe o título do vídeo.")
-    if not duracao_minutos:
-        raise ValidationError("Informe a duração do vídeo em minutos.")
+    # A duracao ausente ou zerada nao tem mais linha propria: quem a recusa e o
+    # `Anexo.clean()` rodado no espelho, junto com tudo o mais que o Anexo recusa.
+    _prevalida_anexo_de_video(upload, titulo, duracao_minutos)
 
     caminho = upload.caminho()
     tamanho = caminho.stat().st_size
@@ -415,16 +470,28 @@ def concluir_upload(upload, titulo, duracao_minutos):
         )
         # File.chunks() volta ao inicio sozinho e copia de 64 KB em 64 KB.
         arquivo.arquivo.save(upload.nome_original, File(parcial), save=False)
-    arquivo.save()
+    # Daqui para baixo os bytes JA estao em MEDIA_ROOT, e a transacao nao os alcanca.
+    # A pre-validacao acima cobre o que da para prever; este `except` e a rede para o
+    # que nao da — um IntegrityError, um PROTECT, um `clean()` novo que ninguem
+    # lembrou de espelhar. Sem ele o arquivo fica em disco sem nenhuma linha de
+    # Arquivo apontando para ele, e `limpar_arquivos_orfaos`, que varre
+    # `Arquivo.objects`, nunca o veria. E o mesmo `arquivo.arquivo.delete(save=False)`
+    # que `views/aluno.anexar` faz no seu ramo de erro; a licao nao tinha atravessado
+    # a costura para o caminho do upload em blocos.
+    try:
+        arquivo.save()
 
-    anexo = Anexo.objects.create(
-        entregavel=upload.entregavel,
-        tipo_midia=TipoMidia.VIDEO,
-        titulo=titulo,
-        arquivo=arquivo,
-        duracao_minutos=duracao_minutos,
-        enviado_por=upload.usuario,
-    )
+        anexo = Anexo.objects.create(
+            entregavel=upload.entregavel,
+            tipo_midia=TipoMidia.VIDEO,
+            titulo=titulo,
+            arquivo=arquivo,
+            duracao_minutos=duracao_minutos,
+            enviado_por=upload.usuario,
+        )
+    except Exception:
+        arquivo.arquivo.delete(save=False)
+        raise
     # Fora da transacao de proposito. Um `unlink()` aqui dentro e a inversao classica:
     # se a transacao volta atras depois dele, a linha de UploadEmAndamento ressuscita
     # apontando para um arquivo que ja nao existe, e o dono nao consegue nem retomar

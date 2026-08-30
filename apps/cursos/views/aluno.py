@@ -71,6 +71,12 @@ def entregavel(request, pk):
             "uuid_modelo": UUID_MODELO,
             "duracao_minima": validacoes.DURACAO_MINIMA,
             "duracao_maxima": validacoes.DURACAO_MAXIMA,
+            # Sai do proprio campo do Anexo, e nao de um 200 escrito no HTML: sem o
+            # `maxlength`, um titulo colado depois de meia hora de upload so era
+            # recusado no servidor, e o aluno tentava de novo — outro giga em disco a
+            # cada tentativa. O numero duplicado no template divergiria do model no
+            # dia em que o campo mudasse.
+            "titulo_maximo": Anexo._meta.get_field("titulo").max_length,
         },
     )
 

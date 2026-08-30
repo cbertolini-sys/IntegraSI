@@ -63,7 +63,8 @@
             data-url-concluir="{% url 'upload_concluir' uuid_modelo %}">
         {% csrf_token %}
         <label>Vídeo-aula (MP4, até 1 GB) <input type="file" accept="video/mp4"></label>
-        <label>Título <input type="text" name="titulo" required></label>
+        <label>Título <input type="text" name="titulo"
+                          maxlength="{{ titulo_maximo }}" required></label>
         <label>Duração em minutos
           <input type="number" name="duracao_minutos"
                  min="{{ duracao_minima }}" max="{{ duracao_maxima }}" required></label>

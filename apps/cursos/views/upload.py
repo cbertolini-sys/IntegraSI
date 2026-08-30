@@ -17,6 +17,7 @@ from django.views.decorators.http import require_GET, require_POST
 
 from apps.cursos import permissions, services
 from apps.cursos.arquivos import valida_declaracao
+from apps.cursos.choices import TipoEntregavel
 from apps.cursos.models import Entregavel, UploadEmAndamento
 
 # UUID de enfeite para o template reverter, com `{% url %}`, as tres rotas que
@@ -99,8 +100,15 @@ def upload_iniciar(request):
     )
     try:
         # Antes de criar o registro: o que da para saber sem ver um byte (extensao
-        # conhecida, tamanho dentro do teto DAQUELE tipo) tem que ser dito agora, e
-        # nao depois de meia hora de upload. O conteudo so na conclusao.
+        # conhecida, tamanho dentro do teto DAQUELE tipo, entregavel que comporta um
+        # video) tem que ser dito agora, e nao depois de meia hora de upload. O
+        # conteudo so na conclusao.
+        #
+        # `concluir_upload` reconfere o tipo do entregavel — a mesma dupla de guardas
+        # que `pode_editar_producao` ja tem nas duas pontas, e pelo mesmo motivo: o
+        # registro tambem nasce por outros caminhos que nao esta view.
+        if entregavel.tipo != TipoEntregavel.VIDEOS:
+            raise ValidationError("O upload em blocos é só do entregável de vídeo-aulas.")
         valida_declaracao(nome, tamanho)
         upload = UploadEmAndamento.objects.create(
             usuario=request.user,
