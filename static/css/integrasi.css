@@ -1,21 +1,21 @@
-/* IntegraSI — catálogo público.
+/* IntegraSI — identidade do catálogo público.
  *
- * O material desta sala de aula não é "tecnologia": é o quadro verde e o caderno
- * quadriculado. A página vai do quadro (herói) para o caderno (catálogo), porque
- * é assim que a aula anda. E o quadriculado não é enfeite — é o suporte real das
- * atividades desplugadas, que se fazem no papel quando não há computador.
+ * Estrutura no espírito de uma plataforma de cursos: fundo claro, cartões com
+ * canto arredondado e sombra leve, muito respiro, tipografia sem serifa.
+ * A cor vem de onde o sistema mora — o marinho institucional da UFSM (#21376B,
+ * amostrado da página do curso) com o azul e o ciano da marca IntegraSI.
  */
 
 @font-face {
-  font-family: "Bricolage";
-  src: url("../fonts/bricolage.woff2") format("woff2");
-  font-weight: 400 800;
+  font-family: "Inter";
+  src: url("../fonts/inter.woff2") format("woff2");
+  font-weight: 300 800;
   font-display: swap;
 }
 @font-face {
-  font-family: "Literata";
-  src: url("../fonts/literata.woff2") format("woff2");
-  font-weight: 300 700;
+  font-family: "Jakarta";
+  src: url("../fonts/jakarta.woff2") format("woff2");
+  font-weight: 400 800;
   font-display: swap;
 }
 @font-face {
@@ -26,21 +26,28 @@
 }
 
 :root {
-  --lousa: #1f3a31;
-  --lousa-clara: #2c4f43;
-  --giz: #efeee4;
-  --papel: #e8ede6;
-  --quadriculado: #cbd8cd;
-  --tinta: #24312c;
-  --grafite: #5c665f;
-  --plugado: #2a4bd7;
-  --desplugado: #c8892b;
+  --marinho: #21376b;
+  --marinho-fundo: #1a2c57;
+  --azul: #055695;
+  --azul-forte: #04477c;
+  --azul-suave: #e8f1f9;
+  --ciano: #38c2c2;
 
-  --display: "Bricolage", "Helvetica Neue", sans-serif;
-  --corpo: "Literata", Georgia, serif;
+  --texto: #16202e;
+  --cinza: #5a6675;
+  --cinza-claro: #8b95a3;
+  --linha: #e1e6ec;
+  --nevoa: #f5f8fb;
+  --branco: #fff;
+
+  --display: "Jakarta", "Inter", system-ui, sans-serif;
+  --corpo: "Inter", system-ui, -apple-system, sans-serif;
   --dado: "JetBrains", ui-monospace, monospace;
 
-  --quadra: 22px; /* o lado do quadriculado; tudo se alinha a ele */
+  --raio: 12px;
+  --raio-p: 8px;
+  --sombra: 0 1px 2px rgba(22, 32, 46, 0.06), 0 4px 12px rgba(22, 32, 46, 0.06);
+  --sombra-alta: 0 2px 4px rgba(22, 32, 46, 0.08), 0 12px 28px rgba(22, 32, 46, 0.12);
 }
 
 *,
@@ -51,452 +58,576 @@
 
 body {
   margin: 0;
-  background: var(--papel);
-  color: var(--tinta);
+  background: var(--branco);
+  color: var(--texto);
   font-family: var(--corpo);
-  font-size: 1.02rem;
+  font-size: 1rem;
   line-height: 1.6;
-  /* O caderno. Duas linhas de 1px sobre o papel, na medida da --quadra. */
-  background-image: linear-gradient(var(--quadriculado) 1px, transparent 1px),
-    linear-gradient(90deg, var(--quadriculado) 1px, transparent 1px);
-  background-size: var(--quadra) var(--quadra);
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 }
 
-/* ---------- o quadro ---------- */
-
-.lousa {
-  background: var(--lousa);
-  color: var(--giz);
-  /* O leve esfumaçado de giz que nunca sai do quadro. */
-  background-image: radial-gradient(
-      ellipse 60% 40% at 20% 30%,
-      rgba(239, 238, 228, 0.06),
-      transparent
-    ),
-    radial-gradient(ellipse 50% 50% at 85% 70%, rgba(239, 238, 228, 0.05), transparent);
-  border-bottom: 3px solid #16281f;
+main {
+  flex: 1;
 }
 
-.lousa a {
-  color: var(--giz);
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+a {
+  color: var(--azul);
 }
 
 .faixa {
-  max-width: 68rem;
+  max-width: 74rem;
   margin: 0 auto;
   padding: 0 1.5rem;
+  width: 100%;
 }
 
-.topo {
+/* ---------- barra do topo ---------- */
+
+.barra {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--branco);
+  border-bottom: 1px solid var(--linha);
+}
+
+.barra .faixa {
   display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
-  padding-block: 1.1rem;
-  font-family: var(--dado);
-  font-size: 0.76rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  gap: 1.25rem;
+  min-height: 4.25rem;
+  flex-wrap: wrap;
 }
 
-.topo .marca {
-  font-family: var(--display);
-  font-size: 1.05rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  text-transform: none;
-  text-decoration: none;
+.marca img {
+  display: block;
+  height: 2.625rem;
+  width: auto;
 }
 
-.topo .quem {
+.menu {
   display: flex;
-  align-items: baseline;
-  gap: 0.9rem;
-  color: rgba(239, 238, 228, 0.72);
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+  flex-wrap: wrap;
+  font-size: 0.9375rem;
 }
+
+.menu a {
+  color: var(--texto);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.menu a:hover {
+  color: var(--azul);
+}
+
+.menu .quem {
+  color: var(--cinza);
+  font-size: 0.875rem;
+}
+
+.menu form {
+  margin: 0;
+}
+
+/* ---------- botões ---------- */
+
+.botao,
+button {
+  font-family: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.2;
+  padding: 0.6875rem 1.25rem;
+  border-radius: var(--raio-p);
+  border: 1px solid transparent;
+  background: var(--azul);
+  color: var(--branco);
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+  transition: background 0.15s ease;
+}
+
+.botao:hover,
+button:hover {
+  background: var(--azul-forte);
+  color: var(--branco);
+}
+
+.botao-linha {
+  background: transparent;
+  color: var(--azul);
+  border-color: #c3d5e6;
+}
+
+.botao-linha:hover {
+  background: var(--azul-suave);
+  color: var(--azul-forte);
+}
+
+.botao-largo {
+  width: 100%;
+}
+
+:focus-visible {
+  outline: 2px solid var(--azul);
+  outline-offset: 2px;
+}
+
+/* Rotulo que o leitor de tela anuncia e a tela nao mostra: o campo de busca tem
+   placeholder, mas placeholder nao e rotulo. */
+.visualmente-oculto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---------- herói ---------- */
 
 .heroi {
-  padding-block: clamp(2.2rem, 6vw, 4.2rem) clamp(2rem, 5vw, 3.4rem);
+  background: linear-gradient(160deg, var(--marinho) 0%, var(--marinho-fundo) 55%, #14224a 100%);
+  color: var(--branco);
+  position: relative;
+  overflow: hidden;
+}
+
+/* O halo ciano da marca: profundidade sem virar enfeite. */
+.heroi::after {
+  content: "";
+  position: absolute;
+  inset: -20% -10% -40% 52%;
+  background: radial-gradient(circle at center, rgba(56, 194, 194, 0.2), transparent 62%);
+  pointer-events: none;
+}
+
+.heroi .faixa {
+  position: relative;
+  z-index: 1;
   display: grid;
-  /* minmax(0, 1fr) e nao 1fr: item de grade nasce com min-width:auto e uma linha
-     de titulo longa infla a coluna alem do contentor -- era o que empurrava a
-     pagina inteira para fora da tela no celular. */
-  grid-template-columns: minmax(0, 1fr);
-  gap: 2rem 3rem;
-  align-items: end;
+  gap: 2.5rem 3.5rem;
+  padding-block: clamp(2.5rem, 6vw, 4.5rem);
+  align-items: center;
 }
 
-.heroi > * {
-  min-width: 0;
-}
-
-/* A partir do desktop o herói divide: a tese à esquerda, a chave de leitura à
-   direita. A chave é conteúdo, não enfeite -- é o que ensina a ler os cartões
-   antes de o visitante chegar neles. */
-@media (min-width: 60rem) {
-  .heroi {
-    grid-template-columns: minmax(0, 1.35fr) minmax(15rem, 0.8fr);
+@media (min-width: 62rem) {
+  .heroi .faixa {
+    grid-template-columns: minmax(0, 1.15fr) minmax(20rem, 0.85fr);
   }
-}
-
-.heroi-texto {
-  max-width: 34rem;
-}
-
-.heroi .eyebrow {
-  font-family: var(--dado);
-  font-size: 0.74rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: rgba(239, 238, 228, 0.62);
-  margin: 0 0 1.2rem;
 }
 
 .heroi h1 {
   font-family: var(--display);
-  font-weight: 700;
-  font-size: clamp(1.75rem, 7.5vw, 3.9rem);
-  overflow-wrap: break-word;
-  line-height: 1.04;
-  letter-spacing: -0.025em;
-  margin: 0 0 1.1rem;
+  font-size: clamp(2rem, 4.4vw, 3.125rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  margin: 0 0 1rem;
   text-wrap: balance;
 }
 
-.heroi h1 em {
-  font-style: normal;
-  color: var(--desplugado);
-}
-
-.heroi p {
-  font-size: 1.1rem;
-  line-height: 1.55;
-  color: rgba(239, 238, 228, 0.8);
-  margin: 0;
+.heroi .chamada-texto {
+  font-size: 1.125rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0 0 1.75rem;
   max-width: 34rem;
 }
 
-/* ---------- a assinatura: precisa de computador? ---------- */
-
-.pratica {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-family: var(--dado);
-  font-size: 0.72rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+.numeros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
 }
 
-@media (min-width: 30rem) {
-  .pratica {
-    white-space: nowrap;
-  }
-}
-
-/* Duas células: a da esquerda é o computador, a da direita é o papel.
-   Preenchida = o curso tem aquela metade. */
-.marca-pratica {
-  display: inline-grid;
-  grid-template-columns: 1fr 1fr;
-  width: 2.6rem;
-  height: 1.3rem;
-  border: 1.5px solid currentColor;
-  flex: none;
-}
-
-.marca-pratica span {
+.numeros strong {
   display: block;
+  font-family: var(--display);
+  font-size: 1.625rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
 }
 
-.marca-pratica span + span {
-  border-left: 1.5px solid currentColor;
+.numeros span {
+  font-size: 0.8125rem;
+  color: rgba(255, 255, 255, 0.7);
 }
 
-.marca-pratica .liga {
-  background: var(--plugado);
-}
-.marca-pratica .papel {
-  background: var(--desplugado);
-}
+/* ---------- cartão de acesso ---------- */
 
-.legenda {
-  display: grid;
-  gap: 0.85rem;
-  padding: 1.2rem 1.3rem;
-  border: 1px solid rgba(239, 238, 228, 0.22);
-  color: rgba(239, 238, 228, 0.82);
-  align-content: start;
+.acesso {
+  background: var(--branco);
+  color: var(--texto);
+  border-radius: var(--raio);
+  padding: 1.75rem;
+  box-shadow: var(--sombra-alta);
 }
 
-.legenda .titulo-chave {
-  font-family: var(--dado);
-  font-size: 0.7rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: rgba(239, 238, 228, 0.55);
-  padding-bottom: 0.7rem;
-  margin: 0;
-  border-bottom: 1px solid rgba(239, 238, 228, 0.16);
+.acesso h2 {
+  font-family: var(--display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  margin: 0 0 0.25rem;
 }
 
-/* Na página do curso a chave é uma linha só, sem moldura: ali ela informa sobre
-   este curso, não ensina a ler o catálogo. */
-.legenda.unica {
-  border: 0;
-  padding: 0;
-  padding-top: 1.3rem;
-  border-top: 1px solid rgba(239, 238, 228, 0.18);
+.acesso .sub {
+  font-size: 0.875rem;
+  color: var(--cinza);
+  margin: 0 0 1.25rem;
 }
 
-/* ---------- filtros: a ficha na dobra ---------- */
-
-.ficha {
-  background: var(--giz);
-  border: 1px solid var(--quadriculado);
-  border-top: 3px solid var(--lousa);
-  padding: 1.3rem;
-  margin-top: -1.6rem;
-  margin-bottom: 2.6rem;
+.campo {
+  margin-bottom: 0.875rem;
 }
 
-.ficha legend,
-.ficha .rotulo-ficha {
-  font-family: var(--dado);
-  font-size: 0.72rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--grafite);
-  margin-bottom: 0.8rem;
+.campo label {
   display: block;
-}
-
-/* Grade e nao flex: com flex o campo de busca encolhia ate cortar o proprio
-   placeholder, e a ultima linha ficava com um vao. Aqui a busca ocupa a linha
-   inteira e os quatro filtros dividem a seguinte em partes iguais. */
-.campos {
-  display: grid;
-  gap: 0.7rem;
-  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
-}
-
-.ficha input[type="search"] {
-  grid-column: 1 / -1;
-}
-
-.ficha button {
-  justify-self: start;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--texto);
+  margin-bottom: 0.375rem;
 }
 
 input,
 select,
 textarea {
   font: inherit;
-  font-size: 0.95rem;
-  padding: 0.55rem 0.7rem;
-  background: #fff;
-  color: var(--tinta);
-  border: 1px solid var(--quadriculado);
-  border-radius: 0;
+  font-size: 0.9375rem;
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  color: var(--texto);
+  background: var(--branco);
+  border: 1px solid #c9d2dc;
+  border-radius: var(--raio-p);
 }
 
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible,
-button:focus-visible,
-a:focus-visible {
-  outline: 2px solid var(--plugado);
-  outline-offset: 2px;
+input::placeholder,
+textarea::placeholder {
+  color: var(--cinza-claro);
 }
 
-button,
-.botao {
-  font-family: var(--dado);
-  font-size: 0.78rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  padding: 0.6rem 1.2rem;
-  background: var(--lousa);
-  color: var(--giz);
-  border: 1px solid var(--lousa);
-  border-radius: 0;
-  cursor: pointer;
-  text-decoration: none;
-  display: inline-block;
-  transition: background 0.15s ease;
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--azul);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(5, 86, 149, 0.13);
 }
 
-button:hover,
-.botao:hover {
-  background: var(--lousa-clara);
+.erro-acesso {
+  background: #fdf0ec;
+  border: 1px solid #f3c9ba;
+  color: #9a3d18;
+  border-radius: var(--raio-p);
+  padding: 0.625rem 0.75rem;
+  font-size: 0.875rem;
+  margin: 0 0 1rem;
 }
 
-/* ---------- o caderno ---------- */
-
-main {
-  padding-bottom: 5rem;
+.rodape-acesso {
+  margin: 1rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--cinza);
+  text-align: center;
 }
 
-.contagem {
-  font-family: var(--dado);
-  font-size: 0.75rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--grafite);
-  margin: 0 0 1.1rem;
+/* ---------- busca ---------- */
+
+.busca {
+  background: var(--nevoa);
+  border-bottom: 1px solid var(--linha);
+  padding-block: 1.5rem;
+}
+
+.busca form {
+  display: grid;
+  gap: 0.75rem;
+  /* 12.5rem e nao 11: com 11 o primeiro select cortava "Qualquer etapa escolar"
+     no proprio rotulo. O botao sai da grade e fica com a largura do texto. */
+  grid-template-columns: repeat(auto-fit, minmax(12.5rem, 1fr));
+  align-items: end;
+}
+
+.busca .campo-busca {
+  grid-column: 1 / -1;
+}
+
+.busca .campo-busca input {
+  height: 3rem;
+  font-size: 1rem;
+}
+
+.busca button {
+  height: 2.75rem;
+  justify-self: start;
+  padding-inline: 1.75rem;
+}
+
+/* ---------- seção de cursos ---------- */
+
+.secao {
+  padding-block: 3rem 4.5rem;
+}
+
+.cabeca-secao {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 1.75rem;
+}
+
+.cabeca-secao h2 {
+  font-family: var(--display);
+  font-size: 1.625rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.cabeca-secao p {
+  margin: 0;
+  color: var(--cinza);
+  font-size: 0.9375rem;
 }
 
 .cursos {
   display: grid;
-  gap: 1.1rem;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 21rem), 1fr));
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 18.5rem), 1fr));
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
 .curso {
-  background: var(--giz);
-  border: 1px solid var(--quadriculado);
-  padding: 1.4rem;
+  position: relative;
+  background: var(--branco);
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 0.7rem;
-  transition: border-color 0.15s ease, transform 0.15s ease;
+  transition: box-shadow 0.18s ease, transform 0.18s ease, border-color 0.18s ease;
 }
 
 .curso:hover {
-  border-color: var(--lousa);
-  transform: translateY(-2px);
+  box-shadow: var(--sombra-alta);
+  transform: translateY(-3px);
+  border-color: #cfdae6;
 }
 
-.curso h2 {
-  font-family: var(--display);
-  font-size: 1.3rem;
+/* Capa: campo de cor da marca em vez de foto de banco de imagens. O selo de
+   prática mora aqui porque é a primeira decisão de quem escolhe um curso. */
+.capa {
+  height: 6.5rem;
+  background: linear-gradient(135deg, var(--marinho), var(--azul) 70%, #0a6ba8);
+  display: flex;
+  align-items: flex-end;
+  padding: 0.875rem;
+}
+
+.capa.plugada {
+  background: linear-gradient(135deg, #05436f, var(--azul) 65%, #0d7ec2);
+}
+.capa.desplugada {
+  background: linear-gradient(135deg, #12564f, #1c8a7a 60%, var(--ciano));
+}
+.capa.ambas {
+  background: linear-gradient(135deg, var(--marinho), var(--azul) 45%, var(--ciano));
+}
+
+.selo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4375rem;
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--texto);
+  border-radius: 999px;
+  padding: 0.3125rem 0.75rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  line-height: 1.18;
+  line-height: 1.3;
+}
+
+.selo .ponto {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--azul);
+  flex: none;
+}
+
+.selo.desplugada .ponto {
+  background: var(--ciano);
+}
+.selo.ambas .ponto {
+  background: linear-gradient(90deg, var(--azul) 50%, var(--ciano) 50%);
+}
+.selo.nenhuma .ponto {
+  background: var(--cinza-claro);
+}
+
+.corpo-curso {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  flex: 1;
+}
+
+.curso h3 {
+  font-family: var(--display);
+  font-size: 1.0625rem;
+  font-weight: 700;
+  line-height: 1.3;
   letter-spacing: -0.015em;
   margin: 0;
-  text-wrap: balance;
 }
 
-.curso h2 a {
+.curso h3 a {
   color: inherit;
   text-decoration: none;
 }
 
-.curso h2 a:hover {
-  text-decoration: underline;
-  text-underline-offset: 3px;
+/* O título cobre o cartão inteiro: o alvo de clique é o cartão, e o leitor de
+   tela continua ouvindo um link só, com o nome do curso. */
+.curso h3 a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
 }
 
 .curso .resumo {
   margin: 0;
-  color: var(--grafite);
-  font-size: 0.94rem;
+  font-size: 0.9375rem;
+  color: var(--cinza);
 }
 
-/* Os dados duros do curso: mono, porque são dados. */
-.dados {
-  font-family: var(--dado);
-  font-size: 0.74rem;
-  letter-spacing: 0.06em;
-  color: var(--grafite);
-  margin: 0;
+.meta {
+  margin: auto 0 0;
+  padding-top: 0.875rem;
+  border-top: 1px solid var(--linha);
+  font-size: 0.8125rem;
+  color: var(--cinza);
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem 0.9rem;
+  gap: 0.25rem 0.5rem;
 }
 
-.rodape-curso {
-  margin-top: auto;
-  padding-top: 0.8rem;
-  border-top: 1px solid var(--quadriculado);
+.meta .sep {
+  color: #c9d2dc;
 }
 
 .vazio {
-  background: var(--giz);
-  border: 1px dashed var(--quadriculado);
-  padding: 2.6rem 1.5rem;
+  border: 1px dashed #ccd6e0;
+  border-radius: var(--raio);
+  background: var(--nevoa);
+  padding: 3rem 1.5rem;
   text-align: center;
-  color: var(--grafite);
+  color: var(--cinza);
 }
 
 .vazio p {
-  margin: 0 0 0.4rem;
+  margin: 0 0 0.75rem;
 }
 
 /* ---------- página do curso ---------- */
 
-.curso-detalhe {
-  max-width: 44rem;
+.topo-curso {
+  background: linear-gradient(160deg, var(--marinho), var(--marinho-fundo));
+  color: var(--branco);
+  padding-block: 2.5rem 3rem;
 }
 
-.curso-detalhe h1 {
+.migalha {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.72);
+  margin: 0 0 1rem;
+}
+
+.migalha a {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.topo-curso h1 {
   font-family: var(--display);
-  font-size: clamp(1.9rem, 5vw, 2.9rem);
-  font-weight: 700;
-  line-height: 1.06;
-  letter-spacing: -0.025em;
-  margin: 0 0 0.9rem;
+  font-size: clamp(1.875rem, 4vw, 2.625rem);
+  font-weight: 800;
+  line-height: 1.12;
+  letter-spacing: -0.03em;
+  margin: 0 0 1rem;
+  max-width: 46rem;
   text-wrap: balance;
 }
 
-.curso-detalhe h2 {
-  font-family: var(--dado);
-  font-size: 0.76rem;
-  font-weight: 600;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--grafite);
-  margin: 2.4rem 0 0.7rem;
-  padding-bottom: 0.4rem;
-  border-bottom: 1px solid var(--quadriculado);
+.topo-curso .resumo {
+  font-size: 1.0625rem;
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0 0 1.5rem;
+  max-width: 44rem;
 }
 
-.curso-detalhe .abertura {
-  font-size: 1.12rem;
-  line-height: 1.6;
-}
-
-.ficha-curso {
-  background: var(--giz);
-  border: 1px solid var(--quadriculado);
-  border-left: 3px solid var(--lousa);
-  padding: 1.1rem 1.3rem;
-  margin: 1.5rem 0 2rem;
+.fatos {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem 2rem;
-  align-items: center;
+  gap: 0.625rem;
 }
 
-.competencias {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+.fato {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  padding: 0.375rem 0.875rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.colunas {
   display: grid;
-  gap: 0.6rem;
+  gap: 2.5rem;
+  padding-block: 2.5rem 4rem;
+  align-items: start;
 }
 
-.competencias li {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 0.8rem;
-  align-items: baseline;
+@media (min-width: 58rem) {
+  .colunas {
+    grid-template-columns: minmax(0, 1fr) 20rem;
+  }
 }
 
-/* Códigos da BNCC são códigos: EF06CO01 pede monoespaçada, não itálico. */
-.codigo {
-  font-family: var(--dado);
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--lousa);
-  background: var(--giz);
-  border: 1px solid var(--quadriculado);
-  padding: 0.15rem 0.45rem;
-  white-space: nowrap;
+.conteudo h2 {
+  font-family: var(--display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  margin: 2rem 0 0.75rem;
+}
+
+.conteudo h2:first-child {
+  margin-top: 0;
 }
 
 .etiquetas {
@@ -509,155 +640,209 @@ main {
 }
 
 .etiquetas li {
-  font-family: var(--dado);
-  font-size: 0.75rem;
-  letter-spacing: 0.05em;
-  border: 1px solid var(--quadriculado);
-  background: var(--giz);
-  padding: 0.2rem 0.6rem;
+  background: var(--azul-suave);
+  color: var(--azul-forte);
+  border-radius: 999px;
+  padding: 0.3125rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
 }
 
-.chamada {
-  margin-top: 2.8rem;
-  padding: 1.6rem;
-  background: var(--lousa);
-  color: var(--giz);
+/* O resumo mora aqui, e nao no heroi: e o que garante que a coluna principal
+   nunca fique vazia num curso sem pre-requisitos e sem referencial. */
+.sobre {
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  margin: 0;
 }
 
-.chamada p {
-  margin: 0 0 1rem;
-  max-width: 34rem;
-}
-
-.chamada .botao {
-  background: var(--giz);
-  color: var(--lousa);
-  border-color: var(--giz);
-  font-weight: 600;
-}
-
-.chamada .botao:hover {
-  background: #fff;
-}
-
-/* ---------- formulário ---------- */
-
-.formulario {
-  max-width: 36rem;
-}
-
-.formulario p {
-  margin: 0 0 1.1rem;
-}
-
-.formulario label {
-  display: block;
-  font-family: var(--dado);
-  font-size: 0.74rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--grafite);
-  margin-bottom: 0.3rem;
-}
-
-.formulario input,
-.formulario select,
-.formulario textarea {
-  width: 100%;
-}
-
-.formulario .helptext,
-.formulario .errorlist {
-  font-family: var(--dado);
-  font-size: 0.74rem;
-  letter-spacing: 0.04em;
-}
-
-.formulario .errorlist {
-  color: #a3311f;
+.competencias {
   list-style: none;
   padding: 0;
-  margin: 0.3rem 0 0;
+  margin: 0;
+  display: grid;
+  gap: 0.75rem;
 }
 
-.aviso {
-  border-left: 3px solid var(--desplugado);
-  background: var(--giz);
-  padding: 0.9rem 1.1rem;
-  margin-bottom: 1.8rem;
-  font-size: 0.95rem;
+.competencias li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.75rem;
+  align-items: start;
+  font-size: 0.9375rem;
+}
+
+/* Código da BNCC é código: monoespaçada informa, não enfeita. */
+.codigo {
+  font-family: var(--dado);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--marinho);
+  background: var(--nevoa);
+  border: 1px solid var(--linha);
+  border-radius: 6px;
+  padding: 0.1875rem 0.4375rem;
+  white-space: nowrap;
+}
+
+.lateral {
+  background: var(--branco);
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+  box-shadow: var(--sombra);
+  padding: 1.5rem;
+}
+
+@media (min-width: 58rem) {
+  .lateral {
+    position: sticky;
+    top: 5.5rem;
+  }
+}
+
+.lateral h2 {
+  font-family: var(--display);
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem;
+}
+
+.lateral p {
+  font-size: 0.9375rem;
+  color: var(--cinza);
+  margin: 0 0 1.25rem;
+}
+
+.lateral .selo {
+  background: var(--nevoa);
+  border: 1px solid var(--linha);
+  margin-bottom: 1rem;
+}
+
+/* ---------- páginas estreitas ---------- */
+
+.pagina-estreita {
+  max-width: 38rem;
+  padding-block: 2.5rem 4rem;
+}
+
+.pagina-estreita h1 {
+  font-family: var(--display);
+  font-size: 1.875rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  margin: 0 0 0.5rem;
+}
+
+.pagina-estreita .abertura {
+  color: var(--cinza);
+  margin: 0 0 2rem;
+}
+
+.cartao {
+  background: var(--branco);
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+  box-shadow: var(--sombra);
+  padding: 1.75rem;
+}
+
+.cartao p {
+  margin: 0 0 1rem;
+}
+
+.cartao label {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  margin-bottom: 0.375rem;
+}
+
+.helptext {
+  display: block;
+  font-size: 0.8125rem;
+  color: var(--cinza);
+  margin-top: 0.25rem;
+}
+
+.errorlist {
+  list-style: none;
+  padding: 0;
+  margin: 0.375rem 0 0;
+  font-size: 0.8125rem;
+  color: #b23c17;
+}
+
+.finalidade {
+  background: var(--nevoa);
+  border-left: 3px solid var(--ciano);
+  border-radius: var(--raio-p);
+  padding: 0.875rem 1rem;
+  font-size: 0.875rem;
+  color: var(--cinza);
 }
 
 /* ---------- mensagens ---------- */
 
 .mensagens {
   list-style: none;
-  margin: 1.4rem 0 0;
-  padding: 0;
+  margin: 1.5rem auto 0;
+  padding: 0 1.5rem;
+  max-width: 74rem;
   display: grid;
   gap: 0.5rem;
 }
 
 .mensagens li {
-  background: var(--giz);
-  border-left: 3px solid var(--lousa);
-  padding: 0.7rem 1rem;
-  font-size: 0.95rem;
+  background: var(--azul-suave);
+  border: 1px solid #cfe1f0;
+  border-radius: var(--raio-p);
+  padding: 0.75rem 1rem;
+  font-size: 0.9375rem;
 }
 
 /* ---------- rodapé ---------- */
 
 .rodape {
-  border-top: 1px solid var(--quadriculado);
-  margin-top: 4rem;
-  padding-block: 1.6rem 3rem;
-  font-family: var(--dado);
-  font-size: 0.74rem;
-  letter-spacing: 0.06em;
-  color: var(--grafite);
+  background: var(--marinho-fundo);
+  color: rgba(255, 255, 255, 0.72);
+  padding-block: 3rem;
+  font-size: 0.875rem;
 }
 
-/* ---------- entrada ---------- */
+.rodape .faixa {
+  display: grid;
+  gap: 2rem;
+  align-items: start;
+}
 
-@media (prefers-reduced-motion: no-preference) {
-  .heroi > * {
-    animation: sobe 0.6s cubic-bezier(0.2, 0.7, 0.3, 1) backwards;
-  }
-  .heroi .eyebrow {
-    animation-delay: 0.05s;
-  }
-  .heroi h1 {
-    animation-delay: 0.13s;
-  }
-  .heroi p {
-    animation-delay: 0.22s;
-  }
-  .heroi .legenda {
-    animation-delay: 0.3s;
+@media (min-width: 48rem) {
+  .rodape .faixa {
+    grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
   }
 }
 
-@keyframes sobe {
-  from {
-    opacity: 0;
-    transform: translateY(0.7rem);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
+.rodape img {
+  height: 5rem;
+  width: auto;
+  background: var(--branco);
+  border-radius: var(--raio-p);
+  padding: 0.75rem 1rem;
 }
 
-a {
-  color: var(--lousa);
-  text-underline-offset: 2px;
+.rodape a {
+  color: var(--branco);
 }
 
-@media (max-width: 34rem) {
-  .topo {
-    font-size: 0.7rem;
-  }
-  .ficha {
-    margin-top: -1rem;
+.rodape p {
+  margin: 0 0 0.5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
   }
 }

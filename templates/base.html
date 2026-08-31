@@ -4,47 +4,61 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#21376b">
   <title>{% block titulo %}IntegraSI{% endblock %}</title>
   <link rel="stylesheet" href="{% static 'css/integrasi.css' %}">
   <script src="{% static 'js/htmx.min.js' %}" defer></script>
 </head>
 <body>
-  <div class="lousa">
+  <header class="barra">
     <div class="faixa">
-      <header class="topo">
-        <a class="marca" href="{% url 'catalogo' %}">IntegraSI</a>
+      <a class="marca" href="{% url 'catalogo' %}">
+        <img src="{% static 'img/integrasi-marca.png' %}"
+             alt="IntegraSI — Sistemas de Informação, UFSM Frederico Westphalen">
+      </a>
+      <nav class="menu">
+        <a href="{% url 'catalogo' %}">Cursos</a>
         {% if user.is_authenticated %}
-          <span class="quem">
-            {{ user.nome_completo }} &middot; {{ user.get_papel_display }}
-            <form method="post" action="{% url 'logout' %}">
-              {% csrf_token %}
-              <button type="submit">Sair</button>
-            </form>
-          </span>
+          <a href="{% url 'painel' %}">Painel</a>
+          <span class="quem">{{ user.nome_completo }} &middot; {{ user.get_papel_display }}</span>
+          <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit" class="botao-linha">Sair</button>
+          </form>
         {% else %}
-          <span class="quem">UFSM &middot; Frederico Westphalen</span>
+          <a class="botao" href="{% url 'login' %}">Entrar</a>
         {% endif %}
-      </header>
+      </nav>
     </div>
-    {% block quadro %}{% endblock %}
-  </div>
+  </header>
 
-  <main class="faixa">
-    {% if messages %}
-      <ul class="mensagens">
-        {% for message in messages %}
-          <li>{{ message }}</li>
-        {% endfor %}
-      </ul>
-    {% endif %}
+  {% block topo %}{% endblock %}
+
+  {% if messages %}
+    <ul class="mensagens">
+      {% for message in messages %}
+        <li>{{ message }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  <main>
     {% block conteudo %}{% endblock %}
   </main>
 
-  <div class="faixa">
-    <footer class="rodape">
-      Sistemas de Informação &middot; UFSM Frederico Westphalen &middot;
-      cursos produzidos por equipes de estudantes e oferecidos sem custo à comunidade.
-    </footer>
-  </div>
+  <footer class="rodape">
+    <div class="faixa">
+      <img src="{% static 'img/integrasi-completo.png' %}"
+           alt="IntegraSI — Sistema de gestão de cursos de extensão">
+      <div>
+        <p><strong style="color:#fff">Cursos de extensão de Sistemas de Informação</strong></p>
+        <p>Produzidos por equipes de estudantes, revisados por professores e oferecidos
+           sem custo a escolas e grupos da comunidade.</p>
+        <p>Universidade Federal de Santa Maria &middot; Campus Frederico Westphalen &middot;
+           <a href="https://www.ufsm.br/cursos/graduacao/frederico-westphalen/sistemas-de-informacao"
+              rel="noopener noreferrer" target="_blank">página do curso</a></p>
+      </div>
+    </div>
+  </footer>
 </body>
 </html>

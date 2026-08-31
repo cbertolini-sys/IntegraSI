@@ -1,17 +1,11 @@
 {% extends "base.html" %}
-{% block titulo %}Solicitação recebida{% endblock %}
-
-{% block quadro %}
-  <div class="faixa">
-    <div class="heroi">
-      <p class="eyebrow">Solicitação registrada</p>
-      <h1>Recebemos seu pedido.</h1>
-      <p>Recebemos seu pedido para o curso <strong>{{ curso.titulo }}</strong>. O professor
-         responsável entrará em contato pelo e-mail informado.</p>
-    </div>
-  </div>
-{% endblock %}
+{% block titulo %}Solicitação recebida &mdash; IntegraSI{% endblock %}
 
 {% block conteudo %}
-  <p><a class="botao" href="{% url 'catalogo' %}">Voltar ao catálogo</a></p>
+  <div class="faixa pagina-estreita">
+    <h1>Solicitação recebida</h1>
+    <p class="abertura">Recebemos seu pedido para o curso <strong>{{ curso.titulo }}</strong>. O professor
+       responsável entrará em contato pelo e-mail informado.</p>
+    <a class="botao" href="{% url 'catalogo' %}">Voltar ao catálogo</a>
+  </div>
 {% endblock %}

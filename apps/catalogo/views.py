@@ -66,6 +66,9 @@ def catalogo(request):
             "referenciais": Referencial.objects.filter(ativo=True),
             "formatos": Formato.choices,
             "filtros": request.GET,
+            # O total do catalogo inteiro, nao do resultado filtrado: no heroi ele
+            # informa o tamanho da oferta, e mudaria de sentido se seguisse o filtro.
+            "total_cursos": cursos_publicados().count(),
         },
     )
 

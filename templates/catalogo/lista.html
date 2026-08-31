@@ -1,101 +1,140 @@
 {% extends "base.html" %}
-{% block titulo %}Catálogo de cursos de extensão{% endblock %}
+{% block titulo %}Catálogo de cursos de extensão &mdash; IntegraSI{% endblock %}
 
-{% block quadro %}
-  <div class="faixa">
-    <div class="heroi">
-      <div class="heroi-texto">
-        <p class="eyebrow">Cursos de extensão &middot; Sistemas de Informação</p>
-        <h1>Dá para ensinar computação <em>sem computador</em>.</h1>
-        <p>
-          Oficinas prontas para escolas e grupos da comunidade, produzidas por equipes de
-          estudantes e revisadas por professores. Cada curso diz, antes de tudo, se a sua
-          turma precisa de laboratório para fazê-lo.
+{% block topo %}
+  <section class="heroi">
+    <div class="faixa">
+      <div>
+        <h1>Cursos de computação prontos para a sua turma</h1>
+        <p class="chamada-texto">
+          Oficinas produzidas por equipes de estudantes de Sistemas de Informação e
+          revisadas por professores. Escolha um curso, solicite pelo formulário e a
+          coordenação combina data, local e vagas.
         </p>
+        <div class="numeros">
+          <div>
+            <strong>{{ total_cursos }}</strong>
+            <span>curso{{ total_cursos|pluralize:"s" }} no catálogo</span>
+          </div>
+          <div>
+            <strong>Gratuito</strong>
+            <span>para escolas e grupos da comunidade</span>
+          </div>
+          <div>
+            <strong>UFSM</strong>
+            <span>Campus Frederico Westphalen</span>
+          </div>
+        </div>
       </div>
-      <div class="legenda">
-        <p class="titulo-chave">Como ler cada curso</p>
-        <span class="pratica">
-          <span class="marca-pratica"><span class="liga"></span><span></span></span>
-          Precisa de computador
-        </span>
-        <span class="pratica">
-          <span class="marca-pratica"><span></span><span class="papel"></span></span>
-          Funciona no papel
-        </span>
-        <span class="pratica">
-          <span class="marca-pratica"><span class="liga"></span><span class="papel"></span></span>
-          Tem as duas metades
-        </span>
-      </div>
+
+      {% if user.is_authenticated %}
+        <div class="acesso">
+          <h2>Você está no sistema</h2>
+          <p class="sub">{{ user.nome_completo }} &middot; {{ user.get_papel_display }}</p>
+          <a class="botao botao-largo" href="{% url 'painel' %}">Ir para o painel</a>
+        </div>
+      {% else %}
+        <div class="acesso">
+          <h2>Entrar no IntegraSI</h2>
+          <p class="sub">Para professores, coordenação e equipes de produção.</p>
+          <form method="post" action="{% url 'login' %}">
+            {% csrf_token %}
+            <div class="campo">
+              <label for="id_username">E-mail institucional</label>
+              <input type="email" name="username" id="id_username"
+                     autocomplete="username" placeholder="nome@ufsm.br" required>
+            </div>
+            <div class="campo">
+              <label for="id_password">Senha</label>
+              <input type="password" name="password" id="id_password"
+                     autocomplete="current-password" required>
+            </div>
+            <input type="hidden" name="next" value="{% url 'painel' %}">
+            <button type="submit" class="botao-largo">Entrar</button>
+          </form>
+          <p class="rodape-acesso">
+            As contas são criadas pela coordenação do curso.
+          </p>
+        </div>
+      {% endif %}
     </div>
-  </div>
+  </section>
+
+  <section class="busca">
+    <div class="faixa">
+      <form method="get">
+        <div class="campo-busca">
+          <label class="visualmente-oculto" for="id_q">Buscar</label>
+          <input type="search" name="q" id="id_q" value="{{ filtros.q }}"
+                 placeholder="Buscar por assunto, tema ou palavra-chave">
+        </div>
+        <select name="etapa" aria-label="Etapa escolar">
+          <option value="">Qualquer etapa escolar</option>
+          {% for codigo, nome in etapas %}
+            <option value="{{ codigo }}" {% if filtros.etapa == codigo %}selected{% endif %}>{{ nome }}</option>
+          {% endfor %}
+        </select>
+        <select name="tema" aria-label="Tema">
+          <option value="">Qualquer tema</option>
+          {% for tema in temas %}
+            <option value="{{ tema.slug }}" {% if filtros.tema == tema.slug %}selected{% endif %}>{{ tema.nome }}</option>
+          {% endfor %}
+        </select>
+        <select name="formato" aria-label="Formato">
+          <option value="">Qualquer formato</option>
+          {% for codigo, nome in formatos %}
+            <option value="{{ codigo }}" {% if filtros.formato == codigo %}selected{% endif %}>{{ nome }}</option>
+          {% endfor %}
+        </select>
+        <select name="referencial" aria-label="Referencial pedagógico">
+          <option value="">Qualquer referencial</option>
+          {% for ref in referenciais %}
+            <option value="{{ ref.sigla }}" {% if filtros.referencial == ref.sigla %}selected{% endif %}>{{ ref.nome }}</option>
+          {% endfor %}
+        </select>
+        <button type="submit">Filtrar</button>
+      </form>
+    </div>
+  </section>
 {% endblock %}
 
 {% block conteudo %}
-  <form method="get" class="ficha">
-    <span class="rotulo-ficha">Encontrar um curso</span>
-    <div class="campos">
-      <input type="search" name="q" value="{{ filtros.q }}" placeholder="Buscar por assunto, tema ou palavra-chave" aria-label="Buscar">
-      <select name="etapa" aria-label="Etapa escolar">
-        <option value="">Qualquer etapa escolar</option>
-        {% for codigo, nome in etapas %}
-          <option value="{{ codigo }}" {% if filtros.etapa == codigo %}selected{% endif %}>{{ nome }}</option>
-        {% endfor %}
-      </select>
-      <select name="tema" aria-label="Tema">
-        <option value="">Qualquer tema</option>
-        {% for tema in temas %}
-          <option value="{{ tema.slug }}" {% if filtros.tema == tema.slug %}selected{% endif %}>{{ tema.nome }}</option>
-        {% endfor %}
-      </select>
-      <select name="formato" aria-label="Formato">
-        <option value="">Qualquer formato</option>
-        {% for codigo, nome in formatos %}
-          <option value="{{ codigo }}" {% if filtros.formato == codigo %}selected{% endif %}>{{ nome }}</option>
-        {% endfor %}
-      </select>
-      <select name="referencial" aria-label="Referencial pedagógico">
-        <option value="">Qualquer referencial</option>
-        {% for ref in referenciais %}
-          <option value="{{ ref.sigla }}" {% if filtros.referencial == ref.sigla %}selected{% endif %}>{{ ref.nome }}</option>
-        {% endfor %}
-      </select>
-      <button type="submit">Filtrar</button>
-    </div>
-  </form>
+  <section class="secao">
+    <div class="faixa">
+      <div class="cabeca-secao">
+        <h2>Cursos disponíveis</h2>
+        <p>{{ cursos|length }} resultado{{ cursos|length|pluralize:"s" }}</p>
+      </div>
 
-  {% if cursos %}
-    <p class="contagem">{{ cursos|length }} curso{{ cursos|length|pluralize:"s" }} no catálogo</p>
-  {% endif %}
-
-  <ul class="cursos">
-    {% for curso in cursos %}
-      <li class="curso">
-        <h2><a href="{% url 'catalogo_curso' curso.pk %}">{{ curso.titulo }}</a></h2>
-        <p class="dados">
-          <span>{{ curso.publico_alvo }}</span>
-          <span>{{ curso.carga_horaria }}h</span>
-          <span>{{ curso.get_formato_display }}</span>
-        </p>
-        <p class="resumo">{{ curso.resumo|truncatewords:26 }}</p>
-        <div class="rodape-curso">
+      <ul class="cursos">
+        {% for curso in cursos %}
           {% with p=curso.praticas %}
-            <span class="pratica">
-              <span class="marca-pratica" aria-hidden="true">
-                <span class="{% if p.plugada %}liga{% endif %}"></span>
-                <span class="{% if p.desplugada %}papel{% endif %}"></span>
-              </span>
-              {{ p.rotulo }}
-            </span>
+            <li class="curso">
+              <div class="capa {% if p.plugada and p.desplugada %}ambas{% elif p.desplugada %}desplugada{% elif p.plugada %}plugada{% endif %}">
+                <span class="selo {% if p.plugada and p.desplugada %}ambas{% elif p.desplugada %}desplugada{% elif p.plugada %}plugada{% else %}nenhuma{% endif %}">
+                  <span class="ponto" aria-hidden="true"></span>{{ p.rotulo }}
+                </span>
+              </div>
+              <div class="corpo-curso">
+                <h3><a href="{% url 'catalogo_curso' curso.pk %}">{{ curso.titulo }}</a></h3>
+                <p class="resumo">{{ curso.resumo|truncatewords:22 }}</p>
+                <p class="meta">
+                  <span>{{ curso.publico_alvo }}</span>
+                  <span class="sep">&middot;</span>
+                  <span>{{ curso.carga_horaria }}h</span>
+                  <span class="sep">&middot;</span>
+                  <span>{{ curso.get_formato_display }}</span>
+                </p>
+              </div>
+            </li>
           {% endwith %}
-        </div>
-      </li>
-    {% empty %}
-      <li class="vazio">
-        <p>Nenhum curso com esses filtros.</p>
-        <p><a href="{% url 'catalogo' %}">Ver o catálogo inteiro</a></p>
-      </li>
-    {% endfor %}
-  </ul>
+        {% empty %}
+          <li class="vazio">
+            <p>Nenhum curso encontrado com esses filtros.</p>
+            <p><a class="botao botao-linha" href="{% url 'catalogo' %}">Ver o catálogo inteiro</a></p>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </section>
 {% endblock %}

@@ -1,11 +1,28 @@
 {% extends "base.html" %}
 {% block titulo %}Entrar &mdash; IntegraSI{% endblock %}
+
 {% block conteudo %}
-  <h1>Entrar</h1>
-  {% if form.errors %}<p>E-mail ou senha incorretos.</p>{% endif %}
-  <form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Entrar</button>
-  </form>
+  <div class="faixa pagina-estreita">
+    <h1>Entrar</h1>
+    <p class="abertura">Acesso para professores, coordenação e equipes de produção.</p>
+    <div class="cartao">
+      {% if form.errors %}<p class="erro-acesso">E-mail ou senha incorretos.</p>{% endif %}
+      <form method="post">
+        {% csrf_token %}
+        <div class="campo">
+          <label for="id_username">E-mail institucional</label>
+          <input type="email" name="username" id="id_username"
+                 autocomplete="username" placeholder="nome@ufsm.br" required autofocus>
+        </div>
+        <div class="campo">
+          <label for="id_password">Senha</label>
+          <input type="password" name="password" id="id_password"
+                 autocomplete="current-password" required>
+        </div>
+        {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+        <button type="submit" class="botao-largo">Entrar</button>
+      </form>
+      <p class="rodape-acesso">As contas são criadas pela coordenação do curso.</p>
+    </div>
+  </div>
 {% endblock %}

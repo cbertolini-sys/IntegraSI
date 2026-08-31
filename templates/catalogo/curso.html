@@ -1,70 +1,66 @@
 {% extends "base.html" %}
-{% block titulo %}{{ curso.titulo }}{% endblock %}
+{% block titulo %}{{ curso.titulo }} &mdash; IntegraSI{% endblock %}
 
-{% block quadro %}
-  <div class="faixa">
-    <div class="heroi">
-      <div class="heroi-texto">
-      <p class="eyebrow">
-        <a href="{% url 'catalogo' %}">Catálogo</a> &middot; Versão {{ curso.versao }} &middot; {{ curso.edicao }}
+{% block topo %}
+  <section class="topo-curso">
+    <div class="faixa">
+      <p class="migalha">
+        <a href="{% url 'catalogo' %}">Cursos</a> &rsaquo; {{ curso.get_formato_display }}
       </p>
       <h1>{{ curso.titulo }}</h1>
-      <div class="legenda unica">
-        {% with p=curso.praticas %}
-          <span class="pratica">
-            <span class="marca-pratica" aria-hidden="true">
-              <span class="{% if p.plugada %}liga{% endif %}"></span>
-              <span class="{% if p.desplugada %}papel{% endif %}"></span>
-            </span>
-            {{ p.rotulo }}
-          </span>
-        {% endwith %}
-      </div>
+      <div class="fatos">
+        <span class="fato">{{ curso.publico_alvo }}</span>
+        <span class="fato">{{ curso.carga_horaria }} horas</span>
+        <span class="fato">{{ curso.get_formato_display }}</span>
+        <span class="fato">Versão {{ curso.versao }} &middot; {{ curso.edicao }}</span>
       </div>
     </div>
-  </div>
+  </section>
 {% endblock %}
 
 {% block conteudo %}
-  <article class="curso-detalhe">
-    <div class="ficha-curso">
-      <span class="pratica">{{ curso.publico_alvo }}</span>
-      <span class="pratica">{{ curso.carga_horaria }} horas</span>
-      <span class="pratica">{{ curso.get_formato_display }}</span>
+  <div class="faixa colunas">
+    <div class="conteudo">
+      <h2>Sobre o curso</h2>
+      <p class="sobre">{{ curso.resumo }}</p>
+
+      {% if curso.pre_requisitos %}
+        <h2>O que a turma precisa saber antes</h2>
+        <p>{{ curso.pre_requisitos }}</p>
+      {% endif %}
+
+      {% if curso.temas.exists %}
+        <h2>Temas</h2>
+        <ul class="etiquetas">
+          {% for tema in curso.temas.all %}<li>{{ tema.nome }}</li>{% endfor %}
+        </ul>
+      {% endif %}
+
+      {% if curso.referencial %}
+        <h2>{{ curso.referencial.nome }}</h2>
+        <ul class="competencias">
+          {% for competencia in curso.competencias.all %}
+            <li>
+              <span class="codigo">{{ competencia.codigo }}</span>
+              <span>{{ competencia.descricao }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
     </div>
 
-    <p class="abertura">{{ curso.resumo }}</p>
-
-    {% if curso.pre_requisitos %}
-      <h2>O que a turma precisa saber antes</h2>
-      <p>{{ curso.pre_requisitos }}</p>
-    {% endif %}
-
-    {% if curso.temas.exists %}
-      <h2>Temas</h2>
-      <ul class="etiquetas">
-        {% for tema in curso.temas.all %}<li>{{ tema.nome }}</li>{% endfor %}
-      </ul>
-    {% endif %}
-
-    {% if curso.referencial %}
-      <h2>{{ curso.referencial.nome }}</h2>
-      <ul class="competencias">
-        {% for competencia in curso.competencias.all %}
-          <li>
-            <span class="codigo">{{ competencia.codigo }}</span>
-            <span>{{ competencia.descricao }}</span>
-          </li>
-        {% endfor %}
-      </ul>
-    {% endif %}
-
-    <div class="chamada">
+    <aside class="lateral">
+      {% with p=curso.praticas %}
+        <span class="selo {% if p.plugada and p.desplugada %}ambas{% elif p.desplugada %}desplugada{% elif p.plugada %}plugada{% else %}nenhuma{% endif %}">
+          <span class="ponto" aria-hidden="true"></span>{{ p.rotulo }}
+        </span>
+      {% endwith %}
+      <h2>Solicitar este curso</h2>
       <p>
         O curso é oferecido sem custo. Conte quantas pessoas participariam e quando
         seria melhor: a coordenação responde combinando data, local e vagas.
       </p>
-      <a class="botao" href="{% url 'solicitar' curso.pk %}">Solicitar este curso</a>
-    </div>
-  </article>
+      <a class="botao botao-largo" href="{% url 'solicitar' curso.pk %}">Solicitar este curso</a>
+    </aside>
+  </div>
 {% endblock %}
