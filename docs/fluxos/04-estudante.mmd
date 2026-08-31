@@ -1,0 +1,18 @@
+flowchart TD
+    A[/Recebe o convite por e-mail/] --> B{Link ainda vale?<br/>sete dias, uso único}
+    B -- Não --> C[Pede novo convite ao professor]
+    C --> A
+    B -- Sim --> D[Cria a senha e completa o cadastro:<br/>CPF, matrícula e telefone]
+    D --> E([Entra no sistema])
+
+    E --> F[Meus cursos: escolhe o entregável<br/>em que vai trabalhar]
+    F --> G[Escreve as seções e anexa o material<br/>vídeo de até 1 GB, com envio retomável]
+    G --> H{As pendências do roteiro<br/>foram resolvidas?}
+    H -- Não --> G
+    H -- Sim --> I[Envia para revisão do professor]
+    I --> J[(EM REVISÃO — a edição congela)]
+    J --> K{Decisão do professor}
+    K -- Devolvido --> L[Lê o comentário e corrige]
+    L --> G
+    K -- Aprovado --> M[(APROVADO)]
+    M --> N([Trabalho concluído.<br/>A data e o local da turma são<br/>combinados pela coordenação.])

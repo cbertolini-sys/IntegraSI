@@ -1525,3 +1525,185 @@ textarea:focus {
     transform: none;
   }
 }
+
+/* =====================================================================
+   Página "Sobre" — o que o sistema é e como cada papel o percorre.
+
+   Os fluxogramas são SVG estático gerado de `docs/fluxos/*.mmd` por
+   `deploy/gerar-fluxogramas.sh`. Não carregamos o Mermaid no navegador:
+   são 3,2 MB para quatro diagramas que nunca mudam, e este sistema é
+   feito para escolas com conexão ruim.
+   ===================================================================== */
+
+.pagina-sobre {
+  padding-block: 3rem 4.5rem;
+}
+
+.bloco-sobre {
+  max-width: 64rem;
+  margin: 0 auto 4rem;
+}
+
+.bloco-sobre > h2 {
+  font-family: var(--display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  margin: 0 0 1rem;
+}
+
+.bloco-sobre > p {
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  max-width: 46rem;
+  margin: 0 0 1rem;
+}
+
+/* A primeira frase carrega o argumento inteiro: ganha peso de subtítulo. */
+.destaque-sobre {
+  font-size: 1.25rem !important;
+  line-height: 1.55;
+  color: var(--texto);
+  font-weight: 500;
+  border-left: 3px solid var(--ciano);
+  padding-left: 1.25rem;
+}
+
+.pilares {
+  list-style: none;
+  padding: 0;
+  margin: 2rem 0 0;
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+}
+
+.pilares li {
+  background: var(--nevoa);
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+  padding: 1.25rem;
+}
+
+.pilares h3 {
+  font-family: var(--display);
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 0.375rem;
+}
+
+.pilares p {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: var(--cinza);
+}
+
+/* ---------- os quatro fluxos ---------- */
+
+.fluxo {
+  display: grid;
+  gap: 2rem;
+  align-items: start;
+  padding-block: 2.5rem;
+  border-top: 1px solid var(--linha);
+}
+
+.fluxo:first-of-type {
+  margin-top: 1.5rem;
+}
+
+@media (min-width: 62rem) {
+  .fluxo {
+    grid-template-columns: minmax(0, 23rem) minmax(0, 1fr);
+    gap: 3rem;
+  }
+  /* O texto acompanha o diagrama enquanto ele rola: os fluxogramas são altos, e
+     sem isto a explicação sai da tela antes de o desenho terminar. */
+  .fluxo-texto {
+    position: sticky;
+    top: 5.5rem;
+  }
+}
+
+.fluxo-quem {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ciano);
+  margin: 0 0 0.375rem;
+}
+
+.fluxo-texto h3 {
+  font-family: var(--display);
+  font-size: 1.375rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin: 0 0 0.875rem;
+}
+
+.fluxo-texto p {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--cinza);
+  margin: 0 0 0.875rem;
+}
+
+.nota-fluxo {
+  background: var(--azul-suave);
+  border-radius: var(--raio-p);
+  padding: 0.875rem 1rem;
+  color: var(--azul-forte) !important;
+  margin-top: 1.25rem !important;
+}
+
+.fluxo-desenho {
+  margin: 0;
+  background: var(--branco);
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+  padding: 1.5rem;
+  box-shadow: var(--sombra);
+  /* Diagrama largo rola dentro do próprio quadro; a página nunca rola na
+     horizontal por causa dele. */
+  overflow-x: auto;
+}
+
+.fluxo-desenho img {
+  display: block;
+  width: 100%;
+  min-width: 18rem;
+  height: auto;
+}
+
+.chamada-sobre {
+  background: linear-gradient(160deg, var(--marinho), var(--marinho-fundo));
+  color: var(--branco);
+  border-radius: var(--raio);
+  padding: 2.5rem;
+  text-align: center;
+  margin-bottom: 0;
+}
+
+.chamada-sobre h2 {
+  color: var(--branco);
+  margin-bottom: 0.5rem;
+}
+
+.chamada-sobre p {
+  color: rgba(255, 255, 255, 0.82);
+  margin: 0 auto 1.5rem !important;
+  max-width: 34rem;
+}
+
+.chamada-sobre .botao {
+  background: var(--branco);
+  color: var(--marinho);
+  border-color: var(--branco);
+}
+
+.chamada-sobre .botao:hover {
+  background: var(--azul-suave);
+  color: var(--marinho);
+}

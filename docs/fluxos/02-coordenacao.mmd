@@ -1,0 +1,18 @@
+flowchart TD
+    A([Entra com e-mail institucional]) --> B[Painel: quanto espera decisão<br/>em cada frente]
+    B --> C{O que decidir agora?}
+
+    C -- Curso submetido --> D[Fila da coordenação:<br/>cursos com os cinco entregáveis aprovados]
+    D --> E[Analisa seções, anexos e ficha do curso]
+    E --> F{Aprova?}
+    F -- Sim --> G[(PUBLICADO — entra no catálogo)]
+    F -- Não --> H[(DEVOLVIDO ao professor,<br/>com o motivo)]
+
+    C -- Solicitação recebida --> I[Abre o pedido da escola<br/>ou do grupo comunitário]
+    I --> J{Aceita?}
+    J -- Sim --> K[Designa professor, data,<br/>local e número de vagas]
+    K --> L[(Turma AGENDADA<br/>solicitante avisado por e-mail)]
+    J -- Não --> M[Escreve a resposta;<br/>solicitante avisado por e-mail]
+
+    C -- Catálogo --> N[Despublica, republica<br/>ou abre nova versão do curso]
+    C -- Pessoas --> O[Promove professor a coordenador<br/>ou retira o acesso]

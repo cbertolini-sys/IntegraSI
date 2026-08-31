@@ -37,6 +37,20 @@ def cursos_publicados():
     )
 
 
+@require_http_methods(["GET"])
+def sobre(request):
+    """O que o sistema e e como cada papel o percorre.
+
+    Publica como o catalogo: quem vai solicitar um curso precisa entender o que
+    esta pedindo antes de ter conta -- e provavelmente nunca tera uma.
+
+    Sem contexto: os fluxogramas sao SVG estatico, gerados de `docs/fluxos/*.mmd`
+    por `deploy/gerar-fluxogramas.sh`. O texto vive no template porque e texto, e
+    nao dado.
+    """
+    return render(request, "catalogo/sobre.html")
+
+
 def catalogo(request):
     cursos = cursos_publicados()
 

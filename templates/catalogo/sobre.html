@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% load estaticos %}
+{% block titulo %} &mdash; Sobre o sistema{% endblock %}
+
+{% block topo %}
+  <section class="topo-curso">
+    <div class="faixa">
+      <p class="migalha"><a href="{% url 'catalogo' %}">Cursos</a> &rsaquo; Sobre</p>
+      <h1>Cursos de extensão que saem do papel</h1>
+      <p class="resumo">
+        O IntegraSI é onde os cursos de extensão do curso de Sistemas de Informação
+        são propostos, produzidos, revisados e publicados — e onde escolas e grupos
+        da comunidade os solicitam.
+      </p>
+    </div>
+  </section>
+{% endblock %}
+
+{% block conteudo %}
+  <div class="faixa pagina-sobre">
+
+    <section class="bloco-sobre">
+      <h2>Por que ele existe</h2>
+      <p class="destaque-sobre">
+        Um curso de extensão bem feito costuma morrer no computador de quem o fez.
+        O material fica espalhado entre pastas pessoais, ninguém fora da disciplina
+        sabe que ele existe, e a escola que precisaria dele nunca fica sabendo.
+      </p>
+      <p>
+        O IntegraSI trata a produção de um curso como trabalho que precisa de
+        percurso: o professor propõe, uma equipe de estudantes produz dentro do
+        sistema, cada entregável é revisado e aprovado um a um, a coordenação
+        publica, e só então o curso aparece num catálogo público que qualquer
+        pessoa pode consultar e solicitar.
+      </p>
+      <p>
+        A consequência prática é que o trabalho dos estudantes deixa de ser um
+        exercício avaliado e passa a ser material que a comunidade recebe — com
+        autoria registrada, versão identificada e um endereço para onde apontar.
+      </p>
+
+      <ul class="pilares">
+        <li>
+          <h3>O material fica no sistema</h3>
+          <p>Seções escritas, cards, caderno de exercícios, vídeo-aulas e slides
+             vivem aqui, não em pastas soltas. Cada arquivo tem dono, data e versão.</p>
+        </li>
+        <li>
+          <h3>Nada é publicado sem revisão</h3>
+          <p>Os cinco entregáveis do roteiro passam pelo professor responsável, um a
+             um. Só com os cinco aprovados o curso chega à coordenação.</p>
+        </li>
+        <li>
+          <h3>O curso pode melhorar depois</h3>
+          <p>Uma nova equipe abre outra versão sem tirar a atual do ar. A antiga
+             permanece consultável como histórico.</p>
+        </li>
+        <li>
+          <h3>Quem está fora não precisa de conta</h3>
+          <p>A escola navega o catálogo e solicita por formulário. Não cria login,
+             não gerencia nada — a coordenação responde por e-mail.</p>
+        </li>
+      </ul>
+    </section>
+
+    <section class="bloco-sobre">
+      <h2>Como cada pessoa percorre o sistema</h2>
+      <p>
+        Quatro papéis, quatro caminhos. Os diagramas abaixo descrevem o que o
+        sistema faz hoje — cada caixa corresponde a uma tela ou a uma decisão que
+        existe no código.
+      </p>
+
+      <article class="fluxo">
+        <div class="fluxo-texto">
+          <p class="fluxo-quem">Comunidade</p>
+          <h3>Escola ou grupo que quer receber um curso</h3>
+          <p>
+            Navega o catálogo sem conta, filtra pelo que interessa e abre a página
+            do curso. Se decidir pedir, preenche um formulário com contato,
+            instituição, número de participantes e período pretendido.
+          </p>
+          <p>
+            O pedido chega ao professor responsável e à coordenação por e-mail. Daí
+            em diante o contato é por e-mail: <strong>quem solicita não ganha acesso
+            ao sistema</strong> e não acompanha o andamento por dentro.
+          </p>
+        </div>
+        <figure class="fluxo-desenho">
+          <img src="{% estatico 'img/fluxos/01-comunidade.svg' %}"
+               alt="Fluxo da comunidade: navega o catálogo, filtra, abre o curso,
+                    preenche o formulário de solicitação, o pedido é validado e gravado,
+                    a coordenação e o professor são avisados por e-mail.">
+        </figure>
+      </article>
+
+      <article class="fluxo">
+        <div class="fluxo-texto">
+          <p class="fluxo-quem">Coordenação</p>
+          <h3>Quem decide o que entra no catálogo</h3>
+          <p>
+            O painel abre com as contagens do que espera decisão. São quatro frentes:
+            aprovar cursos submetidos, responder às solicitações da comunidade,
+            cuidar do que já está no catálogo e administrar quem é professor e quem
+            é coordenador.
+          </p>
+          <p>
+            Aceitar uma solicitação é o que cria uma turma: a coordenação designa o
+            professor, a data, o local e as vagas, e o solicitante é avisado.
+            Publicar, despublicar e abrir nova versão também são decisões daqui.
+          </p>
+        </div>
+        <figure class="fluxo-desenho">
+          <img src="{% estatico 'img/fluxos/02-coordenacao.svg' %}"
+               alt="Fluxo da coordenação: entra no sistema, vê o painel, e decide entre
+                    aprovar cursos da fila, responder solicitações criando turmas,
+                    gerir o catálogo ou promover professores.">
+        </figure>
+      </article>
+
+      <article class="fluxo">
+        <div class="fluxo-texto">
+          <p class="fluxo-quem">Professor</p>
+          <h3>Quem propõe o curso e responde por ele</h3>
+          <p>
+            Cria a proposta e aloca a equipe informando apenas nome e e-mail de cada
+            estudante — o sistema envia o convite de primeiro acesso. A partir daí o
+            curso está em produção.
+          </p>
+          <p>
+            A revisão é entregável por entregável: ler as seções, conferir os anexos
+            e as pendências do roteiro, e então aprovar ou devolver com um comentário
+            que diz o que falta. Com os cinco aprovados, submete à coordenação.
+          </p>
+        </div>
+        <figure class="fluxo-desenho">
+          <img src="{% estatico 'img/fluxos/03-professor.svg' %}"
+               alt="Fluxo do professor: cria a proposta, aloca estudantes por nome e
+                    e-mail, revisa cada entregável aprovando ou devolvendo, e submete o
+                    curso à coordenação quando os cinco estão aprovados.">
+        </figure>
+      </article>
+
+      <article class="fluxo">
+        <div class="fluxo-texto">
+          <p class="fluxo-quem">Estudante de Sistemas de Informação</p>
+          <h3>Quem produz o material</h3>
+          <p>
+            Entra pelo convite que o professor enviou: cria a senha e completa o
+            cadastro com CPF, matrícula e telefone. O link vale sete dias e serve
+            uma vez só.
+          </p>
+          <p>
+            Escreve as seções e anexa o material — vídeo de até 1 GB, com envio que
+            retoma de onde parou se a conexão cair. Ao enviar para revisão, o
+            entregável congela; devolvido, volta a ser editável com o comentário do
+            professor à vista.
+          </p>
+          <p class="nota-fluxo">
+            O trabalho do estudante termina na aprovação. <strong>Data e local da
+            turma são combinados pela coordenação</strong> com quem solicitou — a
+            equipe de produção não participa dessa etapa nem a acompanha pelo sistema.
+          </p>
+        </div>
+        <figure class="fluxo-desenho">
+          <img src="{% estatico 'img/fluxos/04-estudante.svg' %}"
+               alt="Fluxo do estudante: recebe o convite, cria a senha e completa o
+                    cadastro, produz as seções e anexos, envia para revisão, corrige o
+                    que for devolvido, até a aprovação.">
+        </figure>
+      </article>
+    </section>
+
+    <section class="bloco-sobre chamada-sobre">
+      <h2>Quer um destes cursos na sua escola?</h2>
+      <p>
+        O catálogo é público e a solicitação é por formulário. Não há custo, e você
+        não precisa criar conta.
+      </p>
+      <a class="botao" href="{% url 'catalogo' %}">Ver os cursos disponíveis</a>
+    </section>
+
+  </div>
+{% endblock %}
