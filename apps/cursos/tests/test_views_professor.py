@@ -109,12 +109,23 @@ def test_coordenador_cria_proposta(client, coordenador):
 
 
 @pytest.mark.django_db
-def test_professor_monta_equipe(client, professor, dados_curso, aluno):
+def test_professor_monta_equipe(client, professor, dados_curso):
+    """Contrato novo no Plano 5: a tela recebe nome e e-mail, e nao o pk de uma
+    conta que ja existe (regra 2). O que se prende continua sendo o mesmo -- a
+    pessoa entra na equipe pela tela do professor."""
+    from apps.contas.models import Usuario
+
     curso = services.criar_curso(**dados_curso)
     client.force_login(professor)
-    resposta = client.post(reverse("equipe", args=[curso.pk]), {"aluno": aluno.pk}, follow=True)
+    resposta = client.post(
+        reverse("equipe", args=[curso.pk]),
+        {"nome": "Joana Silva", "email": "joana@acad.ufsm.br"},
+        follow=True,
+    )
     assert resposta.status_code == 200
-    assert curso.tem_membro(aluno)
+    nova = Usuario.objects.get(email="joana@acad.ufsm.br")
+    assert curso.tem_membro(nova)
+    assert nova.convites.filter(usado_em__isnull=True).count() == 1
 
 
 @pytest.mark.django_db
@@ -131,21 +142,35 @@ def test_equipe_mostra_todas_as_mensagens_de_erro_do_servico(
     def sempre_recusa(*args, **kwargs):
         raise ValidationError(["Primeira mensagem de erro.", "Segunda mensagem de erro."])
 
-    monkeypatch.setattr(services, "adicionar_membro", sempre_recusa)
+    # Alvo trocado no Plano 5 (a view chama alocar_aluno agora); a REGRA que este
+    # teste prende e outra e continua valendo: todas as mensagens chegam, nao so
+    # a primeira.
+    monkeypatch.setattr(services, "alocar_aluno", sempre_recusa)
     client.force_login(professor)
-    resposta = client.post(reverse("equipe", args=[curso.pk]), {"aluno": aluno.pk}, follow=True)
+    resposta = client.post(
+        reverse("equipe", args=[curso.pk]),
+        {"nome": "Joana Silva", "email": "joana@acad.ufsm.br"},
+        follow=True,
+    )
     conteudo = resposta.content.decode()
     assert "Primeira mensagem de erro." in conteudo
     assert "Segunda mensagem de erro." in conteudo
 
 
 @pytest.mark.django_db
-def test_equipe_sem_aluno_selecionado_nao_quebra(client, professor, dados_curso):
+def test_equipe_com_formulario_vazio_nao_quebra(client, professor, dados_curso):
+    """POST incompleto devolve mensagem, nunca 500.
+
+    A regra sobrevive ao Plano 5; so a mensagem mudou. E ela quase se perdeu junto
+    com o contrato antigo: `create_user` levanta `ValueError` para e-mail vazio, a
+    view so captura `ValidationError`, e o formulario novo reintroduziu o 500 ate
+    o servico passar a recusar explicitamente.
+    """
     curso = services.criar_curso(**dados_curso)
     client.force_login(professor)
     resposta = client.post(reverse("equipe", args=[curso.pk]), {}, follow=True)
     assert resposta.status_code == 200
-    assert "Selecione um aluno" in resposta.content.decode()
+    assert "Informe o e-mail" in resposta.content.decode()
 
 
 @pytest.mark.django_db

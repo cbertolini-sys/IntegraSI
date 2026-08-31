@@ -22,16 +22,20 @@
     </div>
 
     <aside class="lateral">
-      <h2>Adicionar estudante</h2>
+      <h2>Alocar estudante</h2>
+      <p>Informe nome e e-mail. A pessoa recebe um convite para criar a senha e
+         completar o cadastro. O link vale sete dias.</p>
       <form method="post">
         {% csrf_token %}
         <div class="campo">
-          <label for="id_aluno">Estudante</label>
-          <select name="aluno" id="id_aluno">
-            {% for candidato in candidatos %}<option value="{{ candidato.pk }}">{{ candidato.nome_completo }}</option>{% endfor %}
-          </select>
+          <label for="id_nome">Nome</label>
+          <input type="text" name="nome" id="id_nome" maxlength="150" required>
         </div>
-        <button type="submit" class="botao-largo">Adicionar à equipe</button>
+        <div class="campo">
+          <label for="id_email">E-mail</label>
+          <input type="email" name="email" id="id_email" required>
+        </div>
+        <button type="submit" class="botao-largo">Alocar e convidar</button>
       </form>
     </aside>
   </div>

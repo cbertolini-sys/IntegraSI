@@ -611,3 +611,59 @@ def abrir_nova_versao(curso, por, motivo):
         observacao=f"Versão {nova.versao} aberta a partir da versão {curso.versao}: {motivo}",
     )
     return nova
+
+
+@transaction.atomic
+def alocar_aluno(curso, nome, email, por, base_url=""):
+    """Cria a conta do aluno, vincula a equipe e envia o convite (regras 2 e 3
+    do Plano 5).
+
+    Os tres acontecem juntos: uma conta criada sem convite fica inalcancavel --
+    ninguem consegue ativa-la, e o e-mail fica queimado, porque a segunda
+    tentativa bate na recusa de e-mail ja cadastrado.
+
+    A recusa e por e-mail existente, e nao vinculo da conta que ja existe: um
+    endereco digitado errado poria a pessoa errada numa equipe, e o professor nao
+    teria como perceber.
+    """
+    # Importes adiados, e nao no topo: `contas.services` nao pode ser importado na
+    # carga deste modulo sem fechar um ciclo (`contas` nao conhece `cursos`, e este
+    # arquivo ja usa o mesmo padrao para `Usuario` em `definir_temas`).
+    from apps.contas.models import Usuario
+    from apps.contas.services import convidar
+
+    permissions.garante(
+        permissions.pode_gerir_equipe(por, curso),
+        "Somente o professor responsável monta a equipe.",
+    )
+    email = (email or "").strip().lower()
+    nome = (nome or "").strip()
+    # Recusa explicita antes do create_user: ele levanta ValueError para e-mail
+    # vazio, e a view so captura ValidationError -- um POST sem e-mail virava 500.
+    # Era o que `test_equipe_sem_aluno_selecionado_nao_quebra` prendia no contrato
+    # antigo, e a regra 2 do Plano 5 quase a perdeu junto com o contrato.
+    erros = {}
+    if not nome:
+        erros["nome"] = "Informe o nome do estudante."
+    if not email:
+        erros["email"] = "Informe o e-mail do estudante."
+    if erros:
+        raise ValidationError(erros)
+
+    if Usuario.objects.filter(email__iexact=email).exists():
+        raise ValidationError(
+            "Já existe conta com este e-mail. Confira o endereço ou peça à "
+            "coordenação para vincular a conta existente."
+        )
+
+    aluno = Usuario.objects.create_user(
+        email=email, nome_completo=nome, papel=Usuario.ALUNO, password=None
+    )
+    # Sem senha utilizavel: so o convite abre a conta. `create_user(password=None)`
+    # ja gera uma senha inutilizavel, mas deixar explicito e o que um teste prende.
+    aluno.set_unusable_password()
+    aluno.save(update_fields=["password"])
+
+    membro = adicionar_membro(curso, aluno, por=por)
+    convidar(aluno, por=por, base_url=base_url)
+    return membro

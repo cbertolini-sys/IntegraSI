@@ -45,23 +45,27 @@ def equipe(request, pk):
     curso = get_object_or_404(Curso, pk=pk)
     permissions.garante(permissions.pode_gerir_equipe(request.user, curso), "Curso de outro professor.")
     if request.method == "POST":
-        aluno_pk = request.POST.get("aluno")
-        if not aluno_pk:
-            messages.error(request, "Selecione um aluno para adicionar.")
-            return redirect("equipe", pk=curso.pk)
-        aluno = get_object_or_404(Usuario, pk=aluno_pk)
         try:
-            services.adicionar_membro(curso, aluno, por=request.user)
+            membro = services.alocar_aluno(
+                curso,
+                nome=request.POST.get("nome", ""),
+                email=request.POST.get("email", ""),
+                por=request.user,
+                # O convite precisa de um endereco absoluto: o e-mail e lido fora
+                # do navegador, onde caminho relativo nao resolve.
+                base_url=request.build_absolute_uri("/").rstrip("/"),
+            )
         except ValidationError as erro:
             for mensagem in erro.messages:
                 messages.error(request, mensagem)
         else:
-            messages.success(request, f"{aluno.nome_completo} entrou na equipe.")
+            messages.success(
+                request,
+                f"{membro.aluno.nome_completo} entrou na equipe. "
+                "Enviamos o convite de primeiro acesso por e-mail.",
+            )
         return redirect("equipe", pk=curso.pk)
-    candidatos = Usuario.objects.filter(papel=Usuario.ALUNO, is_active=True).exclude(
-        equipes__curso=curso
-    )
-    return render(request, "cursos/equipe.html", {"curso": curso, "candidatos": candidatos})
+    return render(request, "cursos/equipe.html", {"curso": curso})
 
 
 @login_required

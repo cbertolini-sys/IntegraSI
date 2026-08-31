@@ -181,3 +181,29 @@ def test_consumir_e_atomico(recem_alocado, professor, monkeypatch):
     assert recem_alocado.perfil_completo is False
     assert recem_alocado.has_usable_password() is False
     assert convite.usado_em is None
+
+
+@pytest.mark.django_db
+def test_convidar_e_atomico(recem_alocado, professor, monkeypatch):
+    """O convite e o aviso nascem juntos ou nao nascem.
+
+    Sem `@transaction.atomic`, uma falha ao enfileirar deixaria um convite
+    gravado que ninguem sabe que existe: o aluno nunca recebe o link, e o
+    professor ve na tela que "o convite foi enviado". Pior no reenvio, onde o
+    convite anterior ja foi cancelado -- a pessoa ficaria com dois links mortos.
+    """
+    from apps.contas import services as servicos
+
+    def explode(*args, **kwargs):
+        raise RuntimeError("fila fora do ar")
+
+    anterior = services.convidar(recem_alocado, por=professor)
+    monkeypatch.setattr(servicos, "enfileirar", explode)
+
+    with pytest.raises(RuntimeError):
+        services.convidar(recem_alocado, por=professor)
+
+    monkeypatch.undo()
+    anterior.refresh_from_db()
+    assert ConviteAluno.objects.filter(usuario=recem_alocado).count() == 1
+    assert anterior.valido is True, "o convite anterior nao pode ter sido cancelado a toa"
