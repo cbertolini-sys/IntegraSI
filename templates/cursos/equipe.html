@@ -17,7 +17,9 @@
     <div class="bloco">
       <h2>Na equipe</h2>
       <ul class="etiquetas">
-        {% for membro in curso.membros.all %}<li>{{ membro.pessoa.nome_completo }}</li>{% empty %}<li>Equipe vazia.</li>{% endfor %}
+        {% for membro in curso.membros.all %}
+          <li>{{ membro.pessoa.nome_completo }}{% if membro.pessoa_id == curso.professor_responsavel_id %} <span class="etiqueta">responsável</span>{% endif %}</li>
+        {% empty %}<li>Equipe vazia.</li>{% endfor %}
       </ul>
     </div>
 
@@ -27,6 +29,7 @@
          completar o cadastro. O link vale sete dias.</p>
       <form method="post">
         {% csrf_token %}
+        <input type="hidden" name="acao" value="aluno">
         <div class="campo">
           <label for="id_nome">Nome</label>
           <input type="text" name="nome" id="id_nome" maxlength="150" required>
@@ -36,6 +39,26 @@
           <input type="email" name="email" id="id_email" required>
         </div>
         <button type="submit" class="botao-largo">Alocar e convidar</button>
+      </form>
+
+      <h2>Alocar professor</h2>
+      <p>Professores e coordenadores já cadastrados. Quem entra por aqui produz
+         material como qualquer membro; quem aprova os entregáveis continua sendo o
+         professor responsável.</p>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="acao" value="professor">
+        <div class="campo">
+          <label for="id_professor">Professor</label>
+          <select name="professor" id="id_professor" required>
+            {% for pessoa in professores %}
+              <option value="{{ pessoa.pk }}">{{ pessoa.nome_completo }}</option>
+            {% empty %}
+              <option value="" disabled>Nenhum professor disponível</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="botao-largo">Alocar professor</button>
       </form>
     </aside>
   </div>

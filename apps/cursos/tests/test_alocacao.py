@@ -163,3 +163,91 @@ def test_nome_ou_email_em_branco_e_recusado(curso, professor, faltando):
     with pytest.raises(ValidationError):
         services.alocar_aluno(curso, por=professor, **dados)
     assert Usuario.objects.filter(email="joana@acad.ufsm.br").exists() is False
+
+
+# --- Alocar professor na equipe (Plano 6) ------------------------------------
+
+
+@pytest.mark.django_db
+def test_professor_e_alocado_na_equipe(curso, professor, outro_professor):
+    membro = services.alocar_professor(curso, outro_professor, por=professor)
+    assert membro.pessoa == outro_professor
+    assert curso.tem_membro(outro_professor)
+
+
+@pytest.mark.django_db
+def test_alocar_professor_nao_manda_convite(curso, professor, outro_professor):
+    """Professor ja tem conta: quem cria conta de professor e a coordenacao. Um
+    convite de primeiro acesso aqui seria convite para quem ja entra no sistema."""
+    antes = Notificacao.objects.count()
+    services.alocar_professor(curso, outro_professor, por=professor)
+    assert Notificacao.objects.count() == antes
+    assert ConviteAluno.objects.filter(usuario=outro_professor).exists() is False
+
+
+@pytest.mark.django_db
+def test_alocar_aluno_pelo_caminho_de_professor_e_recusado(curso, professor, aluno):
+    with pytest.raises(ValidationError):
+        services.alocar_professor(curso, aluno, por=professor)
+
+
+@pytest.mark.django_db
+def test_alocar_professor_sem_escolher_ninguem_e_recusado(curso, professor):
+    """O select pode chegar vazio (POST forjado, ou nenhum professor disponivel).
+
+    Confere a MENSAGEM, e nao so o tipo: sem a recusa aqui, o None seguiria para
+    MembroEquipe, cujo full_clean tambem levanta ValidationError por campo nulo.
+    Um pytest.raises pelado ficaria verde com esta guarda apagada, e a pessoa veria
+    "Este campo nao pode ser nulo" no lugar de uma frase que explica o que fazer.
+    """
+    with pytest.raises(ValidationError, match="Escolha um professor"):
+        services.alocar_professor(curso, None, por=professor)
+
+
+@pytest.mark.django_db
+def test_professor_de_fora_nao_aloca_ninguem(curso, outro_professor, coordenador):
+    with pytest.raises(PermissionDenied):
+        services.alocar_professor(curso, coordenador, por=outro_professor)
+
+
+@pytest.mark.django_db
+def test_professor_alocado_produz_mas_nao_revisa(curso, professor, outro_professor):
+    """A decisao da spec 10: professor colaborador produz e nao aprova. As duas
+    metades no mesmo teste, porque e o contraste que descreve a regra."""
+    from apps.cursos import permissions
+
+    services.alocar_professor(curso, outro_professor, por=professor)
+    assert permissions.pode_ver_curso(outro_professor, curso) is True
+    assert permissions.pode_editar_ficha(outro_professor, curso) is True
+    assert permissions.pode_revisar(outro_professor, curso) is False
+    assert permissions.pode_gerir_equipe(outro_professor, curso) is False
+
+
+@pytest.mark.django_db
+def test_tela_de_equipe_aloca_professor_pelo_select(client, curso, professor, outro_professor):
+    """Fiacao da tela: o campo escondido `acao` e o que separa os dois formularios.
+    Sem ele o POST do select cairia no ramo do aluno e viraria "informe o nome"."""
+    from django.urls import reverse
+
+    client.force_login(professor)
+    client.post(
+        reverse("equipe", args=[curso.pk]),
+        {"acao": "professor", "professor": outro_professor.pk},
+        follow=True,
+    )
+    assert curso.tem_membro(outro_professor)
+
+
+@pytest.mark.django_db
+def test_select_de_professores_nao_oferece_quem_ja_esta_na_equipe(
+    client, dados_curso, professor, outro_professor
+):
+    """O responsavel e membro desde a criacao, entao nao pode aparecer no select:
+    escolhe-lo daria erro de unicidade em vez de mensagem."""
+    from django.urls import reverse
+
+    curso = services.criar_curso(**dados_curso)
+    client.force_login(professor)
+    disponiveis = client.get(reverse("equipe", args=[curso.pk])).context["professores"]
+    assert professor not in disponiveis
+    assert outro_professor in disponiveis

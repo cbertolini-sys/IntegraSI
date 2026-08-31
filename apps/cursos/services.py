@@ -664,6 +664,25 @@ def abrir_nova_versao(curso, por, motivo):
     return nova
 
 
+def alocar_professor(curso, professor, por):
+    """Poe um professor que ja tem conta na equipe de producao (spec 4.1).
+
+    Sem convite, ao contrario de alocar_aluno: quem cria conta de professor e a
+    coordenacao, e mandar primeiro acesso para quem ja entra no sistema seria
+    convite que nao serve para nada.
+
+    A recusa de None e explicita: o select pode chegar vazio, e sem ela o None
+    seguiria para adicionar_membro e viraria 500 em vez de mensagem.
+    """
+    permissions.garante(
+        permissions.pode_gerir_equipe(por, curso),
+        "Somente o professor responsável monta a equipe.",
+    )
+    if professor is None or not professor.e_professor:
+        raise ValidationError("Escolha um professor ou coordenador para a equipe.")
+    return adicionar_membro(curso, professor, por=por)
+
+
 @transaction.atomic
 def alocar_aluno(curso, nome, email, por, base_url=""):
     """Cria a conta do aluno, vincula a equipe e envia o convite (regras 2 e 3

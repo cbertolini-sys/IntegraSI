@@ -65,27 +65,66 @@ def equipe(request, pk):
     curso = get_object_or_404(Curso, pk=pk)
     permissions.garante(permissions.pode_gerir_equipe(request.user, curso), "Curso de outro professor.")
     if request.method == "POST":
-        try:
-            membro = services.alocar_aluno(
-                curso,
-                nome=request.POST.get("nome", ""),
-                email=request.POST.get("email", ""),
-                por=request.user,
-                # O convite precisa de um endereco absoluto: o e-mail e lido fora
-                # do navegador, onde caminho relativo nao resolve.
-                base_url=request.build_absolute_uri("/").rstrip("/"),
-            )
-        except ValidationError as erro:
-            for mensagem in erro.messages:
-                messages.error(request, mensagem)
+        # Um campo escondido distingue os dois formularios da tela. Sem ele, o
+        # POST do select cairia no ramo do aluno e viraria "informe o nome".
+        if request.POST.get("acao") == "professor":
+            _alocar_professor(request, curso)
         else:
-            messages.success(
-                request,
-                f"{membro.pessoa.nome_completo} entrou na equipe. "
-                "Enviamos o convite de primeiro acesso por e-mail.",
-            )
+            _alocar_aluno(request, curso)
         return redirect("equipe", pk=curso.pk)
-    return render(request, "cursos/equipe.html", {"curso": curso})
+    return render(
+        request,
+        "cursos/equipe.html",
+        {"curso": curso, "professores": _professores_disponiveis(curso)},
+    )
+
+
+def _professores_disponiveis(curso):
+    """Professores e coordenadores que ainda nao estao na equipe deste curso.
+
+    O `exclude` pelo related_name `equipes` tira o responsavel junto: ele e membro
+    desde a criacao (spec 4.1), e oferece-lo no select so daria erro de unicidade.
+    """
+    return (
+        Usuario.objects.filter(
+            papel__in=(Usuario.PROFESSOR, Usuario.COORDENADOR), is_active=True
+        )
+        .exclude(equipes__curso=curso)
+        .order_by("nome_completo")
+    )
+
+
+def _alocar_professor(request, curso):
+    escolhido = Usuario.objects.filter(pk=request.POST.get("professor") or 0).first()
+    try:
+        membro = services.alocar_professor(curso, escolhido, por=request.user)
+    except ValidationError as erro:
+        for mensagem in erro.messages:
+            messages.error(request, mensagem)
+    else:
+        messages.success(request, f"{membro.pessoa.nome_completo} entrou na equipe.")
+
+
+def _alocar_aluno(request, curso):
+    try:
+        membro = services.alocar_aluno(
+            curso,
+            nome=request.POST.get("nome", ""),
+            email=request.POST.get("email", ""),
+            por=request.user,
+            # O convite precisa de um endereco absoluto: o e-mail e lido fora
+            # do navegador, onde caminho relativo nao resolve.
+            base_url=request.build_absolute_uri("/").rstrip("/"),
+        )
+    except ValidationError as erro:
+        for mensagem in erro.messages:
+            messages.error(request, mensagem)
+    else:
+        messages.success(
+            request,
+            f"{membro.pessoa.nome_completo} entrou na equipe. "
+            "Enviamos o convite de primeiro acesso por e-mail.",
+        )
 
 
 @login_required
