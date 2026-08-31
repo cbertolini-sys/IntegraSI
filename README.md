@@ -82,7 +82,10 @@ Para conferir antes de commitar:
 git ls-files | xargs grep -n "—\|&mdash;"
 ```
 
-`apps/catalogo/tests/test_vitrine.py::test_nenhuma_pagina_usa_travessao` reprova
-se um travessão chegar às páginas públicas. No resto do repositório a regra
-depende de quem escreve, e o comando acima é o que a confere.
+`tests/test_estilo.py` reprova se o símbolo aparecer em qualquer arquivo de
+texto versionado, apontando arquivo e linha. Se ele acusar um arquivo que você
+acabou de trazer de fora, a correção é reescrever a frase, e não isentar o
+arquivo: a única isenção são o `README.md` e a `CLAUDE.md`, que precisam mostrar
+o símbolo para explicá-lo, e há um teste garantindo que essa isenção continue
+justificada.
 
