@@ -1,34 +1,61 @@
 {% extends "base.html" %}
-{% block titulo %}{{ curso.titulo }}{% endblock %}
+{% block titulo %}{{ curso.titulo }} &mdash; IntegraSI{% endblock %}
+
 {% block conteudo %}
-  <h1>{{ curso.titulo }}</h1>
-  <p>{{ curso.publico_alvo }} &middot; {{ curso.carga_horaria }}h &middot; {{ curso.get_formato_display }}</p>
-  <p>Situação: {{ curso.get_status_display }}</p>
-  {% if curso.versao > 1 %}
-    <p>Versão {{ curso.versao }} &mdash; {{ curso.motivo_versao }}</p>
-  {% endif %}
+<div class="trabalho">
+  <div class="cabecalho-pagina">
+    <div class="faixa">
+      <div>
+        <h1>{{ curso.titulo }}</h1>
+        <p class="sub">{{ curso.publico_alvo }} &middot; {{ curso.carga_horaria }}h &middot; {{ curso.get_formato_display }}</p>
+      </div>
+      <div class="acoes">
+        <span class="estado {% if curso.status == 'PUBLICADO' %}ok{% elif curso.status == 'AGUARDANDO_COORDENADOR' %}espera{% elif curso.status == 'DEVOLVIDO' %}atencao{% endif %}">{{ curso.get_status_display }}</span>
+      </div>
+    </div>
+  </div>
 
-  <h2>Entregáveis</h2>
-  {% for entregavel in entregaveis %}
-    <article class="entregavel-card">
-      <h3><a href="{% url 'entregavel' entregavel.pk %}">{{ entregavel.get_tipo_display }}</a></h3>
-      <p>{{ entregavel.get_status_display }}</p>
-    </article>
-  {% endfor %}
+  <div class="faixa corpo-trabalho duas-colunas">
+    <div>
+      {% if curso.versao > 1 %}
+        <div class="bloco">
+          <h2>Versão {{ curso.versao }}</h2>
+          <p>{{ curso.motivo_versao }}</p>
+        </div>
+      {% endif %}
 
-  <h2>Equipe</h2>
-  <ul>
-    {% for membro in membros %}<li>{{ membro.aluno.nome_completo }}</li>{% endfor %}
-  </ul>
+      <div class="bloco">
+        <h2>Entregáveis</h2>
+        <ul class="registros">
+          {% for entregavel in entregaveis %}
+            <li class="registro entregavel-card">
+              <div>
+                <h3><a href="{% url 'entregavel' entregavel.pk %}">{{ entregavel.get_tipo_display }}</a></h3>
+              </div>
+              <span class="estado {% if entregavel.status == 'APROVADO' %}ok{% elif entregavel.status == 'EM_REVISAO' %}espera{% elif entregavel.status == 'DEVOLVIDO' %}atencao{% endif %}">{{ entregavel.get_status_display }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
 
-  {% if pode_abrir_versao %}
-    <p><a href="{% url 'nova_versao' curso.pk %}">Abrir nova versão</a></p>
-  {% endif %}
+    <aside class="lateral">
+      <h2>Equipe</h2>
+      <ul class="etiquetas" style="margin-bottom:1.25rem">
+        {% for membro in membros %}<li>{{ membro.aluno.nome_completo }}</li>{% empty %}<li>Sem equipe ainda</li>{% endfor %}
+      </ul>
 
-  {% if curso.pronto_para_o_coordenador and user == curso.professor_responsavel %}
-    <form method="post" action="{% url 'submeter_curso' curso.pk %}">
-      {% csrf_token %}
-      <button type="submit">Submeter à coordenação</button>
-    </form>
-  {% endif %}
+      {% if pode_abrir_versao %}
+        <a class="botao botao-linha botao-largo" href="{% url 'nova_versao' curso.pk %}">Abrir nova versão</a>
+      {% endif %}
+
+      {% if curso.pronto_para_o_coordenador and user == curso.professor_responsavel %}
+        <form method="post" action="{% url 'submeter_curso' curso.pk %}" style="margin-top:.75rem">
+          {% csrf_token %}
+          <button type="submit" class="botao-largo">Submeter à coordenação</button>
+        </form>
+      {% endif %}
+    </aside>
+  </div>
+</div>
 {% endblock %}

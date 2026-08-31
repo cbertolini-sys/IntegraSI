@@ -1,51 +1,85 @@
 {% extends "base.html" %}
-{% block titulo %}Analisar {{ curso.titulo }}{% endblock %}
+{% block titulo %}Analisar {{ curso.titulo }} &mdash; IntegraSI{% endblock %}
+
 {% block conteudo %}
-  <h1>{{ curso.titulo }}</h1>
-  <p>{{ curso.publico_alvo }} &middot; {{ curso.carga_horaria }}h &middot; {{ curso.get_formato_display }}</p>
-  <p>{{ curso.resumo }}</p>
+<div class="trabalho">
+  <div class="cabecalho-pagina">
+    <div class="faixa">
+      <div>
+        <h1>{{ curso.titulo }}</h1>
+        <p class="sub">{{ curso.publico_alvo }} &middot; {{ curso.carga_horaria }}h &middot; {{ curso.get_formato_display }}</p>
+      </div>
+      <div class="acoes">
+        <span class="estado {% if curso.status == 'PUBLICADO' %}ok{% elif curso.status == 'AGUARDANDO_COORDENADOR' %}espera{% endif %}">{{ curso.get_status_display }}</span>
+      </div>
+    </div>
+  </div>
 
-  {% for entregavel in entregaveis %}
-    <section class="entregavel-analise">
-      <h2>{{ entregavel.get_tipo_display }} &mdash; {{ entregavel.get_status_display }}</h2>
-      {% for secao in entregavel.secoes.all %}
-        {# O |safe abaixo e seguro: Secao.save() sanitiza o conteudo com nh3 antes de
-           gravar, incondicionalmente, mesmo em update_fields (Task 4). E o terceiro
-           lugar do sistema que renderiza HTML vindo do banco sem escape (os outros
-           dois sao revisar.html e _secao.html) - depende dessa sanitizacao
-           acontecer antes, nao aqui. #}
-        <h3>{{ secao.titulo }}</h3><div>{{ secao.conteudo|safe }}</div>
+  <div class="faixa corpo-trabalho duas-colunas">
+    <div>
+      <div class="bloco">
+        <h2>Resumo</h2>
+        <p>{{ curso.resumo }}</p>
+      </div>
+
+      {% for entregavel in entregaveis %}
+        <section class="bloco entregavel-analise">
+          <h2>{{ entregavel.get_tipo_display }}
+            <span class="estado {% if entregavel.status == 'APROVADO' %}ok{% elif entregavel.status == 'EM_REVISAO' %}espera{% elif entregavel.status == 'DEVOLVIDO' %}atencao{% endif %}">{{ entregavel.get_status_display }}</span>
+          </h2>
+          {% for secao in entregavel.secoes.all %}
+            {# O |safe abaixo e seguro: Secao.save() sanitiza o conteudo com nh3 antes de
+               gravar, incondicionalmente, mesmo em update_fields (Task 4). E o terceiro
+               lugar do sistema que renderiza HTML vindo do banco sem escape (os outros
+               dois sao revisar.html e _secao.html) - depende dessa sanitizacao
+               acontecer antes, nao aqui. #}
+            <h3>{{ secao.titulo }}</h3><div>{{ secao.conteudo|safe }}</div>
+          {% endfor %}
+          {% if entregavel.anexos.all %}
+            <ul class="etiquetas">{% for anexo in entregavel.anexos.all %}<li>{{ anexo.titulo }}</li>{% endfor %}</ul>
+          {% endif %}
+        </section>
       {% endfor %}
-      <ul>{% for anexo in entregavel.anexos.all %}<li>{{ anexo.titulo }}</li>{% endfor %}</ul>
-    </section>
-  {% endfor %}
+    </div>
 
-  {# Os valores de "decisao" sao os mesmos de apps/cursos/views/coordenador.py:
-     sem acento e nunca alterados por passada de texto (CLAUDE.md); so os rotulos
-     dos botoes sao portugues acentuado. A view roteia por igualdade explicita, e
-     um valor desconhecido nao decide nada - nao existe mais ramo pega-tudo. #}
-  {% if pode_decidir %}
-    <form method="post" action="{% url 'decidir_curso' curso.pk %}">
-      {% csrf_token %}
-      <label for="comentario">Comentário</label>
-      <textarea id="comentario" name="comentario" rows="5"></textarea>
-      <button type="submit" name="decisao" value="PUBLICAR">Publicar</button>
-      <button type="submit" name="decisao" value="DEVOLVER">Devolver ao professor</button>
-    </form>
-  {% elif pode_despublicar %}
-    <form method="post" action="{% url 'decidir_curso' curso.pk %}">
-      {% csrf_token %}
-      <label for="comentario">Motivo da despublicação</label>
-      <textarea id="comentario" name="comentario" rows="5"></textarea>
-      <button type="submit" name="decisao" value="DESPUBLICAR">Despublicar</button>
-    </form>
-  {% elif pode_republicar %}
-    <p>Este curso foi despublicado e está fora do catálogo público.</p>
-    <form method="post" action="{% url 'decidir_curso' curso.pk %}">
-      {% csrf_token %}
-      <button type="submit" name="decisao" value="PUBLICAR">Republicar</button>
-    </form>
-  {% else %}
-    <p>Este curso não está em nenhuma decisão da coordenação agora.</p>
-  {% endif %}
+    <aside class="lateral">
+      {# Os valores de "decisao" sao os mesmos de apps/cursos/views/coordenador.py:
+         sem acento e nunca alterados por passada de texto (CLAUDE.md); so os rotulos
+         dos botoes sao portugues acentuado. A view roteia por igualdade explicita, e
+         um valor desconhecido nao decide nada - nao existe mais ramo pega-tudo. #}
+      {% if pode_decidir %}
+        <h2>Decisão da coordenação</h2>
+        <form method="post" action="{% url 'decidir_curso' curso.pk %}">
+          {% csrf_token %}
+          <div class="campo">
+            <label for="comentario">Comentário</label>
+            <textarea id="comentario" name="comentario" rows="5"></textarea>
+          </div>
+          <button type="submit" name="decisao" value="PUBLICAR" class="botao-largo">Publicar</button>
+          <button type="submit" name="decisao" value="DEVOLVER" class="botao-linha botao-largo" style="margin-top:.5rem">Devolver ao professor</button>
+        </form>
+      {% elif pode_despublicar %}
+        <h2>Tirar do catálogo</h2>
+        <form method="post" action="{% url 'decidir_curso' curso.pk %}">
+          {% csrf_token %}
+          <div class="campo">
+            <label for="comentario">Motivo da despublicação</label>
+            <textarea id="comentario" name="comentario" rows="5"></textarea>
+          </div>
+          <button type="submit" name="decisao" value="DESPUBLICAR" class="botao-largo">Despublicar</button>
+        </form>
+      {% elif pode_republicar %}
+        <h2>Fora do catálogo</h2>
+        <p>Este curso foi despublicado e está fora do catálogo público.</p>
+        <form method="post" action="{% url 'decidir_curso' curso.pk %}">
+          {% csrf_token %}
+          <button type="submit" name="decisao" value="PUBLICAR" class="botao-largo">Republicar</button>
+        </form>
+      {% else %}
+        <h2>Nada a decidir</h2>
+        <p>Este curso não está em nenhuma decisão da coordenação agora.</p>
+      {% endif %}
+    </aside>
+  </div>
+</div>
 {% endblock %}

@@ -1,13 +1,35 @@
 {% extends "base.html" %}
-{% block titulo %}Revisão{% endblock %}
+{% block titulo %}Revisão &mdash; IntegraSI{% endblock %}
+
 {% block conteudo %}
-  <h1>Esperando por você</h1>
-  {% for entregavel in entregaveis %}
-    <article>
-      <h2><a href="{% url 'revisar' entregavel.pk %}">{{ entregavel.get_tipo_display }}</a></h2>
-      <p>{{ entregavel.curso.titulo }} &middot; enviado em {{ entregavel.atualizado_em }}</p>
-    </article>
-  {% empty %}
-    <p>Nada aguardando revisão.</p>
-  {% endfor %}
+<div class="trabalho">
+  <div class="cabecalho-pagina">
+    <div class="faixa">
+      <div>
+        <h1>Esperando por você</h1>
+        <p class="sub">Entregáveis enviados pelas equipes, para aprovar ou devolver.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="faixa corpo-trabalho">
+    <ul class="registros">
+      {% for entregavel in entregaveis %}
+        <li class="registro">
+          <div>
+            <h3><a href="{% url 'revisar' entregavel.pk %}">{{ entregavel.get_tipo_display }}</a></h3>
+            <p class="detalhe">
+              <span>{{ entregavel.curso.titulo }}</span>
+              <span class="sep">&middot;</span>
+              <span>enviado em {{ entregavel.atualizado_em|date:"d/m/Y" }}</span>
+            </p>
+          </div>
+          <span class="estado espera">Em revisão</span>
+        </li>
+      {% empty %}
+        <li class="vazio"><p>Nada aguardando revisão.</p></li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
 {% endblock %}

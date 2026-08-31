@@ -1,10 +1,19 @@
 {% extends "base.html" %}
-{% block titulo %}Nova proposta{% endblock %}
+{% block titulo %}Nova proposta &mdash; IntegraSI{% endblock %}
+
 {% block conteudo %}
-  <h1>Nova proposta de curso</h1>
-  <form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Criar proposta</button>
-  </form>
+<div class="trabalho">
+  <div class="faixa pagina-estreita">
+    <h1>Nova proposta de curso</h1>
+    <p class="abertura">O curso nasce em rascunho com os cinco entregáveis do roteiro.
+       Você monta a equipe em seguida.</p>
+    <div class="cartao">
+      <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="botao-largo">Criar proposta</button>
+      </form>
+    </div>
+  </div>
+</div>
 {% endblock %}

@@ -1,15 +1,39 @@
 {% extends "base.html" %}
-{% block titulo %}Turmas{% endblock %}
+{% block titulo %}Turmas &mdash; IntegraSI{% endblock %}
+
 {% block conteudo %}
-  <h1>Turmas</h1>
-  {% for turma in turmas %}
-    <article>
-      <h2>{{ turma.curso.titulo }}</h2>
-      <p>{{ turma.local }} &middot; {{ turma.data_inicio|date:"d/m/Y" }} a {{ turma.data_fim|date:"d/m/Y" }}
-         &middot; {{ turma.vagas }} vagas &middot; {{ turma.get_status_display }}</p>
-      <p>{{ turma.participantes.count }} participantes inscritos</p>
-    </article>
-  {% empty %}
-    <p>Nenhuma turma agendada.</p>
-  {% endfor %}
+<div class="trabalho">
+  <div class="cabecalho-pagina">
+    <div class="faixa">
+      <div>
+        <h1>Turmas</h1>
+        <p class="sub">Realizações agendadas a partir das solicitações aceitas.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="faixa corpo-trabalho">
+    <ul class="registros">
+      {% for turma in turmas %}
+        <li class="registro">
+          <div>
+            <h3>{{ turma.curso.titulo }}</h3>
+            <p class="detalhe">
+              <span>{{ turma.local }}</span>
+              <span class="sep">&middot;</span>
+              <span>{{ turma.data_inicio|date:"d/m/Y" }} a {{ turma.data_fim|date:"d/m/Y" }}</span>
+              <span class="sep">&middot;</span>
+              <span>{{ turma.vagas }} vagas</span>
+              <span class="sep">&middot;</span>
+              <span>{{ turma.participantes.count }} participantes inscritos</span>
+            </p>
+          </div>
+          <span class="estado {% if turma.status == 'AGENDADA' %}info{% elif turma.status == 'CONCLUIDA' %}ok{% elif turma.status == 'CANCELADA' %}atencao{% endif %}">{{ turma.get_status_display }}</span>
+        </li>
+      {% empty %}
+        <li class="vazio"><p>Nenhuma turma agendada.</p></li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
 {% endblock %}

@@ -1,16 +1,39 @@
 {% extends "base.html" %}
 {% block titulo %}Equipe &mdash; {{ curso.titulo }}{% endblock %}
+
 {% block conteudo %}
-  <h1>Equipe de {{ curso.titulo }}</h1>
-  <ul>
-    {% for membro in curso.membros.all %}<li>{{ membro.aluno.nome_completo }}</li>{% empty %}<li>Equipe vazia.</li>{% endfor %}
-  </ul>
-  <form method="post">
-    {% csrf_token %}
-    <select name="aluno">
-      {% for candidato in candidatos %}<option value="{{ candidato.pk }}">{{ candidato.nome_completo }}</option>{% endfor %}
-    </select>
-    <button type="submit">Adicionar à equipe</button>
-  </form>
-  <p><a href="{% url 'curso' curso.pk %}">Ver o curso</a></p>
+<div class="trabalho">
+  <div class="cabecalho-pagina">
+    <div class="faixa">
+      <div>
+        <h1>Equipe de {{ curso.titulo }}</h1>
+        <p class="sub">Os estudantes que produzem o material deste curso.</p>
+      </div>
+      <div class="acoes"><a class="botao botao-linha" href="{% url 'curso' curso.pk %}">Ver o curso</a></div>
+    </div>
+  </div>
+
+  <div class="faixa corpo-trabalho duas-colunas">
+    <div class="bloco">
+      <h2>Na equipe</h2>
+      <ul class="etiquetas">
+        {% for membro in curso.membros.all %}<li>{{ membro.aluno.nome_completo }}</li>{% empty %}<li>Equipe vazia.</li>{% endfor %}
+      </ul>
+    </div>
+
+    <aside class="lateral">
+      <h2>Adicionar estudante</h2>
+      <form method="post">
+        {% csrf_token %}
+        <div class="campo">
+          <label for="id_aluno">Estudante</label>
+          <select name="aluno" id="id_aluno">
+            {% for candidato in candidatos %}<option value="{{ candidato.pk }}">{{ candidato.nome_completo }}</option>{% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="botao-largo">Adicionar à equipe</button>
+      </form>
+    </aside>
+  </div>
+</div>
 {% endblock %}

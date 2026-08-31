@@ -1,25 +1,60 @@
 {% extends "base.html" %}
-{% block titulo %}Responder solicitação{% endblock %}
+{% block titulo %}Responder solicitação &mdash; IntegraSI{% endblock %}
+
 {% block conteudo %}
-  {# A região de messages é de base.html. Repeti-la aqui mostraria cada aviso duas vezes. #}
-  <h1>{{ solicitacao.curso.titulo }}</h1>
-  <p>{{ solicitacao.nome }} &middot; {{ solicitacao.email }} &middot; {{ solicitacao.telefone }}</p>
-  <p>{{ solicitacao.instituicao }} &middot; {{ solicitacao.num_participantes }} participantes
-     &middot; {{ solicitacao.periodo_pretendido }}</p>
-  <blockquote>{{ solicitacao.mensagem }}</blockquote>
+{# A região de messages é de base.html. Repeti-la aqui mostraria cada aviso duas vezes. #}
+<div class="trabalho">
+  <div class="cabecalho-pagina">
+    <div class="faixa">
+      <div>
+        <h1>{{ solicitacao.curso.titulo }}</h1>
+        <p class="sub">Solicitação de {{ solicitacao.nome }}</p>
+      </div>
+      <div class="acoes">
+        <a class="botao botao-linha" href="{% url 'solicitacoes' %}">Todas as solicitações</a>
+      </div>
+    </div>
+  </div>
 
-  <h2>Aceitar e agendar a turma</h2>
-  <form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit" name="decisao" value="ACEITAR">Aceitar e agendar</button>
-  </form>
+  <div class="faixa corpo-trabalho duas-colunas">
+    <div>
+      <div class="bloco">
+        <h2>Quem pediu</h2>
+        <ul class="dados-lista">
+          <div><span class="rotulo">Contato</span><span>{{ solicitacao.nome }} &middot; {{ solicitacao.email }} &middot; {{ solicitacao.telefone }}</span></div>
+          <div><span class="rotulo">Instituição</span><span>{{ solicitacao.instituicao }}</span></div>
+          <div><span class="rotulo">Participantes</span><span>{{ solicitacao.num_participantes }}</span></div>
+          <div><span class="rotulo">Período pretendido</span><span>{{ solicitacao.periodo_pretendido }}</span></div>
+        </ul>
+        {% if solicitacao.mensagem %}
+          <h2 style="margin-top:1.5rem">Mensagem</h2>
+          <blockquote class="citacao">{{ solicitacao.mensagem }}</blockquote>
+        {% endif %}
+      </div>
 
-  <h2>Recusar</h2>
-  <form method="post">
-    {% csrf_token %}
-    <label for="resposta">Resposta ao solicitante</label>
-    <textarea id="resposta" name="resposta" rows="4"></textarea>
-    <button type="submit" name="decisao" value="RECUSAR">Recusar</button>
-  </form>
+      <div class="bloco">
+        <h2>Aceitar e agendar a turma</h2>
+        <form method="post">
+          {% csrf_token %}
+          {{ form.as_p }}
+          <button type="submit" name="decisao" value="ACEITAR">Aceitar e agendar</button>
+        </form>
+      </div>
+    </div>
+
+    <aside class="lateral">
+      <h2>Recusar</h2>
+      <p>A resposta vai por e-mail para quem solicitou. Escreva o motivo com as palavras
+         que você usaria ao telefone.</p>
+      <form method="post">
+        {% csrf_token %}
+        <div class="campo">
+          <label for="resposta">Resposta ao solicitante</label>
+          <textarea id="resposta" name="resposta" rows="4"></textarea>
+        </div>
+        <button type="submit" name="decisao" value="RECUSAR" class="botao-linha botao-largo">Recusar</button>
+      </form>
+    </aside>
+  </div>
+</div>
 {% endblock %}

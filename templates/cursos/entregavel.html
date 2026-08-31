@@ -2,21 +2,32 @@
 {% load static %}
 {% block titulo %}{{ entregavel.get_tipo_display }}{% endblock %}
 {% block conteudo %}
-  <h1>{{ entregavel.get_tipo_display }}</h1>
-  <p><a href="{% url 'curso' entregavel.curso.pk %}">{{ entregavel.curso.titulo }}</a></p>
-  <p>Situação: {{ entregavel.get_status_display }}</p>
+<div class="trabalho">
+  <div class="cabecalho-pagina">
+    <div class="faixa">
+      <div>
+        <h1>{{ entregavel.get_tipo_display }}</h1>
+        <p class="sub"><a href="{% url 'curso' entregavel.curso.pk %}">{{ entregavel.curso.titulo }}</a></p>
+      </div>
+      <div class="acoes">
+        <span class="estado {% if entregavel.status == 'APROVADO' %}ok{% elif entregavel.status == 'EM_REVISAO' %}espera{% elif entregavel.status == 'DEVOLVIDO' %}atencao{% endif %}">{{ entregavel.get_status_display }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="faixa corpo-trabalho">
 
   {% if ultima_revisao and ultima_revisao.decisao == "DEVOLVIDO" %}
-    <section class="devolutiva">
+    <section class="bloco devolutiva">
       <h2>Devolvido pelo professor</h2>
       <p>{{ ultima_revisao.comentario }}</p>
     </section>
   {% endif %}
 
   {% if pendencias %}
-    <section class="pendencias">
+    <section class="bloco pendencias">
       <h2>O que falta</h2>
-      <ul>{% for falta in pendencias %}<li>{{ falta }}</li>{% endfor %}</ul>
+      <ul class="registros">{% for falta in pendencias %}<li class="registro"><span class="estado atencao">{{ falta }}</span></li>{% endfor %}</ul>
     </section>
   {% endif %}
 
@@ -24,10 +35,11 @@
     {% include "cursos/_secao.html" with pode_editar=pode_editar %}
   {% endfor %}
 
+  <div class="bloco">
   <h2>Materiais</h2>
-  <ul>
+  <ul class="registros">
     {% for anexo in entregavel.anexos.all %}
-      <li>
+      <li class="registro">
         {% if anexo.arquivo %}
           <a href="{% url 'baixar' anexo.arquivo.identificador %}">{{ anexo.titulo }}</a>
         {% else %}
@@ -37,18 +49,24 @@
         {% if anexo.referencia_bibliografica %} &mdash; {{ anexo.referencia_bibliografica }}{% endif %}
       </li>
     {% empty %}
-      <li>Nenhum material anexado.</li>
+      <li class="vazio"><p>Nenhum material anexado.</p></li>
     {% endfor %}
   </ul>
+  </div>
 
   {% if pode_editar %}
-    <form method="post" action="{% url 'anexar' entregavel.pk %}" enctype="multipart/form-data">
-      {% csrf_token %}
-      {{ form_anexo.as_p }}
-      <button type="submit">Anexar</button>
-    </form>
+    <div class="bloco">
+      <h2>Anexar material</h2>
+      <form method="post" action="{% url 'anexar' entregavel.pk %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form_anexo.as_p }}
+        <button type="submit">Anexar</button>
+      </form>
+    </div>
 
     {% if entregavel.tipo == "VIDEOS" %}
+      <div class="bloco">
+      <h2>Enviar vídeo-aula</h2>
       {# Upload fatiado e retomavel: e o unico ponto do sistema com JS proprio,
          porque HTMX nao fatia arquivo (spec 8). Tudo o que o JS precisa saber sobre
          o servidor sai daqui — as quatro rotas revertidas pelo Django e o tamanho
@@ -73,11 +91,16 @@
         <button type="submit">Enviar vídeo</button>
       </form>
       <script src="{% static 'js/upload.js' %}" defer></script>
+      </div>
     {% endif %}
 
-    <form method="post" action="{% url 'enviar_entregavel' entregavel.pk %}">
-      {% csrf_token %}
-      <button type="submit">Enviar para revisão</button>
-    </form>
+    <div class="bloco">
+      <form method="post" action="{% url 'enviar_entregavel' entregavel.pk %}">
+        {% csrf_token %}
+        <button type="submit">Enviar para revisão</button>
+      </form>
+    </div>
   {% endif %}
+  </div>
+</div>
 {% endblock %}

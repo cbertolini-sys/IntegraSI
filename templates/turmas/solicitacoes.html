@@ -1,23 +1,54 @@
 {% extends "base.html" %}
-{% block titulo %}Solicitações{% endblock %}
-{% block conteudo %}
-  <h1>Solicitações recebidas</h1>
-  {% for solicitacao in pendentes %}
-    <article>
-      <h2><a href="{% url 'responder_solicitacao' solicitacao.pk %}">{{ solicitacao.curso.titulo }}</a></h2>
-      <p>{{ solicitacao.nome }} &middot; {{ solicitacao.instituicao }} &middot;
-         {{ solicitacao.num_participantes }} participantes &middot; {{ solicitacao.criado_em|date:"d/m/Y" }}</p>
-    </article>
-  {% empty %}
-    <p>Nenhuma solicitação pendente.</p>
-  {% endfor %}
+{% block titulo %}Solicitações &mdash; IntegraSI{% endblock %}
 
-  <h2>Já respondidas</h2>
-  <ul>
-    {% for solicitacao in respondidas %}
-      <li>{{ solicitacao.curso.titulo }} &mdash; {{ solicitacao.get_status_display }}</li>
-    {% empty %}
-      <li>Nenhuma solicitação respondida ainda.</li>
-    {% endfor %}
-  </ul>
+{% block conteudo %}
+<div class="trabalho">
+  <div class="cabecalho-pagina">
+    <div class="faixa">
+      <div>
+        <h1>Solicitações recebidas</h1>
+        <p class="sub">Pedidos de escolas e grupos da comunidade pelo formulário público.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="faixa corpo-trabalho">
+    <ul class="registros">
+      {% for solicitacao in pendentes %}
+        <li class="registro">
+          <div>
+            <h3><a href="{% url 'responder_solicitacao' solicitacao.pk %}">{{ solicitacao.curso.titulo }}</a></h3>
+            <p class="detalhe">
+              <span>{{ solicitacao.nome }}</span>
+              <span class="sep">&middot;</span>
+              <span>{{ solicitacao.instituicao }}</span>
+              <span class="sep">&middot;</span>
+              <span>{{ solicitacao.num_participantes }} participantes</span>
+              <span class="sep">&middot;</span>
+              <span>{{ solicitacao.criado_em|date:"d/m/Y" }}</span>
+            </p>
+          </div>
+          <span class="estado espera">A responder</span>
+        </li>
+      {% empty %}
+        <li class="vazio"><p>Nenhuma solicitação pendente.</p></li>
+      {% endfor %}
+    </ul>
+
+    <h2 class="titulo-bloco" style="margin-top:2.5rem">Já respondidas</h2>
+    <ul class="registros">
+      {% for solicitacao in respondidas %}
+        <li class="registro">
+          <div>
+            <h3>{{ solicitacao.curso.titulo }}</h3>
+            <p class="detalhe"><span>{{ solicitacao.nome }}</span></p>
+          </div>
+          <span class="estado {% if solicitacao.status == 'ACEITA' %}ok{% else %}atencao{% endif %}">{{ solicitacao.get_status_display }}</span>
+        </li>
+      {% empty %}
+        <li class="vazio"><p>Nenhuma solicitação respondida ainda.</p></li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
 {% endblock %}

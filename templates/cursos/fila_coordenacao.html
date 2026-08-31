@@ -1,14 +1,43 @@
 {% extends "base.html" %}
-{% block titulo %}Coordenação{% endblock %}
+{% block titulo %}Fila da coordenação &mdash; IntegraSI{% endblock %}
+
 {% block conteudo %}
-  <h1>Cursos aguardando aprovação</h1>
-  <p><a href="{% url 'cursos_no_catalogo' %}">Cursos no catálogo</a></p>
-  {% for curso in cursos %}
-    <article>
-      <h2><a href="{% url 'analisar_curso' curso.pk %}">{{ curso.titulo }}</a></h2>
-      <p>{{ curso.professor_responsavel.nome_completo }} &middot; {{ curso.edicao }} &middot; {{ curso.publico_alvo }}</p>
-    </article>
-  {% empty %}
-    <p>Nenhum curso aguardando aprovação.</p>
-  {% endfor %}
+<div class="trabalho">
+  <div class="cabecalho-pagina">
+    <div class="faixa">
+      <div>
+        <h1>Cursos aguardando aprovação</h1>
+        <p class="sub">Com os cinco entregáveis aprovados pelo professor responsável.</p>
+      </div>
+      <div class="acoes">
+        <a class="botao botao-linha" href="{% url 'cursos_no_catalogo' %}">Cursos no catálogo</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="faixa corpo-trabalho">
+    <ul class="registros">
+      {% for curso in cursos %}
+        <li class="registro">
+          <div>
+            <h3><a href="{% url 'analisar_curso' curso.pk %}">{{ curso.titulo }}</a></h3>
+            <p class="detalhe">
+              <span>{{ curso.professor_responsavel.nome_completo }}</span>
+              <span class="sep">&middot;</span>
+              <span>{{ curso.edicao }}</span>
+              <span class="sep">&middot;</span>
+              <span>{{ curso.publico_alvo }}</span>
+            </p>
+          </div>
+          <span class="estado espera">Aguardando você</span>
+        </li>
+      {% empty %}
+        <li class="vazio">
+          <p>Nenhum curso aguardando aprovação.</p>
+          <p><a class="botao botao-linha" href="{% url 'cursos_no_catalogo' %}">Ver os cursos no catálogo</a></p>
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
 {% endblock %}

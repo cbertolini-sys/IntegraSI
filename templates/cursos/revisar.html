@@ -1,44 +1,73 @@
 {% extends "base.html" %}
-{% block titulo %}Revisar{% endblock %}
+{% block titulo %}Revisar {{ entregavel.get_tipo_display }} &mdash; IntegraSI{% endblock %}
+
 {% block conteudo %}
-  <h1>{{ entregavel.get_tipo_display }}</h1>
-  <p>{{ entregavel.curso.titulo }}</p>
+<div class="trabalho">
+  <div class="cabecalho-pagina">
+    <div class="faixa">
+      <div>
+        <h1>{{ entregavel.get_tipo_display }}</h1>
+        <p class="sub">{{ entregavel.curso.titulo }}</p>
+      </div>
+      <div class="acoes">
+        <span class="estado {% if entregavel.status == 'APROVADO' %}ok{% elif entregavel.status == 'EM_REVISAO' %}espera{% elif entregavel.status == 'DEVOLVIDO' %}atencao{% endif %}">{{ entregavel.get_status_display }}</span>
+      </div>
+    </div>
+  </div>
 
-  {% if pendencias %}
-    <section class="pendencias">
-      <h2>O que falta</h2>
-      <ul>{% for falta in pendencias %}<li>{{ falta }}</li>{% endfor %}</ul>
-    </section>
-  {% endif %}
+  <div class="faixa corpo-trabalho duas-colunas">
+    <div>
+      {% if pendencias %}
+        <section class="bloco pendencias">
+          <h2>O que falta</h2>
+          <ul class="registros">{% for falta in pendencias %}<li class="registro"><span class="estado atencao">{{ falta }}</span></li>{% endfor %}</ul>
+        </section>
+      {% endif %}
 
-  {% for secao in entregavel.secoes.all %}
-    {# O |safe abaixo e seguro: Secao.save() sanitiza o conteudo com nh3 antes de
-       gravar, incondicionalmente, mesmo em update_fields (Task 4). E o unico lugar
-       do sistema que renderiza HTML vindo do banco sem escape - depende dessa
-       sanitizacao acontecer antes, nao aqui. #}
-    <section><h3>{{ secao.titulo }}</h3><div>{{ secao.conteudo|safe }}</div></section>
-  {% endfor %}
+      {% for secao in entregavel.secoes.all %}
+        {# O |safe abaixo e seguro: Secao.save() sanitiza o conteudo com nh3 antes de
+           gravar, incondicionalmente, mesmo em update_fields (Task 4). E o unico lugar
+           do sistema que renderiza HTML vindo do banco sem escape - depende dessa
+           sanitizacao acontecer antes, nao aqui. #}
+        <section class="bloco"><h2>{{ secao.titulo }}</h2><div>{{ secao.conteudo|safe }}</div></section>
+      {% endfor %}
 
-  <h2>Materiais</h2>
-  <ul>
-    {% for anexo in entregavel.anexos.all %}
-      <li>
-        {% if anexo.arquivo %}
-          <a href="{% url 'baixar' anexo.arquivo.identificador %}">{{ anexo.titulo }}</a>
-        {% else %}
-          <a href="{{ anexo.url }}" rel="noopener noreferrer" target="_blank">{{ anexo.titulo }}</a>
-        {% endif %}
-        {% if anexo.duracao_minutos %} ({{ anexo.duracao_minutos }} min){% endif %}
-        {% if anexo.referencia_bibliografica %} &mdash; {{ anexo.referencia_bibliografica }}{% endif %}
-      </li>
-    {% endfor %}
-  </ul>
+      <div class="bloco">
+        <h2>Materiais</h2>
+        <ul class="registros">
+          {% for anexo in entregavel.anexos.all %}
+            <li class="registro">
+              <div>
+                <h3>
+                  {% if anexo.arquivo %}
+                    <a href="{% url 'baixar' anexo.arquivo.identificador %}">{{ anexo.titulo }}</a>
+                  {% else %}
+                    <a href="{{ anexo.url }}" rel="noopener noreferrer" target="_blank">{{ anexo.titulo }}</a>
+                  {% endif %}
+                </h3>
+                {% if anexo.referencia_bibliografica %}<p class="detalhe">{{ anexo.referencia_bibliografica }}</p>{% endif %}
+              </div>
+              {% if anexo.duracao_minutos %}<span class="estado">{{ anexo.duracao_minutos }} min</span>{% endif %}
+            </li>
+          {% empty %}
+            <li class="vazio"><p>Nenhum material anexado ainda.</p></li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
 
-  <form method="post" action="{% url 'decidir' entregavel.pk %}">
-    {% csrf_token %}
-    <label for="comentario">Comentário</label>
-    <textarea id="comentario" name="comentario" rows="5"></textarea>
-    <button type="submit" name="decisao" value="APROVAR">Aprovar</button>
-    <button type="submit" name="decisao" value="DEVOLVER">Devolver</button>
-  </form>
+    <aside class="lateral">
+      <h2>Sua decisão</h2>
+      <form method="post" action="{% url 'decidir' entregavel.pk %}">
+        {% csrf_token %}
+        <div class="campo">
+          <label for="comentario">Comentário</label>
+          <textarea id="comentario" name="comentario" rows="5"></textarea>
+        </div>
+        <button type="submit" name="decisao" value="APROVAR" class="botao-largo">Aprovar</button>
+        <button type="submit" name="decisao" value="DEVOLVER" class="botao-linha botao-largo" style="margin-top:.5rem">Devolver</button>
+      </form>
+    </aside>
+  </div>
+</div>
 {% endblock %}

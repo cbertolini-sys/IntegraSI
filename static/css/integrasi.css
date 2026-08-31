@@ -846,3 +846,341 @@ textarea:focus {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* =====================================================================
+   Área autenticada — superfície de trabalho, não página de vitrine.
+   O catálogo convence; aqui a pessoa decide, aprova e responde. Por isso
+   fundo névoa, cabeçalho de página sóbrio e listas densas de registros.
+   ===================================================================== */
+
+.trabalho {
+  background: var(--nevoa);
+  flex: 1;
+}
+
+.cabecalho-pagina {
+  background: var(--branco);
+  border-bottom: 1px solid var(--linha);
+}
+
+.cabecalho-pagina .faixa {
+  padding-block: 1.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 1.5rem;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.cabecalho-pagina h1 {
+  font-family: var(--display);
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  margin: 0;
+}
+
+.cabecalho-pagina .sub {
+  margin: 0.25rem 0 0;
+  color: var(--cinza);
+  font-size: 0.9375rem;
+}
+
+.cabecalho-pagina .acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+}
+
+.corpo-trabalho {
+  padding-block: 2rem 4rem;
+}
+
+/* ---------- painel ---------- */
+
+.saudacao {
+  font-family: var(--display);
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  margin: 0 0 0.25rem;
+}
+
+.indicadores {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+  list-style: none;
+  padding: 0;
+  margin: 0 0 2.5rem;
+}
+
+.indicador {
+  position: relative;
+  background: var(--branco);
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+  padding: 1.25rem;
+  transition: box-shadow 0.16s ease, border-color 0.16s ease;
+}
+
+.indicador:hover {
+  box-shadow: var(--sombra);
+  border-color: #cfdae6;
+}
+
+.indicador strong {
+  display: block;
+  font-family: var(--display);
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: var(--marinho);
+}
+
+.indicador a {
+  color: var(--texto);
+  text-decoration: none;
+  font-size: 0.9375rem;
+  font-weight: 500;
+}
+
+.indicador a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+/* Zero não é um alerta: quando não há nada na fila, o número recua. */
+.indicador.zerado strong {
+  color: var(--cinza-claro);
+}
+
+.atalhos {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.atalho {
+  position: relative;
+  background: var(--branco);
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+  padding: 1.25rem;
+  transition: box-shadow 0.16s ease, transform 0.16s ease, border-color 0.16s ease;
+}
+
+.atalho:hover {
+  box-shadow: var(--sombra);
+  transform: translateY(-2px);
+  border-color: #cfdae6;
+}
+
+.atalho h3 {
+  font-family: var(--display);
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 0.25rem;
+}
+
+.atalho h3 a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.atalho h3 a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.atalho p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--cinza);
+}
+
+.titulo-bloco {
+  font-family: var(--display);
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  margin: 0 0 1rem;
+}
+
+/* ---------- listas de registros ---------- */
+
+.registros {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.registro {
+  position: relative;
+  background: var(--branco);
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+  padding: 1.125rem 1.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: center;
+  justify-content: space-between;
+  transition: box-shadow 0.16s ease, border-color 0.16s ease;
+}
+
+.registro:hover {
+  box-shadow: var(--sombra);
+  border-color: #cfdae6;
+}
+
+.registro h3 {
+  font-family: var(--display);
+  font-size: 1.0625rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 0 0 0.25rem;
+}
+
+.registro h3 a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.registro h3 a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.registro .detalhe {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--cinza);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.5rem;
+}
+
+.registro .detalhe .sep {
+  color: #c9d2dc;
+}
+
+/* ---------- selos de estado ---------- */
+
+.estado {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4375rem;
+  border-radius: 999px;
+  padding: 0.25rem 0.6875rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+  background: #eef1f5;
+  color: var(--cinza);
+  border: 1px solid transparent;
+}
+
+.estado::before {
+  content: "";
+  width: 0.4375rem;
+  height: 0.4375rem;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+
+.estado.espera {
+  background: #fff5e6;
+  color: #96601a;
+  border-color: #f2ddb9;
+}
+
+.estado.ok {
+  background: #e8f6ee;
+  color: #1c6b41;
+  border-color: #c2e5d1;
+}
+
+.estado.atencao {
+  background: #fdeeea;
+  color: #9a3d18;
+  border-color: #f3cfc1;
+}
+
+.estado.info {
+  background: var(--azul-suave);
+  color: var(--azul-forte);
+  border-color: #cfe1f0;
+}
+
+/* ---------- blocos de conteúdo interno ---------- */
+
+.bloco {
+  background: var(--branco);
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.bloco > h2 {
+  font-family: var(--display);
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  margin: 0 0 1rem;
+}
+
+.duas-colunas {
+  display: grid;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (min-width: 58rem) {
+  .duas-colunas {
+    grid-template-columns: minmax(0, 1fr) 20rem;
+  }
+}
+
+.dados-lista {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.75rem;
+  font-size: 0.9375rem;
+}
+
+.dados-lista div {
+  display: grid;
+  gap: 0.125rem;
+}
+
+.dados-lista dt,
+.dados-lista .rotulo {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--cinza-claro);
+}
+
+.citacao {
+  border-left: 3px solid var(--linha);
+  padding-left: 1rem;
+  margin: 0;
+  color: var(--cinza);
+  font-size: 0.9375rem;
+}

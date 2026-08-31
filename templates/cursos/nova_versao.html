@@ -1,15 +1,24 @@
 {% extends "base.html" %}
-{% block titulo %}Nova versão de {{ curso.titulo }}{% endblock %}
+{% block titulo %}Nova versão de {{ curso.titulo }} &mdash; IntegraSI{% endblock %}
+
 {% block conteudo %}
-  <h1>Nova versão de {{ curso.titulo }}</h1>
-  <p>A versão {{ curso.versao }} continua publicada e disponível para solicitação
-     enquanto a nova estiver sendo produzida. Ela será substituída quando a nova for
-     aprovada e publicada.</p>
-  <p>A nova versão nasce sem equipe: monte a equipe logo depois de abri-la.</p>
-  <form method="post">
-    {% csrf_token %}
-    <label for="motivo">Por que esta versão está sendo aberta?</label>
-    <textarea id="motivo" name="motivo" rows="4" required></textarea>
-    <button type="submit">Abrir nova versão</button>
-  </form>
+<div class="trabalho">
+  <div class="faixa pagina-estreita">
+    <h1>Nova versão de {{ curso.titulo }}</h1>
+    <p class="abertura">A versão {{ curso.versao }} continua publicada e disponível para solicitação
+       enquanto a nova estiver sendo produzida. Ela será substituída quando a nova for
+       aprovada e publicada.</p>
+    <div class="cartao">
+      <p class="finalidade">A nova versão nasce sem equipe: monte a equipe logo depois de abri-la.</p>
+      <form method="post">
+        {% csrf_token %}
+        <div class="campo">
+          <label for="motivo">Por que esta versão está sendo aberta?</label>
+          <textarea id="motivo" name="motivo" rows="4" required></textarea>
+        </div>
+        <button type="submit" class="botao-largo">Abrir nova versão</button>
+      </form>
+    </div>
+  </div>
+</div>
 {% endblock %}
