@@ -578,3 +578,10 @@ def test_operacao_instala_a_extensao_unaccent(operacao):
 
 def test_operacao_manda_restaurar_o_backup(operacao):
     assert "restaurar-teste.sh" in operacao
+
+
+def test_o_cron_confere_a_entrega_protegida():
+    """A checagem que a suite nao alcanca precisa acontecer sozinha em algum
+    lugar. Sem esta linha no cron, ela depende de alguem lembrar."""
+    crontab = (DEPLOY / "crontab").read_text()
+    assert "conferir_entrega_protegida" in crontab

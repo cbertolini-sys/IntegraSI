@@ -19,3 +19,8 @@ RESTIC_REPOSITORY=sftp:integrasi@backup.exemplo.ufsm.br:/srv/restic/integrasi
 17 3 * * * cd /srv/integrasi && .venv/bin/python manage.py limpar_uploads >> /var/log/integrasi/cron.log
 32 3 * * * cd /srv/integrasi && .venv/bin/python manage.py limpar_arquivos_orfaos >> /var/log/integrasi/cron.log
 5 2 * * * /srv/integrasi/deploy/backup.sh >> /var/log/integrasi/backup.log
+
+# Confere semanalmente se o /protegido/ do nginx continua `internal;`. E a unica
+# checagem que a suite de testes nao alcanca -- sem nginx, o pytest fala direto
+# com o Django -- e a que abre o sistema inteiro se falhar em silencio.
+30 6 * * 1 cd /srv/integrasi && .venv/bin/python manage.py conferir_entrega_protegida --base-url https://integrasi.ufsm.br >> /var/log/integrasi/cron.log

@@ -208,6 +208,28 @@ solicitações passarem todas, uma das duas está errada.
 
 ---
 
+### A conferência da entrega protegida, por comando
+
+O `curl` à mão continua valendo, mas existe um comando que faz a mesma coisa e
+devolve código de saída — serve no deploy e no cron:
+
+```bash
+python manage.py conferir_entrega_protegida --base-url https://integrasi.ufsm.br
+```
+
+- **Sai 0** e diz "porta fechada": o nginx recusou a rota (404 ou 403), como deve.
+- **Sai diferente de 0**: ou a rota respondeu 200 — e aí qualquer pessoa baixa
+  material sem passar pela checagem de permissão, corrija o `internal;` e recarregue
+  o nginx agora —, ou o servidor não respondeu, e nesse caso **a conferência não
+  foi feita**: o comando reprova em vez de dar por seguro o que não checou.
+
+O caminho conferido sai de `apps.cursos.views.midia.PREFIXO_INTERNO`, e não de uma
+string repetida no comando: trocar o prefixo no código sem trocar no nginx é um dos
+jeitos de abrir a porta, e a conferência acompanha o código.
+
+Rode **depois de instalar, depois de qualquer mudança no nginx**, e uma vez por
+semana pelo cron.
+
 ## 3. Backup e restauração
 
 `deploy/backup.sh` roda às 02:05 pelo cron e resolve dois problemas distintos
