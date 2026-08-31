@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 {% block titulo %}Catálogo de cursos de extensão &mdash; IntegraSI{% endblock %}
 
 {% block topo %}
@@ -27,36 +28,67 @@
         </div>
       </div>
 
-      {% if user.is_authenticated %}
-        <div class="acesso">
-          <h2>Você está no sistema</h2>
-          <p class="sub">{{ user.nome_completo }} &middot; {{ user.get_papel_display }}</p>
-          <a class="botao botao-largo" href="{% url 'painel' %}">Ir para o painel</a>
-        </div>
-      {% else %}
-        <div class="acesso">
-          <h2>Entrar no IntegraSI</h2>
-          <p class="sub">Para professores, coordenação e equipes de produção.</p>
-          <form method="post" action="{% url 'login' %}">
-            {% csrf_token %}
-            <div class="campo">
-              <label for="id_username">E-mail institucional</label>
-              <input type="email" name="username" id="id_username"
-                     autocomplete="username" placeholder="nome@ufsm.br" required>
+      <div class="vitrine" data-carrossel
+           {% if vitrine %}aria-roledescription="carrossel"{% endif %}
+           aria-label="Últimos cursos publicados">
+        {% if vitrine %}
+          <p class="vitrine-rotulo">Últimos cursos publicados</p>
+
+          <div class="vitrine-palco">
+            <ul class="vitrine-slides" data-slides>
+              {% for curso in vitrine %}
+                <li class="vitrine-slide{% if forloop.first %} ativo{% endif %}"
+                    role="group"
+                    aria-roledescription="slide"
+                    aria-label="{{ forloop.counter }} de {{ vitrine|length }}"
+                    {% if not forloop.first %}aria-hidden="true"{% endif %}>
+                  <article class="cartao-vitrine">
+                    <p class="etiquetas-vitrine">
+                      {% with tema=curso.temas.first %}
+                        {% if tema %}<span class="marca-tema">{{ tema.nome }}</span>{% endif %}
+                      {% endwith %}
+                      <span class="marca-formato">{{ curso.get_formato_display }}</span>
+                    </p>
+                    <h3>{{ curso.titulo }}</h3>
+                    <p class="resumo-vitrine">{{ curso.resumo|truncatewords:18 }}</p>
+                    <p class="dados-vitrine">{{ curso.publico_alvo }} &middot; {{ curso.carga_horaria }}h</p>
+                    <a class="ver-mais" href="{% url 'catalogo_curso' curso.pk %}">
+                      Ver detalhes <span aria-hidden="true">&rarr;</span>
+                    </a>
+                  </article>
+                </li>
+              {% endfor %}
+            </ul>
+
+            {% if vitrine|length > 1 %}
+              <button type="button" class="seta anterior" data-anterior aria-label="Curso anterior">
+                <span aria-hidden="true">&lsaquo;</span>
+              </button>
+              <button type="button" class="seta proxima" data-proxima aria-label="Próximo curso">
+                <span aria-hidden="true">&rsaquo;</span>
+              </button>
+            {% endif %}
+          </div>
+
+          {% if vitrine|length > 1 %}
+            <div class="pontos" role="tablist" aria-label="Escolher curso" data-pontos>
+              {% for curso in vitrine %}
+                <button type="button" role="tab"
+                        class="ponto{% if forloop.first %} ativo{% endif %}"
+                        aria-label="{{ curso.titulo }}"
+                        aria-selected="{% if forloop.first %}true{% else %}false{% endif %}"
+                        data-ir-para="{{ forloop.counter0 }}"></button>
+              {% endfor %}
             </div>
-            <div class="campo">
-              <label for="id_password">Senha</label>
-              <input type="password" name="password" id="id_password"
-                     autocomplete="current-password" required>
-            </div>
-            <input type="hidden" name="next" value="{% url 'painel' %}">
-            <button type="submit" class="botao-largo">Entrar</button>
-          </form>
-          <p class="rodape-acesso">
-            As contas são criadas pela coordenação do curso.
-          </p>
-        </div>
-      {% endif %}
+          {% endif %}
+        {% else %}
+          <div class="cartao-vitrine vazio-vitrine">
+            <h3>O catálogo está sendo montado</h3>
+            <p class="resumo-vitrine">Os primeiros cursos aparecem aqui assim que a
+               coordenação publicar.</p>
+          </div>
+        {% endif %}
+      </div>
     </div>
   </section>
 
@@ -137,4 +169,8 @@
       </ul>
     </div>
   </section>
+{% endblock %}
+
+{% block rodape_scripts %}
+  <script src="{% static 'js/vitrine.js' %}" defer></script>
 {% endblock %}

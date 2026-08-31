@@ -18,6 +18,10 @@ from apps.referenciais.models import Referencial
 
 LIMITE_POR_IP_POR_HORA = 5
 
+# Quantos cursos o carrossel do heroi mostra. O corte e do servidor, e nao do CSS:
+# esconder o excedente com overflow mandaria a lista inteira pelo fio.
+CURSOS_NA_VITRINE = 10
+
 
 def cursos_publicados():
     """Visitante enxerga exclusivamente cursos PUBLICADO (spec 10).
@@ -69,6 +73,16 @@ def catalogo(request):
             # O total do catalogo inteiro, nao do resultado filtrado: no heroi ele
             # informa o tamanho da oferta, e mudaria de sentido se seguisse o filtro.
             "total_cursos": cursos_publicados().count(),
+            # A vitrine do heroi ignora os filtros de proposito: ela mostra a
+            # novidade do catalogo, e quem responde a busca e a grade abaixo. Sem
+            # isso, um termo que nao casa com nada esvaziaria a primeira dobra da
+            # pagina.
+            #
+            # Passa pelo mesmo `cursos_publicados()` das outras portas publicas, e
+            # nao por uma consulta propria: e a unica definicao de "o que o
+            # visitante enxerga" (spec 10), e duplica-la aqui e como um dia ela
+            # divergiria.
+            "vitrine": cursos_publicados()[:CURSOS_NA_VITRINE],
         },
     )
 

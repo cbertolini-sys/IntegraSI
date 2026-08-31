@@ -109,10 +109,10 @@ def test_filtro_por_publico_alvo(client, curso_publicado, dados_curso, outro_alu
     )
     publica(services.criar_curso(**dados_curso), outro_aluno, professor, coordenador)
 
-    resposta = client.get(reverse("catalogo"), {"etapa": "EF05"})
-    conteudo = resposta.content.decode()
-    assert curso_publicado.titulo in conteudo
-    assert "Cidadania digital para adultos" not in conteudo
+    # Sobre a grade, e nao sobre o HTML: o heroi ignora o filtro (test_vitrine.py).
+    grade = client.get(reverse("catalogo"), {"etapa": "EF05"}).context["cursos"]
+    assert curso_publicado in grade
+    assert "Cidadania digital para adultos" not in [c.titulo for c in grade]
 
 
 @pytest.mark.django_db
@@ -125,18 +125,19 @@ def test_filtro_comunitario(client, curso_publicado, dados_curso, outro_aluno, p
     )
     curso_comunitario = publica(services.criar_curso(**dados_curso), outro_aluno, professor, coordenador)
 
-    resposta = client.get(reverse("catalogo"), {"comunitario": "1"})
-    conteudo = resposta.content.decode()
-    assert curso_comunitario.titulo in conteudo
-    assert curso_publicado.titulo not in conteudo
+    # Sobre a grade, e nao sobre o HTML: o heroi ignora o filtro (test_vitrine.py).
+    grade = client.get(reverse("catalogo"), {"comunitario": "1"}).context["cursos"]
+    assert curso_comunitario in grade
+    assert curso_publicado not in grade
 
 
 @pytest.mark.django_db
 def test_filtro_por_tema(client, curso_publicado, professor):
     tema = Tema.objects.create(nome="Robotica Educacional")
     services.definir_temas(curso_publicado, [tema], por=professor)
-    assert curso_publicado.titulo in client.get(reverse("catalogo"), {"tema": tema.slug}).content.decode()
-    assert curso_publicado.titulo not in client.get(reverse("catalogo"), {"tema": "outro"}).content.decode()
+    # Sobre a grade, e nao sobre o HTML: o heroi ignora o filtro (test_vitrine.py).
+    assert curso_publicado in client.get(reverse("catalogo"), {"tema": tema.slug}).context["cursos"]
+    assert curso_publicado not in client.get(reverse("catalogo"), {"tema": "outro"}).context["cursos"]
 
 
 @pytest.mark.django_db
@@ -147,9 +148,9 @@ def test_filtro_por_formato(client, curso_publicado, dados_curso, outro_aluno, p
     curso_online = publica(services.criar_curso(**dados_curso), outro_aluno, professor, coordenador)
 
     resposta = client.get(reverse("catalogo"), {"formato": Formato.ONLINE})
-    conteudo = resposta.content.decode()
-    assert curso_online.titulo in conteudo
-    assert curso_publicado.titulo not in conteudo
+    # Sobre a grade, e nao sobre o HTML: o heroi ignora o filtro de proposito.
+    assert curso_online in resposta.context["cursos"]
+    assert curso_publicado not in resposta.context["cursos"]
 
 
 @pytest.mark.django_db
@@ -177,20 +178,32 @@ def test_filtro_por_referencial(client, curso_publicado, dados_curso, outro_alun
 
     # sem filtro, o curso sem referencial (curso_publicado) nao some do catalogo:
     # referencial e um filtro que so alguns cursos respondem, nunca um pressuposto.
-    resposta_sem_filtro = client.get(reverse("catalogo"))
-    assert curso_publicado.titulo in resposta_sem_filtro.content.decode()
-    assert curso_bncc.titulo in resposta_sem_filtro.content.decode()
+    sem_filtro = client.get(reverse("catalogo")).context["cursos"]
+    assert curso_publicado in sem_filtro
+    assert curso_bncc in sem_filtro
 
-    resposta = client.get(reverse("catalogo"), {"referencial": "BNCC-COMP"})
-    conteudo = resposta.content.decode()
-    assert curso_bncc.titulo in conteudo
-    assert curso_publicado.titulo not in conteudo
+    # Sobre a grade, e nao sobre o HTML: o heroi mostra os ultimos publicados
+    # ignorando o filtro (ver test_vitrine.py), entao curso_publicado continua no
+    # HTML mesmo filtrado por referencial.
+    filtrado = client.get(reverse("catalogo"), {"referencial": "BNCC-COMP"}).context["cursos"]
+    assert curso_bncc in filtrado
+    assert curso_publicado not in filtrado
 
 
 @pytest.mark.django_db
 def test_busca_no_catalogo(client, curso_publicado):
-    assert curso_publicado.titulo in client.get(reverse("catalogo"), {"q": "pensamento"}).content.decode()
-    assert curso_publicado.titulo not in client.get(reverse("catalogo"), {"q": "astronomia"}).content.decode()
+    """Afirma sobre a GRADE (`context["cursos"]`), e nao sobre o HTML bruto.
+
+    O heroi mostra os ultimos publicados ignorando o filtro (ver
+    test_vitrine.py), entao o titulo continua no HTML mesmo quando a busca nao
+    casa -- e o que o filtro governa e a grade. Mesma correcao que o Plano 4 fez
+    em test_catalogo_mostra_a_linhagem_uma_vez_so, pelo mesmo motivo: assercao em
+    HTML bruto quebra quando outra parte da pagina passa a citar o mesmo texto.
+    """
+    achou = client.get(reverse("catalogo"), {"q": "pensamento"})
+    assert curso_publicado in achou.context["cursos"]
+    nao_achou = client.get(reverse("catalogo"), {"q": "astronomia"})
+    assert curso_publicado not in nao_achou.context["cursos"]
 
 
 @pytest.mark.django_db

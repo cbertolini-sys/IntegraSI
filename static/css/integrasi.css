@@ -158,13 +158,31 @@ button {
   text-decoration: none;
   display: inline-block;
   text-align: center;
-  transition: background 0.15s ease;
+  /* Elevacao sutil: o "Entrar" da barra e o "Filtrar" da busca sao o mesmo
+     componente, e o mesmo botao, e precisam ler igual nas duas pontas da tela. */
+  box-shadow: 0 1px 2px rgba(4, 71, 124, 0.18), 0 2px 6px rgba(4, 71, 124, 0.12);
+  transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 }
 
 .botao:hover,
 button:hover {
   background: var(--azul-forte);
   color: var(--branco);
+  box-shadow: 0 2px 4px rgba(4, 71, 124, 0.22), 0 6px 14px rgba(4, 71, 124, 0.18);
+  transform: translateY(-1px);
+}
+
+.botao:active,
+button:active {
+  transform: none;
+  box-shadow: 0 1px 2px rgba(4, 71, 124, 0.2);
+}
+
+/* O contorno nao tem elevacao: ele e secundario, e sombra o poria no mesmo peso
+   do botao cheio. */
+.botao-linha,
+.botao-linha:hover {
+  box-shadow: none;
 }
 
 .botao-linha {
@@ -1183,4 +1201,219 @@ textarea:focus {
   margin: 0;
   color: var(--cinza);
   font-size: 0.9375rem;
+}
+
+/* =====================================================================
+   Vitrine — os últimos cursos publicados, no herói.
+   Substituiu o formulário de login: a primeira dobra da página pública
+   é do catálogo, e quem vem entrar tem o botão na barra.
+   ===================================================================== */
+
+.vitrine {
+  position: relative;
+}
+
+.vitrine-rotulo {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0 0 0.75rem;
+}
+
+.vitrine-palco {
+  position: relative;
+}
+
+.vitrine-slides {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+}
+
+/* Todos os slides ocupam a mesma célula da grade: a altura do palco é a do
+   maior cartão, e a troca não faz a página pular. */
+.vitrine-slide {
+  grid-area: 1 / 1;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(1.25rem);
+  transition: opacity 0.45s ease, transform 0.45s ease, visibility 0.45s;
+}
+
+.vitrine-slide.ativo {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+}
+
+/* Vidro leve sobre o gradiente, e não branco puro: o cartão flutua no azul em
+   vez de recortar um buraco nele. */
+.cartao-vitrine {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: var(--raio);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  padding: 1.75rem;
+  min-height: 15.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  box-shadow: 0 12px 32px rgba(10, 20, 45, 0.28);
+}
+
+.etiquetas-vitrine {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.marca-tema,
+.marca-formato {
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 0.25rem 0.6875rem;
+  line-height: 1.4;
+}
+
+.marca-tema {
+  background: rgba(56, 194, 194, 0.22);
+  color: #bff3f3;
+  border: 1px solid rgba(56, 194, 194, 0.4);
+}
+
+.marca-formato {
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.cartao-vitrine h3 {
+  font-family: var(--display);
+  font-size: 1.375rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  margin: 0;
+  color: var(--branco);
+  text-wrap: balance;
+}
+
+.resumo-vitrine {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.dados-vitrine {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.ver-mais {
+  margin-top: auto;
+  align-self: flex-start;
+  color: var(--branco);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.45);
+  padding-bottom: 2px;
+  transition: border-color 0.15s ease, gap 0.15s ease;
+}
+
+.ver-mais:hover {
+  border-bottom-color: var(--branco);
+}
+
+.vazio-vitrine {
+  min-height: 0;
+}
+
+/* ---------- controles ---------- */
+
+.seta {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  font-size: 1.5rem;
+  line-height: 1;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: var(--branco);
+  box-shadow: none;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.seta:hover {
+  background: rgba(255, 255, 255, 0.26);
+  color: var(--branco);
+  transform: translateY(-50%);
+  box-shadow: none;
+}
+
+.seta.anterior {
+  left: -1.125rem;
+}
+.seta.proxima {
+  right: -1.125rem;
+}
+
+.pontos {
+  display: flex;
+  justify-content: center;
+  gap: 0.4375rem;
+  margin-top: 1.125rem;
+}
+
+.ponto {
+  width: 0.5rem;
+  height: 0.5rem;
+  padding: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.32);
+  border: 0;
+  box-shadow: none;
+  transition: background 0.2s ease, width 0.2s ease;
+}
+
+.ponto:hover {
+  background: rgba(255, 255, 255, 0.55);
+  transform: none;
+  box-shadow: none;
+}
+
+/* O ativo vira um traço, e não um ponto maior: distingue sem crescer a linha. */
+.ponto.ativo {
+  width: 1.375rem;
+  background: var(--branco);
+}
+
+@media (max-width: 62rem) {
+  .seta {
+    display: none;
+  }
+}
+
+/* Sem movimento para quem pediu sem movimento: a troca fica instantânea e o
+   autoplay é desligado no JS. */
+@media (prefers-reduced-motion: reduce) {
+  .vitrine-slide {
+    transition: none;
+    transform: none;
+  }
 }
