@@ -271,3 +271,18 @@ def test_coordenador_leva_o_proprio_curso_do_rascunho_ao_catalogo(
 
     curso.refresh_from_db()
     assert curso.status == StatusCurso.PUBLICADO
+
+
+@pytest.mark.django_db
+def test_professor_colaborador_ve_o_curso(curso, outro_professor):
+    """Professor alocado na equipe de curso alheio enxerga o curso que produz."""
+    from apps.cursos.models import MembroEquipe
+
+    MembroEquipe.objects.create(curso=curso, pessoa=outro_professor)
+    assert permissions.pode_ver_curso(outro_professor, curso) is True
+
+
+@pytest.mark.django_db
+def test_professor_de_fora_nao_ve_o_curso(curso, outro_professor):
+    """Prende o outro lado: sem vinculo nenhum, professor nao entra em curso alheio."""
+    assert permissions.pode_ver_curso(outro_professor, curso) is False

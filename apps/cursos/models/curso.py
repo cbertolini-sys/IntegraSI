@@ -222,7 +222,7 @@ class Curso(models.Model):
             raise ValidationError(erros)
 
     def tem_membro(self, usuario):
-        return self.membros.filter(aluno=usuario).exists()
+        return self.membros.filter(pessoa=usuario).exists()
 
     @property
     def pronto_para_o_coordenador(self):

@@ -22,10 +22,16 @@ def pode_criar_curso(usuario):
 
 
 def pode_ver_curso(usuario, curso):
+    """Coordenacao ve tudo; os demais veem o curso que respondem ou que produzem.
+
+    O ramo do professor nao pode ser so `e_responsavel`: a partir do Plano 6 um
+    professor pode estar na equipe de um curso de outro (spec 10, professor
+    colaborador), e produzir sem enxergar nao existe.
+    """
     if usuario.e_coordenador:
         return True
-    if usuario.e_professor:
-        return e_responsavel(usuario, curso)
+    if e_responsavel(usuario, curso):
+        return True
     return curso.tem_membro(usuario)
 
 

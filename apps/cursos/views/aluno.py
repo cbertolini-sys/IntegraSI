@@ -16,7 +16,7 @@ from apps.cursos.views.upload import UUID_MODELO
 @login_required
 def meus_cursos(request):
     cursos = Curso.objects.filter(
-        Q(membros__aluno=request.user) | Q(professor_responsavel=request.user)
+        Q(membros__pessoa=request.user) | Q(professor_responsavel=request.user)
     ).distinct()
     return render(request, "cursos/meus_cursos.html", {"cursos": cursos})
 
@@ -26,10 +26,10 @@ def curso(request, pk):
     obj = get_object_or_404(Curso, pk=pk)
     permissions.garante(permissions.pode_ver_curso(request.user, obj), "Curso de outra equipe.")
     entregaveis = obj.entregaveis.all()
-    # select_related("aluno"): o template le membro.aluno.nome_completo para cada
+    # select_related("pessoa"): o template le membro.pessoa.nome_completo para cada
     # membro da equipe - sem isto, uma consulta a mais por membro (fila_revisao.html
     # ja faz isto certo).
-    membros = obj.membros.select_related("aluno")
+    membros = obj.membros.select_related("pessoa")
     return render(
         request,
         "cursos/curso.html",

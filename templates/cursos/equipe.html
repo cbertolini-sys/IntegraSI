@@ -17,7 +17,7 @@
     <div class="bloco">
       <h2>Na equipe</h2>
       <ul class="etiquetas">
-        {% for membro in curso.membros.all %}<li>{{ membro.aluno.nome_completo }}</li>{% empty %}<li>Equipe vazia.</li>{% endfor %}
+        {% for membro in curso.membros.all %}<li>{{ membro.pessoa.nome_completo }}</li>{% empty %}<li>Equipe vazia.</li>{% endfor %}
       </ul>
     </div>
 

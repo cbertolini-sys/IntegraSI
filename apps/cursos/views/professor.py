@@ -61,7 +61,7 @@ def equipe(request, pk):
         else:
             messages.success(
                 request,
-                f"{membro.aluno.nome_completo} entrou na equipe. "
+                f"{membro.pessoa.nome_completo} entrou na equipe. "
                 "Enviamos o convite de primeiro acesso por e-mail.",
             )
         return redirect("equipe", pk=curso.pk)

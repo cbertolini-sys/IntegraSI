@@ -61,13 +61,13 @@ def criar_curso(**dados):
 
 
 @transaction.atomic
-def adicionar_membro(curso, aluno, por):
-    """Vincula um aluno a equipe. O primeiro membro tira o curso do rascunho."""
+def adicionar_membro(curso, pessoa, por):
+    """Vincula alguem a equipe. O primeiro membro tira o curso do rascunho."""
     permissions.garante(
         permissions.pode_gerir_equipe(por, curso),
         "Somente o professor responsável monta a equipe.",
     )
-    membro = MembroEquipe.objects.create(curso=curso, aluno=aluno)
+    membro = MembroEquipe.objects.create(curso=curso, pessoa=pessoa)
     if curso.status == StatusCurso.RASCUNHO:
         curso.status = StatusCurso.EM_PRODUCAO
         # atualizado_em precisa estar na lista pelo mesmo motivo de
@@ -166,7 +166,7 @@ def _transicionar(curso, para, por, observacao=""):
 
 
 def _emails_da_equipe(curso):
-    return [m.aluno.email for m in curso.membros.select_related("aluno")]
+    return [m.pessoa.email for m in curso.membros.select_related("pessoa")]
 
 
 def _emails_dos_coordenadores():

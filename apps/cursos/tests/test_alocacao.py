@@ -13,10 +13,10 @@ def test_alocar_cria_a_conta_com_nome_e_email(curso, professor):
     membro = services.alocar_aluno(
         curso, nome="Joana Silva", email="joana@acad.ufsm.br", por=professor
     )
-    assert membro.aluno.nome_completo == "Joana Silva"
-    assert membro.aluno.papel == Usuario.ALUNO
-    assert membro.aluno.cpf is None
-    assert membro.aluno.perfil_completo is False
+    assert membro.pessoa.nome_completo == "Joana Silva"
+    assert membro.pessoa.papel == Usuario.ALUNO
+    assert membro.pessoa.cpf is None
+    assert membro.pessoa.perfil_completo is False
 
 
 @pytest.mark.django_db
@@ -38,7 +38,7 @@ def test_a_conta_nasce_sem_senha_utilizavel(curso, professor):
     membro = services.alocar_aluno(
         curso, nome="Joana Silva", email="joana@acad.ufsm.br", por=professor
     )
-    assert membro.aluno.has_usable_password() is False
+    assert membro.pessoa.has_usable_password() is False
 
 
 @pytest.mark.django_db
@@ -80,7 +80,7 @@ def test_qualquer_dominio_de_email_e_aceito(curso, professor):
     membro = services.alocar_aluno(
         curso, nome="Joana Silva", email="joana@gmail.com", por=professor
     )
-    assert membro.aluno.email == "joana@gmail.com"
+    assert membro.pessoa.email == "joana@gmail.com"
 
 
 @pytest.mark.django_db
@@ -149,7 +149,7 @@ def test_coordenador_tambem_aloca(curso, coordenador):
     membro = services.alocar_aluno(
         curso, nome="Joana Silva", email="joana@acad.ufsm.br", por=coordenador
     )
-    assert membro.aluno.email == "joana@acad.ufsm.br"
+    assert membro.pessoa.email == "joana@acad.ufsm.br"
 
 
 @pytest.mark.django_db

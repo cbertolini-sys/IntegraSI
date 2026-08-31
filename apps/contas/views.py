@@ -72,7 +72,7 @@ def _resumo(usuario):
     return [
         {
             "rotulo": "Cursos em que você produz",
-            "valor": Curso.objects.filter(membros__aluno=usuario).distinct().count(),
+            "valor": Curso.objects.filter(membros__pessoa=usuario).distinct().count(),
             "url": "meus_cursos",
         },
     ]
