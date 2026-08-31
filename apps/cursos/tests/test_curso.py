@@ -98,3 +98,20 @@ def test_identidade_omite_a_parte_que_falta(curso):
     curso.formato = ""
     curso.save()
     assert curso.identidade == "5º ano do Ensino Fundamental · 12h"
+
+
+@pytest.mark.django_db
+def test_entregaveis_saem_na_ordem_do_roteiro(dados_curso):
+    """Os rotulos sao numerados de A a E, e e nessa ordem que a tela deve mostra-los.
+
+    O `ordering` antigo era ["curso", "tipo"], que ordena pelo VALOR gravado
+    (CADERNO, CARDS, PLANO_ENSINO, SLIDES, VIDEOS) e nao pelo rotulo: a pagina do
+    curso exibia C, B, A, E, D. Assercao pela lista inteira, e nao pelo primeiro
+    item: com so o primeiro, trocar D com E passaria batido.
+    """
+    from apps.cursos import services
+
+    curso = services.criar_curso(**dados_curso)
+    rotulos = [e.get_tipo_display() for e in curso.entregaveis.all()]
+    assert [r[0] for r in rotulos] == ["A", "B", "C", "D", "E"]
+    assert rotulos == sorted(rotulos)

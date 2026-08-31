@@ -11,6 +11,39 @@ TAGS_PERMITIDAS = {
 }
 
 
+# A ordem em que o roteiro pede os entregaveis, que e a dos rotulos ("A - Plano de
+# Ensino", "B - Infograficos"...). Nao da para ordenar pela coluna `tipo`: ela guarda
+# o valor sem a letra e sem acento (CADERNO, CARDS, PLANO_ENSINO, SLIDES, VIDEOS), e
+# ordenar por ele exibia C, B, A, E, D na tela. Tambem nao da para ordenar pelo
+# rotulo, que nao existe no banco. O Case traduz um no outro dentro da consulta.
+#
+# Aplicado por um Manager, e NAO por Meta.ordering: expressao em Meta.ordering
+# rebenta assim que o modelo e alcancado por relacao (curso.entregaveis, um
+# prefetch, um filtro que atravessa a FK), porque o Django tenta prefixar a
+# expressao com o caminho do join e levanta "'Q' object has no attribute
+# 'prefix_references'". Foram 140 testes vermelhos ate isso ficar claro.
+ORDEM_DO_ROTEIRO = models.Case(
+    *[
+        models.When(tipo=valor, then=models.Value(posicao))
+        for posicao, valor in enumerate(TipoEntregavel.values)
+    ],
+    output_field=models.PositiveSmallIntegerField(),
+)
+
+
+class EntregavelManager(models.Manager):
+    """Entrega os entregaveis na ordem do roteiro, sempre.
+
+    No manager e nao em cada view: o Django monta o manager reverso
+    (`curso.entregaveis`) a partir desta classe, entao a ordem vale igual na pagina
+    do curso, na fila de revisao, na analise da coordenacao e em qualquer tela nova,
+    sem que ninguem precise lembrar de um order_by.
+    """
+
+    def get_queryset(self):
+        return super().get_queryset().order_by("curso", ORDEM_DO_ROTEIRO)
+
+
 class Entregavel(models.Model):
     """Um dos cinco pacotes obrigatorios do roteiro. E a unidade de revisao:
     o professor aprova ou devolve o entregavel, nunca item por item (spec 4.6)."""
@@ -31,6 +64,8 @@ class Entregavel(models.Model):
         verbose_name="aluno responsável",
     )
     atualizado_em = models.DateTimeField("atualizado em", auto_now=True)
+
+    objects = EntregavelManager()
 
     class Meta:
         verbose_name = "entregável"
