@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
 from apps.contas.forms import UsuarioChangeForm, UsuarioCreationForm
-from apps.contas.models import Usuario
+from apps.contas.models import ConviteAluno, Usuario
 
 
 def mascara_cpf(cpf):
@@ -54,3 +54,26 @@ class UsuarioAdmin(UserAdmin):
     @admin.display(description="CPF")
     def cpf_mascarado(self, obj):
         return mascara_cpf(obj.cpf)
+
+
+@admin.register(ConviteAluno)
+class ConviteAlunoAdmin(admin.ModelAdmin):
+    """Somente leitura: o convite nasce por `services.convidar` e morre por
+    `consumir_convite`. Editar o prazo ou marcar como usado pela mão contornaria
+    as duas regras que ele existe para ter -- uso único e sete dias.
+
+    Sem `readonly_fields`: com `has_change_permission` False o Django já renderiza
+    tudo em leitura e recusa o POST. Somar as duas coisas criaria o par
+    indistinguível que a CLAUDE.md descreve -- apagar a permissão sozinha deixaria
+    um teste ingênuo verde.
+    """
+
+    list_display = ["usuario", "criado_por", "criado_em", "expira_em", "usado_em"]
+    list_filter = ["usado_em"]
+    search_fields = ["usuario__nome_completo", "usuario__email"]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False

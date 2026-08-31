@@ -173,3 +173,7 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
         if "update_fields" not in kwargs:
             self.full_clean()
         super().save(*args, **kwargs)
+
+
+# Reexportado para que o resto do sistema importe de um lugar so.
+from apps.contas.models_convite import ConviteAluno  # noqa: E402,F401
