@@ -9,8 +9,10 @@
     <p class="apoio">Nenhum referencial escolhido. Escolha um acima para ver o que
        ele oferece, ou deixe em branco: curso sem referencial é normal.</p>
   {% elif not etapa %}
-    <p class="apoio">{{ referencial.nome }} organiza o que oferece por etapa escolar.
-       Defina o público escolar e a etapa para ver a lista.</p>
+    <p class="apoio"><strong>{{ referencial.nome }} organiza o que oferece por etapa
+       escolar.</strong> Marque <em>Tipo de público: escolar</em> e escolha a
+       <em>etapa ou ano</em>, nos campos acima: a lista aparece aqui assim que você
+       escolher.</p>
   {% else %}
     <p class="apoio">{{ referencial.nome }}: {{ rotulo }} de
        {{ etapa|etapa_legivel }}. Escolha de {{ referencial.min_competencias }} a

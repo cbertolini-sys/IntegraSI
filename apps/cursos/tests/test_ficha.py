@@ -297,12 +297,20 @@ def test_educacao_infantil_usa_o_termo_do_documento(
 def test_bloco_pede_a_etapa_quando_falta(client, proposta, professor, habilidades):
     """Referencial escolhido e curso sem etapa: a tela explica em vez de listar
     nada e deixar a pessoa achando que a BNCC nao tem conteudo."""
+    import re
+
     client.force_login(professor)
     html = client.get(
         reverse("ficha_habilidades", args=[proposta.pk]),
         {"referencial": habilidades.pk, "etapa_ano": ""},
     ).content.decode()
-    assert "por etapa escolar" in html
+    # Espaco normalizado: a frase e quebrada em varias linhas no template, e
+    # conferir o literal fazia o teste depender de onde a linha termina.
+    texto = " ".join(re.sub(r"<[^>]+>", " ", html).split())
+    assert "organiza o que oferece por etapa escolar" in texto
+    # Precisa dizer ONDE: a pessoa escolheu o referencial e os campos de publico
+    # ficam dois acima. Foi o relato de quem usou que trouxe esta frase.
+    assert "nos campos acima" in texto
 
 
 @pytest.mark.django_db
