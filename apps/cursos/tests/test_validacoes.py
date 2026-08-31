@@ -381,3 +381,65 @@ def test_curso_com_resumo_nao_tem_essa_pendencia(curso_criado):
     um `faltas.append` incondicional passaria no teste de cima."""
     assert curso_criado.resumo
     assert not any("resumo" in f.lower() for f in validacoes.dados_do_curso(curso_criado))
+
+
+# --- Referencial organizado por etapa exige etapa (Plano 7) ------------------
+
+
+@pytest.fixture
+def bncc_carregada(db):
+    from pathlib import Path
+
+    from django.conf import settings
+    from django.core.management import call_command
+
+    from apps.referenciais.models import Referencial
+
+    call_command("loaddata", "bncc_computacao", verbosity=0)
+    call_command(
+        "importar_competencias", referencial="BNCC-COMP",
+        csv=str(Path(settings.BASE_DIR) / "docs" / "dados" / "bncc_computacao_habilidades.csv"),
+        verbosity=0,
+    )
+    return Referencial.objects.get(sigla="BNCC-COMP")
+
+
+@pytest.mark.django_db
+def test_referencial_por_etapa_exige_etapa_do_curso(curso_criado, bncc_carregada):
+    """Spec 4.2: sem etapa, o curso fica com um referencial cujas habilidades
+    nenhuma tela consegue listar."""
+    from apps.cursos.choices import TipoPublico
+
+    curso_criado.referencial = bncc_carregada
+    curso_criado.tipo_publico = TipoPublico.COMUNITARIO
+    curso_criado.etapa_ano = ""
+    curso_criado.publico_descricao = "Grupo de convivência do bairro"
+    curso_criado.save()
+    faltas = validacoes.dados_do_curso(curso_criado)
+    assert any("etapa" in f.lower() for f in faltas)
+
+
+@pytest.mark.django_db
+def test_referencial_sem_competencias_nao_exige_etapa(curso_criado):
+    """Prende o outro lado, e prende a regra CERTA: a exigencia vem do dado, nao
+    da sigla. Um referencial recem-criado, sem CSV importado, nao pode travar
+    curso nenhum (spec 4.2: nenhuma tela pressupoe BNCC)."""
+    from apps.cursos.choices import TipoPublico
+    from apps.referenciais.models import Referencial
+
+    curso_criado.referencial = Referencial.objects.create(nome="Novo", sigla="NOVO")
+    curso_criado.tipo_publico = TipoPublico.COMUNITARIO
+    curso_criado.etapa_ano = ""
+    curso_criado.publico_descricao = "Grupo de convivência do bairro"
+    curso_criado.save()
+    assert not any("etapa" in f.lower() for f in validacoes.dados_do_curso(curso_criado))
+
+
+@pytest.mark.django_db
+def test_curso_escolar_com_etapa_nao_tem_essa_pendencia(curso_criado, bncc_carregada):
+    """Com etapa definida a cobranca some. Sem este par, um append incondicional
+    passaria no primeiro teste."""
+    curso_criado.referencial = bncc_carregada
+    curso_criado.save()
+    assert curso_criado.etapa_ano
+    assert not any("etapa escolar" in f for f in validacoes.dados_do_curso(curso_criado))

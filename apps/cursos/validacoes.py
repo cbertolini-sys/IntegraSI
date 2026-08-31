@@ -54,6 +54,14 @@ def dados_do_curso(curso):
     if not curso.formato:
         faltas.append("Informe o formato do curso.")
     if curso.referencial_id:
+        # A exigencia vem do DADO, e nao da sigla: nenhuma tela pode pressupor
+        # BNCC (spec 4.2). Referencial sem competencias carregadas nao trava curso
+        # nenhum, e um referencial futuro que nao separe por etapa tambem nao.
+        if curso.referencial.organiza_por_etapa and not curso.etapa_ano:
+            faltas.append(
+                f"{curso.referencial.nome} organiza o que oferece por etapa escolar: "
+                "defina o público escolar e a etapa, ou deixe o curso sem referencial."
+            )
         try:
             curso.referencial.valida_quantidade(curso.competencias.count())
         except ValidationError as erro:
