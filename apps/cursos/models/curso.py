@@ -181,9 +181,16 @@ class Curso(models.Model):
 
     @property
     def publico_alvo(self):
-        """Texto legível do público, seja etapa escolar ou grupo comunitário."""
+        """Texto legível do público, seja etapa escolar ou grupo comunitário.
+
+        No público comunitário cai para o rótulo do tipo quando não há descrição:
+        ela deixou de ser obrigatória, e o catálogo não pode ficar sem dizer para
+        quem o curso é, que a spec 4.3 chama de identidade do curso.
+        """
         if self.tipo_publico == TipoPublico.ESCOLAR:
             return self.get_etapa_ano_display()
+        if self.tipo_publico == TipoPublico.COMUNITARIO:
+            return self.publico_descricao or self.get_tipo_publico_display()
         return self.publico_descricao
 
     @property
@@ -231,16 +238,18 @@ class Curso(models.Model):
     def clean(self):
         super().clean()
         erros = {}
-        if self.tipo_publico == TipoPublico.ESCOLAR:
-            if not self.etapa_ano:
-                erros["etapa_ano"] = "Informe a etapa ou ano escolar."
-            if self.publico_descricao:
-                erros["publico_descricao"] = "Deixe vazio quando o público é escolar."
-        elif self.tipo_publico == TipoPublico.COMUNITARIO:
-            if not self.publico_descricao:
-                erros["publico_descricao"] = "Descreva o público da comunidade."
-            if self.etapa_ano:
-                erros["etapa_ano"] = "Deixe vazio quando o público é comunitário."
+        # A descricao do publico e livre em qualquer tipo: era proibida junto com a
+        # etapa e obrigatoria no comunitario, e as duas regras cairam a pedido de
+        # quem preenche. "5o ano" e "turmas da escola do campo" dizem mais juntos
+        # do que separados, e o catalogo nao fica sem publico porque
+        # `publico_alvo` cai para o tipo quando nao ha descricao.
+        #
+        # As regras da ETAPA continuam: e ela que liga o curso ao referencial
+        # organizado por etapa (spec 4.2).
+        if self.tipo_publico == TipoPublico.ESCOLAR and not self.etapa_ano:
+            erros["etapa_ano"] = "Informe a etapa ou ano escolar."
+        if self.tipo_publico == TipoPublico.COMUNITARIO and self.etapa_ano:
+            erros["etapa_ano"] = "Deixe vazio quando o público é comunitário."
         if self.professor_responsavel_id and not self.professor_responsavel.e_professor:
             erros["professor_responsavel"] = "O responsável precisa ter papel de professor."
         if erros:

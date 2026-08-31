@@ -19,18 +19,26 @@ def test_publico_escolar_exige_etapa(dados_curso):
 
 
 @pytest.mark.django_db
-def test_publico_escolar_nao_aceita_descricao_comunitaria(dados_curso):
-    dados_curso["publico_descricao"] = "Professores da rede"
-    with pytest.raises(ValidationError):
-        Curso.objects.create(**dados_curso)
+def test_publico_escolar_aceita_descricao_como_complemento(dados_curso):
+    """Regra invertida a pedido de quem preenche. A descricao era PROIBIDA junto
+    com a etapa; passou a ser complemento, porque "5o ano" e "turmas da escola do
+    campo" dizem mais juntos do que separados."""
+    dados_curso["publico_descricao"] = "Turmas da escola do campo"
+    curso = Curso.objects.create(**dados_curso)
+    assert curso.publico_descricao == "Turmas da escola do campo"
 
 
 @pytest.mark.django_db
-def test_publico_comunitario_exige_descricao(dados_curso):
+def test_publico_comunitario_nao_exige_descricao(dados_curso):
+    """A outra metade da mesma inversao: a descricao era OBRIGATORIA no
+    comunitario. O catalogo nao fica sem publico porque `publico_alvo` cai para o
+    rotulo do tipo, o que o teste confere junto: sem essa queda, a regra teria
+    sido trocada por um buraco."""
     dados_curso["tipo_publico"] = TipoPublico.COMUNITARIO
     dados_curso["etapa_ano"] = ""
-    with pytest.raises(ValidationError):
-        Curso.objects.create(**dados_curso)
+    curso = Curso.objects.create(**dados_curso)
+    assert curso.publico_descricao == ""
+    assert curso.publico_alvo == "Público da comunidade"
 
 
 @pytest.mark.django_db

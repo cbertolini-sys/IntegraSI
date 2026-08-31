@@ -3,6 +3,7 @@ from django.core.exceptions import ValidationError
 from django.forms.models import construct_instance
 
 from apps.cursos.arquivos import valida_upload
+from apps.cursos.choices import PALAVRAS_CHAVE_EXIGIDAS
 from apps.cursos.models import Anexo, Curso, Secao
 from apps.referenciais.choices import etapa_do_referencial
 
@@ -74,15 +75,74 @@ class AnexoForm(forms.ModelForm):
             self._update_errors(erro)
 
 
+class CaixasDePalavraChave(forms.MultiWidget):
+    """Uma caixa por palavra, em vez de uma linha com virgulas.
+
+    Deixa obvio quantas se espera e evita que alguem escreva uma frase inteira num
+    campo so, que e o que acontecia com o campo de texto livre.
+    """
+
+    def __init__(self, attrs=None):
+        entradas = [
+            forms.TextInput(attrs={"placeholder": f"palavra {i + 1}"})
+            for i in range(PALAVRAS_CHAVE_EXIGIDAS)
+        ]
+        super().__init__(entradas, attrs)
+
+    def decompress(self, value):
+        """Reparte o texto gravado de volta nas caixas, para a equipe nao ter de
+        reescrever tudo a cada edicao."""
+        partes = [p.strip() for p in (value or "").split(",") if p.strip()]
+        partes += [""] * PALAVRAS_CHAVE_EXIGIDAS
+        return partes[:PALAVRAS_CHAVE_EXIGIDAS]
+
+
+class PalavrasChaveField(forms.MultiValueField):
+    """Cinco caixas que gravam um texto so.
+
+    O campo do banco continua sendo um CharField unico porque e ele que alimenta
+    o `search_vector` do curso (spec 4.4); quebrar em cinco colunas obrigaria a
+    reescrever a busca para ganhar nada.
+
+    `required=False` de proposito: a obrigatoriedade das cinco e cobrada no portao
+    de completude, como todo o resto da ficha, para que a equipe possa salvar o
+    trabalho pela metade.
+    """
+
+    widget = CaixasDePalavraChave
+
+    def __init__(self, **kwargs):
+        campos = [
+            forms.CharField(required=False, max_length=50)
+            for _ in range(PALAVRAS_CHAVE_EXIGIDAS)
+        ]
+        kwargs.setdefault("required", False)
+        super().__init__(fields=campos, require_all_fields=False, **kwargs)
+
+    def compress(self, valores):
+        return ", ".join(v.strip() for v in (valores or []) if v and v.strip())
+
+
 class FichaCursoForm(forms.ModelForm):
+    palavras_chave = PalavrasChaveField(
+        label="palavras-chave",
+        help_text=(
+            f"{PALAVRAS_CHAVE_EXIGIDAS} palavras que ajudem a encontrar o curso na "
+            "busca. Podem ficar para depois; a lista de pendências cobra."
+        ),
+    )
+
     """A ficha que a equipe preenche depois da proposta (spec 4.3)."""
 
     class Meta:
         model = Curso
+        # A ordem e a da tela, pedida por quem preenche: o que descreve o curso
+        # primeiro, depois o publico, depois o referencial com as habilidades
+        # coladas nele, e os pre-requisitos por ultimo.
         fields = [
-            "titulo", "resumo", "tipo_publico", "etapa_ano", "publico_descricao",
-            "referencial", "competencias", "carga_horaria", "formato", "pre_requisitos",
-            "temas", "palavras_chave",
+            "titulo", "resumo", "palavras_chave", "temas", "carga_horaria", "formato",
+            "tipo_publico", "etapa_ano", "publico_descricao", "referencial",
+            "competencias", "pre_requisitos",
         ]
         widgets = {"resumo": forms.Textarea(attrs={"rows": 4})}
 

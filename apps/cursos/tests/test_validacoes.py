@@ -443,3 +443,78 @@ def test_curso_escolar_com_etapa_nao_tem_essa_pendencia(curso_criado, bncc_carre
     curso_criado.save()
     assert curso_criado.etapa_ano
     assert not any("etapa escolar" in f for f in validacoes.dados_do_curso(curso_criado))
+
+
+# --- Descricao do publico opcional e palavras-chave exigidas (a pedido) ------
+
+
+@pytest.mark.django_db
+def test_descricao_do_publico_e_livre_no_publico_escolar(curso_criado):
+    """Era proibida junto com a etapa. Passa a ser complemento: "5o ano" e "turmas
+    da escola do campo" dizem mais juntos do que separados."""
+    curso_criado.publico_descricao = "Turmas da escola do campo"
+    curso_criado.save()  # full_clean roda aqui; antes levantava ValidationError
+    assert curso_criado.publico_descricao
+
+
+@pytest.mark.django_db
+def test_curso_comunitario_sem_descricao_ainda_diz_para_quem_e(curso_criado):
+    """A descricao deixou de ser obrigatoria, e o catalogo nao pode ficar sem
+    dizer para quem o curso e: cai para o tipo de publico."""
+    from apps.cursos.choices import TipoPublico
+
+    curso_criado.tipo_publico = TipoPublico.COMUNITARIO
+    curso_criado.etapa_ano = ""
+    curso_criado.publico_descricao = ""
+    curso_criado.save()
+    assert curso_criado.publico_alvo == "Público da comunidade"
+    assert not any("público-alvo" in f for f in validacoes.dados_do_curso(curso_criado))
+
+
+@pytest.mark.django_db
+def test_descricao_preenchida_ganha_do_tipo(curso_criado):
+    """Prende o outro lado: com descricao, e ela que aparece, nao o rotulo generico."""
+    from apps.cursos.choices import TipoPublico
+
+    curso_criado.tipo_publico = TipoPublico.COMUNITARIO
+    curso_criado.etapa_ano = ""
+    curso_criado.publico_descricao = "Grupos de convivência do bairro"
+    curso_criado.save()
+    assert curso_criado.publico_alvo == "Grupos de convivência do bairro"
+
+
+@pytest.mark.django_db
+def test_publico_escolar_continua_exigindo_etapa(curso_criado):
+    """O que caiu foi a regra da DESCRICAO. A etapa continua obrigatoria no
+    publico escolar, e continua proibida no comunitario."""
+    from django.core.exceptions import ValidationError as ErroDeValidacao
+
+    from apps.cursos.choices import TipoPublico
+
+    curso_criado.etapa_ano = ""
+    with pytest.raises(ErroDeValidacao):
+        curso_criado.save()
+
+    curso_criado.refresh_from_db()
+    curso_criado.tipo_publico = TipoPublico.COMUNITARIO
+    with pytest.raises(ErroDeValidacao):
+        curso_criado.save()
+
+
+@pytest.mark.django_db
+def test_cinco_palavras_chave_sao_cobradas_no_portao(curso_criado):
+    """Cobrado no portao, e nao no formulario: a ficha salva pela metade de
+    proposito, e quem escreveu so o resumo nao pode perder o que digitou por nao
+    ter pensado em cinco palavras ainda."""
+    curso_criado.palavras_chave = "robotica, sucata"
+    curso_criado.save()
+    faltas = validacoes.dados_do_curso(curso_criado)
+    assert any("palavras-chave" in f for f in faltas)
+
+
+@pytest.mark.django_db
+def test_cinco_palavras_chave_completas_nao_sao_cobradas(curso_criado):
+    """Prende o outro lado: sem este par, um append incondicional passaria."""
+    curso_criado.palavras_chave = "robotica, sucata, reciclagem, motor, oficina"
+    curso_criado.save()
+    assert not any("palavras-chave" in f for f in validacoes.dados_do_curso(curso_criado))

@@ -1,6 +1,12 @@
 from django.core.exceptions import ValidationError
 
-from apps.cursos.choices import Rotulo, TipoEntregavel, TipoMidia, TipoPratica
+from apps.cursos.choices import (
+    PALAVRAS_CHAVE_EXIGIDAS,
+    Rotulo,
+    TipoEntregavel,
+    TipoMidia,
+    TipoPratica,
+)
 
 DURACAO_MINIMA = 5
 DURACAO_MAXIMA = 10
@@ -53,6 +59,15 @@ def dados_do_curso(curso):
         faltas.append("Informe a carga horária do curso.")
     if not curso.formato:
         faltas.append("Informe o formato do curso.")
+    # Cobrado aqui, e nao no formulario: a ficha salva pela metade de proposito, e
+    # quem escreveu so o resumo nao pode perder o que digitou por ainda nao ter
+    # pensado em cinco palavras.
+    palavras = [p for p in (curso.palavras_chave or "").split(",") if p.strip()]
+    if len(palavras) < PALAVRAS_CHAVE_EXIGIDAS:
+        faltas.append(
+            f"Informe as {PALAVRAS_CHAVE_EXIGIDAS} palavras-chave do curso; "
+            f"há {len(palavras)}."
+        )
     if curso.referencial_id:
         # A exigencia vem do DADO, e nao da sigla: nenhuma tela pode pressupor
         # BNCC (spec 4.2). Referencial sem competencias carregadas nao trava curso

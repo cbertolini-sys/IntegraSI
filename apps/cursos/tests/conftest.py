@@ -88,6 +88,10 @@ def dados_curso(edicao, professor):
         "etapa_ano": "EF05",
         "carga_horaria": 12,
         "formato": Formato.PRESENCIAL,
+        # Cinco de proposito: e o que o portao de completude exige, e esta fixture
+        # representa um curso COMPLETO. Com menos, todo teste que confere ausencia
+        # de pendencia falharia por um motivo que nada tem a ver com o que ele mede.
+        "palavras_chave": "pensamento computacional, algoritmo, desplugado, logica, oficina",
     }
 
 

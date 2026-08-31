@@ -61,3 +61,9 @@ class TipoPratica(models.TextChoices):
 # services.py, porque permissions.py precisa dele e nao pode importar services
 # (services importa permissions, e o ciclo fecharia).
 STATUS_EDITAVEIS = (StatusCurso.RASCUNHO, StatusCurso.EM_PRODUCAO, StatusCurso.DEVOLVIDO)
+
+
+# Quantas palavras-chave o curso precisa ter para ir ao catalogo. Vive aqui, e nao
+# em validacoes.py, porque o formulario tambem precisa dela para desenhar as
+# caixas, e choices.py nao importa nada do app.
+PALAVRAS_CHAVE_EXIGIDAS = 5

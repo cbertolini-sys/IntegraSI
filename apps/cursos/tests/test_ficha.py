@@ -371,8 +371,11 @@ def test_bloco_fica_colado_ao_campo_de_referencial(client, proposta, professor, 
     html = client.get(reverse("ficha", args=[proposta.pk])).content.decode()
     posicao_referencial = html.index('id="id_referencial"')
     posicao_bloco = html.index('id="habilidades"')
-    posicao_carga = html.index('id="id_carga_horaria"')
-    assert posicao_referencial < posicao_bloco < posicao_carga
+    # Pre-requisitos e o campo seguinte na ordem da tela; carga horaria passou a
+    # vir antes do referencial, e prender o bloco a ela deixaria de dizer
+    # "colado ao referencial" e passaria a dizer "em algum lugar depois".
+    posicao_seguinte = html.index('id="id_pre_requisitos"')
+    assert posicao_referencial < posicao_bloco < posicao_seguinte
 
 
 @pytest.mark.django_db
@@ -410,3 +413,66 @@ def test_escolher_nenhum_esvazia_o_bloco(client, proposta, professor, habilidade
     ).content.decode()
     assert "Nenhum referencial escolhido" in html
     assert "EF05CO01" not in html
+
+
+@pytest.mark.django_db
+def test_ficha_oferece_cinco_caixas_de_palavra_chave(client, proposta, professor):
+    """Cinco caixas, e nao uma linha com virgulas: deixa obvio quantas se espera e
+    evita que alguem escreva uma frase inteira num campo so."""
+    import re
+
+    client.force_login(professor)
+    html = client.get(reverse("ficha", args=[proposta.pk])).content.decode()
+    caixas = re.findall(r'name="palavras_chave_\d"', html)
+    assert len(caixas) == 5
+
+
+@pytest.mark.django_db
+def test_as_cinco_caixas_viram_um_texto_so(proposta, professor):
+    """O campo do banco continua sendo um texto, porque e ele que alimenta a busca."""
+    from apps.cursos import services
+    from apps.cursos.forms import FichaCursoForm
+
+    dados = ficha_valida()
+    dados.pop("palavras_chave", None)
+    for i, palavra in enumerate(["robotica", "sucata", "reciclagem", "motor", "oficina"]):
+        dados[f"palavras_chave_{i}"] = palavra
+    form = FichaCursoForm(dados, instance=proposta)
+    assert form.is_valid() is True, form.errors
+    services.atualizar_ficha(proposta, form.cleaned_data, por=professor)
+    proposta.refresh_from_db()
+    assert proposta.palavras_chave == "robotica, sucata, reciclagem, motor, oficina"
+
+
+@pytest.mark.django_db
+def test_caixas_voltam_preenchidas_ao_reabrir(proposta, professor):
+    """Ida e volta: o texto gravado precisa se repartir de volta nas cinco caixas,
+    senao a equipe reescreve tudo a cada edicao."""
+    from apps.cursos.forms import FichaCursoForm
+
+    import re
+
+    proposta.palavras_chave = "robotica, sucata, reciclagem, motor, oficina"
+    proposta.save()
+    form = FichaCursoForm(instance=proposta)
+    # O HTML renderizado, e nao BoundField.value(): este devolve o texto gravado
+    # cru, porque quem reparte e o widget, na hora de desenhar. O que interessa e
+    # o que a pessoa ve nas caixas.
+    caixas = re.findall(r'name="palavras_chave_\d"[^>]*value="([^"]*)"', str(form["palavras_chave"]))
+    assert caixas == ["robotica", "sucata", "reciclagem", "motor", "oficina"]
+
+
+@pytest.mark.django_db
+def test_caixas_vazias_nao_inventam_virgulas(proposta, professor):
+    """Prende o outro lado do reparte: ficha sem palavra nenhuma nao pode gravar
+    uma sequencia de virgulas, que a busca indexaria como lixo."""
+    from apps.cursos import services
+    from apps.cursos.forms import FichaCursoForm
+
+    dados = ficha_valida()
+    dados.pop("palavras_chave", None)
+    form = FichaCursoForm(dados, instance=proposta)
+    assert form.is_valid() is True, form.errors
+    services.atualizar_ficha(proposta, form.cleaned_data, por=professor)
+    proposta.refresh_from_db()
+    assert proposta.palavras_chave == ""
