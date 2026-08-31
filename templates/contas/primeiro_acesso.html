@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block titulo %}Primeiro acesso &mdash; IntegraSI{% endblock %}
+
+{% block conteudo %}
+<div class="trabalho">
+  <div class="faixa pagina-estreita">
+    <h1>Bem-vindo ao IntegraSI</h1>
+    <p class="abertura">Olá, {{ convite.usuario.nome_completo }}. Crie sua senha e
+       complete o cadastro para começar a produzir.</p>
+    <div class="cartao">
+      {% if form.non_field_errors %}
+        <p class="erro-acesso">{{ form.non_field_errors|join:" " }}</p>
+      {% endif %}
+      <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="botao-largo">Criar senha e entrar</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

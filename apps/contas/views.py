@@ -1,7 +1,13 @@
+from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
+from django.core.exceptions import ValidationError
+from django.shortcuts import redirect, render
+from django.views.decorators.http import require_http_methods
 
 from apps.catalogo.models import Solicitacao
+from apps.contas import services
+from apps.contas.forms_convite import PrimeiroAcessoForm
+from apps.contas.models import ConviteAluno
 from apps.cursos.choices import StatusCurso, StatusEntregavel
 from apps.cursos.models import Curso
 from apps.turmas.models import Turma
@@ -74,3 +80,36 @@ def _resumo(usuario):
 @login_required
 def painel(request):
     return render(request, "painel.html", {"resumo": _resumo(request.user)})
+
+
+@require_http_methods(["GET", "POST"])
+def primeiro_acesso(request, token):
+    """Tela do convite: cria a senha e completa o cadastro.
+
+    Aberta sem login de proposito -- quem chega aqui ainda nao tem senha. O token
+    e a credencial, e `consumir_convite` e quem confere se ele ainda vale.
+    """
+    convite = ConviteAluno.objects.filter(token=token).first()
+    if convite is None or not convite.valido:
+        return render(request, "contas/convite_invalido.html")
+
+    form = PrimeiroAcessoForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        try:
+            usuario = services.consumir_convite(
+                token,
+                senha=form.cleaned_data["senha"],
+                cpf=form.cleaned_data["cpf"],
+                matricula=form.cleaned_data["matricula"],
+                telefone=form.cleaned_data["telefone"],
+            )
+        except ValidationError as erro:
+            for mensagem in erro.messages:
+                form.add_error(None, mensagem)
+        else:
+            login(request, usuario, backend="django.contrib.auth.backends.ModelBackend")
+            return redirect("painel")
+
+    return render(
+        request, "contas/primeiro_acesso.html", {"form": form, "convite": convite}
+    )
