@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-{% load estaticos %}
 {% block titulo %} &mdash; Sobre o sistema{% endblock %}
 
 {% block topo %}
@@ -73,7 +72,7 @@
 
       <article class="fluxo">
         <div class="fluxo-texto">
-          <p class="fluxo-quem">Comunidade</p>
+          <p class="fluxo-quem" style="color:#0e6a6a">Comunidade</p>
           <h3>Escola ou grupo que quer receber um curso</h3>
           <p>
             Navega o catálogo sem conta, filtra pelo que interessa e abre a página
@@ -86,17 +85,77 @@
             ao sistema</strong> e não acompanha o andamento por dentro.
           </p>
         </div>
-        <figure class="fluxo-desenho">
-          <img src="{% estatico 'img/fluxos/01-comunidade.svg' %}"
-               alt="Fluxo da comunidade: navega o catálogo, filtra, abre o curso,
-                    preenche o formulário de solicitação, o pedido é validado e gravado,
-                    a coordenação e o professor são avisados por e-mail.">
-        </figure>
+
+        <ol class="fluxograma comunidade">
+          <li class="etapa limite">
+            <span class="etapa-marca" aria-hidden="true"></span>
+            <div class="etapa-corpo"><h4>Chega ao catálogo público</h4>
+              <p>Sem login e sem cadastro.</p></div>
+          </li>
+          <li class="etapa">
+            <span class="etapa-marca" aria-hidden="true"></span>
+            <div class="etapa-corpo"><h4>Filtra a busca</h4>
+              <p>Por etapa escolar, tema, formato ou referencial pedagógico.</p></div>
+          </li>
+          <li class="etapa decisao">
+            <span class="etapa-marca" aria-hidden="true"></span>
+            <div class="etapa-corpo">
+              <h4>Encontrou um curso adequado?</h4>
+              <div class="ramos">
+                <div class="ramo nao"><span class="ramo-rotulo">Não</span>
+                  <p>Ajusta os filtros e procura de novo.</p>
+                  <span class="volta">volta ao passo 2</span></div>
+                <div class="ramo sim"><span class="ramo-rotulo">Sim</span>
+                  <p>Abre a página do curso.</p></div>
+              </div>
+            </div>
+          </li>
+          <li class="etapa">
+            <span class="etapa-marca" aria-hidden="true"></span>
+            <div class="etapa-corpo"><h4>Lê a ficha do curso</h4>
+              <p>Ementa, público-alvo, carga horária, formato e se a turma precisa
+                 de computador.</p></div>
+          </li>
+          <li class="etapa">
+            <span class="etapa-marca" aria-hidden="true"></span>
+            <div class="etapa-corpo"><h4>Preenche a solicitação</h4>
+              <p>Contato, instituição, número de participantes e período pretendido.</p></div>
+          </li>
+          <li class="etapa decisao">
+            <span class="etapa-marca" aria-hidden="true"></span>
+            <div class="etapa-corpo">
+              <h4>O pedido passa na validação?</h4>
+              <div class="ramos">
+                <div class="ramo nao"><span class="ramo-rotulo">Não</span>
+                  <p>Campo faltando, texto longo demais ou limite de pedidos por hora
+                     atingido.</p>
+                  <span class="volta">volta ao passo 5</span></div>
+                <div class="ramo sim"><span class="ramo-rotulo">Sim</span>
+                  <p>O pedido é gravado.</p></div>
+              </div>
+            </div>
+          </li>
+          <li class="etapa sistema">
+            <span class="etapa-marca" aria-hidden="true"></span>
+            <div class="etapa-corpo"><h4>Solicitação registrada</h4>
+              <p>Situação <strong>Recebida</strong>, aguardando resposta da coordenação.</p></div>
+          </li>
+          <li class="etapa sistema">
+            <span class="etapa-marca" aria-hidden="true"></span>
+            <div class="etapa-corpo"><h4>Aviso por e-mail</h4>
+              <p>O professor responsável e a coordenação são notificados.</p></div>
+          </li>
+          <li class="etapa limite">
+            <span class="etapa-marca" aria-hidden="true"></span>
+            <div class="etapa-corpo"><h4>Aguarda o contato</h4>
+              <p>A resposta vem por e-mail. Não há conta para acompanhar por dentro.</p></div>
+          </li>
+        </ol>
       </article>
 
       <article class="fluxo">
         <div class="fluxo-texto">
-          <p class="fluxo-quem">Coordenação</p>
+          <p class="fluxo-quem" style="color:#055695">Coordenação</p>
           <h3>Quem decide o que entra no catálogo</h3>
           <p>
             O painel abre com as contagens do que espera decisão. São quatro frentes:
@@ -107,43 +166,155 @@
           <p>
             Aceitar uma solicitação é o que cria uma turma: a coordenação designa o
             professor, a data, o local e as vagas, e o solicitante é avisado.
-            Publicar, despublicar e abrir nova versão também são decisões daqui.
           </p>
         </div>
-        <figure class="fluxo-desenho">
-          <img src="{% estatico 'img/fluxos/02-coordenacao.svg' %}"
-               alt="Fluxo da coordenação: entra no sistema, vê o painel, e decide entre
-                    aprovar cursos da fila, responder solicitações criando turmas,
-                    gerir o catálogo ou promover professores.">
-        </figure>
+
+        <ol class="fluxograma coordenacao">
+          <li class="etapa limite">
+            <span class="etapa-marca" aria-hidden="true"></span>
+            <div class="etapa-corpo"><h4>Entra com e-mail institucional</h4></div>
+          </li>
+          <li class="etapa">
+            <span class="etapa-marca" aria-hidden="true"></span>
+            <div class="etapa-corpo"><h4>Painel</h4>
+              <p>Quanto espera decisão em cada frente: cursos na fila, solicitações
+                 a responder, cursos no catálogo, turmas agendadas.</p></div>
+          </li>
+          <li class="etapa decisao">
+            <span class="etapa-marca" aria-hidden="true"></span>
+            <div class="etapa-corpo">
+              <h4>Curso submetido pelo professor</h4>
+              <p>Chega aqui só com os cinco entregáveis já aprovados.</p>
+              <div class="ramos">
+                <div class="ramo sim"><span class="ramo-rotulo">Publica</span>
+                  <p>O curso entra no catálogo público e passa a receber solicitações.</p></div>
+                <div class="ramo nao"><span class="ramo-rotulo">Devolve</span>
+                  <p>Volta ao professor com o motivo registrado no histórico.</p></div>
+              </div>
+            </div>
+          </li>
+          <li class="etapa decisao">
+            <span class="etapa-marca" aria-hidden="true"></span>
+            <div class="etapa-corpo">
+              <h4>Solicitação da comunidade</h4>
+              <div class="ramos">
+                <div class="ramo sim"><span class="ramo-rotulo">Aceita</span>
+                  <p>Designa professor, data, local e vagas. Nasce a turma, e quem
+                     pediu é avisado.</p></div>
+                <div class="ramo nao"><span class="ramo-rotulo">Recusa</span>
+                  <p>Escreve a resposta; ela vai por e-mail a quem pediu.</p></div>
+              </div>
+            </div>
+          </li>
+          <li class="etapa">
+            <span class="etapa-marca" aria-hidden="true"></span>
+            <div class="etapa-corpo"><h4>Cuida do catálogo</h4>
+              <p>Despublica um curso desatualizado, republica o que foi retirado, ou
+                 abre nova versão sem tirar a atual do ar.</p></div>
+          </li>
+          <li class="etapa">
+            <span class="etapa-marca" aria-hidden="true"></span>
+            <div class="etapa-corpo"><h4>Administra pessoas</h4>
+              <p>Promove um professor a coordenador ou retira esse acesso. Ninguém
+                 rebaixa a si mesmo.</p></div>
+          </li>
+          <li class="etapa limite">
+            <span class="etapa-marca" aria-hidden="true"></span>
+            <div class="etapa-corpo"><h4>Catálogo em dia</h4>
+              <p>Cada decisão fica no histórico do curso, com autor e data.</p></div>
+          </li>
+        </ol>
       </article>
 
       <article class="fluxo">
         <div class="fluxo-texto">
-          <p class="fluxo-quem">Professor</p>
+          <p class="fluxo-quem" style="color:#5a3ea9">Professor</p>
           <h3>Quem propõe o curso e responde por ele</h3>
           <p>
             Cria a proposta e aloca a equipe informando apenas nome e e-mail de cada
-            estudante — o sistema envia o convite de primeiro acesso. A partir daí o
-            curso está em produção.
+            estudante — o sistema envia o convite de primeiro acesso.
           </p>
           <p>
             A revisão é entregável por entregável: ler as seções, conferir os anexos
             e as pendências do roteiro, e então aprovar ou devolver com um comentário
-            que diz o que falta. Com os cinco aprovados, submete à coordenação.
+            que diz o que falta.
           </p>
         </div>
-        <figure class="fluxo-desenho">
-          <img src="{% estatico 'img/fluxos/03-professor.svg' %}"
-               alt="Fluxo do professor: cria a proposta, aloca estudantes por nome e
-                    e-mail, revisa cada entregável aprovando ou devolvendo, e submete o
-                    curso à coordenação quando os cinco estão aprovados.">
-        </figure>
+
+        <ol class="fluxograma professor">
+          <li class="etapa limite">
+            <span class="etapa-marca" aria-hidden="true"></span>
+            <div class="etapa-corpo"><h4>Entra no sistema</h4></div>
+          </li>
+          <li class="etapa">
+            <span class="etapa-marca" aria-hidden="true"></span>
+            <div class="etapa-corpo"><h4>Cria a proposta</h4>
+              <p>Título, resumo, público-alvo, carga horária, formato e temas.</p></div>
+          </li>
+          <li class="etapa sistema">
+            <span class="etapa-marca" aria-hidden="true"></span>
+            <div class="etapa-corpo"><h4>Curso em rascunho</h4>
+              <p>Nasce com os cinco entregáveis do roteiro: plano de ensino, cards,
+                 caderno de exercícios, vídeo-aulas e slides.</p></div>
+          </li>
+          <li class="etapa">
+            <span class="etapa-marca" aria-hidden="true"></span>
+            <div class="etapa-corpo"><h4>Aloca os estudantes</h4>
+              <p>Informa apenas nome e e-mail de cada um.</p></div>
+          </li>
+          <li class="etapa sistema">
+            <span class="etapa-marca" aria-hidden="true"></span>
+            <div class="etapa-corpo"><h4>Convites enviados</h4>
+              <p>Cada estudante recebe um link de primeiro acesso. O curso passa a
+                 <strong>Em produção</strong>.</p></div>
+          </li>
+          <li class="etapa">
+            <span class="etapa-marca" aria-hidden="true"></span>
+            <div class="etapa-corpo"><h4>Fila de revisão</h4>
+              <p>O que a equipe enviou, esperando decisão.</p></div>
+          </li>
+          <li class="etapa">
+            <span class="etapa-marca" aria-hidden="true"></span>
+            <div class="etapa-corpo"><h4>Analisa o entregável</h4>
+              <p>Lê as seções, confere os anexos e a lista de pendências do roteiro.</p></div>
+          </li>
+          <li class="etapa decisao">
+            <span class="etapa-marca" aria-hidden="true"></span>
+            <div class="etapa-corpo">
+              <h4>Atende ao que o roteiro pede?</h4>
+              <div class="ramos">
+                <div class="ramo nao"><span class="ramo-rotulo">Não</span>
+                  <p>Devolve com um comentário dizendo o que falta.</p>
+                  <span class="volta">volta ao passo 6</span></div>
+                <div class="ramo sim"><span class="ramo-rotulo">Sim</span>
+                  <p>Aprova o entregável.</p></div>
+              </div>
+            </div>
+          </li>
+          <li class="etapa decisao">
+            <span class="etapa-marca" aria-hidden="true"></span>
+            <div class="etapa-corpo">
+              <h4>Os cinco estão aprovados?</h4>
+              <div class="ramos">
+                <div class="ramo nao"><span class="ramo-rotulo">Não</span>
+                  <p>Segue revisando o que falta.</p>
+                  <span class="volta">volta ao passo 6</span></div>
+                <div class="ramo sim"><span class="ramo-rotulo">Sim</span>
+                  <p>Submete o curso à coordenação.</p></div>
+              </div>
+            </div>
+          </li>
+          <li class="etapa limite">
+            <span class="etapa-marca" aria-hidden="true"></span>
+            <div class="etapa-corpo"><h4>Aguarda a publicação</h4>
+              <p>A decisão de levar ao catálogo é da coordenação.</p></div>
+          </li>
+        </ol>
       </article>
 
       <article class="fluxo">
         <div class="fluxo-texto">
-          <p class="fluxo-quem">Estudante de Sistemas de Informação</p>
+          <p class="fluxo-quem" style="color:#1b6b42">Estudante de Sistemas de Informação</p>
           <h3>Quem produz o material</h3>
           <p>
             Entra pelo convite que o professor enviou: cria a senha e completa o
@@ -152,24 +323,89 @@
           </p>
           <p>
             Escreve as seções e anexa o material — vídeo de até 1 GB, com envio que
-            retoma de onde parou se a conexão cair. Ao enviar para revisão, o
-            entregável congela; devolvido, volta a ser editável com o comentário do
-            professor à vista.
+            retoma de onde parou se a conexão cair.
           </p>
           <p class="nota-fluxo">
-            O trabalho do estudante termina na aprovação. <strong>Data e local da
-            turma são combinados pela coordenação</strong> com quem solicitou — a
-            equipe de produção não participa dessa etapa nem a acompanha pelo sistema.
+            O trabalho termina na aprovação. <strong>Data e local da turma são
+            combinados pela coordenação</strong> com quem solicitou — a equipe de
+            produção não participa dessa etapa nem a acompanha pelo sistema.
           </p>
         </div>
-        <figure class="fluxo-desenho">
-          <img src="{% estatico 'img/fluxos/04-estudante.svg' %}"
-               alt="Fluxo do estudante: recebe o convite, cria a senha e completa o
-                    cadastro, produz as seções e anexos, envia para revisão, corrige o
-                    que for devolvido, até a aprovação.">
-        </figure>
+
+        <ol class="fluxograma estudante">
+          <li class="etapa limite">
+            <span class="etapa-marca" aria-hidden="true"></span>
+            <div class="etapa-corpo"><h4>Recebe o convite por e-mail</h4>
+              <p>Enviado pelo professor ao alocar a equipe.</p></div>
+          </li>
+          <li class="etapa decisao">
+            <span class="etapa-marca" aria-hidden="true"></span>
+            <div class="etapa-corpo">
+              <h4>O link ainda vale?</h4>
+              <p>Sete dias, uso único.</p>
+              <div class="ramos">
+                <div class="ramo nao"><span class="ramo-rotulo">Não</span>
+                  <p>Pede ao professor que envie outro; o anterior é cancelado.</p>
+                  <span class="volta">volta ao passo 1</span></div>
+                <div class="ramo sim"><span class="ramo-rotulo">Sim</span>
+                  <p>Abre a tela de primeiro acesso.</p></div>
+              </div>
+            </div>
+          </li>
+          <li class="etapa">
+            <span class="etapa-marca" aria-hidden="true"></span>
+            <div class="etapa-corpo"><h4>Completa o cadastro</h4>
+              <p>Cria a senha e informa CPF, matrícula e telefone.</p></div>
+          </li>
+          <li class="etapa">
+            <span class="etapa-marca" aria-hidden="true"></span>
+            <div class="etapa-corpo"><h4>Escolhe o entregável</h4>
+              <p>Em <em>Meus cursos</em>, abre aquele em que vai trabalhar.</p></div>
+          </li>
+          <li class="etapa">
+            <span class="etapa-marca" aria-hidden="true"></span>
+            <div class="etapa-corpo"><h4>Produz o material</h4>
+              <p>Escreve as seções e anexa arquivos. Vídeo de até 1 GB, com envio
+                 que retoma se a conexão cair.</p></div>
+          </li>
+          <li class="etapa decisao">
+            <span class="etapa-marca" aria-hidden="true"></span>
+            <div class="etapa-corpo">
+              <h4>As pendências do roteiro foram resolvidas?</h4>
+              <div class="ramos">
+                <div class="ramo nao"><span class="ramo-rotulo">Não</span>
+                  <p>A tela lista o que ainda falta.</p>
+                  <span class="volta">volta ao passo 5</span></div>
+                <div class="ramo sim"><span class="ramo-rotulo">Sim</span>
+                  <p>Envia para a revisão do professor.</p></div>
+              </div>
+            </div>
+          </li>
+          <li class="etapa sistema">
+            <span class="etapa-marca" aria-hidden="true"></span>
+            <div class="etapa-corpo"><h4>Em revisão</h4>
+              <p>A edição congela enquanto o professor analisa.</p></div>
+          </li>
+          <li class="etapa decisao">
+            <span class="etapa-marca" aria-hidden="true"></span>
+            <div class="etapa-corpo">
+              <h4>Decisão do professor</h4>
+              <div class="ramos">
+                <div class="ramo nao"><span class="ramo-rotulo">Devolvido</span>
+                  <p>O comentário fica à vista e a edição reabre.</p>
+                  <span class="volta">volta ao passo 5</span></div>
+                <div class="ramo sim"><span class="ramo-rotulo">Aprovado</span>
+                  <p>O entregável está pronto.</p></div>
+              </div>
+            </div>
+          </li>
+          <li class="etapa limite">
+            <span class="etapa-marca" aria-hidden="true"></span>
+            <div class="etapa-corpo"><h4>Trabalho concluído</h4>
+              <p>Com os cinco aprovados, o professor submete o curso à coordenação.</p></div>
+          </li>
+        </ol>
       </article>
-    </section>
 
     <section class="bloco-sobre chamada-sobre">
       <h2>Quer um destes cursos na sua escola?</h2>

@@ -1526,13 +1526,9 @@ textarea:focus {
   }
 }
 
+
 /* =====================================================================
    Página "Sobre" — o que o sistema é e como cada papel o percorre.
-
-   Os fluxogramas são SVG estático gerado de `docs/fluxos/*.mmd` por
-   `deploy/gerar-fluxogramas.sh`. Não carregamos o Mermaid no navegador:
-   são 3,2 MB para quatro diagramas que nunca mudam, e este sistema é
-   feito para escolas com conexão ruim.
    ===================================================================== */
 
 .pagina-sobre {
@@ -1563,7 +1559,6 @@ textarea:focus {
 .destaque-sobre {
   font-size: 1.25rem !important;
   line-height: 1.55;
-  color: var(--texto);
   font-weight: 500;
   border-left: 3px solid var(--ciano);
   padding-left: 1.25rem;
@@ -1598,7 +1593,223 @@ textarea:focus {
   color: var(--cinza);
 }
 
-/* ---------- os quatro fluxos ---------- */
+/* ---------------------------------------------------------------------
+   Fluxograma em HTML e CSS.
+
+   Trilho vertical, e não um grafo desenhado: os quatro fluxos têm doze a
+   quinze passos e voltas atrás. Um grafo de verdade em CSS só caberia numa
+   tela larga e viraria sopa no celular. Aqui a ordem é a da leitura — de
+   cima para baixo, sempre —, os desvios de decisão abrem em dois ramos lado
+   a lado, e o retorno é dito em palavras em vez de desenhado.
+
+   É `<ol>` de propósito: a sequência é o conteúdo, e o leitor de tela
+   anuncia "item 3 de 12" sem precisar de nada a mais.
+   --------------------------------------------------------------------- */
+
+.fluxograma {
+  --acento: var(--azul);
+  --acento-fraco: var(--azul-suave);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0;
+  counter-reset: passo;
+}
+
+/* Cada fluxo tem sua cor, para que as quatro seções se distingam de relance
+   ao rolar a página. */
+.fluxograma.comunidade {
+  --acento: #0e6a6a;
+  --acento-fraco: #e4f7f7;
+}
+.fluxograma.coordenacao {
+  --acento: var(--azul);
+  --acento-fraco: var(--azul-suave);
+}
+.fluxograma.professor {
+  --acento: #5a3ea9;
+  --acento-fraco: #f1ecfb;
+}
+.fluxograma.estudante {
+  --acento: #1b6b42;
+  --acento-fraco: #e9f7ef;
+}
+
+.etapa {
+  position: relative;
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr);
+  gap: 0 1rem;
+  padding-bottom: 1.75rem;
+}
+
+/* O conector é uma linha atrás da coluna dos marcadores, e não um elemento
+   entre os passos: assim ele acompanha a altura real do bloco, que muda com o
+   texto, sem ninguém calcular nada. */
+.etapa::before {
+  content: "";
+  position: absolute;
+  left: 1.0625rem;
+  top: 2.25rem;
+  bottom: 0;
+  width: 2px;
+  background: var(--linha);
+}
+
+.etapa:last-child {
+  padding-bottom: 0;
+}
+
+.etapa:last-child::before {
+  display: none;
+}
+
+.etapa-marca {
+  grid-row: 1 / -1;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-family: var(--dado);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  background: var(--acento-fraco);
+  color: var(--acento);
+  border: 1.5px solid var(--acento);
+  position: relative;
+  z-index: 1;
+}
+
+.etapa-marca::before {
+  counter-increment: passo;
+  content: counter(passo);
+}
+
+/* Início e fim não são passos numerados: são estados. */
+.etapa.limite .etapa-marca {
+  background: var(--acento);
+  color: var(--branco);
+}
+
+.etapa.limite .etapa-marca::before {
+  content: "●";
+  font-size: 0.625rem;
+}
+
+.etapa-corpo {
+  background: var(--branco);
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+  padding: 0.875rem 1.125rem;
+  min-width: 0;
+}
+
+.etapa-corpo h4 {
+  font-family: var(--display);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.35;
+  margin: 0;
+  color: var(--texto);
+}
+
+.etapa-corpo p {
+  margin: 0.375rem 0 0;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--cinza);
+}
+
+/* Marca o que o sistema faz sozinho: e-mail enfileirado, estado gravado. */
+.etapa.sistema .etapa-corpo {
+  background: var(--nevoa);
+  border-style: dashed;
+}
+
+.etapa.sistema .etapa-marca::before {
+  content: "⚙";
+  font-size: 0.75rem;
+}
+
+/* ---- decisão e seus dois ramos ---- */
+
+.etapa.decisao .etapa-corpo {
+  border-color: var(--acento);
+  border-left-width: 3px;
+  background: var(--acento-fraco);
+}
+
+.etapa.decisao .etapa-marca::before {
+  content: "?";
+  font-size: 0.9375rem;
+}
+
+.ramos {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.875rem;
+  /* Lado a lado quando cabe, empilhados quando não. `min(100%, 13rem)` é o que
+     impede a coluna de forçar rolagem horizontal em tela estreita. */
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+}
+
+.ramo {
+  background: var(--branco);
+  border: 1px solid var(--linha);
+  border-radius: var(--raio-p);
+  padding: 0.75rem 0.875rem;
+}
+
+.ramo-rotulo {
+  display: inline-block;
+  font-family: var(--dado);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  padding: 0.125rem 0.5rem;
+  margin-bottom: 0.375rem;
+}
+
+.ramo.sim .ramo-rotulo {
+  background: #e9f7ef;
+  color: #1b6b42;
+}
+
+.ramo.nao .ramo-rotulo {
+  background: #fdeeea;
+  color: #9a3d18;
+}
+
+.ramo p {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--cinza);
+}
+
+/* O retorno é dito, não desenhado: uma seta curva subindo doze passos seria
+   ilegível na vertical e impossível no celular. */
+.volta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-top: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--acento);
+}
+
+.volta::before {
+  content: "↺";
+  font-size: 1rem;
+  line-height: 1;
+}
+
+/* ---- o bloco de cada fluxo ---- */
 
 .fluxo {
   display: grid;
@@ -1614,11 +1825,11 @@ textarea:focus {
 
 @media (min-width: 62rem) {
   .fluxo {
-    grid-template-columns: minmax(0, 23rem) minmax(0, 1fr);
-    gap: 3rem;
+    grid-template-columns: minmax(0, 22rem) minmax(0, 1fr);
+    gap: 3.5rem;
   }
-  /* O texto acompanha o diagrama enquanto ele rola: os fluxogramas são altos, e
-     sem isto a explicação sai da tela antes de o desenho terminar. */
+  /* O texto acompanha o fluxograma enquanto ele rola: são doze a quinze passos,
+     e sem isto a explicação sai da tela antes do desenho terminar. */
   .fluxo-texto {
     position: sticky;
     top: 5.5rem;
@@ -1630,7 +1841,7 @@ textarea:focus {
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--ciano);
+  color: var(--acento, var(--ciano));
   margin: 0 0 0.375rem;
 }
 
@@ -1656,25 +1867,6 @@ textarea:focus {
   padding: 0.875rem 1rem;
   color: var(--azul-forte) !important;
   margin-top: 1.25rem !important;
-}
-
-.fluxo-desenho {
-  margin: 0;
-  background: var(--branco);
-  border: 1px solid var(--linha);
-  border-radius: var(--raio);
-  padding: 1.5rem;
-  box-shadow: var(--sombra);
-  /* Diagrama largo rola dentro do próprio quadro; a página nunca rola na
-     horizontal por causa dele. */
-  overflow-x: auto;
-}
-
-.fluxo-desenho img {
-  display: block;
-  width: 100%;
-  min-width: 18rem;
-  height: auto;
 }
 
 .chamada-sobre {
