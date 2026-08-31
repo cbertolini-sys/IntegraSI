@@ -534,7 +534,12 @@ No Django Admin é exibido mascarado na listagem e visível apenas na ficha da p
 acessível só ao coordenador. Nenhuma tela de aluno ou de professor mostra o CPF de
 outra pessoa.
 
-**Os dados de terceiros** — solicitantes externos e participantes de turma — Consequências: aviso de finalidade no formulário público, acesso restrito ao
+**Os dados de terceiros** — solicitantes externos e participantes de turma — entram
+sem que a pessoa tenha, ou venha a ter, conta no sistema: quem preenche o
+formulário público apenas avisa que tem interesse num curso, e não ganha acesso a
+nada por isso. Ela não consegue entrar, não acompanha o andamento do próprio
+pedido por dentro, e não tem como corrigir ou apagar o que informou.
+Consequências: aviso de finalidade no formulário público, acesso restrito ao
 professor da turma e ao coordenador, e retenção declarada. O formulário público é a
 única porta anônima que escreve no banco — recebe validação estrita, limite de
 tamanho de texto, *honeypot* e limite por IP, sem CAPTCHA de terceiro.
