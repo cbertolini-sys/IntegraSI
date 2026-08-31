@@ -28,7 +28,24 @@
     <div class="cartao">
       <form method="post">
         {% csrf_token %}
-        {{ form.as_p }}
+        {% comment %}
+          Campo a campo em vez de form.as_p: `competencias` sai do formulario e
+          vira o bloco do referencial, que o HTMX troca sozinho quando muda o
+          referencial ou a etapa. Um select com 120 habilidades de todas as
+          etapas nao serve para ninguem.
+        {% endcomment %}
+        {% for campo in form %}
+          {% if campo.name != "competencias" %}
+            <p>{{ campo.label_tag }} {{ campo }}
+               {% if campo.errors %}<span class="erro">{{ campo.errors }}</span>{% endif %}
+               {% if campo.help_text %}<span class="apoio">{{ campo.help_text }}</span>{% endif %}
+            </p>
+          {% endif %}
+        {% endfor %}
+        {% if form.errors.competencias %}
+          <p class="erro">{{ form.errors.competencias }}</p>
+        {% endif %}
+        {% include "cursos/_habilidades.html" %}
         <button type="submit" class="botao-largo">Salvar ficha</button>
       </form>
     </div>

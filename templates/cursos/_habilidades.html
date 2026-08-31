@@ -1,0 +1,37 @@
+{% load referenciais %}
+<div id="habilidades"
+     hx-get="{% url 'ficha_habilidades' curso.pk %}"
+     hx-trigger="change from:#id_referencial, change from:#id_etapa_ano"
+     hx-include="#id_referencial, #id_etapa_ano"
+     hx-target="#habilidades"
+     hx-swap="outerHTML">
+  {% if not referencial %}
+    <p class="apoio">Nenhum referencial escolhido. Escolha um acima para ver o que
+       ele oferece, ou deixe em branco: curso sem referencial é normal.</p>
+  {% elif not etapa %}
+    <p class="apoio">{{ referencial.nome }} organiza o que oferece por etapa escolar.
+       Defina o público escolar e a etapa para ver a lista.</p>
+  {% else %}
+    <p class="apoio">{{ referencial.nome }}: {{ rotulo }} de
+       {{ etapa|etapa_legivel }}. Escolha de {{ referencial.min_competencias }} a
+       {{ referencial.max_competencias }}.</p>
+    {% for grupo in grupos %}
+      <fieldset class="grupo-habilidades">
+        <legend {% if grupo.categoria.descricao %}title="{{ grupo.categoria.descricao }}"{% endif %}>{{ grupo.categoria.nome }}</legend>
+        {% for item in grupo.itens %}
+          <label class="habilidade">
+            <input type="checkbox" name="competencias" value="{{ item.pk }}"
+                   {% if item.pk in escolhidas %}checked{% endif %}>
+            <span class="codigo">{{ item.codigo }}</span>
+            {% if item.objeto_conhecimento %}
+              <span class="objeto">{{ item.objeto_conhecimento }}</span>
+            {% endif %}
+            <span class="texto">{{ item.descricao }}</span>
+          </label>
+        {% endfor %}
+      </fieldset>
+    {% empty %}
+      <p class="apoio">Nada cadastrado para esta etapa ainda.</p>
+    {% endfor %}
+  {% endif %}
+</div>

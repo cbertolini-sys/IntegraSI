@@ -201,3 +201,151 @@ def test_aluno_da_equipe_define_tema_pela_ficha(proposta, professor, aluno):
     tema = Tema.objects.create(nome="Pensamento Computacional")
     services.atualizar_ficha(proposta, ficha_valida(temas=[tema.pk]), por=aluno)
     assert proposta.temas.count() == 1
+
+
+# --- O bloco de habilidades do referencial (Plano 7) -------------------------
+
+
+@pytest.fixture
+def bncc(db):
+    from django.core.management import call_command
+    from apps.referenciais.models import Referencial
+
+    call_command("loaddata", "bncc_computacao", verbosity=0)
+    return Referencial.objects.get(sigla="BNCC-COMP")
+
+
+@pytest.fixture
+def habilidades(bncc):
+    from pathlib import Path
+
+    from django.conf import settings
+    from django.core.management import call_command
+
+    call_command(
+        "importar_competencias", referencial="BNCC-COMP",
+        csv=str(Path(settings.BASE_DIR) / "docs" / "dados" / "bncc_computacao_habilidades.csv"),
+        verbosity=0,
+    )
+    return bncc
+
+
+@pytest.mark.django_db
+def test_bloco_de_habilidades_nao_existe_sem_referencial(client, proposta, professor):
+    """Spec 4.2: campo vazio de um referencial que nao foi adotado e ruido."""
+    client.force_login(professor)
+    html = client.get(reverse("ficha", args=[proposta.pk])).content.decode()
+    assert 'id="habilidades"' in html
+    assert "Nenhum referencial escolhido" in html
+
+
+@pytest.mark.django_db
+def test_bloco_lista_so_as_habilidades_da_etapa(client, proposta, professor, habilidades):
+    client.force_login(professor)
+    html = client.get(
+        reverse("ficha_habilidades", args=[proposta.pk]),
+        {"referencial": habilidades.pk, "etapa_ano": "EF05"},
+    ).content.decode()
+    assert "EF05CO01" in html
+    assert "EF01CO01" not in html
+
+
+@pytest.mark.django_db
+def test_bloco_do_ensino_medio_aceita_qualquer_um_dos_tres_anos(
+    client, proposta, professor, habilidades
+):
+    """As habilidades do Medio valem para os tres anos de uma vez (spec 4.2)."""
+    client.force_login(professor)
+    for ano in ("EM01", "EM02", "EM03"):
+        html = client.get(
+            reverse("ficha_habilidades", args=[proposta.pk]),
+            {"referencial": habilidades.pk, "etapa_ano": ano},
+        ).content.decode()
+        assert "EM13CO01" in html, ano
+
+
+@pytest.mark.django_db
+def test_educacao_infantil_usa_o_termo_do_documento(
+    client, proposta, professor, habilidades
+):
+    """O documento diz "objetivo de aprendizagem" na Infantil e "habilidade" do
+    1o ano em diante; a tela usa o termo da etapa (spec 4.2)."""
+    import re
+
+    client.force_login(professor)
+
+    def frase(etapa):
+        """So o texto que a pessoa le. A palavra "habilidades" tambem aparece no
+        id do bloco e na url do HTMX, que sao estrutura: procurar no HTML inteiro
+        confundiria as duas coisas e o teste falharia por motivo errado."""
+        html = client.get(
+            reverse("ficha_habilidades", args=[proposta.pk]),
+            {"referencial": habilidades.pk, "etapa_ano": etapa},
+        ).content.decode()
+        return re.search(r'<p class="apoio">(.*?)</p>', html, re.S).group(1)
+
+    infantil = frase("EI")
+    assert "objetivos de aprendizagem" in infantil
+    assert "habilidades" not in infantil
+
+    quinto = frase("EF05")
+    assert "habilidades" in quinto
+    assert "objetivos de aprendizagem" not in quinto
+
+
+@pytest.mark.django_db
+def test_bloco_pede_a_etapa_quando_falta(client, proposta, professor, habilidades):
+    """Referencial escolhido e curso sem etapa: a tela explica em vez de listar
+    nada e deixar a pessoa achando que a BNCC nao tem conteudo."""
+    client.force_login(professor)
+    html = client.get(
+        reverse("ficha_habilidades", args=[proposta.pk]),
+        {"referencial": habilidades.pk, "etapa_ano": ""},
+    ).content.decode()
+    assert "por etapa escolar" in html
+
+
+@pytest.mark.django_db
+def test_get_do_bloco_recusa_quem_nao_e_da_equipe(client, proposta, outro_aluno, habilidades):
+    """A guarda da view do bloco, isolada: e um GET e ela responde sozinha.
+    Sem ela, qualquer pessoa logada leria a ficha de qualquer curso por esta url."""
+    client.force_login(outro_aluno)
+    resposta = client.get(
+        reverse("ficha_habilidades", args=[proposta.pk]),
+        {"referencial": habilidades.pk, "etapa_ano": "EF05"},
+    )
+    assert resposta.status_code == 403
+
+
+@pytest.mark.django_db
+def test_habilidade_de_outra_etapa_e_recusada(proposta, habilidades):
+    """A tela filtra, mas um POST forjado nao passa pela tela. A regra fica no
+    formulario, onde tem mensagem e teste."""
+    from apps.cursos.forms import FichaCursoForm
+
+    de_outra_etapa = habilidades.competencias.filter(etapa="EI").first()
+    form = FichaCursoForm(
+        ficha_valida(
+            etapa_ano="EF05", referencial=habilidades.pk,
+            competencias=[de_outra_etapa.pk],
+        ),
+        instance=proposta,
+    )
+    assert form.is_valid() is False
+    assert "competencias" in form.errors
+
+
+@pytest.mark.django_db
+def test_habilidade_da_etapa_certa_e_aceita(proposta, habilidades):
+    """Prende o outro lado: sem este par, um `raise` incondicional passaria."""
+    from apps.cursos.forms import FichaCursoForm
+
+    da_etapa = list(habilidades.competencias.filter(etapa="EF05")[:2])
+    form = FichaCursoForm(
+        ficha_valida(
+            etapa_ano="EF05", referencial=habilidades.pk,
+            competencias=[c.pk for c in da_etapa],
+        ),
+        instance=proposta,
+    )
+    assert form.is_valid() is True, form.errors

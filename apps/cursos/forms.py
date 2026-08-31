@@ -4,6 +4,7 @@ from django.forms.models import construct_instance
 
 from apps.cursos.arquivos import valida_upload
 from apps.cursos.models import Anexo, Curso, Secao
+from apps.referenciais.choices import etapa_do_referencial
 
 
 class SecaoForm(forms.ModelForm):
@@ -98,5 +99,16 @@ class FichaCursoForm(forms.ModelForm):
             codigos = ", ".join(c.codigo for c in fora)
             raise ValidationError(
                 {"competencias": f"Estas competências não são do referencial escolhido: {codigos}."}
+            )
+        # Regra separada da de cima de proposito: sao duas (referencial errado,
+        # etapa errada), e junta-las num `if` so faria uma delas nunca ser
+        # exercitada sozinha. A tela ja filtra, mas um POST forjado nao passa
+        # pela tela.
+        etapa = etapa_do_referencial(dados.get("etapa_ano"))
+        fora_da_etapa = [c for c in competencias if etapa and c.etapa != etapa]
+        if fora_da_etapa:
+            codigos = ", ".join(c.codigo for c in fora_da_etapa)
+            raise ValidationError(
+                {"competencias": f"Estas não são da etapa escolhida: {codigos}."}
             )
         return dados

@@ -52,11 +52,57 @@ def ficha(request, pk):
         services.atualizar_ficha(curso, form.cleaned_data, por=request.user)
         messages.success(request, "Ficha do curso atualizada.")
         return redirect("curso", pk=curso.pk)
-    return render(
-        request,
-        "cursos/ficha.html",
-        {"curso": curso, "form": form, "pendencias": validacoes.dados_do_curso(curso)},
+    contexto = {"curso": curso, "form": form, "pendencias": validacoes.dados_do_curso(curso)}
+    contexto.update(contexto_das_habilidades(request, curso))
+    return render(request, "cursos/ficha.html", contexto)
+
+
+def contexto_das_habilidades(request, curso):
+    """Monta o bloco a partir do que a tela tem AGORA, e nao do que esta gravado:
+    a pessoa acabou de trocar o select e ainda nao salvou.
+
+    O agrupamento e sequencial e depende de a ordenacao trazer as competencias de
+    uma mesma categoria juntas, o que Competencia.Meta.ordering garante enquanto a
+    ordem do CSV seguir o documento (teste em test_bncc.py).
+    """
+    from apps.referenciais.choices import etapa_do_referencial, rotulo_da_competencia
+    from apps.referenciais.models import Referencial
+
+    referencial_id = request.GET.get("referencial") or curso.referencial_id
+    etapa_ano = request.GET["etapa_ano"] if "etapa_ano" in request.GET else curso.etapa_ano
+    referencial = Referencial.objects.filter(pk=referencial_id or 0).first()
+    etapa = etapa_do_referencial(etapa_ano)
+
+    grupos = []
+    if referencial and etapa:
+        for competencia in referencial.competencias.filter(etapa=etapa).select_related("categoria"):
+            if not grupos or grupos[-1]["categoria"] != competencia.categoria:
+                grupos.append({"categoria": competencia.categoria, "itens": []})
+            grupos[-1]["itens"].append(competencia)
+    return {
+        "curso": curso,
+        "referencial": referencial,
+        "etapa": etapa,
+        "grupos": grupos,
+        "rotulo": rotulo_da_competencia(etapa, plural=True),
+        "escolhidas": set(curso.competencias.values_list("pk", flat=True)),
+    }
+
+
+@login_required
+def ficha_habilidades(request, pk):
+    """O bloco de habilidades da ficha, trocado por HTMX quando muda o
+    referencial ou a etapa.
+
+    Guarda propria: e um GET, e ela responde sozinha. Sem ela, qualquer pessoa
+    logada leria a ficha de qualquer curso por esta url.
+    """
+    curso = get_object_or_404(Curso, pk=pk)
+    permissions.garante(
+        permissions.pode_editar_ficha(request.user, curso),
+        "Somente a equipe do curso edita a ficha, e apenas enquanto ele está em produção.",
     )
+    return render(request, "cursos/_habilidades.html", contexto_das_habilidades(request, curso))
 
 
 @login_required
