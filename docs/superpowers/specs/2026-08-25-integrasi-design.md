@@ -140,9 +140,17 @@ professores, que produzem material como qualquer membro. O campo se chama
 `pessoa`, e não `aluno`, porque chamar de `aluno` uma coluna que guarda professor
 é mentira de esquema, e mentira de esquema cobra juros.
 
-O professor responsável **não** entra como membro: ele já está no curso por
-`professor_responsavel`, e figurar nos dois lugares o contaria duas vezes em
-toda listagem de equipe.
+**O professor responsável é membro da equipe como qualquer outro.** Ser
+responsável é formalidade, e o que ela atribui é o papel de revisar o curso; não
+dispensa ninguém de produzir. Ele entra na equipe no ato da criação, e as
+listagens o mostram uma vez só, com a marca de responsável ao lado do nome.
+
+Entrar na equipe na criação **não** tira o curso de `RASCUNHO`: a proposta sem
+mais ninguém continua sendo uma proposta. O curso passa a `EM_PRODUCAO` quando o
+primeiro outro membro é alocado, que é quando de fato há equipe (§5).
+
+O responsável não pode ser removido da equipe: sem ele o curso ficaria sem quem
+revisa. Trocar de responsável é outro ato, e está fora do escopo deste plano.
 
 Remover alguém da equipe é ato do professor responsável (ou do coordenador) e
 **tira o acesso, não apaga o trabalho**: anexo, seção e revisão registram quem fez
@@ -551,9 +559,14 @@ espalhadas em `if` de template.
   deles. Não publica, não mexe em curso alheio, não vê participantes de turma alheia.
 - **Professor colaborador**: professor alocado na equipe de um curso que não é o
   seu. Enxerga o curso e produz material como qualquer membro, mas **não aprova nem
-  devolve entregável desse curso e não mexe na equipe**. Quem revisa continua sendo o
-  professor responsável, ou o coordenador. Escrever o material e aprovar o material
-  não podem ser o mesmo ato da mesma pessoa.
+  devolve entregável desse curso e não mexe na equipe**. Quem revisa é o professor
+  responsável, ou o coordenador.
+- **Professor responsável**: produz e revisa. Ele é membro da equipe (§4.1), e a
+  responsabilidade é o papel formal de quem decide sobre os entregáveis. A
+  consequência fica dita: ele pode aprovar material que ele mesmo escreveu, e o
+  sistema não tenta impedir. Quem responde pelo curso perante a coordenação é ele,
+  e uma regra que o proibisse de aprovar travaria o curso sempre que a equipe fosse
+  pequena.
 - **Ficha do curso** (título, resumo, público-alvo, carga horária, formato,
   referencial, competências, temas): editam qualquer membro da equipe, o professor
   responsável e o coordenador, e **só enquanto o curso está em produção**. Curso
@@ -685,8 +698,11 @@ Decidido deliberadamente, para não inflar a entrega:
 | Público-alvo obrigatório em todo curso, conferido no portão e não na criação | É a identidade do curso e o filtro principal do catálogo, mas quem o conhece é a equipe que estudou o assunto |
 | Proposta criada só com o título | O professor abre o trabalho; inventar ficha antes do estudo produz número que ninguém revisa depois |
 | Uma lista de equipe para aluno e professor, campo `pessoa` | Dois modelos paralelos dobrariam cada checagem de permissão, e guarda duplicada não se distingue por teste |
-| Professor da equipe produz mas não aprova | Produzir e aprovar o mesmo material pela mesma pessoa não deixa rastro de que houve revisão |
+| Professor colaborador produz mas não aprova | Aprovação é do responsável; colaborador entra para produzir, não para decidir |
+| O responsável é membro da equipe e revisa | Ser responsável é formalidade que atribui a revisão; equipe pequena travaria se quem produz não pudesse aprovar |
+| Entrar na equipe na criação não tira o curso de `RASCUNHO` | Proposta com uma pessoa só ainda é proposta; senão o estado nasceria morto e nunca seria observado |
 | Remover da equipe tira acesso e preserva a autoria do que foi feito | Trabalho entregue é fato histórico; desfazer o vínculo não desfaz quem escreveu |
+| O responsável não pode ser removido da equipe | Sem ele o curso fica sem quem revisa; trocar de responsável é outro ato |
 | Upload de vídeo até 1 GB, retomável, em vez de link externo | Decisão do responsável pelo projeto; material fica sob guarda da universidade |
 | Entrega de arquivo via `X-Accel-Redirect` | 1 GB pelo processo Python derruba o servidor |
 | Fila de e-mail em tabela + cron, sem Celery | Um serviço a menos para manter; SMTP fora do ar não pode travar aprovação |
