@@ -51,6 +51,17 @@ def criar_curso(**dados):
         permissions.pode_criar_curso(dados.get("professor_responsavel")),
         "Somente professor cria curso.",
     )
+    if "edicao" not in dados:
+        # Import adiado, como abrir_nova_versao ja faz neste arquivo.
+        from apps.edicoes.models import Edicao
+
+        corrente = Edicao.objects.corrente()
+        if corrente is None:
+            raise ValidationError(
+                "Nenhuma edição da disciplina está aberta. Peça à coordenação para "
+                "abrir a edição corrente antes de propor um curso."
+            )
+        dados["edicao"] = corrente
     curso = Curso.objects.create(**dados)
     for tipo in TipoEntregavel:
         entregavel = Entregavel.objects.create(curso=curso, tipo=tipo)

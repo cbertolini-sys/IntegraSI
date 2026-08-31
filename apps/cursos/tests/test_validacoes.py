@@ -363,3 +363,21 @@ def test_link_nao_conta_como_slides(curso_criado, aluno):
         url="https://exemplo.org/slides", enviado_por=aluno,
     )
     assert validacoes.pendencias(slides) == ["Anexe ao menos um arquivo de slides."]
+
+
+@pytest.mark.django_db
+def test_resumo_vazio_e_pendencia_do_curso(curso_criado):
+    """O resumo deixou de ser obrigatorio na criacao (Plano 6), entao alguem
+    precisa cobra-lo antes do catalogo. O portao e onde isso mora."""
+    curso_criado.resumo = ""
+    curso_criado.save()
+    faltas = validacoes.dados_do_curso(curso_criado)
+    assert any("resumo" in f.lower() for f in faltas)
+
+
+@pytest.mark.django_db
+def test_curso_com_resumo_nao_tem_essa_pendencia(curso_criado):
+    """Prende o outro lado: com resumo preenchido a cobranca some. Sem este par,
+    um `faltas.append` incondicional passaria no teste de cima."""
+    assert curso_criado.resumo
+    assert not any("resumo" in f.lower() for f in validacoes.dados_do_curso(curso_criado))

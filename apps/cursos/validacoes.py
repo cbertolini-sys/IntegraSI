@@ -45,6 +45,8 @@ def dados_do_curso(curso):
     chama esta funcao na submissao ao coordenador: o curso pode ser editado depois do
     plano aprovado, entao a mesma checagem precisa rodar de novo la fora."""
     faltas = []
+    if not (curso.resumo or "").strip():
+        faltas.append("Escreva o resumo do curso.")
     if not curso.publico_alvo:
         faltas.append("Defina o público-alvo do curso.")
     if not curso.carga_horaria:

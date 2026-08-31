@@ -4,15 +4,19 @@ from django.urls import reverse
 
 from apps.cursos import services
 from apps.cursos.choices import StatusEntregavel, TipoEntregavel, TipoMidia, TipoPublico
-from apps.cursos.forms import CursoForm
+from apps.cursos.forms import PropostaForm
 from apps.cursos.models import Anexo, Curso, Tema
 
 
-def test_curso_form_nao_inclui_competencias():
-    # Competencias depende do referencial escolhido e e editada depois que o curso
-    # ja existe (docs/onde-mora-a-validacao.md); resolver isso no mesmo formulario
-    # exigiria campo dependente em JavaScript, que este projeto nao usa.
-    assert "competencias" not in CursoForm().fields
+def test_proposta_pede_so_o_titulo():
+    """Spec 4.3: a criacao pede o titulo e mais nada.
+
+    Assercao por lista exata, e nao por `"x" not in fields`: listar o conteudo faz
+    qualquer campo novo aparecer aqui, e pedir mais alguma coisa na criacao passa a
+    ser decisao deliberada em vez de acrescimo silencioso. A versao anterior deste
+    teste conferia so a ausencia de `competencias`, e teria ficado verde com o
+    formulario inteiro de volta."""
+    assert list(PropostaForm().fields) == ["titulo"]
 
 
 @pytest.fixture
@@ -32,50 +36,47 @@ def slides_em_revisao(dados_curso, aluno, arquivo_qualquer):
 def test_professor_cria_proposta(client, professor, edicao):
     client.force_login(professor)
     resposta = client.post(
-        reverse("nova_proposta"),
-        {
-            "titulo": "Robotica com sucata",
-            "resumo": "Oficina de robotica de baixo custo.",
-            "edicao": edicao.pk,
-            "tipo_publico": TipoPublico.ESCOLAR,
-            "etapa_ano": "EF09",
-            "publico_descricao": "",
-            "carga_horaria": 8,
-            "formato": "PRESENCIAL",
-            "palavras_chave": "robotica, sucata",
-        },
-        follow=True,
+        reverse("nova_proposta"), {"titulo": "Robotica com sucata"}, follow=True
     )
     assert resposta.status_code == 200
     curso = Curso.objects.get(titulo="Robotica com sucata")
     assert curso.professor_responsavel == professor
+    assert curso.edicao == edicao
     assert curso.entregaveis.count() == 5
 
 
 @pytest.mark.django_db
-def test_professor_cria_proposta_com_temas(client, professor, edicao):
-    tema1 = Tema.objects.create(nome="Robotica Educacional")
-    tema2 = Tema.objects.create(nome="Pensamento Computacional")
+def test_criacao_ignora_campos_de_ficha_enviados_no_post(client, professor, edicao):
+    """O formulario de criacao tem um campo so, entao o que vier alem dele no POST
+    nao pode entrar. Prende a porta pelo lado de fora: alguem que reintroduzisse
+    `resumo` em PropostaForm quebraria este teste alem do da lista de campos."""
     client.force_login(professor)
-    resposta = client.post(
+    client.post(
         reverse("nova_proposta"),
-        {
-            "titulo": "Curso com temas associados",
-            "resumo": "Resumo qualquer para o curso de teste.",
-            "edicao": edicao.pk,
-            "tipo_publico": TipoPublico.ESCOLAR,
-            "etapa_ano": "EF09",
-            "publico_descricao": "",
-            "carga_horaria": 8,
-            "formato": "PRESENCIAL",
-            "palavras_chave": "",
-            "temas": [tema1.pk, tema2.pk],
-        },
+        {"titulo": "So o titulo", "resumo": "Nao deveria entrar", "carga_horaria": 8},
         follow=True,
     )
-    assert resposta.status_code == 200
-    curso = Curso.objects.get(titulo="Curso com temas associados")
-    assert set(curso.temas.values_list("pk", flat=True)) == {tema1.pk, tema2.pk}
+    curso = Curso.objects.get(titulo="So o titulo")
+    assert curso.resumo == ""
+    assert curso.carga_horaria is None
+
+
+@pytest.mark.django_db
+def test_temas_nao_sao_definidos_na_criacao(client, professor, edicao):
+    """Ate o Plano 6 esta tela associava temas. Agora eles moram na ficha, junto
+    com o resto do que a equipe preenche, e a criacao os ignora.
+
+    A cobertura de "definir tema associa e reindexa" nao se perdeu: ela vive em
+    test_ficha.py, do lado onde a regra passou a valer."""
+    tema = Tema.objects.create(nome="Robotica Educacional")
+    client.force_login(professor)
+    client.post(
+        reverse("nova_proposta"),
+        {"titulo": "Curso sem temas", "temas": [tema.pk]},
+        follow=True,
+    )
+    curso = Curso.objects.get(titulo="Curso sem temas")
+    assert curso.temas.count() == 0
 
 
 @pytest.mark.django_db

@@ -7,7 +7,7 @@ from django.views.decorators.http import require_POST, require_http_methods
 from apps.contas.models import Usuario
 from apps.cursos import permissions, services, validacoes
 from apps.cursos.choices import StatusEntregavel
-from apps.cursos.forms import CursoForm
+from apps.cursos.forms import PropostaForm
 from apps.cursos.models import Curso, Entregavel
 
 
@@ -20,22 +20,20 @@ def nova_proposta(request):
     permissions.garante(
         permissions.pode_criar_curso(request.user), "Somente professor cria proposta de curso."
     )
-    form = CursoForm(request.POST or None)
+    form = PropostaForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
-        dados = dict(form.cleaned_data)
-        temas = dados.pop("temas", [])
-        curso = services.criar_curso(professor_responsavel=request.user, **dados)
-        # services.definir_temas, nao curso.temas.set() direto: alem de checar
-        # permissao, e quem reindexa vetor_temas (Task 4). Escrever a M2M aqui na
-        # mao deixava todo curso proposto com tema por esta tela invisivel na
-        # busca por tema ate alguem, por coincidencia, renomear um dos temas pelo
-        # Admin - achado da revisao do Task 4. A checagem de permissao dentro do
-        # servico e redundante aqui (quem propos o curso e sempre o responsavel),
-        # mas concentrar a escrita num lugar so e o que evita a proxima tela
-        # repetir o mesmo esquecimento.
-        services.definir_temas(curso, temas, por=request.user)
-        messages.success(request, "Proposta criada. Monte a equipe para começar a produção.")
-        return redirect("equipe", pk=curso.pk)
+        # O try e necessario: sem edicao corrente aberta, criar_curso levanta
+        # ValidationError, e sem captura a tela devolveria 500 para o professor.
+        try:
+            curso = services.criar_curso(professor_responsavel=request.user, **form.cleaned_data)
+        except ValidationError as erro:
+            for mensagem in erro.messages:
+                messages.error(request, mensagem)
+        else:
+            messages.success(
+                request, "Proposta criada. Monte a equipe e preencha a ficha do curso."
+            )
+            return redirect("equipe", pk=curso.pk)
     return render(request, "cursos/nova_proposta.html", {"form": form})
 
 

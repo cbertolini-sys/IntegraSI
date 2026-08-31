@@ -35,7 +35,7 @@ class Praticas(NamedTuple):
 
 class Curso(models.Model):
     titulo = models.CharField("título", max_length=200)
-    resumo = models.TextField("resumo")
+    resumo = models.TextField("resumo", blank=True)
     edicao = models.ForeignKey(
         "edicoes.Edicao", on_delete=models.PROTECT, related_name="cursos", verbose_name="edição"
     )
@@ -46,7 +46,9 @@ class Curso(models.Model):
         verbose_name="professor responsável",
     )
 
-    tipo_publico = models.CharField("tipo de público", max_length=20, choices=TipoPublico.choices)
+    tipo_publico = models.CharField(
+        "tipo de público", max_length=20, choices=TipoPublico.choices, blank=True
+    )
     etapa_ano = models.CharField("etapa ou ano escolar", max_length=4, choices=ETAPAS, blank=True)
     publico_descricao = models.CharField("descrição do público", max_length=200, blank=True)
 
@@ -62,10 +64,13 @@ class Curso(models.Model):
         "referenciais.Competencia", related_name="cursos", blank=True, verbose_name="competências"
     )
 
+    # null=True porque e numerico: em campo numerico o vazio do banco e NULL, e
+    # blank=True sozinho so afeta formulario. MinValueValidator(1) fica: ele nao
+    # roda sobre None, entao continua barrando carga horaria zero.
     carga_horaria = models.PositiveSmallIntegerField(
-        "carga horária (horas)", validators=[MinValueValidator(1)]
+        "carga horária (horas)", null=True, blank=True, validators=[MinValueValidator(1)]
     )
-    formato = models.CharField("formato", max_length=20, choices=Formato.choices)
+    formato = models.CharField("formato", max_length=20, choices=Formato.choices, blank=True)
     pre_requisitos = models.TextField("pré-requisitos", blank=True)
 
     temas = models.ManyToManyField("cursos.Tema", related_name="cursos", blank=True, verbose_name="temas")

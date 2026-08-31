@@ -12,14 +12,18 @@ class SecaoForm(forms.ModelForm):
         fields = ["conteudo"]
 
 
-class CursoForm(forms.ModelForm):
+class PropostaForm(forms.ModelForm):
+    """A criacao pede o titulo e mais nada (spec 4.3).
+
+    O resto e trabalho da equipe, cobrado no portao de completude
+    (validacoes.dados_do_curso), que ja rodava na revisao do Plano de Ensino e na
+    submissao a coordenacao. Exigir a ficha inteira aqui so obrigava o professor a
+    inventar carga horaria e publico antes de a equipe estudar o assunto.
+    """
+
     class Meta:
         model = Curso
-        fields = [
-            "titulo", "resumo", "edicao", "tipo_publico", "etapa_ano", "publico_descricao",
-            "referencial", "carga_horaria", "formato", "pre_requisitos", "temas", "palavras_chave",
-        ]
-        widgets = {"resumo": forms.Textarea(attrs={"rows": 4})}
+        fields = ["titulo"]
 
 
 class AnexoForm(forms.ModelForm):

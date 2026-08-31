@@ -208,3 +208,25 @@ def test_primeiro_aluno_alocado_tira_o_curso_do_rascunho(dados_curso, professor,
     services.adicionar_membro(curso, aluno, por=professor)
     curso.refresh_from_db()
     assert curso.status == StatusCurso.EM_PRODUCAO
+
+
+@pytest.mark.django_db
+def test_proposta_nasce_so_com_titulo(edicao, professor):
+    """Spec 4.3: o professor abre o trabalho, a equipe preenche a ficha."""
+    curso = services.criar_curso(titulo="Robotica com sucata", professor_responsavel=professor)
+    assert curso.pk is not None
+    assert curso.edicao == edicao
+    assert curso.resumo == ""
+    assert curso.carga_horaria is None
+
+
+@pytest.mark.django_db
+def test_proposta_sem_edicao_aberta_e_recusada(professor, db):
+    """Curso.edicao continua PROTECT e nao nula (restricao entre planos). Sem
+    edicao corrente a proposta recusa com mensagem, nunca grava nulo."""
+    from apps.edicoes.models import Edicao
+
+    Edicao.objects.filter(ativa=True).update(ativa=False)
+    with pytest.raises(ValidationError) as erro:
+        services.criar_curso(titulo="Robotica com sucata", professor_responsavel=professor)
+    assert "edição" in str(erro.value).lower()
