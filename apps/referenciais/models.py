@@ -1,7 +1,7 @@
 from django.core.exceptions import ValidationError
 from django.db import models
 
-from apps.referenciais.choices import ETAPAS
+from apps.referenciais.choices import ETAPAS_REFERENCIAL
 
 
 class Referencial(models.Model):
@@ -39,6 +39,16 @@ class Referencial(models.Model):
                 f"{self.max_competencias} competências; foram escolhidas {quantidade}."
             )
 
+    @property
+    def organiza_por_etapa(self):
+        """Este referencial separa o que oferece por etapa escolar?
+
+        Derivado do dado, e nao um campo: campo seria segunda fonte de verdade e
+        sairia de sincronia na primeira importacao. E a pergunta e sobre o dado, e
+        nao sobre a sigla, porque nenhuma tela pode pressupor BNCC (spec 4.2).
+        """
+        return self.competencias.exists()
+
     def save(self, *args, **kwargs):
         # Ver docs/onde-mora-a-validacao.md: uma escrita direcionada
         # (update_fields) num objeto já persistido não passa por validação do
@@ -55,6 +65,10 @@ class Categoria(models.Model):
         Referencial, on_delete=models.CASCADE, related_name="categorias", verbose_name="referencial"
     )
     nome = models.CharField("nome", max_length=120)
+    # O texto oficial completo, quando o rotulo curto de `nome` for redacao nossa.
+    # E o caso das competencias especificas do Ensino Medio da BNCC, que sao
+    # paragrafos inteiros e nao cabem num select.
+    descricao = models.TextField("descrição", blank=True)
     ordem = models.PositiveSmallIntegerField("ordem", default=0)
 
     class Meta:
@@ -83,7 +97,13 @@ class Competencia(models.Model):
     )
     codigo = models.CharField("código", max_length=20)
     descricao = models.TextField("descrição")
-    etapa = models.CharField("etapa", max_length=4, choices=ETAPAS)
+    # O nivel que o Ensino Fundamental da BNCC poe entre o eixo e a habilidade
+    # ("Conceituacao de Algoritmos"). Campo, e nao modelo: agrupa na tela, nao tem
+    # identidade nem regra, e um modelo custaria tabela e join para um rotulo.
+    objeto_conhecimento = models.CharField(
+        "objeto de conhecimento", max_length=120, blank=True
+    )
+    etapa = models.CharField("etapa", max_length=4, choices=ETAPAS_REFERENCIAL)
     ordem = models.PositiveSmallIntegerField("ordem", default=0)
 
     class Meta:
