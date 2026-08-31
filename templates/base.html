@@ -5,22 +5,33 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block titulo %}IntegraSI{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/integrasi.css' %}">
   <script src="{% static 'js/htmx.min.js' %}" defer></script>
 </head>
 <body>
-  <header>
-    <a href="{% url 'catalogo' %}">IntegraSI</a>
-    {% if user.is_authenticated %}
-      <span>{{ user.nome_completo }} &mdash; {{ user.get_papel_display }}</span>
-      <form method="post" action="{% url 'logout' %}">
-        {% csrf_token %}
-        <button type="submit">Sair</button>
-      </form>
-    {% endif %}
-  </header>
-  <main>
+  <div class="lousa">
+    <div class="faixa">
+      <header class="topo">
+        <a class="marca" href="{% url 'catalogo' %}">IntegraSI</a>
+        {% if user.is_authenticated %}
+          <span class="quem">
+            {{ user.nome_completo }} &middot; {{ user.get_papel_display }}
+            <form method="post" action="{% url 'logout' %}">
+              {% csrf_token %}
+              <button type="submit">Sair</button>
+            </form>
+          </span>
+        {% else %}
+          <span class="quem">UFSM &middot; Frederico Westphalen</span>
+        {% endif %}
+      </header>
+    </div>
+    {% block quadro %}{% endblock %}
+  </div>
+
+  <main class="faixa">
     {% if messages %}
-      <ul>
+      <ul class="mensagens">
         {% for message in messages %}
           <li>{{ message }}</li>
         {% endfor %}
@@ -28,5 +39,12 @@
     {% endif %}
     {% block conteudo %}{% endblock %}
   </main>
+
+  <div class="faixa">
+    <footer class="rodape">
+      Sistemas de Informação &middot; UFSM Frederico Westphalen &middot;
+      cursos produzidos por equipes de estudantes e oferecidos sem custo à comunidade.
+    </footer>
+  </div>
 </body>
 </html>

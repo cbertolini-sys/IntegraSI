@@ -1,8 +1,17 @@
 {% extends "base.html" %}
 {% block titulo %}Solicitação recebida{% endblock %}
+
+{% block quadro %}
+  <div class="faixa">
+    <div class="heroi">
+      <p class="eyebrow">Solicitação registrada</p>
+      <h1>Recebemos seu pedido.</h1>
+      <p>Recebemos seu pedido para o curso <strong>{{ curso.titulo }}</strong>. O professor
+         responsável entrará em contato pelo e-mail informado.</p>
+    </div>
+  </div>
+{% endblock %}
+
 {% block conteudo %}
-  <h1>Solicitação recebida</h1>
-  <p>Recebemos seu pedido para o curso <strong>{{ curso.titulo }}</strong>. O professor
-     responsável entrará em contato pelo e-mail informado.</p>
-  <p><a href="{% url 'catalogo' %}">Voltar ao catálogo</a></p>
+  <p><a class="botao" href="{% url 'catalogo' %}">Voltar ao catálogo</a></p>
 {% endblock %}

@@ -1,3 +1,5 @@
+from typing import NamedTuple
+
 from django.conf import settings
 from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.search import SearchVector, SearchVectorField
@@ -8,8 +10,27 @@ from django.db.models import F, Q, Value
 from django.db.models.functions import Coalesce
 
 from apps.cursos.busca import CONFIG_TEXTO
-from apps.cursos.choices import Formato, StatusCurso, TipoPublico
+from apps.cursos.choices import Formato, StatusCurso, TipoPratica, TipoPublico
 from apps.referenciais.choices import ETAPAS
+
+
+class Praticas(NamedTuple):
+    """Resposta a "precisa de computador?", nas duas dimensoes que nao se excluem:
+    um curso pode ter as duas metades, uma so, ou -- enquanto o caderno nao foi
+    montado -- nenhuma."""
+
+    plugada: bool
+    desplugada: bool
+
+    @property
+    def rotulo(self):
+        if self.plugada and self.desplugada:
+            return "Com e sem computador"
+        if self.desplugada:
+            return "Funciona sem computador"
+        if self.plugada:
+            return "Precisa de computador"
+        return "Não informado"
 
 
 class Curso(models.Model):
@@ -159,6 +180,28 @@ class Curso(models.Model):
         if self.tipo_publico == TipoPublico.ESCOLAR:
             return self.get_etapa_ano_display()
         return self.publico_descricao
+
+    @property
+    def praticas(self):
+        """Este curso precisa de computador?
+
+        A pergunta que uma escola municipal do interior faz primeiro, e que o
+        catalogo nao respondia: o dado ja existia em `Anexo.tipo_pratica`, no
+        caderno de exercicios, e nunca saia da tela de producao. Uma escola com um
+        laboratorio compartilhado -- ou nenhum -- decide por aqui.
+
+        Usa `.all()` de proposito, para aproveitar o `prefetch_related` das telas
+        do catalogo; sem ele seriam duas consultas por curso na listagem.
+        """
+        tipos = {
+            anexo.tipo_pratica
+            for entregavel in self.entregaveis.all()
+            for anexo in entregavel.anexos.all()
+        }
+        return Praticas(
+            plugada=bool(tipos & {TipoPratica.PLUGADA, TipoPratica.AMBAS}),
+            desplugada=bool(tipos & {TipoPratica.DESPLUGADA, TipoPratica.AMBAS}),
+        )
 
     def clean(self):
         super().clean()

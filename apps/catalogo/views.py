@@ -20,8 +20,17 @@ LIMITE_POR_IP_POR_HORA = 5
 
 
 def cursos_publicados():
-    """Visitante enxerga exclusivamente cursos PUBLICADO (spec 10)."""
-    return Curso.objects.filter(status=StatusCurso.PUBLICADO).select_related("referencial")
+    """Visitante enxerga exclusivamente cursos PUBLICADO (spec 10).
+
+    O prefetch dos anexos e para `Curso.praticas`, que a listagem chama uma vez por
+    curso: sem ele, o indicador de "precisa de computador?" custaria duas consultas
+    por cartao.
+    """
+    return (
+        Curso.objects.filter(status=StatusCurso.PUBLICADO)
+        .select_related("referencial")
+        .prefetch_related("entregaveis__anexos")
+    )
 
 
 def catalogo(request):

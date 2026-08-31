@@ -1,16 +1,31 @@
 {% extends "base.html" %}
 {% block titulo %}Solicitar {{ curso.titulo }}{% endblock %}
+
+{% block quadro %}
+  <div class="faixa">
+    <div class="heroi">
+      <p class="eyebrow"><a href="{% url 'catalogo_curso' curso.pk %}">{{ curso.titulo }}</a></p>
+      <h1>Solicitar o curso {{ curso.titulo }}</h1>
+      <p>
+        Conte para quem seria o curso e quando. A coordenação responde combinando data,
+        local e número de vagas.
+      </p>
+    </div>
+  </div>
+{% endblock %}
+
 {% block conteudo %}
-  <h1>Solicitar o curso {{ curso.titulo }}</h1>
-  {% if erro %}<p class="mensagem">{{ erro }}</p>{% endif %}
-  <form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <p class="finalidade">
-      Seus dados serão usados exclusivamente para dar andamento a esta solicitação e
-      organizar a realização do curso, e ficam acessíveis apenas ao professor responsável
-      e à coordenação do curso de Sistemas de Informação.
-    </p>
-    <button type="submit">Enviar solicitação</button>
-  </form>
+  <div class="formulario">
+    {% if erro %}<p class="mensagem aviso">{{ erro }}</p>{% endif %}
+    <form method="post">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <p class="finalidade aviso">
+        Seus dados serão usados exclusivamente para dar andamento a esta solicitação e
+        organizar a realização do curso, e ficam acessíveis apenas ao professor responsável
+        e à coordenação do curso de Sistemas de Informação.
+      </p>
+      <button type="submit">Enviar solicitação</button>
+    </form>
+  </div>
 {% endblock %}

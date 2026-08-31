@@ -1,0 +1,663 @@
+/* IntegraSI — catálogo público.
+ *
+ * O material desta sala de aula não é "tecnologia": é o quadro verde e o caderno
+ * quadriculado. A página vai do quadro (herói) para o caderno (catálogo), porque
+ * é assim que a aula anda. E o quadriculado não é enfeite — é o suporte real das
+ * atividades desplugadas, que se fazem no papel quando não há computador.
+ */
+
+@font-face {
+  font-family: "Bricolage";
+  src: url("../fonts/bricolage.woff2") format("woff2");
+  font-weight: 400 800;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Literata";
+  src: url("../fonts/literata.woff2") format("woff2");
+  font-weight: 300 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "JetBrains";
+  src: url("../fonts/jetbrains.woff2") format("woff2");
+  font-weight: 400 600;
+  font-display: swap;
+}
+
+:root {
+  --lousa: #1f3a31;
+  --lousa-clara: #2c4f43;
+  --giz: #efeee4;
+  --papel: #e8ede6;
+  --quadriculado: #cbd8cd;
+  --tinta: #24312c;
+  --grafite: #5c665f;
+  --plugado: #2a4bd7;
+  --desplugado: #c8892b;
+
+  --display: "Bricolage", "Helvetica Neue", sans-serif;
+  --corpo: "Literata", Georgia, serif;
+  --dado: "JetBrains", ui-monospace, monospace;
+
+  --quadra: 22px; /* o lado do quadriculado; tudo se alinha a ele */
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--papel);
+  color: var(--tinta);
+  font-family: var(--corpo);
+  font-size: 1.02rem;
+  line-height: 1.6;
+  /* O caderno. Duas linhas de 1px sobre o papel, na medida da --quadra. */
+  background-image: linear-gradient(var(--quadriculado) 1px, transparent 1px),
+    linear-gradient(90deg, var(--quadriculado) 1px, transparent 1px);
+  background-size: var(--quadra) var(--quadra);
+}
+
+/* ---------- o quadro ---------- */
+
+.lousa {
+  background: var(--lousa);
+  color: var(--giz);
+  /* O leve esfumaçado de giz que nunca sai do quadro. */
+  background-image: radial-gradient(
+      ellipse 60% 40% at 20% 30%,
+      rgba(239, 238, 228, 0.06),
+      transparent
+    ),
+    radial-gradient(ellipse 50% 50% at 85% 70%, rgba(239, 238, 228, 0.05), transparent);
+  border-bottom: 3px solid #16281f;
+}
+
+.lousa a {
+  color: var(--giz);
+}
+
+.faixa {
+  max-width: 68rem;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.topo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-block: 1.1rem;
+  font-family: var(--dado);
+  font-size: 0.76rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.topo .marca {
+  font-family: var(--display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  text-decoration: none;
+}
+
+.topo .quem {
+  display: flex;
+  align-items: baseline;
+  gap: 0.9rem;
+  color: rgba(239, 238, 228, 0.72);
+}
+
+.heroi {
+  padding-block: clamp(2.2rem, 6vw, 4.2rem) clamp(2rem, 5vw, 3.4rem);
+  display: grid;
+  /* minmax(0, 1fr) e nao 1fr: item de grade nasce com min-width:auto e uma linha
+     de titulo longa infla a coluna alem do contentor -- era o que empurrava a
+     pagina inteira para fora da tela no celular. */
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2rem 3rem;
+  align-items: end;
+}
+
+.heroi > * {
+  min-width: 0;
+}
+
+/* A partir do desktop o herói divide: a tese à esquerda, a chave de leitura à
+   direita. A chave é conteúdo, não enfeite -- é o que ensina a ler os cartões
+   antes de o visitante chegar neles. */
+@media (min-width: 60rem) {
+  .heroi {
+    grid-template-columns: minmax(0, 1.35fr) minmax(15rem, 0.8fr);
+  }
+}
+
+.heroi-texto {
+  max-width: 34rem;
+}
+
+.heroi .eyebrow {
+  font-family: var(--dado);
+  font-size: 0.74rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(239, 238, 228, 0.62);
+  margin: 0 0 1.2rem;
+}
+
+.heroi h1 {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: clamp(1.75rem, 7.5vw, 3.9rem);
+  overflow-wrap: break-word;
+  line-height: 1.04;
+  letter-spacing: -0.025em;
+  margin: 0 0 1.1rem;
+  text-wrap: balance;
+}
+
+.heroi h1 em {
+  font-style: normal;
+  color: var(--desplugado);
+}
+
+.heroi p {
+  font-size: 1.1rem;
+  line-height: 1.55;
+  color: rgba(239, 238, 228, 0.8);
+  margin: 0;
+  max-width: 34rem;
+}
+
+/* ---------- a assinatura: precisa de computador? ---------- */
+
+.pratica {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--dado);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+@media (min-width: 30rem) {
+  .pratica {
+    white-space: nowrap;
+  }
+}
+
+/* Duas células: a da esquerda é o computador, a da direita é o papel.
+   Preenchida = o curso tem aquela metade. */
+.marca-pratica {
+  display: inline-grid;
+  grid-template-columns: 1fr 1fr;
+  width: 2.6rem;
+  height: 1.3rem;
+  border: 1.5px solid currentColor;
+  flex: none;
+}
+
+.marca-pratica span {
+  display: block;
+}
+
+.marca-pratica span + span {
+  border-left: 1.5px solid currentColor;
+}
+
+.marca-pratica .liga {
+  background: var(--plugado);
+}
+.marca-pratica .papel {
+  background: var(--desplugado);
+}
+
+.legenda {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1.2rem 1.3rem;
+  border: 1px solid rgba(239, 238, 228, 0.22);
+  color: rgba(239, 238, 228, 0.82);
+  align-content: start;
+}
+
+.legenda .titulo-chave {
+  font-family: var(--dado);
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(239, 238, 228, 0.55);
+  padding-bottom: 0.7rem;
+  margin: 0;
+  border-bottom: 1px solid rgba(239, 238, 228, 0.16);
+}
+
+/* Na página do curso a chave é uma linha só, sem moldura: ali ela informa sobre
+   este curso, não ensina a ler o catálogo. */
+.legenda.unica {
+  border: 0;
+  padding: 0;
+  padding-top: 1.3rem;
+  border-top: 1px solid rgba(239, 238, 228, 0.18);
+}
+
+/* ---------- filtros: a ficha na dobra ---------- */
+
+.ficha {
+  background: var(--giz);
+  border: 1px solid var(--quadriculado);
+  border-top: 3px solid var(--lousa);
+  padding: 1.3rem;
+  margin-top: -1.6rem;
+  margin-bottom: 2.6rem;
+}
+
+.ficha legend,
+.ficha .rotulo-ficha {
+  font-family: var(--dado);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--grafite);
+  margin-bottom: 0.8rem;
+  display: block;
+}
+
+/* Grade e nao flex: com flex o campo de busca encolhia ate cortar o proprio
+   placeholder, e a ultima linha ficava com um vao. Aqui a busca ocupa a linha
+   inteira e os quatro filtros dividem a seguinte em partes iguais. */
+.campos {
+  display: grid;
+  gap: 0.7rem;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+}
+
+.ficha input[type="search"] {
+  grid-column: 1 / -1;
+}
+
+.ficha button {
+  justify-self: start;
+}
+
+input,
+select,
+textarea {
+  font: inherit;
+  font-size: 0.95rem;
+  padding: 0.55rem 0.7rem;
+  background: #fff;
+  color: var(--tinta);
+  border: 1px solid var(--quadriculado);
+  border-radius: 0;
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--plugado);
+  outline-offset: 2px;
+}
+
+button,
+.botao {
+  font-family: var(--dado);
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.6rem 1.2rem;
+  background: var(--lousa);
+  color: var(--giz);
+  border: 1px solid var(--lousa);
+  border-radius: 0;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  transition: background 0.15s ease;
+}
+
+button:hover,
+.botao:hover {
+  background: var(--lousa-clara);
+}
+
+/* ---------- o caderno ---------- */
+
+main {
+  padding-bottom: 5rem;
+}
+
+.contagem {
+  font-family: var(--dado);
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--grafite);
+  margin: 0 0 1.1rem;
+}
+
+.cursos {
+  display: grid;
+  gap: 1.1rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 21rem), 1fr));
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.curso {
+  background: var(--giz);
+  border: 1px solid var(--quadriculado);
+  padding: 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.curso:hover {
+  border-color: var(--lousa);
+  transform: translateY(-2px);
+}
+
+.curso h2 {
+  font-family: var(--display);
+  font-size: 1.3rem;
+  font-weight: 600;
+  line-height: 1.18;
+  letter-spacing: -0.015em;
+  margin: 0;
+  text-wrap: balance;
+}
+
+.curso h2 a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.curso h2 a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.curso .resumo {
+  margin: 0;
+  color: var(--grafite);
+  font-size: 0.94rem;
+}
+
+/* Os dados duros do curso: mono, porque são dados. */
+.dados {
+  font-family: var(--dado);
+  font-size: 0.74rem;
+  letter-spacing: 0.06em;
+  color: var(--grafite);
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.9rem;
+}
+
+.rodape-curso {
+  margin-top: auto;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--quadriculado);
+}
+
+.vazio {
+  background: var(--giz);
+  border: 1px dashed var(--quadriculado);
+  padding: 2.6rem 1.5rem;
+  text-align: center;
+  color: var(--grafite);
+}
+
+.vazio p {
+  margin: 0 0 0.4rem;
+}
+
+/* ---------- página do curso ---------- */
+
+.curso-detalhe {
+  max-width: 44rem;
+}
+
+.curso-detalhe h1 {
+  font-family: var(--display);
+  font-size: clamp(1.9rem, 5vw, 2.9rem);
+  font-weight: 700;
+  line-height: 1.06;
+  letter-spacing: -0.025em;
+  margin: 0 0 0.9rem;
+  text-wrap: balance;
+}
+
+.curso-detalhe h2 {
+  font-family: var(--dado);
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--grafite);
+  margin: 2.4rem 0 0.7rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--quadriculado);
+}
+
+.curso-detalhe .abertura {
+  font-size: 1.12rem;
+  line-height: 1.6;
+}
+
+.ficha-curso {
+  background: var(--giz);
+  border: 1px solid var(--quadriculado);
+  border-left: 3px solid var(--lousa);
+  padding: 1.1rem 1.3rem;
+  margin: 1.5rem 0 2rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 2rem;
+  align-items: center;
+}
+
+.competencias {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.competencias li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.8rem;
+  align-items: baseline;
+}
+
+/* Códigos da BNCC são códigos: EF06CO01 pede monoespaçada, não itálico. */
+.codigo {
+  font-family: var(--dado);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--lousa);
+  background: var(--giz);
+  border: 1px solid var(--quadriculado);
+  padding: 0.15rem 0.45rem;
+  white-space: nowrap;
+}
+
+.etiquetas {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0;
+  margin: 0;
+}
+
+.etiquetas li {
+  font-family: var(--dado);
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  border: 1px solid var(--quadriculado);
+  background: var(--giz);
+  padding: 0.2rem 0.6rem;
+}
+
+.chamada {
+  margin-top: 2.8rem;
+  padding: 1.6rem;
+  background: var(--lousa);
+  color: var(--giz);
+}
+
+.chamada p {
+  margin: 0 0 1rem;
+  max-width: 34rem;
+}
+
+.chamada .botao {
+  background: var(--giz);
+  color: var(--lousa);
+  border-color: var(--giz);
+  font-weight: 600;
+}
+
+.chamada .botao:hover {
+  background: #fff;
+}
+
+/* ---------- formulário ---------- */
+
+.formulario {
+  max-width: 36rem;
+}
+
+.formulario p {
+  margin: 0 0 1.1rem;
+}
+
+.formulario label {
+  display: block;
+  font-family: var(--dado);
+  font-size: 0.74rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--grafite);
+  margin-bottom: 0.3rem;
+}
+
+.formulario input,
+.formulario select,
+.formulario textarea {
+  width: 100%;
+}
+
+.formulario .helptext,
+.formulario .errorlist {
+  font-family: var(--dado);
+  font-size: 0.74rem;
+  letter-spacing: 0.04em;
+}
+
+.formulario .errorlist {
+  color: #a3311f;
+  list-style: none;
+  padding: 0;
+  margin: 0.3rem 0 0;
+}
+
+.aviso {
+  border-left: 3px solid var(--desplugado);
+  background: var(--giz);
+  padding: 0.9rem 1.1rem;
+  margin-bottom: 1.8rem;
+  font-size: 0.95rem;
+}
+
+/* ---------- mensagens ---------- */
+
+.mensagens {
+  list-style: none;
+  margin: 1.4rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.mensagens li {
+  background: var(--giz);
+  border-left: 3px solid var(--lousa);
+  padding: 0.7rem 1rem;
+  font-size: 0.95rem;
+}
+
+/* ---------- rodapé ---------- */
+
+.rodape {
+  border-top: 1px solid var(--quadriculado);
+  margin-top: 4rem;
+  padding-block: 1.6rem 3rem;
+  font-family: var(--dado);
+  font-size: 0.74rem;
+  letter-spacing: 0.06em;
+  color: var(--grafite);
+}
+
+/* ---------- entrada ---------- */
+
+@media (prefers-reduced-motion: no-preference) {
+  .heroi > * {
+    animation: sobe 0.6s cubic-bezier(0.2, 0.7, 0.3, 1) backwards;
+  }
+  .heroi .eyebrow {
+    animation-delay: 0.05s;
+  }
+  .heroi h1 {
+    animation-delay: 0.13s;
+  }
+  .heroi p {
+    animation-delay: 0.22s;
+  }
+  .heroi .legenda {
+    animation-delay: 0.3s;
+  }
+}
+
+@keyframes sobe {
+  from {
+    opacity: 0;
+    transform: translateY(0.7rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+a {
+  color: var(--lousa);
+  text-underline-offset: 2px;
+}
+
+@media (max-width: 34rem) {
+  .topo {
+    font-size: 0.7rem;
+  }
+  .ficha {
+    margin-top: -1rem;
+  }
+}
