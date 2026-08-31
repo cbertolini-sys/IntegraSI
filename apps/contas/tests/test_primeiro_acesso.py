@@ -105,9 +105,17 @@ def test_perfil_completo_circula_normalmente(client, convite):
 
 @pytest.mark.django_db
 def test_o_portao_nao_prende_o_logout(client, convite):
-    """Sem esta exceção, quem entra com perfil incompleto não consegue nem sair."""
+    """Sem esta exceção, quem entra com o cadastro pela metade não consegue nem
+    sair da conta.
+
+    A asserção é sobre a SESSÃO, e não sobre o código HTTP: o portão também
+    responde 302, então `status_code in (200, 302)` passava com "logout" fora das
+    liberadas -- a pessoa era redirecionada para o convite e seguia logada, e o
+    teste não via diferença (conferido por mutação).
+    """
     client.force_login(convite.usuario)
-    assert client.post(reverse("logout")).status_code in (200, 302)
+    client.post(reverse("logout"))
+    assert "_auth_user_id" not in client.session
 
 
 @pytest.mark.django_db
