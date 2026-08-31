@@ -512,3 +512,37 @@ def test_participante_nao_tem_porta_propria_no_admin():
     """Registrado só como inline de TurmaAdmin: uma tela própria de Participante
     daria ao professor a lista inteira, contornando o recorte por turma."""
     assert Participante not in admin.site._registry
+
+
+@pytest.mark.django_db
+def test_coordenador_pode_ser_designado_para_conduzir_turma(solicitacao, coordenador):
+    """Regra 1 do Plano 5: o coordenador e professor, e `Turma.clean` o aceita.
+
+    A designacao pelo servico e o que importa -- e o caminho que o Plano 3 ja
+    usava para o professor.
+    """
+    turma = services.aceitar_solicitacao(
+        solicitacao, professor=coordenador, dados_turma=dados_turma(), por=coordenador
+    )
+    assert turma.professor == coordenador
+
+
+@pytest.mark.django_db
+def test_o_formulario_de_turma_oferece_o_coordenador(coordenador, professor):
+    """A guarda e do modelo; esta e a conveniencia da tela. Sem este teste, o
+    queryset do formulario pode voltar a filtrar so PROFESSOR e ficar mais estrito
+    que `Turma.clean` -- a coordenacao nao conseguiria designar a si mesma, e nada
+    acusaria (a mutacao sobreviveu a suite inteira na Task 1 do Plano 5).
+    """
+    from apps.turmas.forms import TurmaForm
+
+    oferecidos = set(TurmaForm().fields["professor"].queryset)
+    assert coordenador in oferecidos
+    assert professor in oferecidos
+
+
+@pytest.mark.django_db
+def test_o_formulario_de_turma_nao_oferece_aluno(aluno):
+    from apps.turmas.forms import TurmaForm
+
+    assert aluno not in set(TurmaForm().fields["professor"].queryset)
