@@ -7,9 +7,21 @@ inclusão digital e computação; o IntegraSI dá um lugar a esse ciclo - propos
 produção de material, aprovação e catálogo público - que hoje acontece espalhado
 entre documentos, drive compartilhado e conversa.
 
-Este repositório contém o **Plano 1: fundação e cadastros** (usuários, edições da
-disciplina, referenciais pedagógicos e temas). Módulos seguintes estão descritos em
-`docs/superpowers/plans/`.
+O sistema está implementado em cinco módulos, todos concluídos:
+
+1. **Fundação e cadastros** - usuários, edições da disciplina, referenciais
+   pedagógicos e temas.
+2. **Produção de cursos** - proposta, equipe, os cinco entregáveis do roteiro,
+   revisão entregável por entregável.
+3. **Publicação, catálogo e demanda** - fila da coordenação, catálogo público com
+   busca, formulário de solicitação e turmas.
+4. **Mídia, versões e operação** - envio de vídeo de até 1 GB retomável, entrega
+   protegida por `X-Accel-Redirect`, versões de curso e o deploy com backup.
+5. **Papéis e primeiro acesso** - coordenador herda professor, alocação de aluno
+   por nome e e-mail, convite com prazo e uso único.
+
+Os planos de implementação estão em `docs/superpowers/plans/`, e a especificação
+de design em `docs/superpowers/specs/`.
 
 ## Requisitos
 
