@@ -357,3 +357,19 @@ def test_habilidade_da_etapa_certa_e_aceita(proposta, habilidades):
         instance=proposta,
     )
     assert form.is_valid() is True, form.errors
+
+
+@pytest.mark.django_db
+def test_bloco_fica_colado_ao_campo_de_referencial(client, proposta, professor, habilidades):
+    """Quem escolhe o referencial precisa ver a lista ali mesmo.
+
+    O bloco ficava no fim do formulario, depois de palavras-chave, e quem usou
+    relatou que "nao aparece nada": a lista estava a meia tela de distancia do
+    campo que a produz. A assercao e sobre a POSICAO no HTML, porque e disso que
+    a queixa tratava, e nada mais no sistema garante ordem de template."""
+    client.force_login(professor)
+    html = client.get(reverse("ficha", args=[proposta.pk])).content.decode()
+    posicao_referencial = html.index('id="id_referencial"')
+    posicao_bloco = html.index('id="habilidades"')
+    posicao_carga = html.index('id="id_carga_horaria"')
+    assert posicao_referencial < posicao_bloco < posicao_carga
