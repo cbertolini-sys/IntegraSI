@@ -2,7 +2,7 @@
 // do sistema que precisa de JavaScript próprio (spec §8).
 //
 // Um GB no upstream doméstico de um aluno leva perto de meia hora. Nessa janela
-// uma queda de conexão não é exótica — e a segunda queda é tão provável quanto a
+// uma queda de conexão não é exótica - e a segunda queda é tão provável quanto a
 // primeira. Por isso a retomada é um laço com um número limitado de tentativas e
 // espera crescente, e não um try/catch que salva o upload uma vez só.
 //
@@ -37,7 +37,7 @@ async function mensagemDeErro(resposta) {
 
 async function postar(url, corpo, tipo, csrf) {
   // O CSRF fica ligado nas quatro rotas (nenhuma é `csrf_exempt`), então todo
-  // POST daqui precisa carregar o cabeçalho — sem ele o Django devolve 403.
+  // POST daqui precisa carregar o cabeçalho - sem ele o Django devolve 403.
   const resposta = await fetch(url, {
     method: 'POST',
     headers: { 'X-CSRFToken': csrf, 'Content-Type': tipo },
@@ -60,7 +60,7 @@ async function consultarEstado(url) {
 /** Onde guardamos qual upload já está aberto para este arquivo. Fica em
  * `sessionStorage` e é LIDO de volta: sem a leitura, recarregar a página órfã o
  * identificador junto com os bytes que já subiram, e a retomada só sobreviveria
- * enquanto a aba continuasse viva — que é justo o cenário em que ela menos
+ * enquanto a aba continuasse viva - que é justo o cenário em que ela menos
  * importa. Pode não existir (aba anônima, armazenamento bloqueado); nesse caso o
  * upload funciona igual, só não sobrevive a um recarregamento. */
 function memoria() {
@@ -224,7 +224,7 @@ async function iniciarUpload(form) {
 
     aoAvisar('Concluindo…');
     // A conclusão não entra no laço de retomada de propósito: se ela cair, os
-    // bytes continuam no servidor e a chave continua na memória — escolher o
+    // bytes continuam no servidor e a chave continua na memória - escolher o
     // mesmo arquivo de novo retoma, não acha bloco nenhum faltando e conclui.
     await postar(
       urls.concluir,

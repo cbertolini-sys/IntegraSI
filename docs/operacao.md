@@ -2,7 +2,7 @@
 
 Roteiro de instalação, conferência e manutenção do servidor. Os arquivos de
 configuração citados estão em `deploy/`; este documento diz o que fazer com eles
-e — mais importante — **o que precisa ser conferido contra o servidor no ar**,
+e (mais importante) **o que precisa ser conferido contra o servidor no ar**,
 porque a suíte de testes só conhece os arquivos do repositório.
 
 Ambiente alvo (spec §13): Ubuntu, PostgreSQL, gunicorn atrás de nginx, systemd,
@@ -40,10 +40,10 @@ CREATE TEXT SEARCH CONFIGURATION portugues_unaccent (COPY = portuguese);
 
 **`CREATE EXTENSION` exige privilégio que um papel comum não tem.** Sem ele o
 `migrate` para com `permission denied to create extension "unaccent"`, e a
-instalação não avança — a coluna gerada de `Curso` e o índice de busca dependem
+instalação não avança - a coluna gerada de `Curso` e o índice de busca dependem
 dessa configuração de texto. É a dívida que o Plano 1 deixou para cá.
 
-Caminho normal — crie o banco com um papel superusuário e deixe a aplicação usar
+Caminho normal - crie o banco com um papel superusuário e deixe a aplicação usar
 um papel comum:
 
 ```bash
@@ -103,7 +103,7 @@ No `.env` de produção, além de `SECRET_KEY`, `DATABASE_URL` e `ALLOWED_HOSTS`
 
 As três nascem ligadas quando `DEBUG=False`; estão no `.env.example` para ficarem
 explícitas, não porque o padrão dependa delas. **`CONFIAR_NO_PROXY=True` só é
-correto com o nginx na frente** — gunicorn exposto direto na rede tem que deixar
+correto com o nginx na frente** - gunicorn exposto direto na rede tem que deixar
 `False`, senão o `X-Forwarded-For` é texto do cliente.
 
 ```bash
@@ -118,7 +118,7 @@ sudo -u integrasi .venv/bin/python manage.py collectstatic --noinput
 de propósito); o coordenador inicial sai do `criar_coordenador`.
 
 A carga da BNCC completa (habilidades) é descrita em `docs/dados/README.md`. Os
-códigos vêm transcritos da Resolução CNE/CEB nº 1/2022 — **nunca inventados**.
+códigos vêm transcritos da Resolução CNE/CEB nº 1/2022 - **nunca inventados**.
 
 ### 1.4 Serviço, proxy e cron
 
@@ -145,10 +145,10 @@ que alguém lê (§4).
 está rodando esse arquivo. Faça as conferências abaixo uma vez, no deploy, e a
 cada mudança no nginx. Anote o resultado.
 
-### 2.1 O `internal;` da mídia — a mais importante de todas
+### 2.1 O `internal;` da mídia - a mais importante de todas
 
-Sem `internal;` no `location /protegido/`, qualquer pessoa — sem sessão, sem
-conta — pede a URL direta e recebe material não aprovado. A view de permissão
+Sem `internal;` no `location /protegido/`, qualquer pessoa - sem sessão, sem
+conta - pede a URL direta e recebe material não aprovado. A view de permissão
 continua perfeitamente correta e o sistema fica escancarado. **Nenhum teste da
 suíte alcança isso**, porque o Django nunca vê essa requisição.
 
@@ -168,7 +168,7 @@ curl -i -b "sessionid=<da sessão>" https://integrasi.ufsm.br/materiais/<uuid>/
 ```
 
 Um 404 aqui, com o (1) devolvendo 404 também, costuma ser desencontro entre o
-`alias` do `location /protegido/` e o `MEDIA_ROOT` — barulhento, não perigoso.
+`alias` do `location /protegido/` e o `MEDIA_ROOT` - barulhento, não perigoso.
 
 ### 2.2 HTTPS, HSTS e cookies
 
@@ -182,7 +182,7 @@ Esperado: `301` para `https://`, `Strict-Transport-Security: max-age=31536000;
 includeSubDomains; preload`, e todo cookie com `Secure; HttpOnly`.
 
 Se a página entrar em **laço de redirecionamento**, o nginx não está mandando
-`X-Forwarded-Proto` — o Django acha que a requisição é http e redireciona de
+`X-Forwarded-Proto` - o Django acha que a requisição é http e redireciona de
 novo. Se um POST passar a falhar com erro de CSRF, o suspeito é o `Host`: o
 Django compara o `Origin` do navegador com o host da requisição, e o
 `proxy_set_header Host $host` é quem faz os dois baterem.
@@ -211,16 +211,16 @@ solicitações passarem todas, uma das duas está errada.
 ### A conferência da entrega protegida, por comando
 
 O `curl` à mão continua valendo, mas existe um comando que faz a mesma coisa e
-devolve código de saída — serve no deploy e no cron:
+devolve código de saída - serve no deploy e no cron:
 
 ```bash
 python manage.py conferir_entrega_protegida --base-url https://integrasi.ufsm.br
 ```
 
 - **Sai 0** e diz "porta fechada": o nginx recusou a rota (404 ou 403), como deve.
-- **Sai diferente de 0**: ou a rota respondeu 200 — e aí qualquer pessoa baixa
+- **Sai diferente de 0**: ou a rota respondeu 200 - e aí qualquer pessoa baixa
   material sem passar pela checagem de permissão, corrija o `internal;` e recarregue
-  o nginx agora —, ou o servidor não respondeu, e nesse caso **a conferência não
+  o nginx agora - , ou o servidor não respondeu, e nesse caso **a conferência não
   foi feita**: o comando reprova em vez de dar por seguro o que não checou.
 
 O caminho conferido sai de `apps.cursos.views.midia.PREFIXO_INTERNO`, e não de uma
@@ -235,10 +235,10 @@ semana pelo cron.
 `deploy/backup.sh` roda às 02:05 pelo cron e resolve dois problemas distintos
 (spec §13):
 
-- **banco**: `pg_dump` diário em `/srv/backups/sql`, retenção de 30 dias — é o
+- **banco**: `pg_dump` diário em `/srv/backups/sql`, retenção de 30 dias - é o
   que salva de erro humano;
 - **mídia**: cópia incremental deduplicada com `restic` para destino **fora do
-  servidor** — é o que salva de perda de disco.
+  servidor** - é o que salva de perda de disco.
 
 Antes do primeiro backup: crie o repositório restic, grave a senha em
 `/srv/integrasi/.restic-senha` (modo `600`, dono `integrasi`) e exporte
@@ -248,7 +248,7 @@ servidor**: sem ela o repositório é lixo criptografado.
 **Backup que nunca foi restaurado não é backup.** Rode `deploy/restaurar-teste.sh`
 depois do primeiro backup e **uma vez por semestre**. Ele restaura o último dump
 num banco descartável, conta cursos e usuários, restaura um pedaço da mídia e
-derruba tudo no final — não toca no banco de produção. Anote a data da última
+derruba tudo no final - não toca no banco de produção. Anote a data da última
 restauração de teste; se ninguém sabe qual foi, não há backup conferido.
 
 ---
@@ -257,7 +257,7 @@ restauração de teste; se ninguém sabe qual foi, não há backup conferido.
 
 O `deploy/crontab` tem `MAILTO=` e **não** redireciona `stderr` para o log: o
 stdout de cada rotina vai para `/var/log/integrasi/cron.log` e todo `stderr` vira
-e-mail para o endereço do `MAILTO`. Foi decisão deliberada — com `2>&1`, o único
+e-mail para o endereço do `MAILTO`. Foi decisão deliberada - com `2>&1`, o único
 aviso do problema abaixo iria para um arquivo que ninguém lê.
 
 **O que o alerta pega.** `limpar_arquivos_orfaos` e `limpar_uploads` apagam a
@@ -267,7 +267,7 @@ devolveria o registro ao banco sem os bytes e todo anexo apontaria para um 404
 permanente. O preço é este: se o apagamento dos bytes falhar **depois** do commit
 (disco cheio, permissão, volume desmontado), as linhas já saíram e os bytes ficam
 no disco sem nada apontando para eles. A rotina de órfãos parte de `Arquivo`, e
-esse registro não existe mais — ela não os reencontra nunca.
+esse registro não existe mais - ela não os reencontra nunca.
 
 Quando chegar um e-mail de `limpar_arquivos_orfaos` ou `limpar_uploads`:
 
@@ -282,7 +282,7 @@ comm -13 <(sort /tmp/no-banco.txt) /tmp/no-disco.txt   # está no disco e não n
 ```
 
 O que sair dessa última lista é lixo confirmado **desde que nenhum upload esteja
-em curso** — rode com o serviço parado, ou desconsidere arquivos criados nas
+em curso** - rode com o serviço parado, ou desconsidere arquivos criados nas
 últimas 24 h (é a mesma janela de segurança que a rotina de órfãos respeita, e
 pelo mesmo motivo: entre o fim do upload e o salvamento do `Anexo` o arquivo
 legitimamente não tem referência). Apague à mão, conferindo a lista antes.
@@ -311,20 +311,19 @@ Logs: `journalctl -u integrasi` (aplicação), `/var/log/integrasi/cron.log`
 
 O aluno entra no sistema por um convite que o professor dispara ao alocá-lo numa
 equipe (Plano 5). O e-mail sai pela mesma fila de tudo, então o diagnóstico é o
-mesmo — só o evento muda.
+mesmo - só o evento muda.
 
 - **Aluno diz que não recebeu:** procure em `/admin/notificacoes/` pelo evento
   `CONVITE_ALUNO` e pelo e-mail dele. Com `ultimo_erro` preenchido, o problema é
   SMTP e o recuo progressivo já está reagendando; a seção 4 explica os alertas do
-  cron. Se a notificação nem existe, o convite não chegou a ser criado — confira
+  cron. Se a notificação nem existe, o convite não chegou a ser criado - confira
   em `/admin/contas/convitealuno/`.
 - **Reenvio:** pela tela da equipe do curso, pelo professor responsável ou pela
   coordenação. O reenvio **cancela** o convite anterior: o link antigo para de
-  funcionar no ato, e é assim de propósito — dois links vivos dobram a janela em
+  funcionar no ato, e é assim de propósito - dois links vivos dobram a janela em
   que um token vazado ainda serve.
 - **Convite vencido:** sete dias, contados da criação. Não há como estender o
   prazo de um convite existente; envie outro.
 - **Aluno preso na tela de primeiro acesso:** é o esperado enquanto CPF,
-  matrícula e telefone não estiverem preenchidos. Para destravar sem o convite —
-  aluno que perdeu o acesso ao e-mail, por exemplo — a coordenação completa os
+  matrícula e telefone não estiverem preenchidos. Para destravar sem o convite (aluno que perdeu o acesso ao e-mail, por exemplo) a coordenação completa os
   três campos em `/admin/contas/usuario/` e define uma senha.

@@ -1,7 +1,7 @@
 """Entrega protegida de arquivo (spec 8, 10).
 
 Material de curso nunca fica exposto em MEDIA_URL: quem pede um arquivo passa por
-aqui, e so entao o nginx transmite os bytes por `X-Accel-Redirect` — um caminho
+aqui, e so entao o nginx transmite os bytes por `X-Accel-Redirect` - um caminho
 que o navegador nao consegue pedir sozinho, porque o `location /protegido/` do
 nginx e marcado `internal;` (obrigacao da Task 8, sem a qual esta view inteira
 vira enfeite).

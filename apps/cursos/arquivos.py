@@ -15,7 +15,7 @@ LIMITE_VIDEO = 1 * GIGA
 # formulario: uma segunda copia dentro do JS divergiria em silencio da primeira,
 # e um comentario dizendo "precisa ser o mesmo valor" nao e mecanismo nenhum.
 #
-# Precisa caber em DATA_UPLOAD_MAX_MEMORY_SIZE — acima do teto o Django recusa o
+# Precisa caber em DATA_UPLOAD_MAX_MEMORY_SIZE - acima do teto o Django recusa o
 # corpo antes de a view rodar (test_upload_integracao prende a relacao).
 TAMANHO_BLOCO = 5 * MEGA
 
@@ -28,7 +28,7 @@ ASSINATURAS = [
     (b"PK\x03\x04", "application/zip"),  # pptx, odp e docx sao zip
 ]
 # MP4 nao entra na tabela acima: nao tem assinatura no inicio. O primeiro campo e
-# o tamanho da caixa, e o tipo ('ftyp') vem nos bytes 4 a 8 — ver `detecta_mime`.
+# o tamanho da caixa, e o tipo ('ftyp') vem nos bytes 4 a 8 - ver `detecta_mime`.
 CAIXA_FTYP = slice(4, 8)
 
 LIMITES = {
@@ -43,7 +43,7 @@ LIMITES = {
 # spec diz "outros formatos [de video] sao aceitos mas apenas baixados"; aqui so
 # `.mp4` entra, e `.mov`/`.webm`/`.avi` sao recusados no sistema inteiro (o upload
 # em blocos e o unico caminho que cria `TipoMidia.VIDEO`). A metade "download-only"
-# da frase continua valendo — `views/midia.INLINE` tem so PDF e MP4, e todo o resto
+# da frase continua valendo - `views/midia.INLINE` tem so PDF e MP4, e todo o resto
 # ja sai como `attachment`. O que foi decidido nao implementar e a aceitacao dos
 # outros conteineres. A justificativa esta na spec, anotada na propria frase; em
 # resumo: a validacao e por assinatura, e conteiner que nao sabemos reconhecer e

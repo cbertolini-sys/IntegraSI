@@ -8,7 +8,7 @@ As regras que este arquivo prende, na ordem em que aparecem:
  4. A extensao declarada precisa mapear para um tipo conhecido -> 400 sem registro.
  4b. E a lista de extensoes e fechada tambem para video: `.mov`, `.webm` e `.avi`
     ficam de fora do sistema inteiro. E uma DIVERGENCIA REGISTRADA da spec 8, que
-    pede "aceitos mas apenas baixados" — a justificativa esta anotada na propria
+    pede "aceitos mas apenas baixados" - a justificativa esta anotada na propria
     frase da spec e em `apps/cursos/arquivos.py`.
  5. O tamanho declarado tem que caber no teto DAQUELE tipo, na abertura, nao so na
     conclusao: um `.pdf` de 900 MB nao pode passar meia hora enchendo o disco para
@@ -27,7 +27,7 @@ As regras que este arquivo prende, na ordem em que aparecem:
 12. `upload_concluir` recusa upload incompleto -> 400, sem Anexo.
 13. `upload_concluir` recusa conteudo que nao bate com a extensao declarada.
 13b. Inclusive no sentido inverso: MP4 declarado como `.pdf`. E o unico caso em
-    que a conferencia de extensao da conclusao aparece sozinha — nos outros a
+    que a conferencia de extensao da conclusao aparece sozinha - nos outros a
     regra "so video" ja teria barrado, e as duas guardas ficariam indistinguiveis.
 14. `upload_concluir` recusa arquivo que nao e video MP4.
 14b. `upload_concluir` reconfere que o entregavel e o de VIDEOS. Nao e a mesma
@@ -40,7 +40,7 @@ As regras que este arquivo prende, na ordem em que aparecem:
 16b. Titulo em branco, pelo mesmo motivo e antes dos mesmos bytes.
 16c. E a regra geral da qual 16 e 16b sao casos particulares: NENHUMA recusa do
     Anexo acontece depois da copia. Titulo acima de `max_length` nao era pre-
-    validado por linha nenhuma e vazava os bytes para sempre — sem linha de
+    validado por linha nenhuma e vazava os bytes para sempre - sem linha de
     Arquivo apontando para eles, `limpar_arquivos_orfaos` nunca os acharia.
 16d. Rede embaixo de 16c: uma falha inesperada depois da copia (a que a pre-
     validacao nao soube prever) apaga os bytes copiados.
@@ -183,7 +183,7 @@ def test_extensao_desconhecida_e_recusada_na_abertura(client, aluno, entregavel_
 def test_video_que_nao_e_mp4_fica_de_fora_do_sistema(client, aluno, entregavel_videos, nome):
     """Divergencia registrada da spec 8 ("outros formatos sao aceitos mas apenas
     baixados"). Como o upload em blocos e o unico caminho que cria
-    `TipoMidia.VIDEO`, recusar aqui e recusar no sistema inteiro — nao so no
+    `TipoMidia.VIDEO`, recusar aqui e recusar no sistema inteiro - nao so no
     player. A decisao e a razao dela estao anotadas na spec, na propria frase, e
     em `apps/cursos/arquivos.py`; este teste existe para que reabri-la seja um ato
     deliberado e nao um efeito colateral."""
@@ -200,7 +200,7 @@ def test_video_que_nao_e_mp4_fica_de_fora_do_sistema(client, aluno, entregavel_v
 def test_teto_do_tipo_declarado_vale_na_abertura(client, aluno, entregavel_videos):
     """O teto por tipo so era aplicado na conclusao. Um cliente declarava
     `a.pdf` com 900 MB, o registro nascia (900 MB < 1 GB, o unico teto que o
-    modelo conhecia), meia hora de upload consumia um giga de disco — e so no
+    modelo conhecia), meia hora de upload consumia um giga de disco - e so no
     fim vinha o "PDF para em 20 MB". A regra existia e era testada; o caminho
     da abertura simplesmente nao a atravessava."""
     client.force_login(aluno)
@@ -368,7 +368,7 @@ def test_mp4_declarado_com_extensao_de_pdf_e_recusado_na_conclusao(
     conclusao. Conteudo que nao e video morre na regra "so video MP4" mesmo sem
     conferencia de extensao; MP4 anunciado como `.pdf` atravessa essa regra
     (o conteudo E video/mp4) e so `valida_upload` o barra. Sem ela, o Anexo
-    entraria com um nome_original que mente sobre o conteudo — e o teto cobrado
+    entraria com um nome_original que mente sobre o conteudo - e o teto cobrado
     na abertura teria sido o do PDF, nao o do video."""
     client.force_login(aluno)
     identificador = inicia(client, entregavel_videos, nome="aula.pdf").json()["identificador"]
@@ -387,7 +387,7 @@ def test_arquivo_coerente_que_nao_e_video_e_recusado_na_conclusao(
 ):
     """PDF anunciado como PDF e enviado como PDF: passa por `valida_upload`
     inteira. Quem o barra e a regra separada de que esta rota so monta Anexo de
-    video — sem ela, um PDF viraria um Anexo com tipo_midia=VIDEO."""
+    video - sem ela, um PDF viraria um Anexo com tipo_midia=VIDEO."""
     client.force_login(aluno)
     identificador = inicia(
         client, entregavel_videos, tamanho=len(PDF), nome="material.pdf"
@@ -405,7 +405,7 @@ def test_arquivo_coerente_que_nao_e_video_e_recusado_na_conclusao(
 def test_conclusao_recusa_entregavel_que_nao_e_o_de_videos(client, aluno, entregavel_videos):
     """O registro e criado por fora da view de propósito: a guarda da regra 6b
     barraria a abertura e as duas ficariam indistinguiveis. O dano que esta guarda
-    evita nao e o anexo torto — e `validacoes.pendencias(slides)` voltar vazia com
+    evita nao e o anexo torto - e `validacoes.pendencias(slides)` voltar vazia com
     um .mp4 e mais nada dentro: `_slides` conta arquivos, e video e arquivo. O
     roteiro se declararia satisfeito pelo artefato errado."""
     slides = entregavel_videos.curso.entregaveis.get(tipo=TipoEntregavel.SLIDES)
@@ -428,7 +428,7 @@ def test_conclusao_recusa_entregavel_que_nao_e_o_de_videos(client, aluno, entreg
 def test_conclusao_reconfere_se_o_entregavel_ainda_esta_aberto(
     client, aluno, entregavel_videos, upload_completo
 ):
-    """Um giga no upstream domestico leva perto de meia hora — tempo de sobra
+    """Um giga no upstream domestico leva perto de meia hora - tempo de sobra
     para o professor aprovar o entregavel enquanto os blocos sobem. Sem esta
     reconferencia o video entraria num entregavel ja congelado."""
     congela(entregavel_videos)
@@ -447,7 +447,7 @@ def test_conclusao_reconfere_se_o_entregavel_ainda_esta_aberto(
 def test_duracao_zerada_e_recusada_antes_de_copiar_os_bytes(client, aluno, upload_completo):
     """`Anexo.clean()` exige duracao para video. Se a conclusao so descobrisse
     isso na ultima linha, o Arquivo ja teria sido copiado para MEDIA_ROOT: a
-    transacao desfaz a linha, nao o arquivo em disco — o mesmo orfao que o
+    transacao desfaz a linha, nao o arquivo em disco - o mesmo orfao que o
     Plano 2 teve que consertar em `anexar`."""
     client.force_login(aluno)
 
@@ -463,8 +463,7 @@ def test_duracao_zerada_e_recusada_antes_de_copiar_os_bytes(client, aluno, uploa
 @pytest.mark.django_db
 def test_titulo_em_branco_e_recusado_antes_de_copiar_os_bytes(client, aluno, upload_completo):
     """Mesma armadilha da regra 16 pelo outro campo obrigatorio do Anexo. So que
-    pior: `"   "` nao esta em `empty_values`, entao `Anexo.full_clean()` ACEITA —
-    sem esta checagem o video entra com titulo em branco. Um `titulo=""` seria
+    pior: `"   "` nao esta em `empty_values`, entao `Anexo.full_clean()` ACEITA - sem esta checagem o video entra com titulo em branco. Um `titulo=""` seria
     recusado no fim, e ainda assim tarde demais: o arquivo ja estaria em disco."""
     client.force_login(aluno)
 
@@ -484,12 +483,12 @@ def test_titulo_longo_demais_e_recusado_antes_de_copiar_os_bytes(
     """`titulo` e `CharField(max_length=200)`. A pre-validacao conferia dois campos
     a mao (16 e 16b) e essa regra nao estava entre eles: os bytes iam para
     MEDIA_ROOT e so entao `Anexo.full_clean()` recusava. A transacao desfaz as
-    linhas, nao o arquivo — e sem linha de `Arquivo` apontando para ele,
+    linhas, nao o arquivo - e sem linha de `Arquivo` apontando para ele,
     `limpar_arquivos_orfaos` (que varre `Arquivo.objects`) nunca o encontraria.
 
     O espiao em `FieldFile.save` e o que separa esta guarda da rede da regra 16d:
     com a rede sozinha os bytes tambem sumiriam do disco, mas depois de terem sido
-    copiados — 1 GB por tentativa, e o aluno tenta de novo."""
+    copiados - 1 GB por tentativa, e o aluno tenta de novo."""
     copias = []
     original = FieldFile.save
 
@@ -677,7 +676,7 @@ def test_conclusao_com_lista_json_no_lugar_do_objeto_vira_400(client, aluno, upl
     """`[1, 2, 3]` nao prova a regra: nenhum nome de campo esta dentro, entao a
     checagem de chave obrigatoria ja recusa. Uma lista com os NOMES dentro passa
     por ela (`"titulo" in ["titulo", ...]` e verdadeiro) e chega ao
-    `dados["titulo"]`, que levanta TypeError — 500. Quem a barra e a exigencia de
+    `dados["titulo"]`, que levanta TypeError - 500. Quem a barra e a exigencia de
     que o corpo decodificado seja um objeto JSON."""
     client.force_login(aluno)
 
@@ -695,7 +694,7 @@ def test_conclusao_com_lista_json_no_lugar_do_objeto_vira_400(client, aluno, upl
 @pytest.mark.django_db
 def test_nome_que_nao_e_texto_vira_400(client, aluno, entregavel_videos):
     """O irmao textual da regra 21. `nome` vai direto para `Path(...)`, que
-    levanta TypeError diante de uma lista — 500 por corpo malformado do cliente."""
+    levanta TypeError diante de uma lista - 500 por corpo malformado do cliente."""
     client.force_login(aluno)
 
     resposta = client.post(
@@ -737,7 +736,7 @@ def test_metodo_errado_e_rejeitado(client, aluno, upload_completo, rota, metodo)
 def test_visitante_anonimo_vai_para_o_login(client, rota):
     """Sem @login_required *antes* de tudo, `_meu_upload` filtraria por
     `usuario=AnonymousUser` (erro de banco, 500) e as rotas de POST
-    responderiam 405 — nenhuma delas manda a pessoa fazer login."""
+    responderiam 405 - nenhuma delas manda a pessoa fazer login."""
     args = [] if rota == "upload_iniciar" else [str(uuid.uuid4())]
 
     resposta = client.get(reverse(rota, args=args))
@@ -765,7 +764,7 @@ class _LeitorEspiao(io.BufferedReader):
 def test_conclusao_nunca_le_o_arquivo_inteiro_de_uma_vez(upload_completo, monkeypatch):
     """Spec 8: 1 GB nao pode sentar inteiro na memoria de um worker. Um
     `parcial.read()` sem argumento passaria em todos os outros testes deste
-    arquivo — os arquivos de teste tem 80 bytes. Este espiona os tamanhos
+    arquivo - os arquivos de teste tem 80 bytes. Este espiona os tamanhos
     pedidos: nenhum read() sem limite, e nenhum acima de 1 MB."""
     leituras = []
     monkeypatch.setattr(

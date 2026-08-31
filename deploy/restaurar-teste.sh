@@ -30,7 +30,7 @@ trap limpar EXIT
 # depois da primeira linha, o `ls` morre com 141, o pipeline devolve 141 e `set -e`
 # derruba o script aqui. Com poucos dumps nao acontece; com trinta dias de
 # retencao, acontece. O `|| true` protege o pipeline e o `-z` abaixo e quem de
-# fato recusa a ausencia de dump — a protecao nao pode virar silencio.
+# fato recusa a ausencia de dump - a protecao nao pode virar silencio.
 ULTIMO=$(ls -t "$DESTINO_SQL"/integrasi-*.sql.gz 2>/dev/null | head -1 || true)
 if [ -z "$ULTIMO" ]; then
   echo "Nenhum dump em $DESTINO_SQL: nao ha o que restaurar." >&2

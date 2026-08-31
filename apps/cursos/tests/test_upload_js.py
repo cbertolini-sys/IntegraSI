@@ -3,7 +3,7 @@
 `static/js/upload.js` e o unico ponto do sistema com JS proprio, e e onde mora o
 risco desta tarefa: nenhum teste de view alcanca o laco de retomada, o cabecalho
 CSRF ou a leitura do `sessionStorage`. Playwright e um servidor de verdade seriam
-desproporcionais para 200 linhas — mas rodar essas 200 linhas sob node, com
+desproporcionais para 200 linhas - mas rodar essas 200 linhas sob node, com
 `fetch`, `sessionStorage` e `setTimeout` de mentira, custa 100 ms e prende o que
 importa.
 
@@ -15,7 +15,7 @@ As regras, todas do lado do navegador:
 
  1. O arquivo e fatiado no tamanho que o formulario informa (dois cenarios, com
     tamanhos diferentes: um so nao distingue "leu o dado" de "acertou por acaso").
- 2. Todo POST leva o `X-CSRFToken` deste formulario — nao o primeiro token do
+ 2. Todo POST leva o `X-CSRFToken` deste formulario - nao o primeiro token do
     documento.
  3. As quatro URLs saem do formulario, com a marca do UUID trocada.
  4. Uma queda de conexao no meio nao perde o upload.
@@ -25,7 +25,7 @@ As regras, todas do lado do navegador:
  7. A espera entre tentativas cresce.
  8. O numero de tentativas e limitado, e a desistencia explica o que houve.
  9. Recusa do servidor (4xx) e definitiva: nao entra no laco de retomada.
-10. O identificador guardado na sessao e LIDO de volta — recarregar a pagina
+10. O identificador guardado na sessao e LIDO de volta - recarregar a pagina
     retoma em vez de orfanar os bytes que ja subiram.
 11. Guardado que o servidor esqueceu (404) e descartado.
 12. Guardado de arquivo de outro tamanho tambem.

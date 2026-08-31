@@ -4,7 +4,7 @@ As regras que este arquivo prende, na ordem em que aparecem:
 
  1. A rota `baixar` acha o Arquivo pelo `identificador` (UUID, nao pk);
     identificador desconhecido -> 404.
- 2. Visitante anonimo vai para o login (302 para LOGIN_URL) — nao 403, nao os bytes.
+ 2. Visitante anonimo vai para o login (302 para LOGIN_URL) - nao 403, nao os bytes.
  3. Metodo errado -> 405.
  4. Autoriza quem pode ver ALGUM curso que anexa o arquivo. A partir da Task 5 um
     mesmo Arquivo e compartilhado por varias versoes do curso; olhar so o primeiro
@@ -20,7 +20,7 @@ As regras que este arquivo prende, na ordem em que aparecem:
     (`materiais/<hex>/...`), NUNCA do `nome_original`, que e texto do usuario.
 10. `Content-Disposition: inline` so para PDF e MP4 (spec 8).
 11. PNG e JPEG saem como `attachment`: sao de renderizar, mas ficam de fora de
-    proposito — a lista e de tipos seguros de abrir, nao de tipos exibiveis.
+    proposito - a lista e de tipos seguros de abrir, nao de tipos exibiveis.
 12. Mime que nao esta na lista (ex.: SVG) sai como `attachment`.
 13. O nome exibido no `Content-Disposition` e o `nome_original`, percent-encoded
     em `filename*=UTF-8''`.
@@ -28,7 +28,7 @@ As regras que este arquivo prende, na ordem em que aparecem:
     mesmo cabecalho de disposicao e passando pelo mesmo portao de permissao.
 15. As telas de entregavel e de revisao linkam o anexo pela rota protegida.
 
-Regra 16 — `USAR_X_ACCEL` nasce ligado quando `DEBUG` esta desligado — mora em
+Regra 16 (`USAR_X_ACCEL` nasce ligado quando `DEBUG` esta desligado) mora em
 `tests/test_configuracao.py`: e uma settings, e o unico jeito de ver o padrao e
 importar as settings fora do pytest-django, que forca DEBUG=False.
 
@@ -138,7 +138,7 @@ def test_arquivo_compartilhado_libera_por_qualquer_curso(
     client, settings, request, dados_curso, aluno, outro_aluno, arquivo_qualquer, quem
 ):
     """O mesmo Arquivo em dois cursos, cada um com um aluno diferente: os dois
-    baixam. Autorizar contra `arquivo.anexos.first()` recusaria um deles — qual,
+    baixam. Autorizar contra `arquivo.anexos.first()` recusaria um deles - qual,
     depende da ordenacao do Anexo, por isso o teste cobra os dois lados. E o
     caso que a Task 5 torna rotina: versoes de um curso compartilham o mesmo
     Arquivo em vez de clonar os bytes (spec 4.6)."""
@@ -251,8 +251,8 @@ def test_imagem_vai_como_anexo(client, anexo, aluno, settings, mime):
 @pytest.mark.django_db
 def test_tipo_nao_confiavel_vai_como_anexo(client, anexo, aluno, settings):
     """SVG servido inline a partir do nosso dominio e vetor de XSS. O estado e
-    inalcancavel por upload — `detecta_mime` nunca devolve image/svg+xml e o mime
-    e gravado por ela —, entao isto e defesa em profundidade: prende o
+    inalcancavel por upload - `detecta_mime` nunca devolve image/svg+xml e o mime
+    e gravado por ela - , entao isto e defesa em profundidade: prende o
     comportamento para o dia em que um tipo novo entrar em ASSINATURAS."""
     settings.USAR_X_ACCEL = True
     arquivo = anexo.arquivo

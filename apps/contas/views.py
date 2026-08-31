@@ -18,7 +18,7 @@ def _resumo(usuario):
     """Os números que cada papel precisa ver ao entrar.
 
     Só contagens: o painel é uma porta, não um relatório. Cada número leva a uma
-    tela que já existe e já sabe filtrar — repetir a lista aqui seria manter duas
+    tela que já existe e já sabe filtrar - repetir a lista aqui seria manter duas
     definições do mesmo recorte.
     """
     if usuario.e_coordenador:

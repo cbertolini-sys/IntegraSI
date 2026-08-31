@@ -1,14 +1,14 @@
-# IntegraSI — Plano 5: Papéis, Alocação de Aluno e Primeiro Acesso
+# IntegraSI - Plano 5: Papéis, Alocação de Aluno e Primeiro Acesso
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Coordenador passa a ser um professor com nível de acesso Admin; o professor aloca alunos informando só nome e e-mail; o aluno alocado recebe convite por e-mail e, no primeiro acesso, completa o perfil e define a senha; e a promoção a coordenador ganha tela.
 
-**Architecture:** `e_professor` passa a valer para coordenador — herança por propriedade, sem mexer no `CharField papel`, que continua com um valor por pessoa. CPF e matrícula deixam de ser obrigatórios na criação e passam a ser exigidos pelo próprio conceito de perfil completo, derivado dos campos e não de uma flag paralela. O convite é um modelo próprio com prazo e uso único, e não o gerador de token do reset de senha, cujo prazo é global e compartilhado. O e-mail sai pela fila de `notificacoes`, como todo o resto do sistema.
+**Architecture:** `e_professor` passa a valer para coordenador - herança por propriedade, sem mexer no `CharField papel`, que continua com um valor por pessoa. CPF e matrícula deixam de ser obrigatórios na criação e passam a ser exigidos pelo próprio conceito de perfil completo, derivado dos campos e não de uma flag paralela. O convite é um modelo próprio com prazo e uso único, e não o gerador de token do reset de senha, cujo prazo é global e compartilhado. O e-mail sai pela fila de `notificacoes`, como todo o resto do sistema.
 
 **Tech Stack:** Django 5.2, PostgreSQL, pytest. Nenhuma dependência nova.
 
-**Spec:** `docs/superpowers/specs/2026-08-25-integrasi-design.md` — a Task 7 deste plano atualiza as seções §2 e §10, que as regras abaixo contradizem.
+**Spec:** `docs/superpowers/specs/2026-08-25-integrasi-design.md` - a Task 7 deste plano atualiza as seções §2 e §10, que as regras abaixo contradizem.
 
 ## Global Constraints
 
@@ -17,7 +17,7 @@
 - Só `services.py` altera campo de status ou de papel. Nada de lógica de domínio em `post_save`.
 - CPF não aparece fora do Django Admin, e mascarado até lá. `search_fields` do admin nunca inclui `cpf`.
 - Texto voltado ao usuário em português **acentuado**. Valores gravados (choices, tokens, nomes de rota) sem acento e nunca alterados por passada de texto.
-- Nenhum campo de frequência, nota ou certificado (spec §1.1 — fronteira do módulo de produção).
+- Nenhum campo de frequência, nota ou certificado (spec §1.1 - fronteira do módulo de produção).
 - **Enumere as regras da tarefa antes de conferir os testes contra elas**, e prove cada teste de invariante apagando a guarda que ele prende, **uma de cada vez**, com a árvore commitada antes. O padrão "teste com nome que não exercita a regra" apareceu **dezesseis vezes** nos Planos 2 a 4. Ver `CLAUDE.md`, seção Testes.
 - **Teste existente que contradiga uma regra nova não se ajusta em silêncio.** Pare, relate qual teste, o que ele prende hoje e por que a regra nova o invalida.
 - Baseline: **697 testes, 0 skips**, `filterwarnings = ["error"]` ativo.
@@ -85,7 +85,7 @@ def test_papel_continua_sendo_um_so_valor(coordenador):
 - [ ] **Step 2: Rodar para ver falhar**
 
 Run: `pytest apps/contas/tests/test_papeis.py -v`
-Expected: FAIL — `assert False is True` em `test_coordenador_tambem_e_professor`, e `AttributeError: 'Usuario' object has no attribute 'e_somente_professor'`.
+Expected: FAIL - `assert False is True` em `test_coordenador_tambem_e_professor`, e `AttributeError: 'Usuario' object has no attribute 'e_somente_professor'`.
 
 - [ ] **Step 3: Implementar a herança**
 
@@ -158,10 +158,10 @@ Em `apps/turmas/forms.py`, o queryset do campo `professor` filtra `papel=Usuario
 
 Run: `pytest`
 
-Alguns testes existentes afirmam o comportamento antigo. **Não os altere ainda.** Rode, anote cada falha e relate: o nome do teste, o que ele prende hoje, e por que a regra 1 o invalida. O plano prevê que estes falhem — o gate humano decide caso a caso:
+Alguns testes existentes afirmam o comportamento antigo. **Não os altere ainda.** Rode, anote cada falha e relate: o nome do teste, o que ele prende hoje, e por que a regra 1 o invalida. O plano prevê que estes falhem - o gate humano decide caso a caso:
 
-- `apps/cursos/tests/` — qualquer teste de que coordenador **não** cria proposta.
-- `apps/turmas/tests/test_turma.py` — `test_quem_nao_e_professor_nao_conduz_turma` usa `aluno`, então continua válido; um teste que use `coordenador` como não-professor, não.
+- `apps/cursos/tests/` - qualquer teste de que coordenador **não** cria proposta.
+- `apps/turmas/tests/test_turma.py` - `test_quem_nao_e_professor_nao_conduz_turma` usa `aluno`, então continua válido; um teste que use `coordenador` como não-professor, não.
 
 - [ ] **Step 6: Provar a herança quebrando**
 
@@ -289,7 +289,7 @@ def aluno(db):
 - [ ] **Step 2: Rodar para ver falhar**
 
 Run: `pytest apps/contas/tests/test_perfil.py -v`
-Expected: FAIL — `AttributeError: 'Usuario' object has no attribute 'telefone'`.
+Expected: FAIL - `AttributeError: 'Usuario' object has no attribute 'telefone'`.
 
 - [ ] **Step 3: Implementar os campos e a regra**
 
@@ -320,7 +320,7 @@ E a propriedade, junto das outras:
         return bool(self.cpf and self.matricula and self.telefone)
 ```
 
-E em `clean()`, a exigência de matrícula do aluno passa a valer só quando já há CPF — isto é, quando o perfil está sendo completado, e não quando o aluno acaba de ser alocado:
+E em `clean()`, a exigência de matrícula do aluno passa a valer só quando já há CPF - isto é, quando o perfil está sendo completado, e não quando o aluno acaba de ser alocado:
 
 ```python
         if self.e_aluno:
@@ -369,7 +369,7 @@ python manage.py makemigrations contas --name telefone_e_cpf_opcional
 pytest apps/contas -v
 ```
 
-Confira que a migração é `AddField` mais `AlterField` — **nenhuma perda de dado**. Se aparecer `RemoveField`, pare e relate.
+Confira que a migração é `AddField` mais `AlterField` - **nenhuma perda de dado**. Se aparecer `RemoveField`, pare e relate.
 
 - [ ] **Step 5: Provar quebrando, uma guarda por vez**
 
@@ -546,7 +546,7 @@ def test_consumir_e_atomico_quando_a_senha_e_fraca(recem_alocado, professor):
 - [ ] **Step 2: Rodar para ver falhar**
 
 Run: `pytest apps/contas/tests/test_convite.py -v`
-Expected: FAIL — `ImportError: cannot import name 'ConviteAluno'`.
+Expected: FAIL - `ImportError: cannot import name 'ConviteAluno'`.
 
 - [ ] **Step 3: Implementar o modelo**
 
@@ -734,7 +734,7 @@ pytest apps/contas -v
 
 Apague uma de cada vez e confirme que cai exatamente o teste que a nomeia: a checagem `usado_em is None` em `valido`; a `cancelado_em is None`; a `expira_em > timezone.now()`; o `update(cancelado_em=...)` em `convidar`; o `validate_password`; o `@transaction.atomic` de `consumir_convite`.
 
-Para o `@transaction.atomic`: o teste que o prende é `test_consumir_e_atomico_quando_a_senha_e_fraca`. Confirme que ele falha sem o decorador — se não falhar, a falha está acontecendo antes de qualquer escrita, e o teste não prova atomicidade nenhuma. Nesse caso, mova a validação da senha para depois do `save()` do usuário e relate a mudança.
+Para o `@transaction.atomic`: o teste que o prende é `test_consumir_e_atomico_quando_a_senha_e_fraca`. Confirme que ele falha sem o decorador - se não falhar, a falha está acontecendo antes de qualquer escrita, e o teste não prova atomicidade nenhuma. Nesse caso, mova a validação da senha para depois do `save()` do usuário e relate a mudança.
 
 - [ ] **Step 7: Commitar**
 
@@ -886,7 +886,7 @@ def outro_professor(db):
 - [ ] **Step 2: Rodar para ver falhar**
 
 Run: `pytest apps/cursos/tests/test_alocacao.py -v`
-Expected: FAIL — `AttributeError: module 'apps.cursos.services' has no attribute 'alocar_aluno'`.
+Expected: FAIL - `AttributeError: module 'apps.cursos.services' has no attribute 'alocar_aluno'`.
 
 - [ ] **Step 3: Implementar o serviço**
 
@@ -1129,7 +1129,7 @@ def test_o_portao_nao_prende_o_logout(client, convite):
 - [ ] **Step 2: Rodar para ver falhar**
 
 Run: `pytest apps/contas/tests/test_primeiro_acesso.py -v`
-Expected: FAIL — `NoReverseMatch: Reverse for 'primeiro_acesso' not found`.
+Expected: FAIL - `NoReverseMatch: Reverse for 'primeiro_acesso' not found`.
 
 - [ ] **Step 3: Escrever o formulário**
 
@@ -1218,7 +1218,7 @@ Em `apps/contas/urls.py`:
 
 ```html
 {% extends "base.html" %}
-{% block titulo %}Primeiro acesso &mdash; IntegraSI{% endblock %}
+{% block titulo %}Primeiro acesso - IntegraSI{% endblock %}
 
 {% block conteudo %}
 <div class="trabalho">
@@ -1245,7 +1245,7 @@ Em `apps/contas/urls.py`:
 
 ```html
 {% extends "base.html" %}
-{% block titulo %}Convite vencido &mdash; IntegraSI{% endblock %}
+{% block titulo %}Convite vencido - IntegraSI{% endblock %}
 
 {% block conteudo %}
 <div class="trabalho">
@@ -1457,13 +1457,13 @@ def outro_coordenador(db):
 ```
 
 O CPF acima é válido pelo dígito verificador e não colide com nenhum já usado nas
-fixturas — conferido contra `valida_cpf` e contra o banco. Não o troque por um
+fixturas - conferido contra `valida_cpf` e contra o banco. Não o troque por um
 número inventado: `Usuario.full_clean` reprova, e o teste falharia pela razão errada.
 
 - [ ] **Step 2: Rodar para ver falhar**
 
 Run: `pytest apps/contas/tests/test_promocao.py -v`
-Expected: FAIL — `AttributeError: module 'apps.contas.services' has no attribute 'promover_a_coordenador'`.
+Expected: FAIL - `AttributeError: module 'apps.contas.services' has no attribute 'promover_a_coordenador'`.
 
 - [ ] **Step 3: Implementar os serviços**
 
@@ -1518,7 +1518,7 @@ def rebaixar_a_professor(usuario, por):
     return usuario
 ```
 
-Note que `save(update_fields=[...])` pula o `full_clean()` pela guarda do modelo — aqui isso é o que se quer: os campos mudados são exatamente dois, e o objeto já era válido.
+Note que `save(update_fields=[...])` pula o `full_clean()` pela guarda do modelo - aqui isso é o que se quer: os campos mudados são exatamente dois, e o objeto já era válido.
 
 - [ ] **Step 4: Escrever a tela**
 
@@ -1565,7 +1565,7 @@ Em `apps/contas/urls.py`:
 
 ```html
 {% extends "base.html" %}
-{% block titulo %}Pessoas &mdash; IntegraSI{% endblock %}
+{% block titulo %}Pessoas - IntegraSI{% endblock %}
 
 {% block conteudo %}
 <div class="trabalho">
@@ -1622,7 +1622,7 @@ Run: `pytest`
 
 Apague uma de cada vez: a checagem `usuario.pk == por.pk` (cai `test_ninguem_rebaixa_a_si_mesmo`); o `pode_publicar` de `promover_a_coordenador` (cai `test_professor_nao_promove`); o `e_somente_professor` (cai `test_aluno_nao_vira_coordenador`).
 
-Cuidado com o último: se `test_aluno_nao_vira_coordenador` continuar passando sem a guarda, é porque o `Usuario.clean` recusou por falta de SIAPE — duas regras recusando a mesma entrada. Nesse caso o teste não prende nada, e a correção é afirmar a **mensagem**, não só o tipo da exceção.
+Cuidado com o último: se `test_aluno_nao_vira_coordenador` continuar passando sem a guarda, é porque o `Usuario.clean` recusou por falta de SIAPE - duas regras recusando a mesma entrada. Nesse caso o teste não prende nada, e a correção é afirmar a **mensagem**, não só o tipo da exceção.
 
 - [ ] **Step 6: Commitar**
 
@@ -1684,7 +1684,7 @@ def test_claude_md_documenta_o_primeiro_acesso():
 - [ ] **Step 2: Rodar para ver falhar**
 
 Run: `pytest tests/test_documentacao.py -v`
-Expected: FAIL — as quatro, porque a spec ainda tem o texto antigo.
+Expected: FAIL - as quatro, porque a spec ainda tem o texto antigo.
 
 - [ ] **Step 3: Atualizar a spec**
 
@@ -1736,7 +1736,7 @@ Acrescente uma seção, depois de "Arquitetura":
   vale para coordenador; `e_somente_professor` é para quem precisa da distinção.
   **Não reescreva `papel == PROFESSOR` solto pelo código.**
 - Aluno é criado pelo professor com nome e e-mail, sem CPF e sem matrícula.
-  `Usuario.perfil_completo` é derivado dos campos — não existe flag paralela, e
+  `Usuario.perfil_completo` é derivado dos campos - não existe flag paralela, e
   não crie uma.
 - O convite (`ConviteAluno`) vale 7 dias, serve uma vez e leva token, **nunca
   senha**: a fila de notificações persiste no banco.
@@ -1761,7 +1761,7 @@ Em `docs/operacao.md`, na seção "Quando algo dá errado":
 ```markdown
 - **Aluno não recebeu o convite:** confira a fila em `/admin/notificacoes/` pelo
   evento `CONVITE_ALUNO`. Se `ultimo_erro` estiver preenchido, é SMTP. O
-  professor reenvia pela tela da equipe — o convite antigo é cancelado no ato.
+  professor reenvia pela tela da equipe - o convite antigo é cancelado no ato.
 - **Convite vencido:** sete dias. O professor reenvia; não há como estender o
   prazo de um convite existente, de propósito.
 ```
@@ -1788,10 +1788,10 @@ git commit -m "docs: papeis, alocacao e primeiro acesso na spec e na CLAUDE.md"
 - Primeiro acesso completa CPF, matrícula e telefone e define a senha, em transação.
 - Quem não completou o cadastro só alcança a própria tela.
 - Coordenação promove e rebaixa pela tela, e ninguém rebaixa a si mesmo.
-- Spec, `CLAUDE.md`, `onde-mora-a-validacao.md` e `operacao.md` atualizados — e um teste que reprova se a spec voltar a contradizer o código.
+- Spec, `CLAUDE.md`, `onde-mora-a-validacao.md` e `operacao.md` atualizados - e um teste que reprova se a spec voltar a contradizer o código.
 
 ## O que este plano NÃO faz
 
 - Não mexe em `Turma`/`Participante` além do queryset do formulário: frequência, nota e certificado continuam fora (spec §1.1).
-- Não cria fluxo de "esqueci minha senha" — o convite é para primeiro acesso, não para recuperação.
+- Não cria fluxo de "esqueci minha senha" - o convite é para primeiro acesso, não para recuperação.
 - Não permite ao coordenador escolher outro professor como responsável ao criar curso: ele fica responsável pelo próprio. Tela nova, não conserto.

@@ -587,7 +587,7 @@ def test_banco_recusa_duas_versoes_com_o_mesmo_numero_na_linhagem(
     curso_publicado, coordenador
 ):
     """A outra metade da defesa em profundidade da linhagem. A constraint da regra
-    22 e parcial em PUBLICADO e nao ve duas "v2" em RASCUNHO — que e exatamente o
+    22 e parcial em PUBLICADO e nao ve duas "v2" em RASCUNHO - que e exatamente o
     que a corrida entre duas aberturas simultaneas produz.
 
     Renumerar a v2 para 1 e a forma mais direta de forjar a colisao, e de quebra

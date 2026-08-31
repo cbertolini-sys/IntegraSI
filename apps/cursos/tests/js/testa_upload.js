@@ -25,7 +25,7 @@ const ROTAS = {
 };
 
 // `document` existe so para que um JS que buscasse o token CSRF no documento
-// inteiro (em vez de dentro do formulario) encontrasse ALGO — e o token errado.
+// inteiro (em vez de dentro do formulario) encontrasse ALGO - e o token errado.
 let ouvinteDeSubmit = null;
 globalThis.document = {
   querySelector: () => ({ value: 'token-de-outro-formulario' }),
@@ -165,7 +165,7 @@ async function rodar({ responder, arquivo, memoria, dataset, viaSubmit, alvo }) 
     if (viaSubmit) {
       // Caminho de verdade do navegador: o ouvinte de `submit` do documento.
       // Sem ele o formulario faria um POST comum para a propria pagina e NADA
-      // do resto do arquivo rodaria — com a suite inteira verde.
+      // do resto do arquivo rodaria - com a suite inteira verde.
       const evento = {
         target: alvo || form,
         preventDefault: () => { registro.barrou = true; },
@@ -226,7 +226,7 @@ cenario('fatia_no_tamanho_que_o_formulario_manda', async () => {
   afirma(est.concluido !== null, 'o upload precisava terminar em conclusão');
 });
 
-// Regra: o mesmo, com outro tamanho — o valor vem do dado, nao de uma constante.
+// Regra: o mesmo, com outro tamanho - o valor vem do dado, nao de uma constante.
 cenario('outro_tamanho_de_bloco_muda_o_fatiamento', async () => {
   const est = novoEstado();
   const r = await rodar({ responder: servidor(est), dataset: { tamanhoBloco: '3' } });
@@ -266,7 +266,7 @@ cenario('uma_queda_no_meio_nao_perde_o_upload', async () => {
   afirmaIgual(est.uploads['ident-novo'], 10, 'bytes no servidor');
 });
 
-// Regra: DUAS quedas tambem nao. E o ponto inteiro da tarefa — meia hora de
+// Regra: DUAS quedas tambem nao. E o ponto inteiro da tarefa - meia hora de
 // transferencia domestica cabe mais de uma queda, e um try/catch unico salva a
 // primeira e entrega a segunda de bandeja.
 cenario('duas_quedas_no_meio_nao_perdem_o_upload', async () => {
@@ -324,7 +324,7 @@ cenario('desiste_depois_do_limite_de_tentativas', async () => {
   afirma(r.aviso.includes('tentativas'), `aviso pouco explicativo: ${r.aviso}`);
 });
 
-// Regra: recusa do servidor (4xx) e definitiva — repetir so gasta a paciencia de
+// Regra: recusa do servidor (4xx) e definitiva - repetir so gasta a paciencia de
 // quem espera, porque o servidor entendeu o pedido e disse nao.
 cenario('recusa_do_servidor_nao_e_retentada', async () => {
   const est = novoEstado();
@@ -366,7 +366,7 @@ cenario('identificador_guardado_que_o_servidor_esqueceu_e_descartado', async () 
 });
 
 // Regra: guardado que e de OUTRO arquivo (mesmo nome, tamanho diferente no
-// servidor) tambem e descartado — a chave leva o tamanho, mas a memoria pode ter
+// servidor) tambem e descartado - a chave leva o tamanho, mas a memoria pode ter
 // sobrado de um arquivo trocado.
 cenario('guardado_de_arquivo_de_outro_tamanho_e_descartado', async () => {
   const est = novoEstado({ uploads: { 'ident-de-outro': 4 }, total: 99 });
@@ -402,7 +402,7 @@ cenario('chave_some_da_memoria_quando_o_video_entra', async () => {
   afirmaIgual(r.guardado.size, 0, 'memória depois do sucesso');
 });
 
-// Regra: a tela recarrega no fim — e o que faz o anexo novo aparecer na lista de
+// Regra: a tela recarrega no fim - e o que faz o anexo novo aparecer na lista de
 // materiais. Cenario separado do anterior de proposito: dois assertos numa mesma
 // funcao seriam duas guardas presas por um teste so, e nenhuma das duas estaria
 // presa sozinha.
@@ -421,7 +421,7 @@ cenario('sem_arquivo_nao_fala_com_o_servidor', async () => {
 });
 
 // Regra: o deslocamento do proximo bloco vem do `recebido` do servidor, e nao de
-// uma soma local — o servidor pode ter gravado mais do que o cliente contou.
+// uma soma local - o servidor pode ter gravado mais do que o cliente contou.
 cenario('o_deslocamento_do_proximo_bloco_vem_do_servidor', async () => {
   const est = novoEstado({ recebidoApos: (fim) => (fim === 4 ? 6 : fim) });
   const r = await rodar({ responder: servidor(est) });

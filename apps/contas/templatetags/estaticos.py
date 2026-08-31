@@ -1,4 +1,4 @@
-"""`{% estatico %}` — como `{% static %}`, mas com a versão do arquivo na URL.
+"""`{% estatico %}` - como `{% static %}`, mas com a versão do arquivo na URL.
 
 Existe porque o servidor de desenvolvimento manda `Last-Modified` sem
 `Cache-Control`, e o navegador passa a cachear por heurística: uma folha de

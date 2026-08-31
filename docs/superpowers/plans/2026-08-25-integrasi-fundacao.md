@@ -1,10 +1,10 @@
-# IntegraSI — Plano 1: Fundação e Cadastros
+# IntegraSI - Plano 1: Fundação e Cadastros
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Colocar de pé o projeto Django do IntegraSI com autenticação por papéis e todos os cadastros de apoio (edições da disciplina, referenciais pedagógicos e temas), de modo que o coordenador consiga entrar no sistema e cadastrar tudo que um curso vai precisar referenciar.
 
-**Architecture:** Django monolítico, PostgreSQL, templates renderizados no servidor. Apps pequenos e de mão única sob `apps/`. Modelo de usuário próprio desde a primeira migração, com papel e documentos de identificação validados e normalizados no próprio modelo. Cadastros de apoio administrados pelo Django Admin — nenhuma tela de CRUD escrita à mão nesta etapa.
+**Architecture:** Django monolítico, PostgreSQL, templates renderizados no servidor. Apps pequenos e de mão única sob `apps/`. Modelo de usuário próprio desde a primeira migração, com papel e documentos de identificação validados e normalizados no próprio modelo. Cadastros de apoio administrados pelo Django Admin - nenhuma tela de CRUD escrita à mão nesta etapa.
 
 **Tech Stack:** Python 3.12, Django 5.x, PostgreSQL 16, pytest + pytest-django, python-dotenv, dj-database-url.
 
@@ -18,7 +18,7 @@
 - `DEBUG` desligado por padrão; toda configuração vem de variável de ambiente.
 - CPF, matrícula e SIAPE armazenados **somente com dígitos**; CPF com dígitos verificadores conferidos (spec §4.1).
 - CPF nunca aparece fora do Django Admin, e mascarado nas listagens (spec §10).
-- Nenhuma tela, filtro ou relatório pode pressupor BNCC — cursos sem referencial são de primeira classe (spec §4.2).
+- Nenhuma tela, filtro ou relatório pode pressupor BNCC - cursos sem referencial são de primeira classe (spec §4.2).
 - Textos de interface e nomes de campos em português.
 
 ---
@@ -107,7 +107,7 @@ addopts = "-q"
 ```
 
 Run: `pytest tests/test_configuracao.py -v`
-Expected: FAIL — `assert 'pt-br' == 'en-us'` e o engine ainda é `sqlite3`.
+Expected: FAIL - `assert 'pt-br' == 'en-us'` e o engine ainda é `sqlite3`.
 
 - [ ] **Step 7: Reescrever `config/settings.py`**
 
@@ -265,7 +265,7 @@ def test_cpf_invalido_levanta(cpf):
 - [ ] **Step 2: Rodar o teste para vê-lo falhar**
 
 Run: `pytest apps/contas/tests/test_validators.py -v`
-Expected: FAIL — `ModuleNotFoundError: No module named 'apps.contas.validators'`.
+Expected: FAIL - `ModuleNotFoundError: No module named 'apps.contas.validators'`.
 
 - [ ] **Step 3: Implementar os validadores**
 
@@ -450,7 +450,7 @@ def test_str_mostra_nome_e_nunca_o_cpf():
 - [ ] **Step 3: Rodar o teste para vê-lo falhar**
 
 Run: `pytest apps/contas/tests/test_models.py -v`
-Expected: FAIL — `ImportError: cannot import name 'Usuario' from 'apps.contas.models'`.
+Expected: FAIL - `ImportError: cannot import name 'Usuario' from 'apps.contas.models'`.
 
 - [ ] **Step 4: Implementar o modelo**
 
@@ -677,7 +677,7 @@ def test_comando_e_idempotente_no_email():
 - [ ] **Step 2: Rodar para ver falhar**
 
 Run: `pytest apps/contas/tests/test_admin.py apps/contas/tests/test_comandos.py -v`
-Expected: FAIL — `ImportError: cannot import name 'mascara_cpf'` e `CommandError: Unknown command: 'criar_coordenador'`.
+Expected: FAIL - `ImportError: cannot import name 'mascara_cpf'` e `CommandError: Unknown command: 'criar_coordenador'`.
 
 - [ ] **Step 3: Escrever os formulários do Admin**
 
@@ -887,7 +887,7 @@ def test_login_com_email_e_senha(client, aluno):
 - [ ] **Step 2: Rodar para ver falhar**
 
 Run: `pytest apps/contas/tests/test_views.py -v`
-Expected: FAIL — `NoReverseMatch: Reverse for 'painel' not found`.
+Expected: FAIL - `NoReverseMatch: Reverse for 'painel' not found`.
 
 - [ ] **Step 3: Escrever a view e as rotas**
 
@@ -952,7 +952,7 @@ LOGOUT_REDIRECT_URL = "login"
   <header>
     <a href="{% url 'painel' %}">IntegraSI</a>
     {% if user.is_authenticated %}
-      <span>{{ user.nome_completo }} &mdash; {{ user.get_papel_display }}</span>
+      <span>{{ user.nome_completo }} - {{ user.get_papel_display }}</span>
       <form method="post" action="{% url 'logout' %}">
         {% csrf_token %}
         <button type="submit">Sair</button>
@@ -970,7 +970,7 @@ LOGOUT_REDIRECT_URL = "login"
 
 ```html
 {% extends "base.html" %}
-{% block titulo %}Entrar &mdash; IntegraSI{% endblock %}
+{% block titulo %}Entrar - IntegraSI{% endblock %}
 {% block conteudo %}
   <h1>Entrar</h1>
   {% if form.errors %}<p>E-mail ou senha incorretos.</p>{% endif %}
@@ -986,7 +986,7 @@ LOGOUT_REDIRECT_URL = "login"
 
 ```html
 {% extends "base.html" %}
-{% block titulo %}Painel &mdash; IntegraSI{% endblock %}
+{% block titulo %}Painel - IntegraSI{% endblock %}
 {% block conteudo %}
   <h1>Ola, {{ user.nome_completo }}</h1>
   <p>Voce esta no IntegraSI como {{ user.get_papel_display }}.</p>
@@ -1105,7 +1105,7 @@ def test_str_e_o_codigo():
 - [ ] **Step 3: Rodar para ver falhar**
 
 Run: `pytest apps/edicoes/tests -v`
-Expected: FAIL — `ImportError: cannot import name 'Edicao'`.
+Expected: FAIL - `ImportError: cannot import name 'Edicao'`.
 
 - [ ] **Step 4: Implementar o modelo**
 
@@ -1194,7 +1194,7 @@ Expected: PASS (6 testes).
 
 **Interfaces:**
 - Consumes: nada.
-- Produces: `apps.referenciais.models.Referencial` (`nome`, `sigla`, `descricao`, `min_competencias`, `max_competencias`, `ativo`), `Categoria` (`referencial`, `nome`, `ordem`), `Competencia` (`referencial`, `categoria`, `codigo`, `descricao`, `etapa`, `ordem`); `apps.referenciais.choices.ETAPAS` — lista de tuplas usada também pelo campo `etapa_ano` do `Curso` no Plano 2. Método `Referencial.valida_quantidade(n: int) -> None`, que o `Curso` chamará ao validar suas competências.
+- Produces: `apps.referenciais.models.Referencial` (`nome`, `sigla`, `descricao`, `min_competencias`, `max_competencias`, `ativo`), `Categoria` (`referencial`, `nome`, `ordem`), `Competencia` (`referencial`, `categoria`, `codigo`, `descricao`, `etapa`, `ordem`); `apps.referenciais.choices.ETAPAS` - lista de tuplas usada também pelo campo `etapa_ano` do `Curso` no Plano 2. Método `Referencial.valida_quantidade(n: int) -> None`, que o `Curso` chamará ao validar suas competências.
 
 - [ ] **Step 1: Criar o app e registrá-lo**
 
@@ -1306,7 +1306,7 @@ def test_str_da_competencia_mostra_codigo(bncc, pensamento):
 - [ ] **Step 3: Rodar para ver falhar**
 
 Run: `pytest apps/referenciais/tests -v`
-Expected: FAIL — `ModuleNotFoundError: No module named 'apps.referenciais.choices'`.
+Expected: FAIL - `ModuleNotFoundError: No module named 'apps.referenciais.choices'`.
 
 - [ ] **Step 4: Escrever as etapas de ensino**
 
@@ -1334,7 +1334,7 @@ ETAPAS = [
 
 - [ ] **Step 5: Implementar os modelos**
 
-Sobre os `on_delete`: as tres chaves cascateiam, de modo que apagar um referencial leva junto suas categorias e competencias. Nao ha `PROTECT` aqui de proposito — o guarda real esta no Plano 2, onde `Curso.referencial` e `PROTECT`: um referencial usado por qualquer curso nao pode ser apagado, e so os nao utilizados cascateiam. Um `PROTECT` em `Competencia.categoria` combinado com o `CASCADE` de `Categoria.referencial` cria um impasse: o coletor do Django desce de `Referencial` para `Categoria`, esbarra no `PROTECT` e levanta `ProtectedError` mesmo quando as mesmas competencias ja estavam marcadas para cascatear.
+Sobre os `on_delete`: as tres chaves cascateiam, de modo que apagar um referencial leva junto suas categorias e competencias. Nao ha `PROTECT` aqui de proposito - o guarda real esta no Plano 2, onde `Curso.referencial` e `PROTECT`: um referencial usado por qualquer curso nao pode ser apagado, e so os nao utilizados cascateiam. Um `PROTECT` em `Competencia.categoria` combinado com o `CASCADE` de `Categoria.referencial` cria um impasse: o coletor do Django desce de `Referencial` para `Categoria`, esbarra no `PROTECT` e levanta `ProtectedError` mesmo quando as mesmas competencias ja estavam marcadas para cascatear.
 
 `apps/referenciais/models.py`:
 
@@ -1558,7 +1558,7 @@ def test_categoria_desconhecida_no_csv_interrompe_a_importacao(bncc, tmp_path):
 - [ ] **Step 2: Rodar para ver falhar**
 
 Run: `pytest apps/referenciais/tests/test_importacao.py -v`
-Expected: FAIL — `CommandError: No fixture named 'bncc_computacao' found`.
+Expected: FAIL - `CommandError: No fixture named 'bncc_computacao' found`.
 
 - [ ] **Step 3: Escrever a fixture**
 
@@ -1786,7 +1786,7 @@ def test_tema_nasce_ativo_e_str_e_o_nome():
 - [ ] **Step 3: Rodar para ver falhar**
 
 Run: `pytest apps/cursos/tests -v`
-Expected: FAIL — `ImportError: cannot import name 'Tema' from 'apps.cursos.models'`.
+Expected: FAIL - `ImportError: cannot import name 'Tema' from 'apps.cursos.models'`.
 
 - [ ] **Step 4: Implementar o modelo**
 
@@ -1857,7 +1857,7 @@ def test_fixture_carrega_temas_iniciais_ativos():
 ```
 
 Rode e veja falhar: `pytest apps/cursos/tests/test_tema.py::test_fixture_carrega_temas_iniciais_ativos -v`
-Expected: FAIL — `CommandError: No fixture named 'temas_iniciais' found`.
+Expected: FAIL - `CommandError: No fixture named 'temas_iniciais' found`.
 
 Depois crie o arquivo:
 
@@ -1889,7 +1889,7 @@ python manage.py makemigrations cursos
 pytest -v
 ```
 
-Expected: PASS — todos os testes dos apps `contas`, `edicoes`, `referenciais` e `cursos`, mais os de configuração.
+Expected: PASS - todos os testes dos apps `contas`, `edicoes`, `referenciais` e `cursos`, mais os de configuração.
 
 - [ ] **Step 8: Conferir na mão e commitar**
 
@@ -1910,10 +1910,10 @@ git commit -m "feat(cursos): tema controlado para filtro do catalogo"
 
 ## Entregue ao fim deste plano
 
-O coordenador entra no sistema, cadastra professores e alunos com seus documentos validados, abre a edição corrente da disciplina, carrega a BNCC da Computação (ou qualquer outro referencial) e cadastra os temas do catálogo. Nada de curso ainda — é o que o **Plano 2: Produção de cursos** constrói em cima disto.
+O coordenador entra no sistema, cadastra professores e alunos com seus documentos validados, abre a edição corrente da disciplina, carrega a BNCC da Computação (ou qualquer outro referencial) e cadastra os temas do catálogo. Nada de curso ainda - é o que o **Plano 2: Produção de cursos** constrói em cima disto.
 
 ## Próximos planos
 
-- **Plano 2 — Produção de cursos:** `Curso` com identidade pedagógica e público-alvo obrigatório, `MembroEquipe`, os cinco `Entregavel`, `Secao`, `Anexo`, `Revisao`, `services.py` com a máquina de estados e as validações do §6.
-- **Plano 3 — Publicação e demanda:** submissão ao coordenador, catálogo público com busca, `Solicitacao`, `Turma`, `Participante`, `notificacoes`.
-- **Plano 4 — Mídia e versões:** `Arquivo`, upload retomável de 1 GB, entrega via `X-Accel-Redirect`, versionamento de cursos, deploy e backup.
+- **Plano 2 - Produção de cursos:** `Curso` com identidade pedagógica e público-alvo obrigatório, `MembroEquipe`, os cinco `Entregavel`, `Secao`, `Anexo`, `Revisao`, `services.py` com a máquina de estados e as validações do §6.
+- **Plano 3 - Publicação e demanda:** submissão ao coordenador, catálogo público com busca, `Solicitacao`, `Turma`, `Participante`, `notificacoes`.
+- **Plano 4 - Mídia e versões:** `Arquivo`, upload retomável de 1 GB, entrega via `X-Accel-Redirect`, versionamento de cursos, deploy e backup.

@@ -1,6 +1,6 @@
 """A página Sobre: o que o sistema é e como cada pessoa o percorre.
 
-Pública como o catálogo — quem vai solicitar um curso precisa entender o que
+Pública como o catálogo - quem vai solicitar um curso precisa entender o que
 está pedindo antes de ter conta, e provavelmente nunca terá uma.
 """
 

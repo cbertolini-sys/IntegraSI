@@ -1,4 +1,4 @@
-# IntegraSI — Plano 2: Produção de Cursos
+# IntegraSI - Plano 2: Produção de Cursos
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -10,7 +10,7 @@
 
 **Spec:** `docs/superpowers/specs/2026-08-25-integrasi-design.md`
 
-**Depende de:** Plano 1 (`docs/superpowers/plans/2026-08-25-integrasi-fundacao.md`) completo — `Usuario`, `Edicao`, `Referencial`, `Competencia`, `Tema`.
+**Depende de:** Plano 1 (`docs/superpowers/plans/2026-08-25-integrasi-fundacao.md`) completo - `Usuario`, `Edicao`, `Referencial`, `Competencia`, `Tema`.
 
 ## Global Constraints
 
@@ -72,7 +72,7 @@ def test_tema_continua_importavel_do_pacote_de_modelos():
 - [ ] **Step 2: Rodar para ver falhar**
 
 Run: `pytest apps/cursos/tests/test_choices.py -v`
-Expected: FAIL — `ModuleNotFoundError: No module named 'apps.cursos.choices'`.
+Expected: FAIL - `ModuleNotFoundError: No module named 'apps.cursos.choices'`.
 
 - [ ] **Step 3: Escrever as enumerações**
 
@@ -152,7 +152,7 @@ from apps.cursos.models.tema import Tema
 __all__ = ["Tema"]
 ```
 
-Ao mover o arquivo, acrescente a `Tema.save()` o mesmo guarda de `update_fields` que `contas`, `edicoes` e `referenciais` ja tem — `full_clean()` so quando a gravacao nao e dirigida. `Tema` ficou de fora daquela correcao no Plano 1, e os servicos deste plano gravam com `update_fields`:
+Ao mover o arquivo, acrescente a `Tema.save()` o mesmo guarda de `update_fields` que `contas`, `edicoes` e `referenciais` ja tem - `full_clean()` so quando a gravacao nao e dirigida. `Tema` ficou de fora daquela correcao no Plano 1, e os servicos deste plano gravam com `update_fields`:
 
 ```python
     def save(self, *args, **kwargs):
@@ -169,7 +169,7 @@ git add apps/cursos
 git commit -m "refactor(cursos): enumeracoes do dominio e models como pacote"
 ```
 
-Expected: PASS — inclusive os testes de `Tema` do Plano 1, que continuam importando de `apps.cursos.models`.
+Expected: PASS - inclusive os testes de `Tema` do Plano 1, que continuam importando de `apps.cursos.models`.
 
 ---
 
@@ -349,7 +349,7 @@ def test_professor_responsavel_precisa_ser_professor(dados_curso, aluno):
 - [ ] **Step 3: Rodar para ver falhar**
 
 Run: `pytest apps/cursos/tests/test_curso.py -v`
-Expected: FAIL — `ImportError: cannot import name 'Curso' from 'apps.cursos.models'`.
+Expected: FAIL - `ImportError: cannot import name 'Curso' from 'apps.cursos.models'`.
 
 - [ ] **Step 4: Implementar o modelo**
 
@@ -519,7 +519,7 @@ def test_quem_nao_e_membro_nao_e_reconhecido(curso, aluno, outro_aluno):
 - [ ] **Step 2: Rodar para ver falhar**
 
 Run: `pytest apps/cursos/tests/test_equipe.py -v`
-Expected: FAIL — `ImportError: cannot import name 'MembroEquipe'`.
+Expected: FAIL - `ImportError: cannot import name 'MembroEquipe'`.
 
 - [ ] **Step 3: Implementar**
 
@@ -688,7 +688,7 @@ def test_criar_curso_e_atomico(dados_curso):
 - [ ] **Step 3: Rodar para ver falhar**
 
 Run: `pytest apps/cursos/tests/test_criacao.py -v`
-Expected: FAIL — `ImportError: cannot import name 'Entregavel'`.
+Expected: FAIL - `ImportError: cannot import name 'Entregavel'`.
 
 - [ ] **Step 4: Implementar os modelos de produção**
 
@@ -982,7 +982,7 @@ def arquivo_qualquer(aluno, db):
 - [ ] **Step 2: Rodar para ver falhar**
 
 Run: `pytest apps/cursos/tests/test_anexo.py -v`
-Expected: FAIL — `ModuleNotFoundError: No module named 'apps.cursos.arquivos'`.
+Expected: FAIL - `ModuleNotFoundError: No module named 'apps.cursos.arquivos'`.
 
 - [ ] **Step 3: Implementar a detecção de tipo por conteúdo**
 
@@ -1197,7 +1197,7 @@ Expected: PASS (9 testes).
 
 **Interfaces:**
 - Consumes: `Entregavel`, `Anexo`, `Secao`, `Curso` (Tasks 2-5); `Referencial.valida_quantidade` (Plano 1).
-- Produces: `apps.cursos.validacoes.pendencias(entregavel) -> list[str]` — a lista do que falta, vazia quando o entregável pode ser enviado. Usada pelo serviço da Task 7 e pelas telas da Task 9 (é o que mostra ao aluno o que falta antes de ele clicar em enviar).
+- Produces: `apps.cursos.validacoes.pendencias(entregavel) -> list[str]` - a lista do que falta, vazia quando o entregável pode ser enviado. Usada pelo serviço da Task 7 e pelas telas da Task 9 (é o que mostra ao aluno o que falta antes de ele clicar em enviar).
 
 - [ ] **Step 1: Escrever o teste (vai falhar)**
 
@@ -1346,7 +1346,7 @@ def test_slides_exigem_ao_menos_um_arquivo(curso_criado, aluno, arquivo_qualquer
 - [ ] **Step 2: Rodar para ver falhar**
 
 Run: `pytest apps/cursos/tests/test_validacoes.py -v`
-Expected: FAIL — `ModuleNotFoundError: No module named 'apps.cursos.validacoes'`.
+Expected: FAIL - `ModuleNotFoundError: No module named 'apps.cursos.validacoes'`.
 
 - [ ] **Step 3: Implementar as validações**
 
@@ -1601,7 +1601,7 @@ def test_curso_so_fica_pronto_com_os_cinco_aprovados(slides_prontos, aluno, prof
 - [ ] **Step 2: Rodar para ver falhar**
 
 Run: `pytest apps/cursos/tests/test_revisao.py -v`
-Expected: FAIL — `ImportError: cannot import name 'Revisao'`.
+Expected: FAIL - `ImportError: cannot import name 'Revisao'`.
 
 - [ ] **Step 3: Implementar o modelo de revisão**
 
@@ -1836,7 +1836,7 @@ def test_entregavel_em_revisao_nao_e_editavel_nem_pelo_membro(curso_com_equipe, 
 - [ ] **Step 2: Rodar para ver falhar**
 
 Run: `pytest apps/cursos/tests/test_permissions.py -v`
-Expected: FAIL — `ModuleNotFoundError: No module named 'apps.cursos.permissions'`.
+Expected: FAIL - `ModuleNotFoundError: No module named 'apps.cursos.permissions'`.
 
 - [ ] **Step 3: Implementar as permissões**
 
@@ -1913,7 +1913,7 @@ def devolver_entregavel(entregavel, por, comentario):
     ...
 ```
 
-A checagem de `enviar_para_revisao` precisa vir **antes** da checagem de `editavel`, senão um aluno de fora recebe "este entregável está em revisão" em vez de ser barrado — mensagem de erro que revela estado de curso alheio.
+A checagem de `enviar_para_revisao` precisa vir **antes** da checagem de `editavel`, senão um aluno de fora recebe "este entregável está em revisão" em vez de ser barrado - mensagem de erro que revela estado de curso alheio.
 
 - [ ] **Step 5: Rodar a suíte inteira e commitar**
 
@@ -1923,7 +1923,7 @@ git add apps/cursos
 git commit -m "feat(cursos): permissoes centralizadas e amarradas aos servicos"
 ```
 
-Expected: PASS — inclusive os testes da Task 7, que passam `por=aluno` membro e `por=professor` responsável.
+Expected: PASS - inclusive os testes da Task 7, que passam `por=aluno` membro e `por=professor` responsável.
 
 ---
 
@@ -2046,7 +2046,7 @@ def test_enviar_com_pendencia_mostra_a_lista(client, curso_com_equipe, aluno):
 - [ ] **Step 2: Rodar para ver falhar**
 
 Run: `pytest apps/cursos/tests/test_views_aluno.py -v`
-Expected: FAIL — `NoReverseMatch: Reverse for 'meus_cursos' not found`.
+Expected: FAIL - `NoReverseMatch: Reverse for 'meus_cursos' not found`.
 
 - [ ] **Step 3: Escrever os formulários**
 
@@ -2515,7 +2515,7 @@ def test_aluno_nao_decide(client, aluno, slides_em_revisao):
 - [ ] **Step 2: Rodar para ver falhar**
 
 Run: `pytest apps/cursos/tests/test_views_professor.py -v`
-Expected: FAIL — `NoReverseMatch: Reverse for 'nova_proposta' not found`.
+Expected: FAIL - `NoReverseMatch: Reverse for 'nova_proposta' not found`.
 
 - [ ] **Step 3: Escrever o formulário do curso**
 
@@ -2676,7 +2676,7 @@ E `apps/cursos/urls.py`, acrescentando:
 
 ```html
 {% extends "base.html" %}
-{% block titulo %}Equipe &mdash; {{ curso.titulo }}{% endblock %}
+{% block titulo %}Equipe - {{ curso.titulo }}{% endblock %}
 {% block conteudo %}
   <h1>Equipe de {{ curso.titulo }}</h1>
   {% for mensagem in messages %}<p class="mensagem">{{ mensagem }}</p>{% endfor %}
@@ -2729,7 +2729,7 @@ E `apps/cursos/urls.py`, acrescentando:
   <h2>Materiais</h2>
   <ul>
     {% for anexo in entregavel.anexos.all %}
-      <li>{{ anexo.titulo }}{% if anexo.referencia_bibliografica %} &mdash; {{ anexo.referencia_bibliografica }}{% endif %}</li>
+      <li>{{ anexo.titulo }}{% if anexo.referencia_bibliografica %} - {{ anexo.referencia_bibliografica }}{% endif %}</li>
     {% endfor %}
   </ul>
 
@@ -2743,7 +2743,7 @@ E `apps/cursos/urls.py`, acrescentando:
 {% endblock %}
 ```
 
-O `|safe` no conteúdo da seção é seguro porque `Secao.save()` sanitiza com nh3 antes de gravar (Task 4) — é o único lugar do sistema onde HTML do banco é renderizado sem escape, e depende dessa sanitização.
+O `|safe` no conteúdo da seção é seguro porque `Secao.save()` sanitiza com nh3 antes de gravar (Task 4) - é o único lugar do sistema onde HTML do banco é renderizado sem escape, e depende dessa sanitização.
 
 Acrescente a `templates/painel.html`:
 
@@ -2756,7 +2756,7 @@ Acrescente a `templates/painel.html`:
 - [ ] **Step 6: Rodar a suíte inteira**
 
 Run: `pytest -v`
-Expected: PASS — todos os testes dos Planos 1 e 2.
+Expected: PASS - todos os testes dos Planos 1 e 2.
 
 - [ ] **Step 7: Conferir o fluxo inteiro na mão**
 
@@ -2778,4 +2778,4 @@ git commit -m "feat(cursos): telas do professor para propor, montar equipe e rev
 
 ## Entregue ao fim deste plano
 
-O ciclo de produção funciona de ponta a ponta: professor propõe, equipe produz, professor aprova ou devolve, e o curso chega ao estado de ter os cinco entregáveis aprovados. Falta o que vem depois — submeter ao coordenador, publicar, catalogar e receber demanda — que é o **Plano 3**.
+O ciclo de produção funciona de ponta a ponta: professor propõe, equipe produz, professor aprova ou devolve, e o curso chega ao estado de ter os cinco entregáveis aprovados. Falta o que vem depois (submeter ao coordenador, publicar, catalogar e receber demanda) que é o **Plano 3**.

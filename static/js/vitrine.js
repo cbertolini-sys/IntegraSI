@@ -1,7 +1,7 @@
 // Carrossel dos últimos cursos publicados, no herói da página inicial.
 //
 // Sem dependência: o projeto vendoriza o que usa e não carrega biblioteca de
-// carrossel para ~90 linhas. Progressivo por desenho — sem JS, o primeiro slide
+// carrossel para ~90 linhas. Progressivo por desenho - sem JS, o primeiro slide
 // fica visível e os outros ficam no DOM para quem navega por leitor de tela; o
 // que se perde é a troca automática, não o conteúdo.
 (function () {

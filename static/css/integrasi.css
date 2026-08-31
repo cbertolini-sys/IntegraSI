@@ -1,8 +1,8 @@
-/* IntegraSI — identidade do catálogo público.
+/* IntegraSI - identidade do catálogo público.
  *
  * Estrutura no espírito de uma plataforma de cursos: fundo claro, cartões com
  * canto arredondado e sombra leve, muito respiro, tipografia sem serifa.
- * A cor vem de onde o sistema mora — o marinho institucional da UFSM (#21376B,
+ * A cor vem de onde o sistema mora - o marinho institucional da UFSM (#21376B,
  * amostrado da página do curso) com o azul e o ciano da marca IntegraSI.
  */
 
@@ -936,7 +936,7 @@ textarea:focus {
 }
 
 /* =====================================================================
-   Área autenticada — superfície de trabalho, não página de vitrine.
+   Área autenticada - superfície de trabalho, não página de vitrine.
    O catálogo convence; aqui a pessoa decide, aprova e responde. Por isso
    fundo névoa, cabeçalho de página sóbrio e listas densas de registros.
    ===================================================================== */
@@ -1274,11 +1274,11 @@ textarea:focus {
 }
 
 /* =====================================================================
-   Vitrine — os últimos cursos publicados, no herói.
+   Vitrine - os últimos cursos publicados, no herói.
 
    Cartão branco sólido sobre o azul escuro, e não vidro: o contraste é o que
    faz o painel ler como conteúdo destacado em vez de mais uma camada do mesmo
-   gradiente. As tags são coloridas por informação, não por enfeite — o formato
+   gradiente. As tags são coloridas por informação, não por enfeite - o formato
    tem uma cor por valor, então "Online" e "Presencial" se distinguem antes de
    serem lidos.
    ===================================================================== */
@@ -1355,7 +1355,7 @@ textarea:focus {
   border: 1px solid transparent;
 }
 
-/* Tema em ciano — a cor da marca IntegraSI. */
+/* Tema em ciano - a cor da marca IntegraSI. */
 .marca-tema {
   background: #e4f7f7;
   color: #0e6a6a;
@@ -1528,7 +1528,7 @@ textarea:focus {
 
 
 /* =====================================================================
-   Página "Sobre" — o que o sistema é e como cada papel o percorre.
+   Página "Sobre" - o que o sistema é e como cada papel o percorre.
    ===================================================================== */
 
 .pagina-sobre {
@@ -1598,8 +1598,8 @@ textarea:focus {
 
    Trilho vertical, e não um grafo desenhado: os quatro fluxos têm doze a
    quinze passos e voltas atrás. Um grafo de verdade em CSS só caberia numa
-   tela larga e viraria sopa no celular. Aqui a ordem é a da leitura — de
-   cima para baixo, sempre —, os desvios de decisão abrem em dois ramos lado
+   tela larga e viraria sopa no celular. Aqui a ordem é a da leitura - de
+   cima para baixo, sempre - , os desvios de decisão abrem em dois ramos lado
    a lado, e o retorno é dito em palavras em vez de desenhado.
 
    É `<ol>` de propósito: a sequência é o conteúdo, e o leitor de tela

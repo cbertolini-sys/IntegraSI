@@ -10,14 +10,14 @@ material, não quem assiste.
 
 ## Onde está o desenho
 
-- `docs/superpowers/specs/2026-08-25-integrasi-design.md` — a spec. É a autoridade;
+- `docs/superpowers/specs/2026-08-25-integrasi-design.md` - a spec. É a autoridade;
   os planos argumentam a partir dela.
-- `docs/superpowers/plans/` — quatro planos, executados em ordem:
+- `docs/superpowers/plans/` - quatro planos, executados em ordem:
   1. fundação e cadastros (**concluído**), 2. produção de cursos,
   3. publicação, catálogo e demanda, 4. mídia, versões e operação.
-- `docs/onde-mora-a-validacao.md` — qual mecanismo de validação usar para quê.
+- `docs/onde-mora-a-validacao.md` - qual mecanismo de validação usar para quê.
   **Leia antes de acrescentar validação a qualquer modelo.**
-- `docs/dados/README.md` — como carregar a BNCC.
+- `docs/dados/README.md` - como carregar a BNCC.
 
 Os planos foram corrigidos durante a execução quando as revisões acharam defeitos
 neles. Se você reexecutar um plano, use a versão em git, não a lembrança dele.
@@ -36,7 +36,7 @@ python manage.py runserver
 
 PostgreSQL local, Python 3.13, Django 5.2. Configuração vem toda de variável de
 ambiente (`.env`, modelo em `.env.example`). `createsuperuser` **não funciona** neste
-projeto — `REQUIRED_FIELDS` omite `siape` de propósito; use `criar_coordenador`.
+projeto - `REQUIRED_FIELDS` omite `siape` de propósito; use `criar_coordenador`.
 
 ## Arquitetura
 
@@ -56,19 +56,19 @@ desses aparecendo aqui é sinal de que a fronteira foi atravessada sem querer.
 ## Convenções que custaram caro para estabelecer
 
 **Validação**
-- `save()` chama `full_clean()`, **exceto** quando vem `update_fields` — sem esse
+- `save()` chama `full_clean()`, **exceto** quando vem `update_fields` - sem esse
   guarda, o `update_last_login` do Django valida o objeto inteiro a cada login e
   qualquer linha inválida deixa a pessoa impossibilitada de entrar.
   (`Tema.save()` ainda não tem o guarda; o Plano 2 aplica ao mover o arquivo.)
 - Normalização de documentos roda em `full_clean()` **antes** do `validate_unique()`,
-  nunca depois — senão a unicidade não vale nada.
+  nunca depois - senão a unicidade não vale nada.
 - Só `services.py` altera campo de status (a partir do Plano 2). Nada de lógica de
   domínio em sinais `post_save`.
 
 **Dados pessoais**
 - CPF não aparece em lugar nenhum fora do Django Admin, e mascarado até lá.
 - `search_fields` do admin exclui `cpf` de propósito: buscar por CPF o colocaria na
-  URL e nos logs de acesso. `matricula` e `siape` continuam buscáveis — são
+  URL e nos logs de acesso. `matricula` e `siape` continuam buscáveis - são
   identificadores institucionais internos, não documento nacional.
 
 **Referenciais pedagógicos**
@@ -84,11 +84,22 @@ desses aparecendo aqui é sinal de que a fronteira foi atravessada sem querer.
   `startapp`.
 - Texto voltado ao usuário em português **acentuado**. Valores gravados (choices,
   slugs, códigos) sem acento e nunca alterados por passada de texto.
+- **Nada de travessão.** O caractere `—` (em-dash) é proibido em todo o
+  repositório: prosa, documentação, comentários de código, strings de interface e
+  mensagens de commit. Vale também para a entidade `&mdash;`, que renderiza o
+  mesmo símbolo. No lugar dele, escolha pelo que a frase está fazendo:
+  - dois pontos, quando o que vem depois explica o que veio antes;
+  - parênteses, quando o trecho é um aparte que se pode remover;
+  - vírgula, quando é só uma pausa;
+  - traço simples com espaços ( - ), quando nenhuma das outras serve.
+  Reescrever a frase costuma ser melhor que trocar o símbolo.
+  `test_nenhuma_pagina_usa_travessao` reprova se um travessão chegar às telas
+  públicas; no resto do repositório a regra depende de quem escreve.
 
 **Testes**
 - TDD: teste que falha primeiro.
 - **Enumere as regras antes de conferir os testes, nunca o contrário.** Ao terminar uma
-  tarefa, escreva a lista das regras que ela introduz — lidas do plano e das restrições,
+  tarefa, escreva a lista das regras que ela introduz - lidas do plano e das restrições,
   não do código que você acabou de escrever. Só então percorra a lista dizendo, para cada
   regra, qual teste a prende e se apagar a implementação dela faria algum teste falhar.
   Partir dos testes só encontra teste fraco; partir das regras também encontra regra que
@@ -98,27 +109,27 @@ desses aparecendo aqui é sinal de que a fronteira foi atravessada sem querer.
   vez.** Um teste que falha por dois motivos ao mesmo tempo não prende nenhum dos dois: se
   o cenário viola duas regras juntas, apagar qualquer uma delas deixa a outra levantando a
   exceção e o teste segue verde. A pergunta não é "existe teste que exercita esta regra?",
-  e sim "apagar *esta guarda sozinha* faria algum teste falhar?" — a enumeração de regras
+  e sim "apagar *esta guarda sozinha* faria algum teste falhar?" - a enumeração de regras
   não detecta isso, só a deleção isolada detecta.
 - **Comite antes de quebrar de propósito.** A deleção é temporária e o reflexo para desfazer
-  é `git checkout <arquivo>` — que também descarta qualquer outra alteração não commitada
+  é `git checkout <arquivo>` - que também descarta qualquer outra alteração não commitada
   naquele arquivo. Já custou trabalho neste projeto. Comite (ou faça `stash`) antes de
   mutilar a guarda, e restaure com a certeza de não levar mais nada junto. O padrão "teste com nome
   que não exercita a regra" apareceu **sete vezes** no Plano 2 e mais duas no Plano 3, em
-  tarefas diferentes e achado por revisores diferentes — entre elas uma regra de segurança,
+  tarefas diferentes e achado por revisores diferentes - entre elas uma regra de segurança,
   a checagem de que o plano de ensino é PDF (apagável inteira sem quebrar nada) e a cerca da
   fronteira do módulo, que comparava seis nomes exatos e deixou passar calados três campos
   de nomes mais longos.
 - **Duas guardas para a mesma coisa não se distinguem por teste de POST.** Quando a view
   chama um serviço que também confere permissão, afrouxar a guarda da view não quebra nada:
   o serviço recusa igual e o teste vê o mesmo 403. Ambas *existem*, ambas *têm* teste, e
-  mesmo assim uma delas não está presa. Só o GET — ou qualquer caminho que não chame o
-  serviço — isola a guarda da view. Ao pôr guarda numa view, pergunte por onde ela responde
+  mesmo assim uma delas não está presa. Só o GET - ou qualquer caminho que não chame o
+  serviço - isola a guarda da view. Ao pôr guarda numa view, pergunte por onde ela responde
   sozinha; se não houver caminho assim, ou o teste passa por ele ou a guarda não está presa.
 - **A regra pode estar provada de um lado da fronteira de função e solta do outro.** Um teste
   da função pura prova a aritmética; não prova que o chamador a usa. No Plano 3, `recuo()`
   tinha teste de que dobra a cada falha, e trocar `recuo(tentativas)` por `RECUO_INICIAL` no
-  ponto de chamada deixava a suíte verde. O nome do teste não mentia — a regra estava provada
+  ponto de chamada deixava a suíte verde. O nome do teste não mentia - a regra estava provada
   onde não roda e desprovada onde roda. Prenda no ponto de chamada, não só na função.
 
 ## Papéis e primeiro acesso (Plano 5)
@@ -127,15 +138,14 @@ desses aparecendo aqui é sinal de que a fronteira foi atravessada sem querer.
   vale para coordenador; `e_somente_professor` é para quem precisa da distinção.
   **Não reescreva `papel == PROFESSOR` solto pelo código.**
 - Aluno é criado pelo professor com nome e e-mail, sem CPF e sem matrícula.
-  `Usuario.perfil_completo` é derivado dos campos — não existe flag paralela, e
+  `Usuario.perfil_completo` é derivado dos campos - não existe flag paralela, e
   não crie uma: seria segunda fonte de verdade, e sai de sincronia na primeira
   edição pelo Admin.
 - O convite (`ConviteAluno`) vale 7 dias, serve uma vez e leva token, **nunca
   senha**: a fila de notificações persiste no banco.
 - `PerfilCompletoMiddleware` prende quem não completou o cadastro na própria
   tela. As exceções são explícitas em `LIBERADAS`; `logout` está lá de propósito,
-  senão a pessoa não consegue nem sair. Só age quando há convite pendente —
-  conta antiga sem convite não tem para onde ser redirecionada.
+  senão a pessoa não consegue nem sair. Só age quando há convite pendente - conta antiga sem convite não tem para onde ser redirecionada.
 - Promoção e rebaixamento passam por `contas.services`, nunca por edição do campo
   `papel` no Admin: o Admin não tem como recusar o auto-rebaixamento.
 - `contas` **não** importa `cursos`. `alocar_aluno` (em `cursos`) importa

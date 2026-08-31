@@ -1,4 +1,4 @@
-# IntegraSI — Plano 4: Mídia, Versões e Operação
+# IntegraSI - Plano 4: Mídia, Versões e Operação
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -21,7 +21,7 @@
 - Remoção física de arquivo só quando nenhum anexo de nenhuma versão o referencia, por idade e sob `select_for_update()`, sem contador de referências (spec §13).
 - `SUBSTITUIDO` é terminal: consultável como histórico, fora do catálogo, não republicável (spec §5).
 - Nenhum campo de frequência, nota ou certificado (spec §1.1).
-- **Enumere as regras da tarefa antes de conferir os testes contra elas**, e prove cada teste de invariante quebrando a guarda que ele prende. Partir dos testes só acha teste fraco; partir das regras também acha regra sem teste. Ver `CLAUDE.md`, seção Testes — o padrão apareceu sete vezes no Plano 2.
+- **Enumere as regras da tarefa antes de conferir os testes contra elas**, e prove cada teste de invariante quebrando a guarda que ele prende. Partir dos testes só acha teste fraco; partir das regras também acha regra sem teste. Ver `CLAUDE.md`, seção Testes - o padrão apareceu sete vezes no Plano 2.
 
 ---
 
@@ -114,7 +114,7 @@ def test_upload_declarado_acima_do_limite_e_recusado_na_criacao(entregavel_video
 - [ ] **Step 2: Rodar para ver falhar**
 
 Run: `pytest apps/cursos/tests/test_upload_modelo.py -v`
-Expected: FAIL — `ImportError: cannot import name 'LIMITE_VIDEO'`.
+Expected: FAIL - `ImportError: cannot import name 'LIMITE_VIDEO'`.
 
 - [ ] **Step 3: Reconhecer MP4 em `arquivos.py`**
 
@@ -370,7 +370,7 @@ def test_arquivo_que_nao_e_video_e_recusado_na_conclusao(client, aluno, entregav
 - [ ] **Step 2: Rodar para ver falhar**
 
 Run: `pytest apps/cursos/tests/test_upload_views.py -v`
-Expected: FAIL — `NoReverseMatch: Reverse for 'upload_iniciar' not found`.
+Expected: FAIL - `NoReverseMatch: Reverse for 'upload_iniciar' not found`.
 
 - [ ] **Step 3: Escrever o serviço de conclusão**
 
@@ -541,7 +541,7 @@ Este é o único ponto do sistema com JavaScript próprio: **HTMX não fatia arq
 
 - [ ] **Step 1: Escrever o teste de integração (vai falhar)**
 
-Testar JavaScript de navegador exigiria Playwright e um servidor de verdade — desproporcional para 90 linhas. O que este teste verifica é o contrato do lado do servidor que o JS usa: a sequência iniciar → bloco → bloco → concluir funciona com blocos do tamanho que o JS envia.
+Testar JavaScript de navegador exigiria Playwright e um servidor de verdade - desproporcional para 90 linhas. O que este teste verifica é o contrato do lado do servidor que o JS usa: a sequência iniciar → bloco → bloco → concluir funciona com blocos do tamanho que o JS envia.
 
 `apps/cursos/tests/test_upload_integracao.py`:
 
@@ -628,7 +628,7 @@ def test_retomada_apos_queda_no_meio(client, aluno, entregavel_videos):
 - [ ] **Step 2: Rodar para ver falhar**
 
 Run: `pytest apps/cursos/tests/test_upload_integracao.py -v`
-Expected: FAIL — o segundo teste falha em `DATA_UPLOAD_MAX_MEMORY_SIZE` ou o primeiro na soma dos tamanhos, dependendo da configuração. Anote a mensagem: ela mostra qual limite precisa subir.
+Expected: FAIL - o segundo teste falha em `DATA_UPLOAD_MAX_MEMORY_SIZE` ou o primeiro na soma dos tamanhos, dependendo da configuração. Anote a mensagem: ela mostra qual limite precisa subir.
 
 - [ ] **Step 3: Liberar o tamanho do bloco no Django**
 
@@ -870,7 +870,7 @@ def test_em_desenvolvimento_o_django_entrega_o_arquivo(client, anexo, aluno, set
 - [ ] **Step 2: Rodar para ver falhar**
 
 Run: `pytest apps/cursos/tests/test_midia.py -v`
-Expected: FAIL — `NoReverseMatch: Reverse for 'baixar' not found`.
+Expected: FAIL - `NoReverseMatch: Reverse for 'baixar' not found`.
 
 - [ ] **Step 3: Escrever a view**
 
@@ -945,7 +945,7 @@ Em `templates/cursos/entregavel.html` e `templates/cursos/revisar.html`, troque 
           <a href="{{ anexo.url }}" rel="noopener noreferrer" target="_blank">{{ anexo.titulo }}</a>
         {% endif %}
         {% if anexo.duracao_minutos %} ({{ anexo.duracao_minutos }} min){% endif %}
-        {% if anexo.referencia_bibliografica %} &mdash; {{ anexo.referencia_bibliografica }}{% endif %}
+        {% if anexo.referencia_bibliografica %} - {{ anexo.referencia_bibliografica }}{% endif %}
       </li>
     {% endfor %}
 ```
@@ -1114,7 +1114,7 @@ def test_substituido_nao_volta_ao_ar(curso_publicado, coordenador, professor, al
 - [ ] **Step 2: Rodar para ver falhar**
 
 Run: `pytest apps/cursos/tests/test_versoes.py -v`
-Expected: FAIL — `AttributeError: 'Curso' object has no attribute 'linhagem_id'`.
+Expected: FAIL - `AttributeError: 'Curso' object has no attribute 'linhagem_id'`.
 
 - [ ] **Step 3: Acrescentar os campos de versão**
 
@@ -1363,7 +1363,7 @@ def test_aluno_nao_abre_nova_versao_pela_tela(client, curso_publicado, aluno):
 - [ ] **Step 2: Rodar para ver falhar**
 
 Run: `pytest apps/catalogo/tests/test_versoes_no_catalogo.py -v`
-Expected: FAIL — `NoReverseMatch: Reverse for 'nova_versao' not found`.
+Expected: FAIL - `NoReverseMatch: Reverse for 'nova_versao' not found`.
 
 - [ ] **Step 3: Escrever a view**
 
@@ -1416,7 +1416,7 @@ Em `templates/cursos/curso.html`, antes do fim do bloco:
   {% if curso.status == "PUBLICADO" and user.e_coordenador or curso.status == "PUBLICADO" and user == curso.professor_responsavel %}
     <p><a href="{% url 'nova_versao' curso.pk %}">Abrir nova versao</a></p>
   {% endif %}
-  {% if curso.versao > 1 %}<p>Versao {{ curso.versao }} &mdash; {{ curso.motivo_versao }}</p>{% endif %}
+  {% if curso.versao > 1 %}<p>Versao {{ curso.versao }} - {{ curso.motivo_versao }}</p>{% endif %}
 ```
 
 Em `templates/catalogo/curso.html`, logo abaixo do título:
@@ -1433,7 +1433,7 @@ git add apps/cursos apps/catalogo templates
 git commit -m "feat(catalogo): catalogo por linhagem e abertura de nova versao pela tela"
 ```
 
-Expected: PASS — a consulta do catálogo não mudou: a invariante da Task 5 garante uma versão publicada por linhagem.
+Expected: PASS - a consulta do catálogo não mudou: a invariante da Task 5 garante uma versão publicada por linhagem.
 
 ---
 
@@ -1531,7 +1531,7 @@ def test_arquivo_referenciado_por_qualquer_versao_e_preservado(arquivo_qualquer,
 - [ ] **Step 2: Rodar para ver falhar**
 
 Run: `pytest apps/cursos/tests/test_manutencao.py -v`
-Expected: FAIL — `CommandError: Unknown command: 'limpar_uploads'`.
+Expected: FAIL - `CommandError: Unknown command: 'limpar_uploads'`.
 
 - [ ] **Step 3: Escrever os comandos**
 
@@ -1674,7 +1674,7 @@ def test_env_example_documenta_as_chaves(chave):
 - [ ] **Step 2: Rodar para ver falhar**
 
 Run: `pytest tests/test_producao.py -v`
-Expected: FAIL — `FileNotFoundError: deploy/nginx.conf`.
+Expected: FAIL - `FileNotFoundError: deploy/nginx.conf`.
 
 - [ ] **Step 3: Escrever a configuração do nginx**
 
@@ -1842,7 +1842,7 @@ def test_paginas_de_erro_existem_e_nao_vazam_detalhe(client, settings):
 ```
 
 Rode e veja falhar: `pytest tests/test_producao.py -v`
-Expected: FAIL — `FileNotFoundError: templates/403.html`.
+Expected: FAIL - `FileNotFoundError: templates/403.html`.
 
 `templates/403.html`:
 
@@ -1869,12 +1869,12 @@ Expected: FAIL — `FileNotFoundError: templates/403.html`.
 {% endblock %}
 ```
 
-`templates/500.html` — este **não** estende `base.html`: se o erro estiver no banco ou no contexto, renderizar o template completo falharia de novo e o visitante veria a página branca do servidor.
+`templates/500.html` - este **não** estende `base.html`: se o erro estiver no banco ou no contexto, renderizar o template completo falharia de novo e o visitante veria a página branca do servidor.
 
 ```html
 <!doctype html>
 <html lang="pt-br">
-<head><meta charset="utf-8"><title>Erro no sistema &mdash; IntegraSI</title></head>
+<head><meta charset="utf-8"><title>Erro no sistema - IntegraSI</title></head>
 <body>
   <h1>Algo deu errado</h1>
   <p>O sistema encontrou um erro inesperado. A equipe foi registrada nos logs do servidor.</p>
@@ -1942,7 +1942,7 @@ Ate 3 GB de video por curso; com ~8 equipes por edicao, ~24 GB por semestre e
 ## Quando algo da errado
 
 - **E-mails nao saem:** veja `ultimo_erro` na tabela de notificacoes pelo Admin. A
-  operacao do sistema nao para por isso — por desenho.
+  operacao do sistema nao para por isso - por desenho.
 - **Upload de video falha sempre no mesmo ponto:** confira `client_max_body_size`
   no nginx e `DATA_UPLOAD_MAX_MEMORY_SIZE` no Django; ambos precisam ser maiores
   que o bloco de 5 MB.
@@ -1962,7 +1962,7 @@ git add deploy docs templates pyproject.toml .env.example tests
 git commit -m "chore(deploy): nginx, systemd, cron, backup, paginas de erro e operacao"
 ```
 
-Expected: PASS — todos os testes dos quatro planos.
+Expected: PASS - todos os testes dos quatro planos.
 
 ---
 

@@ -200,7 +200,7 @@ def test_o_rodape_diz_o_que_o_sistema_e(client):
 
 @pytest.mark.django_db
 def test_a_aba_mostra_o_nome_do_sistema_primeiro(client, curso_publicado):
-    """"IntegraSI — Catálogo", e nao "Catálogo — IntegraSI": com muitas abas
+    """"IntegraSI (Catálogo", e nao "Catálogo) IntegraSI": com muitas abas
     abertas, o comeco e a unica parte legivel.
 
     O nome vem da `base.html`, e nao de cada template: assim ele nao pode ser
@@ -208,7 +208,7 @@ def test_a_aba_mostra_o_nome_do_sistema_primeiro(client, curso_publicado):
     mudanca (entregavel, equipe e o titulo padrao).
     """
     inicio = client.get(reverse("catalogo")).content.decode()
-    assert "<title>IntegraSI &mdash; Catálogo de cursos de extensão</title>" in inicio
+    assert "<title>IntegraSI - Catálogo de cursos de extensão</title>" in inicio
 
 
 @pytest.mark.django_db
@@ -216,3 +216,16 @@ def test_o_icone_da_aba_e_a_marca(client):
     conteudo = client.get(reverse("catalogo")).content.decode()
     assert 'rel="icon"' in conteudo
     assert "img/integrasi-icone.png" in conteudo
+
+
+@pytest.mark.django_db
+def test_nenhuma_pagina_usa_travessao(client, curso_publicado):
+    """Regra de estilo do projeto: nada de travessão (—) no texto.
+
+    Vale para o caractere e para a entidade HTML, que renderiza o mesmo símbolo -
+    trocar um e esquecer o outro deixaria a regra valendo pela metade.
+    """
+    for rota in ("catalogo", "sobre"):
+        conteudo = client.get(reverse(rota)).content.decode()
+        assert "—" not in conteudo, f"travessão em {rota}"
+        assert "&mdash;" not in conteudo, f"entidade de travessão em {rota}"

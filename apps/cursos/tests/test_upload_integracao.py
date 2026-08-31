@@ -1,4 +1,4 @@
-"""Upload retomavel no navegador (Plano 4, Task 3) — o lado que roda em Python.
+"""Upload retomavel no navegador (Plano 4, Task 3) - o lado que roda em Python.
 
 O JavaScript em si esta preso em `test_upload_js.py`, que o executa sob node com
 `fetch` e `sessionStorage` de mentira. Aqui ficam duas coisas que o navegador NAO
@@ -10,7 +10,7 @@ As regras que este arquivo prende:
  1. O formulario de video aparece no entregavel de VIDEOS quando a producao esta
     aberta.
  2. Nao aparece nos outros quatro entregaveis: o upload em blocos e da rota de
-    video, e concluir cria um Anexo de tipo VIDEO — em CARDS ou SLIDES o formulario
+    video, e concluir cria um Anexo de tipo VIDEO - em CARDS ou SLIDES o formulario
     prometeria algo que a abertura e a conclusao recusam. Quem prende essa recusa
     sao as regras 6b e 14b de `test_upload_views.py`; este teste so afirma que a
     tela nao a oferece. Ate a revisao de branco a frase acima era falsa: nada no
@@ -27,7 +27,7 @@ As regras que este arquivo prende:
     numero inventado no HTML.
  7b. O `maxlength` do titulo sai do proprio campo do Anexo, pelo mesmo motivo. Sem
     ele o aluno so descobria o limite depois de meia hora de upload, e o servidor
-    devolvia um 400 opaco — a UX do vazamento que a revisao de branco achou.
+    devolvia um 400 opaco - a UX do vazamento que a revisao de branco achou.
  8. iniciar -> bloco -> bloco -> concluir funciona com blocos do tamanho que o JS
     envia de verdade.
  9. Depois de uma queda no meio, `upload_estado` diz onde parou e os blocos que
@@ -123,7 +123,7 @@ def test_outros_entregaveis_nao_mostram_o_formulario_de_upload(
     outro = curso_com_equipe.entregaveis.get(tipo=tipo)
     client.force_login(aluno)
     conteudo = tela(client, outro)
-    # A tela continua editavel — o formulario de anexar esta la. So o de video nao.
+    # A tela continua editavel - o formulario de anexar esta la. So o de video nao.
     assert "Anexar" in conteudo
     assert "data-upload-video" not in conteudo
 
@@ -182,7 +182,7 @@ def test_formulario_carrega_o_tamanho_do_bloco_definido_no_python(
 def test_um_bloco_inteiro_cabe_no_teto_do_corpo_da_requisicao():
     """`HttpRequest.body` recusa corpo acima de `DATA_UPLOAD_MAX_MEMORY_SIZE` antes
     de a view rodar. Se o bloco crescesse alem do teto, todo upload de video
-    morreria em producao e nenhum teste de view veria — eles nao passam pelo
+    morreria em producao e nenhum teste de view veria - eles nao passam pelo
     middleware que le o corpo com o tamanho de verdade.
 
     A relacao entre os dois numeros e a regra; o comentario em `settings.py` sozinho
@@ -208,7 +208,7 @@ def formulario_de_video(conteudo):
     Afirmar sobre a pagina inteira nao serve aqui: o `AnexoForm` renderizado logo
     acima e um ModelForm do mesmo `Anexo`, e o Django ja poe `maxlength="200"` no
     campo `titulo` dele. A primeira versao deste teste passava com o `maxlength`
-    apagado do formulario de video — a campanha de delecao pegou; a enumeracao de
+    apagado do formulario de video - a campanha de delecao pegou; a enumeracao de
     regras nao pegaria.
     """
     inicio = conteudo.index("data-upload-video")

@@ -43,7 +43,7 @@ class UploadEmAndamento(models.Model):
     def save(self, *args, **kwargs):
         # Guarda de `update_fields` como no resto do projeto (docs/onde-mora-a-validacao.md,
         # armadilha 2). Aqui nao e so estilo: `acrescentar()` grava uma vez por bloco de
-        # 5 MB, e sem o guarda cada bloco arrastaria um `full_clean()` inteiro — inclusive
+        # 5 MB, e sem o guarda cada bloco arrastaria um `full_clean()` inteiro - inclusive
         # o `validate_unique()` de `identificador`, uma ida ao banco por bloco, ~200 por GB.
         # A criacao nao passa `update_fields`, entao continua validando.
         if "update_fields" not in kwargs:
@@ -67,8 +67,8 @@ class UploadEmAndamento(models.Model):
 
         Idempotente por bloco, e e o ponto da tarefa: a escrita e posicionada em
         `tamanho_recebido` em vez de ser um append cego. Se os bytes chegam ao disco
-        mas o registro nao avanca — o `save()` falha, o cliente nao recebe a
-        confirmacao e reenvia —, o reenvio reescreve os mesmos bytes no mesmo lugar
+        mas o registro nao avanca - o `save()` falha, o cliente nao recebe a
+        confirmacao e reenvia - , o reenvio reescreve os mesmos bytes no mesmo lugar
         em vez de duplica-los. Com append cego o arquivo ficaria corrompido em
         silencio, com `tamanho_recebido` parecendo certo.
 

@@ -1,7 +1,7 @@
 """Testes dos artefatos de produção.
 
 **O que estes testes provam e o que não provam.** Quase todos leem arquivos do
-repositório. Eles garantem que o `deploy/` versionado está certo — não que o
+repositório. Eles garantem que o `deploy/` versionado está certo - não que o
 servidor no ar esteja rodando esses arquivos. A conferência que só um servidor de
 verdade dá (o `internal;` do nginx, com um `curl` de fora) está em
 `docs/operacao.md` como passo do operador, e não tem, nem pode ter, teste aqui.
@@ -11,7 +11,7 @@ A exceção é o drill de restauração: os testes do fim deste arquivo **execut
 mentira no PATH. Grep não enxerga SIGPIPE nem `trap`, e era exatamente disso que
 o script morria: até a revisão de branco ele abortava no meio em qualquer
 instalação com mais de três arquivos de mídia, deixando um banco e uma cópia da
-mídia para trás, enquanto o teste que o cobria — um grep por `restic restore` —
+mídia para trás, enquanto o teste que o cobria (um grep por `restic restore`)
 passava. O que continua sem teste é o outro lado: que o dump e o repositório
 restic do servidor de verdade contenham o que deveriam.
 """
@@ -38,7 +38,7 @@ TEMPLATES = RAIZ / "templates"
 def sem_comentarios(texto):
     """Comentário não configura nada: um `internal;` comentado tem que reprovar.
 
-    Vale para nginx, crontab, shell e .env — todos comentam com `#`. Sem isto,
+    Vale para nginx, crontab, shell e .env - todos comentam com `#`. Sem isto,
     metade destes testes passaria só porque a diretiva aparece no comentário que
     a explica; foi assim, aliás, que este arquivo estava quando foi escrito.
     """
@@ -174,7 +174,7 @@ def crontab():
 def tarefas(crontab):
     """Só as linhas de tarefa: o comentário do arquivo cita as rotinas pelo nome,
     e um grep no arquivo inteiro continuaria verde com a linha do cron apagada.
-    As atribuições de ambiente (MAILTO, RESTIC_REPOSITORY) também saem — elas são
+    As atribuições de ambiente (MAILTO, RESTIC_REPOSITORY) também saem - elas são
     configuração do cron, não tarefa, e têm testes próprios."""
     return [
         linha
@@ -215,7 +215,7 @@ def test_backup_cobre_banco_e_midia():
     cópia incremental salva a mídia, que é grande e cresce.
 
     A afirmação é sobre os COMANDOS, no início da linha. `"restic" in script`
-    — como este teste estava — continuava verde com os dois `restic` apagados,
+    (como este teste estava) continuava verde com os dois `restic` apagados,
     porque a palavra sobrevivia dentro de `.restic-senha`: a campanha de
     deleção pegou isso, a enumeração de regras não pegaria."""
     script = sem_comentarios((DEPLOY / "backup.sh").read_text())
@@ -226,7 +226,7 @@ def test_backup_cobre_banco_e_midia():
 def test_o_cron_leva_o_repositorio_restic_no_ambiente():
     """`backup.sh` abre com `${RESTIC_REPOSITORY:?...}` e o cron não herda o
     ambiente de login: sem a atribuição no crontab, o backup da mídia falha toda
-    noite — depois de o `pg_dump` do dia já ter rodado, que é o que faz o operador
+    noite - depois de o `pg_dump` do dia já ter rodado, que é o que faz o operador
     achar que "o backup rodou". Como linha de atribuição, não como menção no
     comentário que a explica."""
     crontab = (DEPLOY / "crontab").read_text()
@@ -474,7 +474,7 @@ def test_o_drill_nunca_derruba_o_banco_de_producao(drill):
     Roda com `INTEGRASI_BANCO_TESTE` **removida**, de propósito: é o default do
     script que precisa ser seguro, e é justamente ele que nenhum teste enxergava.
     Com a fixture exportando a variável, este teste conferia o valor que ele mesmo
-    tinha fornecido — trocar o default do script para o banco de produção deixava
+    tinha fornecido - trocar o default do script para o banco de produção deixava
     a suíte inteira verde, este teste incluído.
     """
     drill(INTEGRASI_BANCO_TESTE=None)
@@ -570,7 +570,7 @@ def test_operacao_manda_conferir_o_internal_no_servidor(operacao):
 
 def test_operacao_instala_a_extensao_unaccent(operacao):
     """Dívida do Plano 1: a busca depende de `portugues_unaccent`, e a migração
-    0008 roda `CREATE EXTENSION unaccent` — que exige privilégio no PostgreSQL.
+    0008 roda `CREATE EXTENSION unaccent` - que exige privilégio no PostgreSQL.
     Sem isso o `migrate` falha na instalação."""
     assert "unaccent" in operacao
     assert "CREATE EXTENSION" in operacao

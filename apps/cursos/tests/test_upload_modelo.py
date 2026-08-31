@@ -7,7 +7,7 @@ As regras que este arquivo prende, na ordem em que aparecem:
  2. `detecta_mime` continua devolvendo None para conteudo desconhecido.
  3. `LIMITE_VIDEO` vale exatamente 1 GiB (spec 8).
  4. `.mp4` esta na tabela de extensoes e `video/mp4` na de limites, com o teto
-    de 1 GiB — sem as duas entradas `valida_upload` recusa um MP4 legitimo.
+    de 1 GiB - sem as duas entradas `valida_upload` recusa um MP4 legitimo.
  5. `valida_upload` recusa acima do limite do tipo.
  6. `valida_upload` continua recusando conteudo que nao bate com a extensao.
  7. `caminho()` sai do `identificador`, nunca do `nome_original`, e fica dentro
@@ -114,7 +114,7 @@ def test_upload_declarado_acima_do_limite_e_recusado_na_criacao(novo_upload):
 @pytest.mark.django_db
 def test_acrescentar_nao_revalida_o_objeto_inteiro(novo_upload, monkeypatch):
     """Sem o guarda de `update_fields`, cada bloco de 5 MB dispara um
-    `full_clean()` completo — `validate_unique()` em `identificador` inclusive,
+    `full_clean()` completo - `validate_unique()` em `identificador` inclusive,
     uma ida ao banco por bloco, ~200 por GB."""
     upload = novo_upload(8)
     chamadas = []
@@ -159,7 +159,7 @@ def test_acrescentar_blocos_soma_o_recebido(novo_upload):
 @pytest.mark.django_db
 def test_bloco_reenviado_apos_falha_no_registro_nao_duplica_bytes(novo_upload, monkeypatch):
     """O motivo de existir desta tarefa: o upload sobrevive a queda de conexao.
-    Se os bytes chegam mas o registro nao avanca, o cliente reenvia o bloco — e
+    Se os bytes chegam mas o registro nao avanca, o cliente reenvia o bloco - e
     um append cego escreveria os mesmos bytes duas vezes, corrompendo o arquivo
     enquanto `tamanho_recebido` continua parecendo certo."""
     upload = novo_upload(8)
@@ -203,7 +203,7 @@ def test_sobra_de_bloco_interrompido_nao_sobrevive_ao_reenvio(novo_upload):
 @pytest.mark.django_db
 def test_registro_nao_avanca_quando_a_gravacao_falha(novo_upload, monkeypatch):
     """Se o registro fosse gravado antes dos bytes, uma escrita que falha deixaria
-    `tamanho_recebido` na frente do arquivo — e o proximo bloco cairia depois de um
+    `tamanho_recebido` na frente do arquivo - e o proximo bloco cairia depois de um
     buraco que nada detecta. O registro pode ficar atras do disco (o reenvio
     conserta); na frente, nunca."""
     upload = novo_upload(8)

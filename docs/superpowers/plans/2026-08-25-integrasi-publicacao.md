@@ -1,8 +1,8 @@
-# IntegraSI — Plano 3: Publicação, Catálogo e Demanda
+# IntegraSI - Plano 3: Publicação, Catálogo e Demanda
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Fechar o ciclo: o professor submete o curso pronto, o coordenador publica, o curso aparece num catálogo público com busca, e um interessado externo solicita a realização — o que vira uma turma agendada dentro do sistema.
+**Goal:** Fechar o ciclo: o professor submete o curso pronto, o coordenador publica, o curso aparece num catálogo público com busca, e um interessado externo solicita a realização - o que vira uma turma agendada dentro do sistema.
 
 **Architecture:** `catalogo` é um app somente-leitura sobre `cursos` que também recebe as solicitações externas; `turmas` nasce de uma solicitação aceita e é a fronteira com o futuro módulo de execução; `notificacoes` é uma fila em tabela esvaziada por cron, para que SMTP fora do ar nunca trave uma aprovação.
 
@@ -14,7 +14,7 @@
 
 ## Global Constraints
 
-- Módulo de produção apenas. `Turma` e `Participante` ficam na forma mínima: agendamento e lista. **Nenhum campo de frequência, nota ou certificado** — qualquer um deles é sinal de que a fronteira do §1.1 foi atravessada.
+- Módulo de produção apenas. `Turma` e `Participante` ficam na forma mínima: agendamento e lista. **Nenhum campo de frequência, nota ou certificado** - qualquer um deles é sinal de que a fronteira do §1.1 foi atravessada.
 - `turmas` lê `cursos`; `cursos` e `catalogo` **não** conhecem `turmas`.
 - Só `services.py` altera campo de status; toda transição em `transaction.atomic` (spec §7.2, §5).
 - Somente o coordenador publica, devolve ou despublica (spec §5).
@@ -22,7 +22,7 @@
 - Nenhum filtro ou tela pode pressupor BNCC; público-alvo é o filtro que sempre funciona (spec §4.2, §4.4).
 - Dados de solicitantes e participantes são de terceiros: finalidade declarada no formulário, acesso restrito ao professor da turma e ao coordenador (spec §10).
 - E-mail nunca é enviado dentro da requisição que muda estado (spec §9).
-- **Enumere as regras da tarefa antes de conferir os testes contra elas**, e prove cada teste de invariante quebrando a guarda que ele prende. Partir dos testes só acha teste fraco; partir das regras também acha regra sem teste. Ver `CLAUDE.md`, seção Testes — o padrão apareceu sete vezes no Plano 2.
+- **Enumere as regras da tarefa antes de conferir os testes contra elas**, e prove cada teste de invariante quebrando a guarda que ele prende. Partir dos testes só acha teste fraco; partir das regras também acha regra sem teste. Ver `CLAUDE.md`, seção Testes - o padrão apareceu sete vezes no Plano 2.
 
 ---
 
@@ -144,7 +144,7 @@ def test_notificacao_no_limite_de_tentativas_e_abandonada(settings):
 - [ ] **Step 3: Rodar para ver falhar**
 
 Run: `pytest apps/notificacoes/tests -v`
-Expected: FAIL — `ImportError: cannot import name 'enfileirar'`.
+Expected: FAIL - `ImportError: cannot import name 'enfileirar'`.
 
 - [ ] **Step 4: Implementar o modelo e o serviço**
 
@@ -395,7 +395,7 @@ def test_despublicar_registra_o_motivo(curso_pronto, professor, coordenador):
 - [ ] **Step 2: Rodar para ver falhar**
 
 Run: `pytest apps/cursos/tests/test_publicacao.py -v`
-Expected: FAIL — `ImportError: cannot import name 'LogTransicaoCurso'`.
+Expected: FAIL - `ImportError: cannot import name 'LogTransicaoCurso'`.
 
 - [ ] **Step 3: Implementar o histórico**
 
@@ -642,7 +642,7 @@ def test_analise_mostra_todos_os_entregaveis(client, coordenador, curso_submetid
 - [ ] **Step 2: Rodar para ver falhar**
 
 Run: `pytest apps/cursos/tests/test_views_coordenador.py -v`
-Expected: FAIL — `NoReverseMatch: Reverse for 'submeter_curso' not found`.
+Expected: FAIL - `NoReverseMatch: Reverse for 'submeter_curso' not found`.
 
 - [ ] **Step 3: Escrever as views**
 
@@ -754,7 +754,7 @@ Atualize `apps/cursos/views/__init__.py` acrescentando `analisar_curso`, `decidi
 
   {% for entregavel in entregaveis %}
     <section class="entregavel-analise">
-      <h2>{{ entregavel.get_tipo_display }} &mdash; {{ entregavel.get_status_display }}</h2>
+      <h2>{{ entregavel.get_tipo_display }} - {{ entregavel.get_status_display }}</h2>
       {% for secao in entregavel.secoes.all %}
         <h3>{{ secao.titulo }}</h3><div>{{ secao.conteudo|safe }}</div>
       {% endfor %}
@@ -875,7 +875,7 @@ def test_termo_vazio_devolve_tudo(curso_robotica):
 - [ ] **Step 2: Rodar para ver falhar**
 
 Run: `pytest apps/cursos/tests/test_busca.py -v`
-Expected: FAIL — `ModuleNotFoundError: No module named 'apps.cursos.busca'`.
+Expected: FAIL - `ModuleNotFoundError: No module named 'apps.cursos.busca'`.
 
 - [ ] **Step 3: Acrescentar as colunas ao modelo**
 
@@ -1121,7 +1121,7 @@ def test_catalogo_nao_expoe_dado_pessoal_da_equipe(client, curso_publicado, alun
 - [ ] **Step 3: Rodar para ver falhar**
 
 Run: `pytest apps/catalogo/tests -v`
-Expected: FAIL — `NoReverseMatch: Reverse for 'catalogo' not found`.
+Expected: FAIL - `NoReverseMatch: Reverse for 'catalogo' not found`.
 
 - [ ] **Step 4: Escrever as views**
 
@@ -1214,7 +1214,7 @@ O `painel` já mora em `painel/` desde o Plano 1, então não há conflito de ro
 {% block titulo %}Catalogo de cursos de extensao{% endblock %}
 {% block conteudo %}
   <h1>Cursos de extensao</h1>
-  <p>Cursos e oficinas produzidos pelo curso de Sistemas de Informacao da UFSM &mdash; Frederico Westphalen.</p>
+  <p>Cursos e oficinas produzidos pelo curso de Sistemas de Informacao da UFSM - Frederico Westphalen.</p>
 
   <form method="get">
     <input type="search" name="q" value="{{ filtros.q }}" placeholder="Buscar por assunto">
@@ -1278,7 +1278,7 @@ O `painel` já mora em `painel/` desde o Plano 1, então não há conflito de ro
     <h2>{{ curso.referencial.nome }}</h2>
     <ul>
       {% for competencia in curso.competencias.all %}
-        <li>{{ competencia.codigo }} &mdash; {{ competencia.descricao }}</li>
+        <li>{{ competencia.codigo }} - {{ competencia.descricao }}</li>
       {% endfor %}
     </ul>
   {% endif %}
@@ -1299,7 +1299,7 @@ git add apps/catalogo config templates
 git commit -m "feat(catalogo): catalogo publico com filtros e busca"
 ```
 
-Expected: PASS — inclusive os testes do Plano 1 que usavam `reverse("painel")`, que continuam válidos.
+Expected: PASS - inclusive os testes do Plano 1 que usavam `reverse("painel")`, que continuam válidos.
 
 ---
 
@@ -1414,7 +1414,7 @@ def test_formulario_declara_a_finalidade_dos_dados(client, curso_publicado):
 - [ ] **Step 2: Rodar para ver falhar**
 
 Run: `pytest apps/catalogo/tests/test_solicitacao.py -v`
-Expected: FAIL — `NoReverseMatch: Reverse for 'solicitar' not found`.
+Expected: FAIL - `NoReverseMatch: Reverse for 'solicitar' not found`.
 
 - [ ] **Step 3: Implementar o modelo**
 
@@ -1774,7 +1774,7 @@ def test_turma_nao_tem_campo_de_frequencia_nem_certificado():
 - [ ] **Step 3: Rodar para ver falhar**
 
 Run: `pytest apps/turmas/tests -v`
-Expected: FAIL — `ImportError: cannot import name 'Turma'`.
+Expected: FAIL - `ImportError: cannot import name 'Turma'`.
 
 - [ ] **Step 4: Implementar os modelos**
 
@@ -2088,7 +2088,7 @@ def test_professor_ve_apenas_as_proprias_turmas(client, coordenador, professor, 
 - [ ] **Step 2: Rodar para ver falhar**
 
 Run: `pytest apps/turmas/tests/test_views.py -v`
-Expected: FAIL — `NoReverseMatch: Reverse for 'solicitacoes' not found`.
+Expected: FAIL - `NoReverseMatch: Reverse for 'solicitacoes' not found`.
 
 - [ ] **Step 3: Escrever o formulário**
 
@@ -2227,7 +2227,7 @@ Em `config/urls.py`, acrescente `path("", include("apps.turmas.urls")),`.
   <h2>Ja respondidas</h2>
   <ul>
     {% for solicitacao in respondidas %}
-      <li>{{ solicitacao.curso.titulo }} &mdash; {{ solicitacao.get_status_display }}</li>
+      <li>{{ solicitacao.curso.titulo }} - {{ solicitacao.get_status_display }}</li>
     {% endfor %}
   </ul>
 {% endblock %}
@@ -2294,7 +2294,7 @@ Em `templates/painel.html`:
 - [ ] **Step 6: Rodar a suíte inteira**
 
 Run: `pytest -v`
-Expected: PASS — todos os testes dos Planos 1, 2 e 3.
+Expected: PASS - todos os testes dos Planos 1, 2 e 3.
 
 - [ ] **Step 7: Conferir o ciclo completo na mão**
 

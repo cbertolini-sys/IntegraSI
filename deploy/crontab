@@ -10,7 +10,7 @@
 MAILTO=integrasi-ops@ufsm.br
 
 # O cron NAO herda o ambiente de login, e `backup.sh` abre com
-# `${RESTIC_REPOSITORY:?...}`. Sem esta linha o backup da midia falha toda noite —
+# `${RESTIC_REPOSITORY:?...}`. Sem esta linha o backup da midia falha toda noite  - 
 # depois de o `pg_dump` do dia ja ter rodado, o que faz o operador achar que "o
 # backup rodou". Trocar o endereco abaixo faz parte da instalacao, como o MAILTO.
 RESTIC_REPOSITORY=sftp:integrasi@backup.exemplo.ufsm.br:/srv/restic/integrasi

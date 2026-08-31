@@ -4,7 +4,7 @@ Quatro rotas: abrir o upload, mandar um bloco, perguntar onde parou e concluir. 
 que justifica todas elas e a retomada: 1 GB no upstream domestico de um aluno leva
 perto de meia hora, e um POST unico que morre aos 90% e entrega perdida.
 
-Nenhuma delas devolve HTML — quem as chama e o `static/js/upload.js` da Task 3.
+Nenhuma delas devolve HTML - quem as chama e o `static/js/upload.js` da Task 3.
 """
 
 import json
@@ -32,7 +32,7 @@ def _corpo_json(request):
     """Corpo da requisicao como dicionario.
 
     Cliente que manda lixo tem que ouvir 400. Um `json.loads` cru levantaria
-    JSONDecodeError e viraria 500 — erro do servidor por culpa do cliente, ruido
+    JSONDecodeError e viraria 500 - erro do servidor por culpa do cliente, ruido
     no log de producao e nenhuma explicacao para quem chamou.
     """
     try:
@@ -104,7 +104,7 @@ def upload_iniciar(request):
         # video) tem que ser dito agora, e nao depois de meia hora de upload. O
         # conteudo so na conclusao.
         #
-        # `concluir_upload` reconfere o tipo do entregavel — a mesma dupla de guardas
+        # `concluir_upload` reconfere o tipo do entregavel - a mesma dupla de guardas
         # que `pode_editar_producao` ja tem nas duas pontas, e pelo mesmo motivo: o
         # registro tambem nasce por outros caminhos que nao esta view.
         if entregavel.tipo != TipoEntregavel.VIDEOS:

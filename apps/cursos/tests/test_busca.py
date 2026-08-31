@@ -55,7 +55,7 @@ def test_termo_vazio_devolve_tudo(curso_robotica):
 
 # R62: os temas que o sistema realmente distribui vêm acentuados ("Segurança
 # Digital", spec do Plano 1) e é justamente por isso que a busca precisa ser
-# insensível a acento — sem isso, uma escola digitando "seguranca" (como as
+# insensível a acento - sem isso, uma escola digitando "seguranca" (como as
 # pessoas de fato digitam) não encontraria nada indexado por um tema acentuado.
 # Os testes do brief acima usam nomes de tema sem acento, o que não exercitaria
 # essa lacuna; este teste cobre o caso real, isolando o termo para que só o

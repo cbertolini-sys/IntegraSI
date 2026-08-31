@@ -109,13 +109,13 @@ def catalogo_curso(request, pk):
 def _ip_da_requisicao(request):
     """De quem é esta requisição, para efeito do limite por IP (spec 10).
 
-    Atrás do nginx, `REMOTE_ADDR` é sempre 127.0.0.1 — olhar só para ele
+    Atrás do nginx, `REMOTE_ADDR` é sempre 127.0.0.1 - olhar só para ele
     transformaria o limite por IP num limite global, e um único visitante
     fecharia o formulário para todo mundo. O IP real chega em `X-Forwarded-For`.
 
     Esse cabeçalho é uma lista onde cada proxy **acrescenta ao fim**: o último
     elemento é o que o nosso nginx escreveu; os anteriores são texto que o
-    cliente mandou. Ler o *primeiro* — como este código fazia — entrega o limite
+    cliente mandou. Ler o *primeiro* (como este código fazia) entrega o limite
     ao atacante: `X-Forwarded-For: 9.9.9.9` diferente a cada requisição dá cota
     nova toda vez e o limite nunca dispara. Por isso lemos o último.
 

@@ -82,7 +82,7 @@ def pode_baixar_arquivo(usuario, arquivo):
     que diz o primeiro anexo": `Arquivo.anexos` e FK reversa, e a partir do Plano
     4 (versoes de curso) o mesmo Arquivo e compartilhado por varias versoes em vez
     de ter os bytes clonados (spec 4.6). Olhar so o primeiro recusaria quem tem
-    acesso por outra versao — e liberaria por uma versao que a pessoa nao deveria
+    acesso por outra versao - e liberaria por uma versao que a pessoa nao deveria
     ver, dependendo so da ordenacao do Anexo.
 
     Arquivo sem anexo nenhum nao tem curso por onde autorizar: ninguem baixa.

@@ -1,4 +1,4 @@
-# IntegraSI — Design
+# IntegraSI - Design
 
 Sistema de gerenciamento de cursos de extensão do curso de Sistemas de Informação
 da UFSM, campus Frederico Westphalen.
@@ -11,14 +11,14 @@ Na disciplina UFSM00771 (TICs para Inclusão Digital), equipes de alunos assumem
 papel de desenvolvedoras pedagógicas: planejam, produzem e catalogam cursos e
 oficinas de inclusão digital e computação, voltados a uma etapa escolar específica
 ou a um público da comunidade externa. Hoje esse trabalho acontece fora de qualquer
-sistema — a proposta circula por documento, os materiais por drive compartilhado,
+sistema - a proposta circula por documento, os materiais por drive compartilhado,
 a aprovação por conversa, e o resultado não fica catalogado nem acessível a quem
 poderia solicitar o curso.
 
 O IntegraSI dá um lugar a esse ciclo inteiro: o professor propõe o curso, a equipe
 produz os materiais dentro do sistema, o professor aprova entrega por entrega, o
 coordenador aprova o curso, ele entra num catálogo público, e escolas e grupos da
-comunidade solicitam a realização — o que gera uma turma acompanhada no sistema.
+comunidade solicitam a realização - o que gera uma turma acompanhada no sistema.
 
 O sistema é de **produção de cursos**, não de inscrição em cursos. Os alunos
 cadastrados são os produtores do material, não os cursistas.
@@ -30,7 +30,7 @@ O IntegraSI está planejado em dois módulos. Este documento especifica o primei
 (frequência, avaliação, certificação, acompanhamento de turma em andamento), será
 construído depois, sobre esta base.
 
-Isso não é uma nota de rodapé — é uma restrição de projeto, e três regras saem dela:
+Isso não é uma nota de rodapé - é uma restrição de projeto, e três regras saem dela:
 
 1. **`Turma` e `Participante` existem aqui na forma mínima**: agendamento e lista de
    presentes na lista, nada mais. São o ponto onde a demanda captada pelo catálogo
@@ -38,7 +38,7 @@ Isso não é uma nota de rodapé — é uma restrição de projeto, e três regr
    campo de frequência, nota ou certificado entra agora.
 2. **A costura é a versão do curso.** A `Turma` aponta para uma versão específica do
    `Curso`, nunca para a linhagem. É o que permitirá ao módulo de execução dizer,
-   em 2029, exatamente qual material foi aplicado numa turma de 2027 — mesmo que o
+   em 2029, exatamente qual material foi aplicado numa turma de 2027 - mesmo que o
    curso tenha ganhado versões depois.
 3. **`cursos` e `catalogo` não conhecem `turmas`.** A dependência é de mão única:
    `turmas` lê `cursos`. Assim o módulo de execução cresce a partir de `turmas` sem
@@ -63,7 +63,7 @@ SIAPE. **Contas de aluno são criadas pelo professor ao alocá-lo numa equipe,
 informando apenas nome e e-mail**; o aluno recebe um convite por e-mail e, no
 primeiro acesso, cria a senha e completa o cadastro com CPF, matrícula e
 telefone. O convite vale sete dias, serve uma vez só, e o professor pode
-reenviá-lo — o reenvio cancela o anterior. Enquanto o cadastro não estiver
+reenviá-lo - o reenvio cancela o anterior. Enquanto o cadastro não estiver
 completo, o aluno só alcança a tela de primeiro acesso. O visitante não tem conta
 e nunca precisa de uma.
 
@@ -76,7 +76,7 @@ e nunca precisa de uma.
 
 1. O coordenador cadastra a edição da disciplina e as pessoas.
 2. O professor cria a proposta de curso: título, resumo, público-alvo, carga
-   horária, formato e — se houver — referencial pedagógico e competências.
+   horária, formato e (se houver) referencial pedagógico e competências.
 3. O professor monta a equipe de alunos daquele curso.
 4. O sistema cria automaticamente os cinco entregáveis obrigatórios.
 5. Os alunos preenchem seções e anexam materiais em cada entregável.
@@ -97,7 +97,7 @@ e nunca precisa de uma.
 
 ### 4.1 Pessoas e contexto
 
-**Usuario** — user model próprio desde a primeira migração (trocar depois é
+**Usuario** - user model próprio desde a primeira migração (trocar depois é
 custoso).
 
 Campos comuns a todos: nome completo, e-mail (é o login, único), CPF (único),
@@ -114,7 +114,7 @@ Ambos únicos quando preenchidos. Um só modelo, e não perfis separados por pap
 a base é pequena, os campos são poucos e um `OneToOne` por papel triplicaria as
 consultas em troca de nenhuma garantia que a validação já não dê.
 
-**CPF, matrícula e SIAPE são normalizados na gravação** — só dígitos, sem ponto,
+**CPF, matrícula e SIAPE são normalizados na gravação** - só dígitos, sem ponto,
 traço ou barra. Sem isso, `123.456.789-00` e `12345678900` convivem no banco e a
 restrição de unicidade não serve para nada. O CPF tem os dígitos verificadores
 conferidos; campo digitado à mão erra, e um CPF inválido só aparece anos depois,
@@ -125,13 +125,13 @@ quem produziu cada material e a quem o sistema se dirige. O CPF **não tem uso d
 do módulo de produção**: é coletado para a identificação institucional inequívoca e
 para a emissão de certificado no módulo de execução (§1.1). Está registrado aqui
 justamente porque campo sem finalidade declarada é campo que ninguém sabe explicar
-depois — e a LGPD cobra essa explicação.
+depois - e a LGPD cobra essa explicação.
 
-**Edicao** — a oferta da disciplina. Campos: código (`2026/2`), descrição,
+**Edicao** - a oferta da disciplina. Campos: código (`2026/2`), descrição,
 data de início, data de fim, ativa. Todo curso pertence a uma edição; é o que
 mantém o catálogo legível ao longo dos anos.
 
-**MembroEquipe** — vínculo aluno ↔ curso, criado pelo professor.
+**MembroEquipe** - vínculo aluno ↔ curso, criado pelo professor.
 Único por (curso, aluno).
 
 ### 4.2 Referencial pedagógico
@@ -139,15 +139,15 @@ mantém o catálogo legível ao longo dos anos.
 A BNCC da Computação é *um* referencial possível, não uma propriedade do domínio.
 Cursos podem se apoiar em outros modelos, ou em nenhum.
 
-**Referencial** — nome, sigla, descrição, `min_competencias`, `max_competencias`,
+**Referencial** - nome, sigla, descrição, `min_competencias`, `max_competencias`,
 ativo. A regra "de 2 a 5 habilidades" do roteiro de 2026 é dado deste registro,
 não constante no código.
 
-**Categoria** — agrupamento dentro de um referencial (o que a BNCC chama de
+**Categoria** - agrupamento dentro de um referencial (o que a BNCC chama de
 *eixo*): referencial, nome, ordem. Para a BNCC da Computação: Pensamento
 Computacional, Mundo Digital, Cultura Digital.
 
-**Competencia** — referencial, categoria, código (`EF05CO01`), descrição, etapa
+**Competencia** - referencial, categoria, código (`EF05CO01`), descrição, etapa
 de ensino, ordem. Carregada por fixture.
 
 **Cursos sem referencial são de primeira classe.** Um curso de Arduino, de IA na
@@ -158,11 +158,11 @@ relatório pode pressupor BNCC.
 
 ### 4.3 O curso
 
-**Curso** — título, resumo, edição, professor responsável, status.
+**Curso** - título, resumo, edição, professor responsável, status.
 
 Identidade pedagógica, exigida pelo roteiro como dado estruturado e não como prosa:
 
-- `tipo_publico`: `ESCOLAR` ou `COMUNITARIO` — **obrigatório em todo curso**
+- `tipo_publico`: `ESCOLAR` ou `COMUNITARIO` - **obrigatório em todo curso**
 - `etapa_ano`: obrigatório quando `ESCOLAR` (Educação Infantil ao Ensino Médio)
 - `publico_descricao`: obrigatório quando `COMUNITARIO`
 - `referencial`: opcional; quando presente, restringe as competências selecionáveis
@@ -181,40 +181,40 @@ Datas: criado em, atualizado em, publicado em.
 
 Duas coisas diferentes, que servem a propósitos diferentes.
 
-**Tema** — vocabulário controlado, cadastrado pelo coordenador no Admin
+**Tema** - vocabulário controlado, cadastrado pelo coordenador no Admin
 (Pensamento Computacional, Robótica, Segurança Digital, IA na Educação, Inclusão
 Digital de Adultos…): nome, slug, ativo. Ligado ao curso por M2M e exposto como
 **filtro** no catálogo. É controlado porque filtro com texto livre não funciona:
 "robótica", "Robotica" e "robótica educacional" viram três filtros distintos e
 nenhum deles encontra tudo.
 
-**`palavras_chave`** — texto livre preenchido pela equipe. Não vira filtro;
+**`palavras_chave`** - texto livre preenchido pela equipe. Não vira filtro;
 alimenta a busca.
 
-**Busca textual** — coluna `search_vector` (`SearchVectorField`) no `Curso`, com
+**Busca textual** - coluna `search_vector` (`SearchVectorField`) no `Curso`, com
 índice GIN e dicionário em português. O dicionário é o que faz "robótica" encontrar
 "robotica" e "robôs"; `LIKE` não faz isso.
 
 Como a coluna é mantida, com uma pegadinha que custa uma tarde se descoberta tarde:
 **coluna gerada não faz `JOIN`**. `GeneratedField` (Django 5.0) ou um trigger na
-tabela `curso` cobrem os campos da própria linha — título, resumo, palavras-chave —
+tabela `curso` cobrem os campos da própria linha (título, resumo, palavras-chave)
 mas **não alcançam os nomes dos temas**, que vivem numa M2M. Então: campos próprios
 por coluna gerada, e os temas incorporados ao vetor por atualização explícita quando
-o vínculo muda. O mesmo vale se um `Tema` for renomeado — os cursos ligados a ele
+o vínculo muda. O mesmo vale se um `Tema` for renomeado - os cursos ligados a ele
 precisam ser reindexados.
 
 ### 4.5 Versões de um curso
 
-Um curso publicado pode se mostrar fraco ou incompleto, e outra equipe — em outro
-semestre — pode melhorá-lo. Isso **não** é editar o curso publicado: é criar uma
+Um curso publicado pode se mostrar fraco ou incompleto, e outra equipe - em outro
+semestre - pode melhorá-lo. Isso **não** é editar o curso publicado: é criar uma
 nova versão dele.
 
 Campos no `Curso`:
 
-- `raiz` — FK para a primeira versão da linhagem (vazio na própria v1). Agrupa toda
+- `raiz` - FK para a primeira versão da linhagem (vazio na própria v1). Agrupa toda
   a história de um curso.
-- `versao` — inteiro sequencial dentro da linhagem.
-- `motivo_versao` — por que esta versão foi aberta. Obrigatório a partir da v2.
+- `versao` - inteiro sequencial dentro da linhagem.
+- `motivo_versao` - por que esta versão foi aberta. Obrigatório a partir da v2.
 
 Como funciona:
 
@@ -222,14 +222,14 @@ Como funciona:
    informando o motivo.
 2. O sistema clona o curso na edição corrente: dados, entregáveis, seções e anexos.
    Todos os entregáveis clonados voltam a `RASCUNHO`; o histórico de `Revisao` da
-   versão anterior **não** é copiado — pertence a ela.
+   versão anterior **não** é copiado - pertence a ela.
 3. O professor monta a nova equipe. Pode ser outra turma inteira.
 4. A versão anterior **continua publicada e solicitável** durante todo o trabalho.
 5. Quando o coordenador publica a nova versão, a anterior passa a `SUBSTITUIDO`,
    sai do catálogo e permanece consultável como histórico.
 
 Restrições: no máximo uma versão de cada linhagem fora de `PUBLICADO`/`SUBSTITUIDO`
-por vez — duas equipes não reescrevem o mesmo curso em paralelo. O catálogo mostra,
+por vez - duas equipes não reescrevem o mesmo curso em paralelo. O catálogo mostra,
 de cada linhagem, apenas a versão publicada.
 
 **Curso abandonado antes de publicar é outro caso, e mais simples**: não precisa de
@@ -241,13 +241,13 @@ onde o anterior parou.
 O roteiro da disciplina fixa **o que** deve ser entregue; o professor decide **como**
 o conteúdo se organiza dentro de cada entrega.
 
-**Entregavel** — os cinco do roteiro, criados automaticamente na abertura do curso.
+**Entregavel** - os cinco do roteiro, criados automaticamente na abertura do curso.
 Campos: curso, `tipo` (`PLANO_ENSINO`, `CARDS`, `CADERNO`, `VIDEOS`, `SLIDES`),
 status, responsável (aluno, opcional), atualizado em. Único por (curso, tipo).
 É a unidade de revisão: o professor aprova ou devolve o entregável, não itens
 individuais.
 
-**Secao** — conteúdo em texto rico dentro de um entregável: título, ordem,
+**Secao** - conteúdo em texto rico dentro de um entregável: título, ordem,
 conteúdo (HTML sanitizado no salvamento), quem atualizou, quando. O professor
 monta as seções que quiser.
 
@@ -256,51 +256,51 @@ vazias (ementa, objetivos, conteúdo programático, metodologia, cronograma,
 avaliação, referências), junto com os cinco entregáveis e na mesma transação. O
 aluno abre e encontra a estrutura pronta para preencher. **Isso não é feito por
 sinal `post_save`**: sinal é invisível no fluxo, difícil de testar e não dispara de
-forma confiável em fixtures e criações em lote — e contraria a regra do §7.2 de que
+forma confiável em fixtures e criações em lote - e contraria a regra do §7.2 de que
 só os serviços alteram estado.
 
-**Anexo** — arquivo ou link preso a um entregável, opcionalmente a uma seção:
+**Anexo** - arquivo ou link preso a um entregável, opcionalmente a uma seção:
 
 - `tipo_midia`: `ARQUIVO`, `VIDEO` ou `LINK`. Link é material complementar
   (referência externa, atividade em Scratch) e **não satisfaz nenhuma validação
-  do §6** — em particular, o entregável de vídeo-aulas exige arquivo enviado
-- `arquivo` — FK para `Arquivo`; nome original exibido
+  do §6** - em particular, o entregável de vídeo-aulas exige arquivo enviado
+- `arquivo` - FK para `Arquivo`; nome original exibido
 - `url` para links
 - título, descrição
-- `referencia_bibliografica` — obrigatório nos cards
+- `referencia_bibliografica` - obrigatório nos cards
 - `rotulo`: `NENHUM`, `SEM_GABARITO`, `COM_GABARITO`
 - `tipo_pratica`: `NENHUM`, `PLUGADA`, `DESPLUGADA`, `AMBAS`
 - `duracao_minutos` para vídeos
 - enviado por, enviado em
 
-**Arquivo** — o conteúdo binário, separado do anexo que o referencia: caminho em
+**Arquivo** - o conteúdo binário, separado do anexo que o referencia: caminho em
 disco (UUID), hash do conteúdo, tamanho, mime detectado, enviado por, enviado em.
 Imutável.
 
 A separação existe por causa do versionamento: clonar um curso não pode clonar 3 GB
 de vídeo. Versões diferentes referenciam o **mesmo** `Arquivo`, e a remoção física
-só acontece quando nenhum anexo de nenhuma versão o referencia — verificação feita
+só acontece quando nenhum anexo de nenhuma versão o referencia - verificação feita
 pela rotina de limpeza, nunca no momento de apagar um anexo.
 
-**Revisao** — registro imutável de cada decisão do professor: entregável, revisor,
+**Revisao** - registro imutável de cada decisão do professor: entregável, revisor,
 decisão (`APROVADO`/`DEVOLVIDO`), comentário, data. Nunca sobrescrito; é o
 histórico das idas e vindas.
 
-**LogTransicaoCurso** — curso, status de origem, status de destino, usuário, data,
+**LogTransicaoCurso** - curso, status de origem, status de destino, usuário, data,
 observação. Responde "por que este curso saiu do ar?" seis meses depois.
 
 ### 4.7 Demanda e realização
 
-**Solicitacao** — curso, nome, e-mail, telefone, instituição, número estimado de
+**Solicitacao** - curso, nome, e-mail, telefone, instituição, número estimado de
 participantes, período pretendido, mensagem, status
 (`RECEBIDA`/`EM_ANALISE`/`ACEITA`/`RECUSADA`), resposta, data.
 
-**Turma** — a versão do curso que será aplicada, solicitação de origem (opcional),
+**Turma** - a versão do curso que será aplicada, solicitação de origem (opcional),
 professor responsável (designado no aceite da solicitação, §7.2, e obrigatório),
 data de início, data de fim, local, vagas, status
 (`AGENDADA`/`EM_ANDAMENTO`/`CONCLUIDA`/`CANCELADA`), observações.
 
-**Participante** — turma, nome, e-mail, telefone. Deliberadamente simples: sem
+**Participante** - turma, nome, e-mail, telefone. Deliberadamente simples: sem
 conta, sem login.
 
 Ambos param aqui, por decisão de escopo (§1.1): registram o agendamento e quem
@@ -310,10 +310,10 @@ atravessada sem querer.
 
 ### 4.8 Infraestrutura de dados
 
-**Notificacao** — destinatário, assunto, corpo, evento, tentativas, enviado em,
+**Notificacao** - destinatário, assunto, corpo, evento, tentativas, enviado em,
 último erro. Fila persistente de e-mail (ver §9).
 
-**UploadEmAndamento** — identificador, usuário, entregável, nome original, tamanho
+**UploadEmAndamento** - identificador, usuário, entregável, nome original, tamanho
 total, partes recebidas, criado em, atualizado em. Suporte ao upload retomável
 (ver §8).
 
@@ -355,27 +355,27 @@ nada acontece.
 ## 6. Validações de envio por entregável
 
 Aplicadas quando o aluno envia o entregável para revisão. A mensagem de erro lista
-exatamente o que falta — é ela que evita a ida e volta com o professor.
+exatamente o que falta - é ela que evita a ida e volta com o professor.
 
-**A — Plano de Ensino**: ao menos um anexo PDF; ao menos uma seção com conteúdo; e
-os dados pedagógicos do **curso** preenchidos — público-alvo, carga horária, formato
+**A - Plano de Ensino**: ao menos um anexo PDF; ao menos uma seção com conteúdo; e
+os dados pedagógicos do **curso** preenchidos - público-alvo, carga horária, formato
 e, se houver referencial, número de competências dentro da faixa dele.
 
 Esses últimos são campos do `Curso`, não do `Entregavel` (§4.3): a validação lê
 `entregavel.curso`. A checagem é repetida em `submeter_ao_coordenador`, porque o
-curso pode ser editado depois que o Plano de Ensino foi aprovado — validar só no
+curso pode ser editado depois que o Plano de Ensino foi aprovado - validar só no
 envio do entregável deixaria passar um curso submetido sem carga horária.
 
-**B — Infográficos e Cards**: ao menos um anexo; **todo** anexo com
+**B - Infográficos e Cards**: ao menos um anexo; **todo** anexo com
 `referencia_bibliografica` preenchida.
 
-**C — Caderno de Exercícios**: ao menos um anexo com rótulo `SEM_GABARITO` e um
+**C - Caderno de Exercícios**: ao menos um anexo com rótulo `SEM_GABARITO` e um
 com `COM_GABARITO`; entre os anexos, ao menos um marcado como prática plugada
 (`PLUGADA` ou `AMBAS`) e ao menos um como desplugada (`DESPLUGADA` ou `AMBAS`).
 
-**D — Vídeo-Aulas**: de 2 a 3 vídeos, cada um com `duracao_minutos` entre 5 e 10.
+**D - Vídeo-Aulas**: de 2 a 3 vídeos, cada um com `duracao_minutos` entre 5 e 10.
 
-**E — Slides**: ao menos um anexo.
+**E - Slides**: ao menos um anexo.
 
 ## 7. Arquitetura
 
@@ -419,19 +419,19 @@ três lugares que publicam um curso de jeitos ligeiramente diferentes.
 
 ### 7.3 Telas
 
-**Aluno** — meus cursos → curso → painel dos cinco entregáveis com status e o que
+**Aluno** - meus cursos → curso → painel dos cinco entregáveis com status e o que
 falta → editar seção → anexar arquivo ou vídeo → enviar para revisão → ver
 devolutivas.
 
-**Professor** — meus cursos → criar proposta → montar equipe → fila de revisão
+**Professor** - meus cursos → criar proposta → montar equipe → fila de revisão
 ("o que espera por mim") → aprovar/devolver com comentário → submeter ao
 coordenador → minhas turmas.
 
-**Coordenador** — fila de cursos aguardando aprovação → revisar curso completo →
+**Coordenador** - fila de cursos aguardando aprovação → revisar curso completo →
 publicar ou devolver → abrir nova versão de curso publicado → solicitações
 recebidas → criar turma → Django Admin para pessoas, edições, temas e referenciais.
 
-**Visitante** — catálogo com busca textual e filtros de público-alvo, tema,
+**Visitante** - catálogo com busca textual e filtros de público-alvo, tema,
 referencial, categoria e formato → página do curso → formulário de solicitação.
 Cada linhagem aparece uma única vez, na versão publicada.
 
@@ -444,10 +444,10 @@ disco por UUID; o nome original é apenas metadado exibido.
 **Upload de vídeo é retomável.** O navegador divide o arquivo em blocos e envia um
 a um contra `UploadEmAndamento`, com barra de progresso; queda de conexão retoma de
 onde parou. Este é o único ponto do sistema com JavaScript próprio de verdade:
-**HTMX não fatia arquivo**. O fatiamento usa `Blob.slice()` em JS simples — da ordem
+**HTMX não fatia arquivo**. O fatiamento usa `Blob.slice()` em JS simples - da ordem
 de 150 linhas, sem dependência nova. Se durante a implementação isso se mostrar mais
 espinhoso que o previsto, a alternativa é uma biblioteca minimalista (Resumable.js,
-Uppy), e não esticar o HTMX para o que ele não faz. Um GB no upstream doméstico de um aluno leva perto de meia hora — um
+Uppy), e não esticar o HTMX para o que ele não faz. Um GB no upstream doméstico de um aluno leva perto de meia hora - um
 POST único que falha aos 90% significa entrega perdida.
 
 **Entrega de arquivo nunca passa pelo Django.** A view confere permissão e delega
@@ -456,7 +456,7 @@ ao nginx via `X-Accel-Redirect`. Isso é obrigatório, não otimização: transm
 simultâneos derrubam o servidor. O nginx também dá *range requests*, então o vídeo
 abre e navega no player em vez de só baixar.
 
-No nginx, o `location` da mídia é marcado **`internal;`** — sem isso, qualquer
+No nginx, o `location` da mídia é marcado **`internal;`** - sem isso, qualquer
 pessoa acessa o arquivo pela URL direta e a checagem de permissão do Django vira
 decoração. A view define `Content-Disposition: inline` apenas para PDF e vídeo, para
 abrirem no navegador; **todo o resto vai como `attachment`**, porque HTML ou SVG
@@ -475,7 +475,7 @@ apenas baixados. Sem transcodificação no servidor.
 > a recusa por extensão em `valida_declaracao` acontece **antes do primeiro byte**,
 > e um upload de 1 GB só pode ser recusado cedo contra uma lista fechada; e sem
 > transcodificação um `.mov` chegaria como um vídeo que o professor **não consegue
-> assistir** na revisão — recusar no envio, dizendo "converta para MP4", é uma
+> assistir** na revisão - recusar no envio, dizendo "converta para MP4", é uma
 > falha melhor do que aceitar um arquivo que ninguém pode revisar. Reabrir a
 > decisão é acrescentar a assinatura e o teto do contêiner em `ASSINATURAS`,
 > `LIMITES` e `EXTENSOES`, e nada mais.
@@ -485,7 +485,7 @@ por semestre e ~240 GB em cinco anos. Isso dimensiona disco e estratégia de bac
 
 ## 9. Notificações
 
-Dentro do sistema, cada perfil já tem sua fila do que espera por ele — não é
+Dentro do sistema, cada perfil já tem sua fila do que espera por ele - não é
 preciso e-mail para o aluno descobrir que tem trabalho.
 
 **E-mail apenas quando o destinatário não abriria o sistema por conta própria:**
@@ -509,7 +509,7 @@ progressivo e param depois de um limite, em vez de reprocessar para sempre.
 
 ## 10. Permissões e dados pessoais
 
-Checagens centralizadas em `cursos/permissions.py`, chamadas pelos serviços — nunca
+Checagens centralizadas em `cursos/permissions.py`, chamadas pelos serviços - nunca
 espalhadas em `if` de template.
 
 - **Aluno**: só cursos onde é `MembroEquipe`. Edita seções e anexos apenas com o
@@ -518,7 +518,7 @@ espalhadas em `if` de template.
   deles. Não publica, não mexe em curso alheio, não vê participantes de turma alheia.
 - **Coordenador**: acesso total; publica, despublica e abre nova versão; Admin.
 - **Abrir nova versão**: coordenador ou o professor responsável pelo curso, sempre
-  com motivo registrado. A equipe da nova versão não herda acesso à anterior — ela
+  com motivo registrado. A equipe da nova versão não herda acesso à anterior - ela
   já está publicada e é pública de qualquer forma.
 - **Visitante**: exclusivamente cursos `PUBLICADO`.
 
@@ -527,26 +527,26 @@ passa pela view de permissão descrita no §8; URL de arquivo vaza com facilidad
 material não aprovado não pode circular.
 
 **Dados pessoais entram por três lugares.** Usuários internos (nome, e-mail, CPF,
-matrícula ou SIAPE — §4.1), solicitantes externos e participantes de turma.
+matrícula ou SIAPE - §4.1), solicitantes externos e participantes de turma.
 
 O CPF nunca aparece em tela pública, em listagem de equipe ou em página de curso.
 No Django Admin é exibido mascarado na listagem e visível apenas na ficha da pessoa,
 acessível só ao coordenador. Nenhuma tela de aluno ou de professor mostra o CPF de
 outra pessoa.
 
-**Os dados de terceiros** — solicitantes externos e participantes de turma — entram
+**Os dados de terceiros** (solicitantes externos e participantes de turma) entram
 sem que a pessoa tenha, ou venha a ter, conta no sistema: quem preenche o
 formulário público apenas avisa que tem interesse num curso, e não ganha acesso a
 nada por isso. Ela não consegue entrar, não acompanha o andamento do próprio
 pedido por dentro, e não tem como corrigir ou apagar o que informou.
 Consequências: aviso de finalidade no formulário público, acesso restrito ao
 professor da turma e ao coordenador, e retenção declarada. O formulário público é a
-única porta anônima que escreve no banco — recebe validação estrita, limite de
+única porta anônima que escreve no banco - recebe validação estrita, limite de
 tamanho de texto, *honeypot* e limite por IP, sem CAPTCHA de terceiro.
 
 **Promoção e rebaixamento (Plano 5).** Só a coordenação promove um professor a
 coordenador ou tira esse acesso, pela tela `coordenacao/pessoas/`, e sempre pelos
-serviços de `apps.contas` — nunca por edição do campo `papel` no Django Admin.
+serviços de `apps.contas` - nunca por edição do campo `papel` no Django Admin.
 Ninguém rebaixa a si mesmo: além de decisão registrada, é o que impede o último
 coordenador de deixar o sistema sem quem publique curso, aceite solicitação ou
 promova alguém de volta.
@@ -555,7 +555,7 @@ promova alguém de volta.
 prazo de sete dias, e nunca uma senha. A fila de notificações fica gravada no
 banco: uma senha em texto no corpo do e-mail sobreviveria ali, legível por quem
 tem acesso ao Admin. Enquanto o cadastro não está completo, um middleware prende
-a pessoa na própria tela — as exceções são explícitas, e `logout` está entre elas,
+a pessoa na própria tela - as exceções são explícitas, e `logout` está entre elas,
 senão quem entrou pela metade não conseguiria nem sair.
 
 ## 11. Erros e auditoria
@@ -569,7 +569,7 @@ senão quem entrou pela metade não conseguiria nem sair.
 
 ## 12. Testes
 
-`pytest-django`, com esforço concentrado onde mora a regra — não distribuído por
+`pytest-django`, com esforço concentrado onde mora a regra - não distribuído por
 igual:
 
 1. **Máquina de estados**: cada transição válida e, principalmente, as inválidas
@@ -598,7 +598,7 @@ dimensionados para o upload em blocos. Mídia em volume separado do sistema, por
 ela cresce e o resto não.
 
 **Backup são dois problemas distintos**: `pg_dump` diário do banco, retenção de
-30 dias — é o que salva de erro humano; e cópia incremental da mídia com `restic`
+30 dias - é o que salva de erro humano; e cópia incremental da mídia com `restic`
 ou `borg` para destino fora do servidor. Backup que nunca foi restaurado não é
 backup: uma restauração de teste faz parte da entrega.
 
@@ -622,7 +622,7 @@ etapa), fixture de temas iniciais, edição corrente, usuário coordenador.
 Decidido deliberadamente, para não inflar a entrega:
 
 - Certificado, controle de frequência, avaliação e acompanhamento de turma em
-  andamento — tudo isso é o módulo de execução (§1.1), não corte arbitrário
+  andamento - tudo isso é o módulo de execução (§1.1), não corte arbitrário
 - Login institucional / SSO da UFSM
 - Auto-cadastro de usuários
 - Comparação lado a lado entre versões de um curso (o histórico existe; a

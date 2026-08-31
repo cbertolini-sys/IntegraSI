@@ -3,8 +3,8 @@
 Sistema de gerenciamento de cursos de extensão do curso de Sistemas de Informação
 da UFSM, campus Frederico Westphalen. Na disciplina UFSM00771 (TICs para Inclusão
 Digital), equipes de alunos propõem, produzem e catalogam cursos e oficinas de
-inclusão digital e computação; o IntegraSI dá um lugar a esse ciclo — proposta,
-produção de material, aprovação e catálogo público — que hoje acontece espalhado
+inclusão digital e computação; o IntegraSI dá um lugar a esse ciclo - proposta,
+produção de material, aprovação e catálogo público - que hoje acontece espalhado
 entre documentos, drive compartilhado e conversa.
 
 Este repositório contém o **Plano 1: fundação e cadastros** (usuários, edições da
@@ -37,7 +37,7 @@ python manage.py criar_coordenador --email coord@ufsm.br --nome "Nome Completo" 
 python manage.py runserver
 ```
 
-`criar_coordenador` é a única rota para criar o primeiro superusuário — o modelo de
+`criar_coordenador` é a única rota para criar o primeiro superusuário - o modelo de
 usuário exige SIAPE para todo papel que não seja aluno, então
 `manage.py createsuperuser` não consegue completar. Rodar o comando de novo com o
 mesmo e-mail reseta a senha (se já for coordenador) ou promove a conta a
@@ -51,9 +51,38 @@ python -m pytest
 
 ## Documentação
 
-- `docs/superpowers/specs/` — a especificação de design do sistema.
-- `docs/superpowers/plans/` — os planos de implementação, por módulo.
-- `docs/onde-mora-a-validacao.md` — onde cada tipo de regra de validação vive neste
+- `docs/superpowers/specs/` - a especificação de design do sistema.
+- `docs/superpowers/plans/` - os planos de implementação, por módulo.
+- `docs/onde-mora-a-validacao.md` - onde cada tipo de regra de validação vive neste
   código.
-- `docs/dados/README.md` — como importar os dados de referência (BNCC da
+- `docs/dados/README.md` - como importar os dados de referência (BNCC da
   Computação).
+
+## Estilo de escrita
+
+**É proibido o uso do travessão (`—`).** A regra vale para todo o repositório:
+prosa, documentação, comentários de código, strings de interface e mensagens de
+commit. Vale também para a entidade HTML `&mdash;`, que produz o mesmo símbolo.
+
+Para separar frases ou introduzir explicações, escolha pelo que a frase está
+fazendo:
+
+| Situação | Use |
+|---|---|
+| O que vem depois explica o que veio antes | dois pontos (`:`) |
+| O trecho é um aparte que se pode remover | parênteses (`( )`) |
+| É só uma pausa | vírgula (`,`) |
+| Nenhuma das outras serve | traço simples com espaços (` - `) |
+
+Reescrever a frase costuma ser melhor que trocar o símbolo.
+
+Para conferir antes de commitar:
+
+```bash
+git ls-files | xargs grep -n "—\|&mdash;"
+```
+
+`apps/catalogo/tests/test_vitrine.py::test_nenhuma_pagina_usa_travessao` reprova
+se um travessão chegar às páginas públicas. No resto do repositório a regra
+depende de quem escreve, e o comando acima é o que a confere.
+

@@ -375,7 +375,7 @@ def _prevalida_anexo_de_video(upload, titulo, duracao_minutos):
     copia dos bytes*. `titulo` e `CharField(max_length=200)` e `duracao_minutos` e
     `PositiveSmallIntegerField`; violar qualquer um dos dois so estourava no
     `Anexo.objects.create()` da ultima linha, com o arquivo ja escrito em
-    MEDIA_ROOT. A transacao desfaz as linhas, nao os bytes — e `limpar_arquivos_orfaos`
+    MEDIA_ROOT. A transacao desfaz as linhas, nao os bytes - e `limpar_arquivos_orfaos`
     parte de `Arquivo.objects`, que nesse ponto ja nao tem linha nenhuma apontando
     para eles: ninguem mais os encontraria, e nenhum alerta de cron dispararia,
     porque do lado do cron nada falhou.
@@ -392,7 +392,7 @@ def _prevalida_anexo_de_video(upload, titulo, duracao_minutos):
         enviado_por=upload.usuario,
     )
     try:
-        # `arquivo` fica de fora porque o Arquivo so nasce depois da copia — e a
+        # `arquivo` fica de fora porque o Arquivo so nasce depois da copia - e a
         # copia e exatamente o que esta funcao existe para nao desperdicar.
         # `validate_unique`/`validate_constraints` desligados porque `Anexo` nao tem
         # nem unique nem constraint: ligados, custariam uma ida ao banco por upload
@@ -403,7 +403,7 @@ def _prevalida_anexo_de_video(upload, titulo, duracao_minutos):
     except ValidationError as erro:
         # `exclude` do `full_clean` nao alcanca o que `clean()` levanta (ele so filtra
         # `clean_fields`): a ausencia do arquivo chega aqui como erro do campo
-        # `arquivo`, e e a unica que esperamos — as proximas linhas a resolvem.
+        # `arquivo`, e e a unica que esperamos - as proximas linhas a resolvem.
         erros = {
             campo: mensagens
             for campo, mensagens in erro.message_dict.items()
@@ -431,7 +431,7 @@ def concluir_upload(upload, titulo, duracao_minutos):
         raise ValidationError("O upload ainda não terminou.")
     # Este servico cria um Anexo de tipo VIDEO, e so o entregavel D o comporta. Sem
     # esta linha um .mp4 pousa em SLIDES e `validacoes.pendencias` da o entregavel
-    # por satisfeito — `_slides` conta arquivos, e video e arquivo. A restricao
+    # por satisfeito - `_slides` conta arquivos, e video e arquivo. A restricao
     # existia so no `{% if %}` do template, ou seja, so na tela.
     if upload.entregavel.tipo != TipoEntregavel.VIDEOS:
         raise ValidationError("Vídeo-aula só entra no entregável de vídeo-aulas.")
@@ -472,7 +472,7 @@ def concluir_upload(upload, titulo, duracao_minutos):
         arquivo.arquivo.save(upload.nome_original, File(parcial), save=False)
     # Daqui para baixo os bytes JA estao em MEDIA_ROOT, e a transacao nao os alcanca.
     # A pre-validacao acima cobre o que da para prever; este `except` e a rede para o
-    # que nao da — um IntegrityError, um PROTECT, um `clean()` novo que ninguem
+    # que nao da - um IntegrityError, um PROTECT, um `clean()` novo que ninguem
     # lembrou de espelhar. Sem ele o arquivo fica em disco sem nenhuma linha de
     # Arquivo apontando para ele, e `limpar_arquivos_orfaos`, que varre
     # `Arquivo.objects`, nunca o veria. E o mesmo `arquivo.arquivo.delete(save=False)`
