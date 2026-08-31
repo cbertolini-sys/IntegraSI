@@ -7,56 +7,90 @@
     <div class="faixa">
       <div>
         <h1>Ficha do curso</h1>
-        <p class="sub">O que descreve o curso no catálogo. Preenchido pela equipe.</p>
+        <p class="sub">O que descreve {{ curso.titulo }} no catálogo público.</p>
       </div>
-      <div class="acoes"><a class="botao botao-linha" href="{% url 'curso' curso.pk %}">Ver o curso</a></div>
+      <div class="acoes">
+        <a class="botao botao-linha" href="{% url 'curso' curso.pk %}">Ver o curso</a>
+      </div>
     </div>
   </div>
 
-  <div class="faixa pagina-estreita">
-    {% if pendencias %}
-      <div class="cartao">
-        <h2>Ainda falta</h2>
-        <p>É esta a lista que o professor vai cobrar na revisão do Plano de Ensino
-           e a coordenação na submissão. Preencher agora evita a ida e volta.</p>
+  <div class="faixa corpo-trabalho duas-colunas">
+    <form method="post" class="ficha">
+      {% csrf_token %}
+
+      <fieldset class="ficha-secao">
+        <legend>Identificação</legend>
+        <div class="campos">
+          {% include "cursos/_campo.html" with campo=form.titulo largo=1 %}
+          {% include "cursos/_campo.html" with campo=form.resumo largo=1 %}
+        </div>
+      </fieldset>
+
+      <fieldset class="ficha-secao">
+        <legend>Como encontrar o curso</legend>
+        <p class="secao-apoio">É por aqui que uma escola chega ao curso na busca do
+           catálogo.</p>
+        <div class="campos">
+          {% include "cursos/_campo.html" with campo=form.palavras_chave largo=1 extra="caixas-palavras" %}
+          {% include "cursos/_campo.html" with campo=form.temas largo=1 %}
+        </div>
+      </fieldset>
+
+      <fieldset class="ficha-secao">
+        <legend>Duração e formato</legend>
+        <div class="campos">
+          {% include "cursos/_campo.html" with campo=form.carga_horaria %}
+          {% include "cursos/_campo.html" with campo=form.formato %}
+        </div>
+      </fieldset>
+
+      <fieldset class="ficha-secao">
+        <legend>Para quem é</legend>
+        <div class="campos">
+          {% include "cursos/_campo.html" with campo=form.tipo_publico %}
+          {% include "cursos/_campo.html" with campo=form.etapa_ano %}
+          {% include "cursos/_campo.html" with campo=form.publico_descricao largo=1 %}
+        </div>
+      </fieldset>
+
+      <fieldset class="ficha-secao">
+        <legend>Referencial pedagógico</legend>
+        <div class="campos">
+          {% include "cursos/_campo.html" with campo=form.referencial largo=1 %}
+        </div>
+        {% if form.errors.competencias %}
+          <p class="erro">{{ form.errors.competencias }}</p>
+        {% endif %}
+        {% include "cursos/_habilidades.html" %}
+      </fieldset>
+
+      <fieldset class="ficha-secao">
+        <legend>Pré-requisitos</legend>
+        <div class="campos">
+          {% include "cursos/_campo.html" with campo=form.pre_requisitos largo=1 %}
+        </div>
+      </fieldset>
+
+      <div class="ficha-acoes">
+        <button type="submit" class="botao">Salvar ficha</button>
+        <a class="botao-linha" href="{% url 'curso' curso.pk %}">Cancelar</a>
+      </div>
+    </form>
+
+    <aside class="lateral ficha-pendencias">
+      <h2>Ainda falta</h2>
+      {% if pendencias %}
+        <p>É esta a lista que o professor cobra na revisão do Plano de Ensino e a
+           coordenação na submissão. Preencher agora evita a ida e volta.</p>
         <ul class="pendencias">
           {% for falta in pendencias %}<li>{{ falta }}</li>{% endfor %}
         </ul>
-      </div>
-    {% endif %}
-
-    <div class="cartao">
-      <form method="post">
-        {% csrf_token %}
-        {% comment %}
-          Campo a campo em vez de form.as_p: `competencias` sai do formulario e
-          vira o bloco do referencial, que o HTMX troca sozinho quando muda o
-          referencial ou a etapa. Um select com 120 habilidades de todas as
-          etapas nao serve para ninguem.
-        {% endcomment %}
-        {% for campo in form %}
-          {% if campo.name != "competencias" %}
-            <p>{{ campo.label_tag }} {{ campo }}
-               {% if campo.errors %}<span class="erro">{{ campo.errors }}</span>{% endif %}
-               {% if campo.help_text %}<span class="apoio">{{ campo.help_text }}</span>{% endif %}
-            </p>
-            {% comment %}
-              O bloco entra colado no campo `referencial`, e nao no fim do
-              formulario. Quem escolhe o referencial precisa ver a lista ali
-              mesmo: no fim, ficava depois de palavras-chave, longe do campo que
-              a produz, e quem usou relatou que "nao aparece nada".
-            {% endcomment %}
-            {% if campo.name == "referencial" %}
-              {% if form.errors.competencias %}
-                <p class="erro">{{ form.errors.competencias }}</p>
-              {% endif %}
-              {% include "cursos/_habilidades.html" %}
-            {% endif %}
-          {% endif %}
-        {% endfor %}
-        <button type="submit" class="botao-largo">Salvar ficha</button>
-      </form>
-    </div>
+      {% else %}
+        <p class="tudo-certo">Nada. A ficha está completa para o que o catálogo
+           precisa.</p>
+      {% endif %}
+    </aside>
   </div>
 </div>
 {% endblock %}

@@ -476,3 +476,27 @@ def test_caixas_vazias_nao_inventam_virgulas(proposta, professor):
     services.atualizar_ficha(proposta, form.cleaned_data, por=professor)
     proposta.refresh_from_db()
     assert proposta.palavras_chave == ""
+
+
+@pytest.mark.django_db
+def test_a_ficha_desenha_todos_os_campos_do_formulario(client, proposta, professor):
+    """A ficha renderiza campo a campo, agrupado em secoes, e nao por form.as_p.
+
+    O preco disso e que acrescentar um campo ao formulario e esquecer o template
+    nao quebraria nada: o campo simplesmente nunca apareceria, e a pessoa nao
+    teria como preencher o que o portao vai cobrar. Este teste e o que cobra.
+
+    `competencias` fica de fora de proposito: ele vira o bloco de habilidades, com
+    caixas de nome `competencias` sem `id_competencias`, e tem teste proprio.
+    """
+    from apps.cursos.forms import FichaCursoForm
+
+    client.force_login(professor)
+    html = client.get(reverse("ficha", args=[proposta.pk])).content.decode()
+    ausentes = [
+        nome
+        for nome in FichaCursoForm().fields
+        if nome != "competencias" and f'name="{nome}"' not in html
+        and f'name="{nome}_0"' not in html
+    ]
+    assert ausentes == []

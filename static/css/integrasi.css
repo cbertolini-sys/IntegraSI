@@ -1973,3 +1973,231 @@ textarea:focus {
   background: var(--azul-suave);
   color: var(--marinho);
 }
+
+/* ---------- ficha do curso ---------- */
+
+/* A ficha usava `pagina-estreita`, que trava em 38rem: onze campos numa coluna
+   de meia tela, com o bloco de habilidades espremido embaixo. Passa a usar a
+   faixa inteira, em duas colunas, com as pendencias fixas ao lado enquanto a
+   equipe preenche. */
+
+.ficha {
+  display: grid;
+  gap: 1.25rem;
+  min-width: 0;
+}
+
+.ficha-secao {
+  background: var(--branco);
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+  box-shadow: var(--sombra);
+  padding: 1.5rem;
+  margin: 0;
+  min-width: 0;
+}
+
+.ficha-secao legend {
+  font-family: var(--display);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--azul);
+  padding: 0 0.5rem;
+  margin-left: -0.5rem;
+}
+
+.ficha-secao .secao-apoio {
+  font-size: 0.875rem;
+  color: var(--cinza);
+  margin: 0.25rem 0 1rem;
+}
+
+/* Duas colunas para campo curto, uma para campo longo. `minmax(0, 1fr)` e nao
+   `1fr`: sem o minmax, um select com opcao comprida (as competencias do Ensino
+   Medio) estoura a coluna e leva a pagina inteira a rolar de lado. */
+.ficha .campos {
+  display: grid;
+  gap: 0 1.25rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 44rem) {
+  .ficha .campos {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.ficha .campo-largo {
+  grid-column: 1 / -1;
+}
+
+.ficha .campo {
+  min-width: 0;
+  margin-bottom: 1rem;
+}
+
+.ficha textarea,
+.ficha input[type="text"],
+.ficha input[type="number"],
+.ficha select {
+  width: 100%;
+}
+
+.ficha .ajuda {
+  font-size: 0.8125rem;
+  color: var(--cinza);
+  margin: 0.375rem 0 0;
+}
+
+.ficha .erro {
+  font-size: 0.8125rem;
+  color: #b3261e;
+  margin: 0.375rem 0 0;
+}
+
+/* As cinco caixas de palavra-chave lado a lado, para deixar visivel quantas se
+   espera. Envolvem os inputs que o MultiWidget gera em sequencia. */
+.caixas-palavras > input {
+  width: 100%;
+}
+
+@media (min-width: 30rem) {
+  .caixas-palavras {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.5rem;
+    align-items: start;
+  }
+
+  .caixas-palavras > label,
+  .caixas-palavras > .ajuda,
+  .caixas-palavras > .erro {
+    grid-column: 1 / -1;
+  }
+}
+
+.ficha-acoes {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding-top: 0.25rem;
+}
+
+/* ---------- bloco de habilidades do referencial ---------- */
+
+#habilidades {
+  margin-top: 0.5rem;
+}
+
+#habilidades .apoio {
+  font-size: 0.875rem;
+  color: var(--cinza);
+  background: var(--azul-suave);
+  border-radius: var(--raio-p);
+  padding: 0.75rem 1rem;
+  margin: 0 0 1rem;
+}
+
+.grupo-habilidades {
+  border: 1px solid var(--linha);
+  border-radius: var(--raio-p);
+  padding: 1rem 1.125rem 0.5rem;
+  margin: 0 0 0.875rem;
+  background: var(--nevoa);
+}
+
+.grupo-habilidades legend {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--marinho);
+  padding: 0 0.5rem;
+}
+
+.habilidade {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.25rem 0.75rem;
+  align-items: start;
+  padding: 0.625rem 0;
+  border-top: 1px solid var(--linha);
+  cursor: pointer;
+}
+
+.grupo-habilidades .habilidade:first-of-type {
+  border-top: none;
+}
+
+.habilidade input {
+  margin-top: 0.2rem;
+  width: auto;
+}
+
+.habilidade .codigo {
+  grid-column: 2;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--azul);
+}
+
+.habilidade .objeto {
+  grid-column: 2;
+  font-size: 0.75rem;
+  color: var(--cinza-claro);
+}
+
+.habilidade .texto {
+  grid-column: 2;
+  font-size: 0.875rem;
+  color: var(--texto);
+  line-height: 1.5;
+}
+
+.habilidade:hover {
+  background: var(--branco);
+}
+
+/* ---------- pendencias da ficha ---------- */
+
+.ficha-pendencias .pendencias {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.625rem;
+}
+
+.ficha-pendencias .pendencias li {
+  font-size: 0.875rem;
+  color: var(--texto);
+  line-height: 1.45;
+  padding-left: 1.25rem;
+  position: relative;
+}
+
+.ficha-pendencias .pendencias li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.45rem;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--ciano);
+}
+
+.ficha-pendencias .tudo-certo {
+  color: var(--azul);
+  font-weight: 600;
+}
+
+@media (min-width: 58rem) {
+  .ficha-pendencias {
+    position: sticky;
+    top: 1.5rem;
+  }
+}

@@ -1,0 +1,10 @@
+{% comment %}
+  Um campo da ficha. Existe para nao repetir rotulo, ajuda e erro onze vezes no
+  template: quando o desenho do campo mudar, muda aqui e vale para todos.
+{% endcomment %}
+<div class="campo{% if largo %} campo-largo{% endif %}{% if extra %} {{ extra }}{% endif %}">
+  {{ campo.label_tag }}
+  {{ campo }}
+  {% if campo.help_text %}<p class="ajuda">{{ campo.help_text }}</p>{% endif %}
+  {% if campo.errors %}<p class="erro">{{ campo.errors }}</p>{% endif %}
+</div>
