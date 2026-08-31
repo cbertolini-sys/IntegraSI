@@ -171,14 +171,50 @@ não constante no código.
 *eixo*): referencial, nome, ordem. Para a BNCC da Computação: Pensamento
 Computacional, Mundo Digital, Cultura Digital.
 
-**Competencia** - referencial, categoria, código (`EF05CO01`), descrição, etapa
-de ensino, ordem. Carregada por fixture.
+O Ensino Médio da BNCC **não usa os eixos**: suas 26 habilidades penduram em sete
+*competências específicas*, que entram como Categoria ao lado dos três eixos. As
+duas famílias nunca aparecem juntas numa tela, porque a listagem filtra por etapa.
+O modelo não precisou mudar para isso: Categoria sempre foi agrupamento genérico,
+e é a BNCC que chama uns de eixo e outros de competência.
+
+**Competencia** - referencial, categoria, código (`EF05CO01`), descrição,
+`objeto_conhecimento` (opcional), etapa de ensino, ordem.
+
+O `objeto_conhecimento` é o nível que o Ensino Fundamental da BNCC põe entre o eixo
+e a habilidade ("Conceituação de Algoritmos", "Codificação da informação"). É campo
+de texto, e não modelo próprio: serve para agrupar na tela, não tem identidade nem
+regra, e um modelo a mais custaria uma tabela e um join para guardar um rótulo.
+
+**A etapa da competência tem vocabulário próprio**, diferente do `etapa_ano` do
+curso: `EI`, `EF01` a `EF09` e `EM`. O curso é proposto para um ano (`EM02`), e as
+habilidades do Ensino Médio valem para os três anos de uma vez (`EM13CO01`), então
+uma função mapeia um no outro. Forçar o mesmo vocabulário nos dois exigiria gravar
+cada habilidade do Médio três vezes, com o mesmo código.
+
+**Como se chama depende da etapa.** Na Educação Infantil o documento diz *objetivo
+de aprendizagem*; do 1º ano em diante, *habilidade*. A tela usa o termo da etapa; o
+modelo continua chamando tudo de `Competencia`, que é o nome genérico do sistema
+para o que um referencial qualquer oferece.
+
+**As habilidades não vêm por fixture.** A fixture traz o referencial e os
+agrupamentos; as habilidades são transcritas do Complemento à BNCC (Resolução
+CNE/CEB nº 1/2022) para um CSV e importadas por comando, com a contagem por etapa
+presa em teste: CSV truncado importa sem erro nenhum, e a falta só apareceria na
+tela, meses depois.
 
 **Cursos sem referencial são de primeira classe.** Um curso de Arduino, de IA na
 Educação ou de qualquer outro foco nasce com `referencial` vazio, não seleciona
 competência nenhuma e passa por todas as demais regras normalmente. A validação de
 competências (§6-A) só roda quando existe referencial. Nenhuma tela, filtro ou
-relatório pode pressupor BNCC.
+relatório pode pressupor BNCC. Na ficha do curso, o bloco de habilidades **não
+existe** enquanto não houver referencial escolhido: campo vazio de um referencial
+que não foi adotado é ruído, não informação.
+
+**Referencial organizado por etapa exige etapa.** A BNCC oferece habilidades ano a
+ano, então um curso que a adota precisa ter público escolar e etapa definida. A
+regra é conferida no portão de completude, junto da faixa de quantidade. Sem ela,
+um curso comunitário com BNCC ficaria com um referencial cujas habilidades nenhuma
+tela consegue listar.
 
 ### 4.3 O curso
 
@@ -695,6 +731,11 @@ Decidido deliberadamente, para não inflar a entrega:
 | Revisão no nível do entregável, não da seção ou do anexo | Cinco decisões por curso em vez de vinte; casa com a ideia de pacote do roteiro |
 | Entregáveis fixos, seções livres | Roteiro fixa o que entregar; professor decide como organizar |
 | Referencial genérico em vez de campos BNCC | BNCC é um foco possível, não o único; abre para outros modelos sem tocar no código |
+| As 7 competências específicas do Ensino Médio entram como Categoria | Categoria sempre foi agrupamento genérico; forçar as 26 habilidades nos três eixos seria classificação inventada, que o documento não faz |
+| Blocos consolidados da BNCC (`EF15CO`, `EF69CO`) não são importados | Reagrupam o mesmo conteúdo com outro código; importar os dois listaria cada habilidade duas vezes e ninguém saberia qual escolher |
+| `objeto_conhecimento` é campo de texto, não modelo | Serve para agrupar na tela, não tem identidade nem regra; um modelo custaria tabela e join para guardar um rótulo |
+| Etapa da competência com vocabulário próprio (`EM`, não `EM01`..`EM03`) | As habilidades do Médio valem para os três anos de uma vez; o mesmo vocabulário obrigaria a gravar cada uma três vezes com o mesmo código |
+| Contagem de habilidades por etapa presa em teste | CSV truncado importa sem erro; a falta só apareceria na tela, meses depois |
 | Público-alvo obrigatório em todo curso, conferido no portão e não na criação | É a identidade do curso e o filtro principal do catálogo, mas quem o conhece é a equipe que estudou o assunto |
 | Proposta criada só com o título | O professor abre o trabalho; inventar ficha antes do estudo produz número que ninguém revisa depois |
 | Uma lista de equipe para aluno e professor, campo `pessoa` | Dois modelos paralelos dobrariam cada checagem de permissão, e guarda duplicada não se distingue por teste |
