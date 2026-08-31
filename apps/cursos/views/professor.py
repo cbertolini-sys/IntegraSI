@@ -8,7 +8,7 @@ from apps.contas.models import Usuario
 from apps.cursos import permissions, services, validacoes
 from apps.cursos.choices import StatusEntregavel
 from apps.cursos.forms import FichaCursoForm, PropostaForm
-from apps.cursos.models import Curso, Entregavel
+from apps.cursos.models import Curso, Entregavel, MembroEquipe
 
 
 @login_required
@@ -77,6 +77,22 @@ def equipe(request, pk):
         "cursos/equipe.html",
         {"curso": curso, "professores": _professores_disponiveis(curso)},
     )
+
+
+@login_required
+@require_POST
+def remover_da_equipe(request, pk, membro_pk):
+    curso = get_object_or_404(Curso, pk=pk)
+    permissions.garante(permissions.pode_gerir_equipe(request.user, curso), "Curso de outro professor.")
+    membro = get_object_or_404(MembroEquipe, pk=membro_pk)
+    try:
+        services.remover_membro(curso, membro, por=request.user)
+    except ValidationError as erro:
+        for mensagem in erro.messages:
+            messages.error(request, mensagem)
+    else:
+        messages.success(request, f"{membro.pessoa.nome_completo} saiu da equipe.")
+    return redirect("equipe", pk=curso.pk)
 
 
 def _professores_disponiveis(curso):

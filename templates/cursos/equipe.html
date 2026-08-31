@@ -18,7 +18,17 @@
       <h2>Na equipe</h2>
       <ul class="etiquetas">
         {% for membro in curso.membros.all %}
-          <li>{{ membro.pessoa.nome_completo }}{% if membro.pessoa_id == curso.professor_responsavel_id %} <span class="etiqueta">responsável</span>{% endif %}</li>
+          <li>
+            {{ membro.pessoa.nome_completo }}
+            {% if membro.pessoa_id == curso.professor_responsavel_id %}
+              <span class="etiqueta">responsável</span>
+            {% else %}
+              <form method="post" action="{% url 'remover_da_equipe' curso.pk membro.pk %}" class="remover">
+                {% csrf_token %}
+                <button type="submit" class="botao-linha">Remover</button>
+              </form>
+            {% endif %}
+          </li>
         {% empty %}<li>Equipe vazia.</li>{% endfor %}
       </ul>
     </div>

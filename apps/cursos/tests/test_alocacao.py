@@ -251,3 +251,125 @@ def test_select_de_professores_nao_oferece_quem_ja_esta_na_equipe(
     disponiveis = client.get(reverse("equipe", args=[curso.pk])).context["professores"]
     assert professor not in disponiveis
     assert outro_professor in disponiveis
+
+
+# --- Remover da equipe (Plano 6) ---------------------------------------------
+
+
+@pytest.mark.django_db
+def test_membro_e_removido_da_equipe(curso, professor, aluno):
+    membro = services.adicionar_membro(curso, aluno, por=professor)
+    services.remover_membro(curso, membro, por=professor)
+    assert curso.tem_membro(aluno) is False
+
+
+@pytest.mark.django_db
+def test_remover_membro_preserva_o_que_ele_produziu(dados_curso, professor, aluno, arquivo_qualquer):
+    """Remover tira o acesso, nao apaga o trabalho (spec 4.1).
+
+    O anexo precisa estar pendurado no curso, e nao solto: um Arquivo avulso
+    sobreviveria a qualquer coisa, e o teste passaria mesmo com a regra quebrada.
+    E o vinculo com o entregavel que faz a pergunta valer a pena.
+    """
+    from apps.cursos.choices import TipoEntregavel, TipoMidia
+    from apps.cursos.models import Anexo
+
+    curso = services.criar_curso(**dados_curso)
+    membro = services.adicionar_membro(curso, aluno, por=professor)
+    anexo = Anexo.objects.create(
+        entregavel=curso.entregaveis.get(tipo=TipoEntregavel.SLIDES),
+        tipo_midia=TipoMidia.ARQUIVO,
+        arquivo=arquivo_qualquer,
+        titulo="Slides da oficina",
+        enviado_por=aluno,
+    )
+    services.remover_membro(curso, membro, por=professor)
+    anexo.refresh_from_db()
+    assert anexo.enviado_por == aluno
+
+
+@pytest.mark.django_db
+def test_responsavel_nao_pode_ser_removido(dados_curso, professor):
+    """Sem ele o curso fica sem quem revisa (spec 4.1). Confere a mensagem: sem
+    esta guarda o delete passaria em silencio, e nada mais recusaria."""
+    curso = services.criar_curso(**dados_curso)
+    membro = curso.membros.get(pessoa=professor)
+    with pytest.raises(ValidationError, match="responsável"):
+        services.remover_membro(curso, membro, por=professor)
+
+
+@pytest.mark.django_db
+def test_nao_se_remove_membro_de_curso_ja_submetido(curso, professor, aluno):
+    """Depois de submetido a coordenacao, quem compoe a equipe e parte do que
+    esta sendo julgado (spec 4.1).
+
+    O status e posto na mao, e nao por submeter_ao_coordenador: aquele servico
+    exige os cinco entregaveis aprovados e a ficha completa, e montar tudo isso
+    aqui faria o teste falhar por meia duzia de motivos alheios a regra.
+    """
+    membro = services.adicionar_membro(curso, aluno, por=professor)
+    curso.status = StatusCurso.AGUARDANDO_COORDENADOR
+    curso.save(update_fields=["status"])
+    with pytest.raises(ValidationError, match="produção"):
+        services.remover_membro(curso, membro, por=professor)
+
+
+@pytest.mark.django_db
+def test_nao_se_remove_membro_de_outro_curso(dados_curso, professor, aluno, edicao):
+    """A url traz os dois ids. Sem conferir que o membro e deste curso, quem tem
+    permissao aqui apagaria vinculo de curso alheio."""
+    curso_a = services.criar_curso(**dados_curso)
+    curso_b = services.criar_curso(titulo="Outro curso", professor_responsavel=professor)
+    membro_de_b = services.adicionar_membro(curso_b, aluno, por=professor)
+    with pytest.raises(ValidationError, match="deste curso"):
+        services.remover_membro(curso_a, membro_de_b, por=professor)
+    assert curso_b.tem_membro(aluno)
+
+
+@pytest.mark.django_db
+def test_aluno_da_equipe_nao_remove_ninguem(curso, professor, aluno, outro_aluno):
+    membro = services.adicionar_membro(curso, outro_aluno, por=professor)
+    services.adicionar_membro(curso, aluno, por=professor)
+    with pytest.raises(PermissionDenied):
+        services.remover_membro(curso, membro, por=aluno)
+
+
+@pytest.mark.django_db
+def test_get_da_equipe_recusa_aluno(client, curso, aluno, professor):
+    """A guarda da view de equipe, isolada por GET: no POST o servico recusaria
+    junto e o teste veria o mesmo 403 com a guarda da view apagada."""
+    from django.urls import reverse
+
+    services.adicionar_membro(curso, aluno, por=professor)
+    client.force_login(aluno)
+    assert client.get(reverse("equipe", args=[curso.pk])).status_code == 403
+
+
+@pytest.mark.django_db
+def test_get_de_remover_nao_apaga(client, curso, professor, aluno):
+    """require_POST: remocao e ato destrutivo e nao pode acontecer por navegacao,
+    pre-fetch de navegador ou link colado em conversa."""
+    from django.urls import reverse
+
+    membro = services.adicionar_membro(curso, aluno, por=professor)
+    client.force_login(professor)
+    resposta = client.get(reverse("remover_da_equipe", args=[curso.pk, membro.pk]))
+    assert resposta.status_code == 405
+    assert curso.tem_membro(aluno)
+
+
+@pytest.mark.django_db
+def test_remover_recusa_antes_de_procurar_o_membro(client, curso, aluno, professor):
+    """Isola a guarda da VIEW, que nao tem GET por onde responder sozinha.
+
+    O caminho e o membro inexistente: com a guarda no lugar, quem nao pode gerir a
+    equipe leva 403 antes do get_object_or_404. Sem ela, o fluxo chega ao lookup e
+    devolve 404, o que alem de trocar o erro vira um oraculo de existencia: um
+    aluno descobriria quais MembroEquipe existem comparando 403 com 404.
+    """
+    from django.urls import reverse
+
+    services.adicionar_membro(curso, aluno, por=professor)
+    client.force_login(aluno)
+    resposta = client.post(reverse("remover_da_equipe", args=[curso.pk, 99999]))
+    assert resposta.status_code == 403

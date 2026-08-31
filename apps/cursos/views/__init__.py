@@ -20,6 +20,7 @@ from apps.cursos.views.professor import (
     ficha,
     fila_revisao,
     nova_proposta,
+    remover_da_equipe,
     revisar,
     submeter_curso,
 )
@@ -35,6 +36,6 @@ __all__ = [
     "entregavel",
     "ficha",
     "enviar_entregavel", "equipe", "fila_coordenacao", "fila_revisao", "meus_cursos",
-    "nova_proposta", "nova_versao", "revisar", "salvar_secao", "submeter_curso",
+    "nova_proposta", "nova_versao", "remover_da_equipe", "revisar", "salvar_secao", "submeter_curso",
     "upload_bloco", "upload_concluir", "upload_estado", "upload_iniciar",
 ]

@@ -664,6 +664,32 @@ def abrir_nova_versao(curso, por, motivo):
     return nova
 
 
+def remover_membro(curso, membro, por):
+    """Tira alguem da equipe. Tira o acesso, nao apaga o trabalho (spec 4.1).
+
+    Anexo, Secao e Revisao guardam quem fez cada coisa por FK propria, e
+    MembroEquipe nao e pai de nada: apagar o vinculo nao toca nessas linhas, e o
+    material continua com o nome de quem o produziu.
+    """
+    from apps.cursos.choices import STATUS_EDITAVEIS
+
+    permissions.garante(
+        permissions.pode_gerir_equipe(por, curso),
+        "Somente o professor responsável monta a equipe.",
+    )
+    # A url traz os dois ids. Sem esta conferencia, quem tem permissao neste curso
+    # apagaria o vinculo de alguem num curso alheio so trocando o membro_pk.
+    if membro.curso_id != curso.pk:
+        raise ValidationError("Este membro não é da equipe deste curso.")
+    if membro.pessoa_id == curso.professor_responsavel_id:
+        raise ValidationError(
+            "O professor responsável não sai da equipe: o curso ficaria sem quem revisa."
+        )
+    if curso.status not in STATUS_EDITAVEIS:
+        raise ValidationError("A equipe só muda enquanto o curso está em produção.")
+    membro.delete()
+
+
 def alocar_professor(curso, professor, por):
     """Poe um professor que ja tem conta na equipe de producao (spec 4.1).
 
