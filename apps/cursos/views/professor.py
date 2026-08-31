@@ -14,12 +14,12 @@ from apps.cursos.models import Curso, Entregavel
 @login_required
 @require_http_methods(["GET", "POST"])
 def nova_proposta(request):
-    # Restrito a professor (spec 3): Curso.clean() exige professor_responsavel.
-    # e_professor, e esta view sempre chama services.criar_curso com
-    # professor_responsavel=request.user. Deixar coordenador entrar aqui so faria
-    # sentido com uma tela para ele escolher outro professor responsavel - isso e
-    # tela nova, nao conserto.
-    permissions.garante(request.user.e_professor, "Somente professor cria proposta de curso.")
+    # Coordenador entra aqui a partir do Plano 5: ele e professor (regra 1) e a
+    # view sempre cria com professor_responsavel=request.user, entao ele fica
+    # responsavel pelo proprio curso -- nao e preciso escolher outra pessoa.
+    permissions.garante(
+        permissions.pode_criar_curso(request.user), "Somente professor cria proposta de curso."
+    )
     form = CursoForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         dados = dict(form.cleaned_data)

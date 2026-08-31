@@ -75,10 +75,31 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
 
     @property
     def e_coordenador(self):
+        """Nível de acesso Admin: publica curso, organiza turmas e promove
+        professores. Ver `apps.cursos.permissions.pode_publicar`."""
         return self.papel == self.COORDENADOR
 
     @property
     def e_professor(self):
+        """Verdadeiro também para o coordenador: todo coordenador é professor
+        (regra 1 do Plano 5).
+
+        A herança mora aqui, e não numa segunda coluna, para que exista um lugar
+        só onde ela é definida. `papel` continua com um valor por pessoa; quem
+        precisa da distinção usa `e_somente_professor`.
+
+        Consequências pretendidas, todas por esta linha: o coordenador cria
+        curso (`permissions.pode_criar_curso`), pode ser `professor_responsavel`
+        (`Curso.clean`) e pode conduzir turma (`Turma.clean`). As permissões
+        escritas como `e_coordenador or (e_professor and ...)` não mudam de
+        comportamento -- o `or` já curto-circuitava para o coordenador.
+        """
+        return self.papel in (self.PROFESSOR, self.COORDENADOR)
+
+    @property
+    def e_somente_professor(self):
+        """Professor que não é coordenador. Existe para que a distinção tenha um
+        nome, em vez de reaparecer como `papel == PROFESSOR` solto pelo código."""
         return self.papel == self.PROFESSOR
 
     @property

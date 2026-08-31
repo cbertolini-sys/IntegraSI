@@ -213,10 +213,19 @@ def test_criar_curso_e_o_unico_servico_sem_checagem_propria_ate_aqui(dados_curso
 
 
 @pytest.mark.django_db
-def test_coordenador_nao_cria_curso_via_servico(dados_curso, coordenador):
+def test_coordenador_cria_curso_via_servico(dados_curso, coordenador):
+    """Inverteu no Plano 5. Ate o Plano 4 este teste se chamava
+    `test_coordenador_nao_cria_curso_via_servico` e prendia o oposto: coordenador
+    nao criava curso, porque `e_professor` era `papel == PROFESSOR`.
+
+    A regra 1 do Plano 5 diz que todo coordenador e tambem professor, e
+    `pode_criar_curso` passou a valer para ele. Nao reverta isto achando que e
+    regressao -- a mudanca foi deliberada, e esta registrada na spec 2.
+    """
     dados_curso["professor_responsavel"] = coordenador
-    with pytest.raises(PermissionDenied):
-        services.criar_curso(**dados_curso)
+    curso = services.criar_curso(**dados_curso)
+    assert curso.professor_responsavel == coordenador
+    assert curso.entregaveis.count() == 5
 
 
 @pytest.mark.django_db
@@ -235,3 +244,30 @@ def test_outro_aluno_e_outro_professor_convivem_num_mesmo_teste(outro_aluno, out
     exatamente esse "primeiro caso": so pedir as duas fixtures juntas ja bastava
     para estourar ValidationError de unicidade antes da correcao."""
     assert outro_aluno.cpf != outro_professor.cpf
+
+
+@pytest.mark.django_db
+def test_coordenador_leva_o_proprio_curso_do_rascunho_ao_catalogo(
+    dados_curso, coordenador, aluno
+):
+    """A combinacao que a heranca cria e que nenhum teste exercitava: a mesma
+    pessoa e o professor responsavel E quem publica.
+
+    Ate o Plano 4 isso era impossivel, entao o ciclo completo nunca foi percorrido
+    por um so usuario. Se alguma guarda de publicacao supuser que o responsavel e
+    o publicador sao pessoas diferentes -- por exemplo recusando que o coordenador
+    aprove o proprio trabalho -- e aqui que aparece.
+    """
+    from apps.cursos.choices import StatusCurso, StatusEntregavel
+
+    dados_curso["professor_responsavel"] = coordenador
+    curso = services.criar_curso(**dados_curso)
+    services.adicionar_membro(curso, aluno, por=coordenador)
+    curso.entregaveis.update(status=StatusEntregavel.APROVADO)
+    curso.refresh_from_db()
+
+    services.submeter_ao_coordenador(curso, por=coordenador)
+    services.publicar_curso(curso, por=coordenador)
+
+    curso.refresh_from_db()
+    assert curso.status == StatusCurso.PUBLICADO

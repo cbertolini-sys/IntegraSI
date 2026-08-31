@@ -17,7 +17,14 @@ class TurmaForm(forms.ModelForm):
         # Só professor conduz turma (Turma.clean). Restringir aqui é conveniência
         # de tela, não a guarda: a guarda é a do model, e continua valendo para
         # quem chamar o serviço direto.
-        queryset=Usuario.objects.filter(papel=Usuario.PROFESSOR, is_active=True),
+        #
+        # O coordenador entra na lista a partir do Plano 5 porque ele é professor
+        # (regra 1) e `Turma.clean` passou a aceitá-lo. Filtrar só por PROFESSOR
+        # aqui deixaria o formulário mais estrito que o modelo, e a coordenação
+        # não conseguiria designar a si mesma para conduzir uma turma.
+        queryset=Usuario.objects.filter(
+            papel__in=[Usuario.PROFESSOR, Usuario.COORDENADOR], is_active=True
+        ),
         label="professor responsável",
     )
 

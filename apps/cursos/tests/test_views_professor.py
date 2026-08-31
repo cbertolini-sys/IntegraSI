@@ -94,16 +94,18 @@ def test_aluno_nao_cria_proposta(client, aluno):
 
 
 @pytest.mark.django_db
-def test_coordenador_nao_cria_proposta(client, coordenador):
-    # Curso.clean() exige que professor_responsavel.e_professor seja verdadeiro; um
-    # coordenador nao e professor, entao deixar esta view aceitar coordenador fazia
-    # services.criar_curso() estourar ValidationError sem tratamento (500) assim que
-    # o form validasse (o FK so e checado dentro de Curso.save()). Deixar o
-    # coordenador escolher outro professor responsavel seria uma tela nova (Plano 3),
-    # nao um conserto deste bug.
+def test_coordenador_cria_proposta(client, coordenador):
+    """Inverteu no Plano 5. Ate o Plano 4 esta tela devolvia 403 ao coordenador --
+    nao por decisao de produto, mas por conserto de bug: `Curso.clean()` exigia
+    `professor_responsavel.e_professor`, o coordenador nao era professor, e o
+    `ValidationError` saia como 500 depois que o form validava.
+
+    A regra 1 do Plano 5 removeu a causa: o coordenador e professor, `Curso.clean`
+    o aceita, e nao ha excecao a tratar. Ele fica responsavel pelo proprio curso.
+    """
     client.force_login(coordenador)
     resposta = client.get(reverse("nova_proposta"))
-    assert resposta.status_code == 403
+    assert resposta.status_code == 200
 
 
 @pytest.mark.django_db
