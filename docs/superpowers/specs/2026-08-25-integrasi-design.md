@@ -75,9 +75,12 @@ e nunca precisa de uma.
 ## 3. Fluxo principal
 
 1. O coordenador cadastra a edição da disciplina e as pessoas.
-2. O professor cria a proposta de curso: título, resumo, público-alvo, carga
-   horária, formato e (se houver) referencial pedagógico e competências.
-3. O professor monta a equipe de alunos daquele curso.
+2. O professor cria a proposta com o título apenas, e escolhe quem vai produzi-la:
+   alunos e, se quiser, outros professores. O título é provisório e a própria
+   equipe o ajusta depois.
+3. A equipe preenche a ficha do curso (resumo, público-alvo, carga horária,
+   formato e, se houver, referencial pedagógico e competências) enquanto produz
+   os entregáveis. Nada disso é pedido ao professor na criação.
 4. O sistema cria automaticamente os cinco entregáveis obrigatórios.
 5. Os alunos preenchem seções e anexam materiais em cada entregável.
 6. O aluno envia um entregável para revisão; o sistema valida as regras daquele
@@ -131,8 +134,21 @@ depois - e a LGPD cobra essa explicação.
 data de início, data de fim, ativa. Todo curso pertence a uma edição; é o que
 mantém o catálogo legível ao longo dos anos.
 
-**MembroEquipe** - vínculo aluno ↔ curso, criado pelo professor.
-Único por (curso, aluno).
+**MembroEquipe** - vínculo pessoa ↔ curso, criado pelo professor responsável.
+Único por (curso, pessoa). A equipe de produção tem alunos e pode ter outros
+professores, que produzem material como qualquer membro. O campo se chama
+`pessoa`, e não `aluno`, porque chamar de `aluno` uma coluna que guarda professor
+é mentira de esquema, e mentira de esquema cobra juros.
+
+O professor responsável **não** entra como membro: ele já está no curso por
+`professor_responsavel`, e figurar nos dois lugares o contaria duas vezes em
+toda listagem de equipe.
+
+Remover alguém da equipe é ato do professor responsável (ou do coordenador) e
+**tira o acesso, não apaga o trabalho**: anexo, seção e revisão registram quem fez
+cada coisa, e essas linhas continuam com o nome de quem as fez. Só cabe enquanto o
+curso está em produção; depois de submetido à coordenação, quem compõe a equipe é
+parte do que está sendo julgado.
 
 ### 4.2 Referencial pedagógico
 
@@ -160,9 +176,22 @@ relatório pode pressupor BNCC.
 
 **Curso** - título, resumo, edição, professor responsável, status.
 
-Identidade pedagógica, exigida pelo roteiro como dado estruturado e não como prosa:
+**A proposta nasce só com o título.** A edição vem da edição corrente (§4.1) e o
+professor responsável é quem propôs; mais nada é perguntado. O resto é trabalho da
+equipe.
 
-- `tipo_publico`: `ESCOLAR` ou `COMUNITARIO` - **obrigatório em todo curso**
+O que impede um curso incompleto de avançar não é a obrigatoriedade no formulário
+de criação, e sim o portão de completude: `dados_do_curso` roda na revisão do Plano
+de Ensino e outra vez na submissão à coordenação (§6). Exigir a ficha inteira na
+criação só obrigava o professor a inventar carga horária e público-alvo antes de a
+equipe ter estudado o assunto, e o número inventado costuma ficar.
+
+Identidade pedagógica, exigida pelo roteiro como dado estruturado e não como prosa.
+Nenhum destes campos é exigido na criação; todos são exigidos no portão:
+
+- `resumo`: texto de apresentação, o que o catálogo mostra
+- `tipo_publico`: `ESCOLAR` ou `COMUNITARIO` - **obrigatório em todo curso**,
+  conferido no portão
 - `etapa_ano`: obrigatório quando `ESCOLAR` (Educação Infantil ao Ensino Médio)
 - `publico_descricao`: obrigatório quando `COMUNITARIO`
 - `referencial`: opcional; quando presente, restringe as competências selecionáveis
@@ -419,13 +448,17 @@ três lugares que publicam um curso de jeitos ligeiramente diferentes.
 
 ### 7.3 Telas
 
-**Aluno** - meus cursos → curso → painel dos cinco entregáveis com status e o que
-falta → editar seção → anexar arquivo ou vídeo → enviar para revisão → ver
-devolutivas.
+**Aluno** - meus cursos → curso → editar a ficha do curso → painel dos cinco
+entregáveis com status e o que falta → editar seção → anexar arquivo ou vídeo →
+enviar para revisão → ver devolutivas.
 
-**Professor** - meus cursos → criar proposta → montar equipe → fila de revisão
-("o que espera por mim") → aprovar/devolver com comentário → submeter ao
-coordenador → minhas turmas.
+**Professor** - meus cursos → criar proposta (só o título) → montar equipe, com
+alunos e outros professores, e remover quem saiu → editar a ficha do curso → fila
+de revisão ("o que espera por mim") → aprovar/devolver com comentário → submeter
+ao coordenador → minhas turmas.
+
+O professor colaborador (§10) tem as telas do aluno nos cursos em que produz, e as
+do professor apenas nos cursos que responde.
 
 **Coordenador** - fila de cursos aguardando aprovação → revisar curso completo →
 publicar ou devolver → abrir nova versão de curso publicado → solicitações
@@ -516,6 +549,15 @@ espalhadas em `if` de template.
   entregável em `RASCUNHO` ou `DEVOLVIDO`. Nunca aprova.
 - **Professor**: total sobre os cursos que responde, incluindo abrir nova versão
   deles. Não publica, não mexe em curso alheio, não vê participantes de turma alheia.
+- **Professor colaborador**: professor alocado na equipe de um curso que não é o
+  seu. Enxerga o curso e produz material como qualquer membro, mas **não aprova nem
+  devolve entregável desse curso e não mexe na equipe**. Quem revisa continua sendo o
+  professor responsável, ou o coordenador. Escrever o material e aprovar o material
+  não podem ser o mesmo ato da mesma pessoa.
+- **Ficha do curso** (título, resumo, público-alvo, carga horária, formato,
+  referencial, competências, temas): editam qualquer membro da equipe, o professor
+  responsável e o coordenador, e **só enquanto o curso está em produção**. Curso
+  publicado muda por nova versão (§4.5), nunca por edição no lugar.
 - **Coordenador**: acesso total; publica, despublica e abre nova versão; Admin.
 - **Abrir nova versão**: coordenador ou o professor responsável pelo curso, sempre
   com motivo registrado. A equipe da nova versão não herda acesso à anterior - ela
@@ -640,7 +682,11 @@ Decidido deliberadamente, para não inflar a entrega:
 | Revisão no nível do entregável, não da seção ou do anexo | Cinco decisões por curso em vez de vinte; casa com a ideia de pacote do roteiro |
 | Entregáveis fixos, seções livres | Roteiro fixa o que entregar; professor decide como organizar |
 | Referencial genérico em vez de campos BNCC | BNCC é um foco possível, não o único; abre para outros modelos sem tocar no código |
-| Público-alvo obrigatório em todo curso | É a identidade do curso e o filtro principal do catálogo |
+| Público-alvo obrigatório em todo curso, conferido no portão e não na criação | É a identidade do curso e o filtro principal do catálogo, mas quem o conhece é a equipe que estudou o assunto |
+| Proposta criada só com o título | O professor abre o trabalho; inventar ficha antes do estudo produz número que ninguém revisa depois |
+| Uma lista de equipe para aluno e professor, campo `pessoa` | Dois modelos paralelos dobrariam cada checagem de permissão, e guarda duplicada não se distingue por teste |
+| Professor da equipe produz mas não aprova | Produzir e aprovar o mesmo material pela mesma pessoa não deixa rastro de que houve revisão |
+| Remover da equipe tira acesso e preserva a autoria do que foi feito | Trabalho entregue é fato histórico; desfazer o vínculo não desfaz quem escreveu |
 | Upload de vídeo até 1 GB, retomável, em vez de link externo | Decisão do responsável pelo projeto; material fica sob guarda da universidade |
 | Entrega de arquivo via `X-Accel-Redirect` | 1 GB pelo processo Python derruba o servidor |
 | Fila de e-mail em tabela + cron, sem Celery | Um serviço a menos para manter; SMTP fora do ar não pode travar aprovação |
