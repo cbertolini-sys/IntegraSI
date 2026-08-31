@@ -86,6 +86,17 @@ class FichaCursoForm(forms.ModelForm):
         ]
         widgets = {"resumo": forms.Textarea(attrs={"rows": 4})}
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # O vazio que o Django gera e "---------", que nao diz nada. Curso sem
+        # referencial e de primeira classe (spec 4.2), entao a opcao se chama pelo
+        # nome; senao parece campo que a pessoa esqueceu de preencher.
+        #
+        # Aqui, e nao redeclarando o campo: assim o queryset continua vindo da FK,
+        # e um referencial desativado que ja esteja gravado nao some do select
+        # (sumir o descartaria em silencio no proximo salvamento).
+        self.fields["referencial"].empty_label = "Nenhum"
+
     def clean(self):
         dados = super().clean()
         referencial = dados.get("referencial")

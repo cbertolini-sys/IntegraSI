@@ -68,7 +68,11 @@ def contexto_das_habilidades(request, curso):
     from apps.referenciais.choices import etapa_do_referencial, rotulo_da_competencia
     from apps.referenciais.models import Referencial
 
-    referencial_id = request.GET.get("referencial") or curso.referencial_id
+    # `in request.GET` e nao `.get(...) or ...`: os dois campos precisam
+    # distinguir "veio vazio" de "nao veio". Com o `or`, escolher Nenhum mandava
+    # referencial="" e caia de volta no gravado, entao as habilidades continuavam
+    # na tela depois de a pessoa tirar o referencial.
+    referencial_id = request.GET["referencial"] if "referencial" in request.GET else curso.referencial_id
     etapa_ano = request.GET["etapa_ano"] if "etapa_ano" in request.GET else curso.etapa_ano
     referencial = Referencial.objects.filter(pk=referencial_id or 0).first()
     etapa = etapa_do_referencial(etapa_ano)

@@ -373,3 +373,40 @@ def test_bloco_fica_colado_ao_campo_de_referencial(client, proposta, professor, 
     posicao_bloco = html.index('id="habilidades"')
     posicao_carga = html.index('id="id_carga_horaria"')
     assert posicao_referencial < posicao_bloco < posicao_carga
+
+
+@pytest.mark.django_db
+def test_referencial_oferece_nenhum_por_extenso(client, proposta, professor, bncc):
+    """O vazio que o Django gera e "---------", que nao diz nada.
+
+    Curso sem referencial e de primeira classe (spec 4.2): a opcao precisa se
+    chamar pelo nome, senao parece campo que a pessoa esqueceu de preencher."""
+    import re
+
+    client.force_login(professor)
+    html = client.get(reverse("ficha", args=[proposta.pk])).content.decode()
+    select = re.search(r'<select name="referencial".*?</select>', html, re.S).group(0)
+    opcoes = re.findall(r"<option[^>]*>([^<]*)</option>", select)
+    assert opcoes[0] == "Nenhum"
+    assert "---------" not in select
+
+
+@pytest.mark.django_db
+def test_escolher_nenhum_esvazia_o_bloco(client, proposta, professor, habilidades):
+    """A segunda metade: escolher Nenhum tem de apagar a lista.
+
+    O curso ja tem referencial gravado, e a view precisa distinguir "o campo veio
+    vazio" de "o campo nao veio". Com `GET.get(...) or curso.referencial_id`, o
+    vazio caia de volta no gravado e as habilidades continuavam na tela depois de
+    a pessoa escolher Nenhum."""
+    proposta.referencial = habilidades
+    proposta.etapa_ano = "EF05"
+    proposta.save()
+
+    client.force_login(professor)
+    html = client.get(
+        reverse("ficha_habilidades", args=[proposta.pk]),
+        {"referencial": "", "etapa_ano": "EF05"},
+    ).content.decode()
+    assert "Nenhum referencial escolhido" in html
+    assert "EF05CO01" not in html
