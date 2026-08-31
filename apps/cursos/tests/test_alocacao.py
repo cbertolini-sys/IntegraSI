@@ -45,8 +45,13 @@ def test_a_conta_nasce_sem_senha_utilizavel(curso, professor):
 def test_email_ja_cadastrado_e_recusado(curso, professor, aluno):
     """Decisão do coordenador: recusa em vez de vincular a conta existente.
     Vincular em silêncio poria alguém numa equipe por um e-mail digitado errado."""
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValidationError) as erro:
         services.alocar_aluno(curso, nome="Outro Nome", email=aluno.email, por=professor)
+    # Afirma a MENSAGEM, e nao so o tipo: o indice unico do modelo recusaria este
+    # mesmo caso sozinho, e um `pytest.raises(ValidationError)` pelado passaria com
+    # a checagem do servico apagada (conferido por mutacao). O que o servico
+    # acrescenta e dizer ao professor o que fazer a seguir.
+    assert "Confira o endereço" in " ".join(erro.value.messages)
 
 
 @pytest.mark.django_db

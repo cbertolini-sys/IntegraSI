@@ -656,13 +656,18 @@ def alocar_aluno(curso, nome, email, por, base_url=""):
             "coordenação para vincular a conta existente."
         )
 
+    # `password=None` e o que deixa a senha inutilizavel: `set_password(None)`
+    # grava um hash prefixado com "!" que nenhuma entrada satisfaz. So o convite
+    # abre a conta.
+    #
+    # Uma guarda so, de proposito. Havia aqui uma chamada extra que zerava a senha
+    # depois do create_user, e as duas se mascaravam: apagar qualquer uma deixava
+    # a outra garantindo o mesmo resultado, e nenhum teste distinguia qual estava
+    # valendo. Nao acrescente a segunda de volta -- prefira confiar nesta linha,
+    # que o teste consegue derrubar sozinha.
     aluno = Usuario.objects.create_user(
         email=email, nome_completo=nome, papel=Usuario.ALUNO, password=None
     )
-    # Sem senha utilizavel: so o convite abre a conta. `create_user(password=None)`
-    # ja gera uma senha inutilizavel, mas deixar explicito e o que um teste prende.
-    aluno.set_unusable_password()
-    aluno.save(update_fields=["password"])
 
     membro = adicionar_membro(curso, aluno, por=por)
     convidar(aluno, por=por, base_url=base_url)
