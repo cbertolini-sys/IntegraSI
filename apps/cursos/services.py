@@ -489,15 +489,27 @@ def concluir_upload(upload, titulo, duracao_minutos):
             duracao_minutos=duracao_minutos,
             enviado_por=upload.usuario,
         )
+        # Fora da transacao de proposito. Um `unlink()` aqui dentro e a inversao
+        # classica: se a transacao volta atras depois dele, a linha de
+        # UploadEmAndamento ressuscita apontando para um arquivo que ja nao existe,
+        # e o dono nao consegue nem retomar nem concluir. O disco so pode ser mexido
+        # depois que o banco confirmou.
+        #
+        # Dentro do `try` porque `upload.delete()` tambem pode falhar: ali o Anexo ja
+        # existe, mas a transacao volta atras e leva o Arquivo junto -- os bytes
+        # ficariam em materiais/ sem linha nenhuma apontando para eles, que e
+        # exatamente o vazamento que este bloco existe para impedir.
+        transaction.on_commit(lambda: caminho.unlink(missing_ok=True))
+        upload.delete()
     except Exception:
-        arquivo.arquivo.delete(save=False)
+        try:
+            arquivo.arquivo.delete(save=False)
+        except Exception:
+            # Limpar e melhor-esforco. Uma falha aqui (permissao, disco cheio) nao
+            # pode substituir a excecao original: o aluno receberia 500 no lugar do
+            # 400 que explica que o titulo passou de 200 caracteres.
+            pass
         raise
-    # Fora da transacao de proposito. Um `unlink()` aqui dentro e a inversao classica:
-    # se a transacao volta atras depois dele, a linha de UploadEmAndamento ressuscita
-    # apontando para um arquivo que ja nao existe, e o dono nao consegue nem retomar
-    # nem concluir. O disco so pode ser mexido depois que o banco confirmou.
-    transaction.on_commit(lambda: caminho.unlink(missing_ok=True))
-    upload.delete()
     return anexo
 
 

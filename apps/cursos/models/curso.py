@@ -132,6 +132,12 @@ class Curso(models.Model):
             # daria a mensagem amigavel no lugar do IntegrityError, mas so a constraint
             # vale para quem escreve por fora do service (admin, shell, migracao de
             # dados), e um lock que so o service respeita nao e invariante nenhuma.
+            #
+            # O preco assumido: `nova_versao` so captura ValidationError, entao o
+            # perdedor da corrida ve um 500 em vez de mensagem. E a troca certa --
+            # duas "v2" silenciosas na mesma linhagem sao piores que um erro visivel
+            # num clique duplo -- mas fica dito para quem vier depois nao achar que
+            # o 500 e descuido.
             models.UniqueConstraint(
                 Coalesce(F("raiz_id"), F("id")),
                 "versao",

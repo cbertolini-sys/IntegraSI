@@ -375,6 +375,10 @@ def drill(tmp_path):
             "REGISTRO_DROPDB": str(registro),
             **extra,
         }
+        # Passar None remove a variavel: e o unico jeito de o teste enxergar o
+        # DEFAULT do script. Com a fixture sempre exportando, um teste sobre o nome
+        # do banco confere o valor que ele mesmo forneceu.
+        ambiente = {c: v for c, v in ambiente.items() if v is not None}
         return subprocess.run(
             ["bash", str(DRILL)], capture_output=True, text=True, env=ambiente
         )
@@ -402,7 +406,10 @@ def test_o_drill_apaga_o_banco_e_a_midia_de_teste(drill):
     drill()
 
     assert not drill.restauracao.exists()
-    assert "integrasi_restauracao" in drill.registro.read_text()
+    # Duas: a de antes de restaurar (linha 41) e a da limpeza (o trap). Afirmar
+    # apenas que o nome APARECE deixa a limpeza solta -- a chamada pre-restauracao
+    # roda antes de qualquer ponto de falha e sozinha satisfaz um `in`.
+    assert len(drill.registro.read_text().splitlines()) == 2
 
 
 def test_o_drill_limpa_mesmo_quando_reprova(drill):
@@ -412,7 +419,9 @@ def test_o_drill_limpa_mesmo_quando_reprova(drill):
 
     assert resultado.returncode != 0
     assert not drill.restauracao.exists()
-    assert "integrasi_restauracao" in drill.registro.read_text()
+    # A falha e depois do dropdb pre-restauracao, entao aqui tambem sao duas: se o
+    # trap nao rodasse, seria uma so, e o banco de teste sobreviveria ao semestre.
+    assert len(drill.registro.read_text().splitlines()) == 2
 
 
 def test_restic_que_nao_traz_arquivo_nenhum_reprova(drill):
@@ -460,8 +469,15 @@ def test_sem_dump_nenhum_o_drill_reprova(drill):
 
 def test_o_drill_nunca_derruba_o_banco_de_producao(drill):
     """A promessa do cabeçalho do script. Um `dropdb` com o nome errado num drill
-    semestral é a pior forma possível de descobrir que o backup funciona."""
-    drill()
+    semestral é a pior forma possível de descobrir que o backup funciona.
+
+    Roda com `INTEGRASI_BANCO_TESTE` **removida**, de propósito: é o default do
+    script que precisa ser seguro, e é justamente ele que nenhum teste enxergava.
+    Com a fixture exportando a variável, este teste conferia o valor que ele mesmo
+    tinha fornecido — trocar o default do script para o banco de produção deixava
+    a suíte inteira verde, este teste incluído.
+    """
+    drill(INTEGRASI_BANCO_TESTE=None)
 
     linhas = drill.registro.read_text().splitlines()
     assert linhas, "o drill não chamou dropdb nenhuma vez"
