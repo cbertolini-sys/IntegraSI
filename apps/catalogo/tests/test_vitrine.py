@@ -216,3 +216,20 @@ def test_o_icone_da_aba_e_a_marca(client):
     conteudo = client.get(reverse("catalogo")).content.decode()
     assert 'rel="icon"' in conteudo
     assert "img/integrasi-icone.png" in conteudo
+
+
+@pytest.mark.django_db
+def test_a_barra_traz_o_selo_da_universidade(client):
+    """Escudo mais nome, apontando para a unidade universitaria. Subiu do heroi
+    para ca a pedido: la ele quebrava em larguras intermediarias."""
+    conteudo = client.get(reverse("catalogo")).content.decode()
+    assert "img/ufsm-escudo.svg" in conteudo
+    assert "Campus Frederico Westphalen" in conteudo
+
+
+@pytest.mark.django_db
+def test_o_heroi_tem_dois_cartoes_e_nao_tres(client, curso_publicado):
+    """A terceira coluna era a UFSM, que foi para o cabecalho. Contar os cartoes
+    prende a mudanca: devolver um terceiro aqui derruba este teste."""
+    conteudo = client.get(reverse("catalogo")).content.decode()
+    assert conteudo.count('class="numero"') == 2

@@ -12,18 +12,19 @@
           revisadas por professores. Escolha um curso, solicite pelo formulário e a
           coordenação combina data, local e vagas.
         </p>
+        {% comment %}
+          Dois cartões, e não três itens numa linha: a terceira coluna era "UFSM /
+          Campus Frederico Westphalen", que subiu para o cabeçalho. Ela quebrava
+          mal aqui, e o lugar dela é junto do escudo.
+        {% endcomment %}
         <div class="numeros">
-          <div>
+          <div class="numero">
             <strong>{{ total_cursos }}</strong>
             <span>curso{{ total_cursos|pluralize:"s" }} no catálogo</span>
           </div>
-          <div>
+          <div class="numero">
             <strong>Gratuito</strong>
             <span>para escolas e grupos da comunidade</span>
-          </div>
-          <div>
-            <strong>UFSM</strong>
-            <span>Campus Frederico Westphalen</span>
           </div>
         </div>
       </div>

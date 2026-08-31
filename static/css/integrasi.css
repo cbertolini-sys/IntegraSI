@@ -108,10 +108,68 @@ a {
   flex-wrap: wrap;
 }
 
+.marcas-barra {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 0;
+}
+
 .marca img {
   display: block;
   height: 2.625rem;
   width: auto;
+}
+
+/* O selo institucional: escudo mais nome, separados da marca do sistema por uma
+   linha fina. São duas instituições distintas, e emendá-las leria como uma marca
+   composta. */
+.instituicao {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding-left: 1rem;
+  border-left: 1px solid var(--linha);
+  text-decoration: none;
+  color: var(--cinza);
+  min-width: 0;
+}
+
+.instituicao img {
+  height: 2.125rem;
+  width: auto;
+  display: block;
+  flex: none;
+}
+
+.instituicao span {
+  display: block;
+  font-size: 0.6875rem;
+  line-height: 1.25;
+  min-width: 0;
+}
+
+.instituicao strong {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--marinho);
+  letter-spacing: 0.01em;
+}
+
+.instituicao:hover strong {
+  color: var(--azul);
+}
+
+/* Abaixo do tablet fica só o escudo: o nome por extenso empurraria o botão
+   "Entrar" para uma segunda linha, que era o que estava quebrando. */
+@media (max-width: 56rem) {
+  .instituicao span {
+    display: none;
+  }
+  .instituicao {
+    padding-left: 0.75rem;
+  }
 }
 
 .menu {
@@ -282,26 +340,42 @@ button:active {
   max-width: 34rem;
 }
 
+/* Dois cartões, não três colunas de texto: com três, a terceira quebrava em
+   qualquer largura intermediária. Dois cabem lado a lado até o celular e
+   empilham limpo abaixo disso. */
 .numeros {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1.5rem 2.5rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.16);
+  display: grid;
+  gap: 0.875rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+  margin-top: 2rem;
+  max-width: 30rem;
 }
 
-.numeros strong {
+.numero {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: var(--raio);
+  padding: 1rem 1.125rem;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.numero strong {
   display: block;
   font-family: var(--display);
   font-size: 1.625rem;
   font-weight: 800;
   letter-spacing: -0.02em;
   line-height: 1.15;
+  color: var(--branco);
 }
 
-.numeros span {
+.numero span {
+  display: block;
+  margin-top: 0.125rem;
   font-size: 0.8125rem;
-  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.72);
 }
 
 /* ---------- cartão de acesso ---------- */
