@@ -124,3 +124,20 @@ def test_os_estaticos_saem_versionados(client, curso_publicado):
     conteudo = client.get(reverse("catalogo")).content.decode()
     assert "css/integrasi.css?v=" in conteudo
     assert "js/vitrine.js?v=" in conteudo
+
+
+@pytest.mark.django_db
+def test_a_tag_de_formato_carrega_a_cor_do_valor(client, curso_publicado):
+    """A cor da tag codifica informacao: PRESENCIAL, HIBRIDO e ONLINE se
+    distinguem antes de serem lidos. A classe sai do proprio campo, entao um
+    formato novo nao fica sem cor por esquecimento -- fica com a cor neutra."""
+    conteudo = client.get(reverse("catalogo")).content.decode()
+    assert 'class="marca-formato presencial"' in conteudo
+
+
+@pytest.mark.django_db
+def test_a_barra_nao_tem_mais_o_link_de_cursos(client):
+    """Removido a pedido: o logo ja leva ao catalogo, e o botao Entrar fica
+    sozinho no canto."""
+    conteudo = client.get(reverse("catalogo")).content.decode()
+    assert ">Cursos</a>" not in conteudo

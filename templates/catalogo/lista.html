@@ -47,14 +47,12 @@
                       {% with tema=curso.temas.first %}
                         {% if tema %}<span class="marca-tema">{{ tema.nome }}</span>{% endif %}
                       {% endwith %}
-                      <span class="marca-formato">{{ curso.get_formato_display }}</span>
+                      <span class="marca-formato {{ curso.formato|lower }}">{{ curso.get_formato_display }}</span>
                     </p>
                     <h3>{{ curso.titulo }}</h3>
                     <p class="resumo-vitrine">{{ curso.resumo|truncatewords:18 }}</p>
                     <p class="dados-vitrine">{{ curso.publico_alvo }} &middot; {{ curso.carga_horaria }}h</p>
-                    <a class="ver-mais" href="{% url 'catalogo_curso' curso.pk %}">
-                      Ver detalhes <span aria-hidden="true">&rarr;</span>
-                    </a>
+                    <a class="ver-mais" href="{% url 'catalogo_curso' curso.pk %}">Ver detalhes</a>
                   </article>
                 </li>
               {% endfor %}

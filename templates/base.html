@@ -17,7 +17,6 @@
              alt="IntegraSI — Sistemas de Informação, UFSM Frederico Westphalen">
       </a>
       <nav class="menu">
-        <a href="{% url 'catalogo' %}">Cursos</a>
         {% if user.is_authenticated %}
           <a href="{% url 'painel' %}">Painel</a>
           <span class="quem">{{ user.nome_completo }} &middot; {{ user.get_papel_display }}</span>

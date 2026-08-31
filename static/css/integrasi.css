@@ -149,7 +149,11 @@ button {
   font-size: 0.9375rem;
   font-weight: 600;
   line-height: 1.2;
-  padding: 0.6875rem 1.25rem;
+  /* Estas eram a unica diferenca entre o "Entrar" da barra e o "Filtrar" da
+     busca: `.busca button` sobrescrevia altura e preenchimento. Subiram para ca
+     e a sobrescrita foi apagada -- com um valor so, nao ha o que divergir. */
+  min-height: 2.75rem;
+  padding: 0.6875rem 1.75rem;
   border-radius: var(--raio-p);
   border: 1px solid transparent;
   background: var(--azul);
@@ -397,9 +401,7 @@ textarea:focus {
 }
 
 .busca button {
-  height: 2.75rem;
   justify-self: start;
-  padding-inline: 1.75rem;
 }
 
 /* ---------- seção de cursos ---------- */
@@ -1205,8 +1207,12 @@ textarea:focus {
 
 /* =====================================================================
    Vitrine — os últimos cursos publicados, no herói.
-   Substituiu o formulário de login: a primeira dobra da página pública
-   é do catálogo, e quem vem entrar tem o botão na barra.
+
+   Cartão branco sólido sobre o azul escuro, e não vidro: o contraste é o que
+   faz o painel ler como conteúdo destacado em vez de mais uma camada do mesmo
+   gradiente. As tags são coloridas por informação, não por enfeite — o formato
+   tem uma cor por valor, então "Online" e "Presencial" se distinguem antes de
+   serem lidos.
    ===================================================================== */
 
 .vitrine {
@@ -1218,8 +1224,8 @@ textarea:focus {
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.6);
-  margin: 0 0 0.75rem;
+  color: rgba(255, 255, 255, 0.62);
+  margin: 0 0 0.875rem;
 }
 
 .vitrine-palco {
@@ -1233,14 +1239,14 @@ textarea:focus {
   display: grid;
 }
 
-/* Todos os slides ocupam a mesma célula da grade: a altura do palco é a do
-   maior cartão, e a troca não faz a página pular. */
+/* Todos os slides ocupam a mesma célula: a altura do palco é a do maior cartão,
+   e a troca não faz a página pular. */
 .vitrine-slide {
   grid-area: 1 / 1;
   opacity: 0;
   visibility: hidden;
-  transform: translateX(1.25rem);
-  transition: opacity 0.45s ease, transform 0.45s ease, visibility 0.45s;
+  transform: translateX(1rem) scale(0.99);
+  transition: opacity 0.4s ease, transform 0.4s ease, visibility 0.4s;
 }
 
 .vitrine-slide.ativo {
@@ -1249,20 +1255,19 @@ textarea:focus {
   transform: none;
 }
 
-/* Vidro leve sobre o gradiente, e não branco puro: o cartão flutua no azul em
-   vez de recortar um buraco nele. */
 .cartao-vitrine {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: var(--raio);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  background: var(--branco);
+  border: 1px solid rgba(22, 32, 46, 0.06);
+  border-radius: 16px;
   padding: 1.75rem;
-  min-height: 15.5rem;
+  min-height: 16rem;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  box-shadow: 0 12px 32px rgba(10, 20, 45, 0.28);
+  gap: 0.875rem;
+  color: var(--texto);
+  /* Sombra em duas camadas: a curta assenta o cartão, a longa e difusa o levanta
+     do gradiente. Uma só faria mancha ou faria borda. */
+  box-shadow: 0 2px 6px rgba(8, 18, 40, 0.16), 0 22px 48px rgba(8, 18, 40, 0.32);
 }
 
 .etiquetas-vitrine {
@@ -1277,30 +1282,51 @@ textarea:focus {
   font-size: 0.75rem;
   font-weight: 600;
   border-radius: 999px;
-  padding: 0.25rem 0.6875rem;
-  line-height: 1.4;
+  padding: 0.3125rem 0.75rem;
+  line-height: 1.3;
+  border: 1px solid transparent;
 }
 
+/* Tema em ciano — a cor da marca IntegraSI. */
 .marca-tema {
-  background: rgba(56, 194, 194, 0.22);
-  color: #bff3f3;
-  border: 1px solid rgba(56, 194, 194, 0.4);
+  background: #e4f7f7;
+  color: #0e6a6a;
+  border-color: #b6e7e7;
 }
 
+/* Formato ganha uma cor por valor: distingue antes de ser lido. */
 .marca-formato {
-  background: rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--nevoa);
+  color: var(--cinza);
+  border-color: var(--linha);
+}
+
+.marca-formato.presencial {
+  background: #e9f7ef;
+  color: #1b6b42;
+  border-color: #c3e6d2;
+}
+
+.marca-formato.hibrido {
+  background: #f1ecfb;
+  color: #5a3ea9;
+  border-color: #ddcff3;
+}
+
+.marca-formato.online {
+  background: #e9f1fa;
+  color: #04477c;
+  border-color: #cfe1f0;
 }
 
 .cartao-vitrine h3 {
   font-family: var(--display);
-  font-size: 1.375rem;
+  font-size: 1.4375rem;
   font-weight: 700;
-  line-height: 1.2;
-  letter-spacing: -0.02em;
+  line-height: 1.18;
+  letter-spacing: -0.025em;
   margin: 0;
-  color: var(--branco);
+  color: var(--texto);
   text-wrap: balance;
 }
 
@@ -1308,29 +1334,39 @@ textarea:focus {
   margin: 0;
   font-size: 0.9375rem;
   line-height: 1.55;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--cinza);
 }
 
 .dados-vitrine {
   margin: 0;
   font-size: 0.8125rem;
-  color: rgba(255, 255, 255, 0.62);
+  color: var(--cinza-claro);
 }
 
+/* Botão minimalista: contorno, não preenchido. O cheio é o "Entrar" e o
+   "Filtrar"; aqui competir com eles tiraria a hierarquia da página. */
 .ver-mais {
   margin-top: auto;
   align-self: flex-start;
-  color: var(--branco);
-  font-size: 0.9375rem;
+  min-height: 0;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
   font-weight: 600;
+  color: var(--azul);
+  background: transparent;
+  border: 1px solid #c3d5e6;
+  border-radius: var(--raio-p);
   text-decoration: none;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.45);
-  padding-bottom: 2px;
-  transition: border-color 0.15s ease, gap 0.15s ease;
+  box-shadow: none;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 .ver-mais:hover {
-  border-bottom-color: var(--branco);
+  background: var(--azul-suave);
+  border-color: var(--azul);
+  color: var(--azul-forte);
+  box-shadow: none;
+  transform: none;
 }
 
 .vazio-vitrine {
@@ -1339,38 +1375,39 @@ textarea:focus {
 
 /* ---------- controles ---------- */
 
+/* Setas brancas, como o cartão: no vidro anterior elas sumiam no gradiente. */
 .seta {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  width: 2.25rem;
-  height: 2.25rem;
+  width: 2.375rem;
+  height: 2.375rem;
+  min-height: 0;
   padding: 0;
   display: grid;
   place-items: center;
-  font-size: 1.5rem;
+  font-size: 1.375rem;
   line-height: 1;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  color: var(--branco);
-  box-shadow: none;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: var(--branco);
+  border: 1px solid rgba(22, 32, 46, 0.08);
+  color: var(--azul);
+  box-shadow: 0 2px 6px rgba(8, 18, 40, 0.2);
+  z-index: 2;
 }
 
 .seta:hover {
-  background: rgba(255, 255, 255, 0.26);
-  color: var(--branco);
-  transform: translateY(-50%);
-  box-shadow: none;
+  background: var(--branco);
+  color: var(--azul-forte);
+  transform: translateY(-50%) scale(1.06);
+  box-shadow: 0 4px 12px rgba(8, 18, 40, 0.28);
 }
 
 .seta.anterior {
-  left: -1.125rem;
+  left: -1.1875rem;
 }
 .seta.proxima {
-  right: -1.125rem;
+  right: -1.1875rem;
 }
 
 .pontos {
@@ -1383,9 +1420,10 @@ textarea:focus {
 .ponto {
   width: 0.5rem;
   height: 0.5rem;
+  min-height: 0;
   padding: 0;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.32);
+  background: rgba(255, 255, 255, 0.3);
   border: 0;
   box-shadow: none;
   transition: background 0.2s ease, width 0.2s ease;
@@ -1397,7 +1435,7 @@ textarea:focus {
   box-shadow: none;
 }
 
-/* O ativo vira um traço, e não um ponto maior: distingue sem crescer a linha. */
+/* O ativo vira um traço: distingue sem crescer a linha. */
 .ponto.ativo {
   width: 1.375rem;
   background: var(--branco);
@@ -1407,10 +1445,12 @@ textarea:focus {
   .seta {
     display: none;
   }
+  .vitrine-rotulo {
+    margin-top: 0.5rem;
+  }
 }
 
-/* Sem movimento para quem pediu sem movimento: a troca fica instantânea e o
-   autoplay é desligado no JS. */
+/* Sem movimento para quem pediu sem movimento; o autoplay é desligado no JS. */
 @media (prefers-reduced-motion: reduce) {
   .vitrine-slide {
     transition: none;
