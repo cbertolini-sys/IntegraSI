@@ -187,6 +187,26 @@ class Curso(models.Model):
         return self.publico_descricao
 
     @property
+    def identidade(self):
+        """Publico, carga horaria e formato numa linha, so com o que ja existe.
+
+        A proposta nasce com a ficha vazia (spec 4.3), e os cabecalhos
+        interpolavam os campos direto: um curso recem-criado mostrava
+        " . Noneh . " no lugar da linha, porque o template do Django renderiza
+        None como o texto "None". Achado olhando a tela, nao pela suite.
+
+        Monta em Python, e nao com `if` no template, pela mesma razao de
+        pode_abrir_versao na view do curso: a decisao fica onde da para testar.
+        """
+        partes = [self.publico_alvo]
+        if self.carga_horaria:
+            partes.append(f"{self.carga_horaria}h")
+        if self.formato:
+            partes.append(self.get_formato_display())
+        partes = [p for p in partes if p]
+        return " \u00b7 ".join(partes) if partes else "Ficha ainda não preenchida"
+
+    @property
     def praticas(self):
         """Este curso precisa de computador?
 

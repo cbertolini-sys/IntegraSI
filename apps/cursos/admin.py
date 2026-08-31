@@ -23,12 +23,12 @@ class TemaAdmin(admin.ModelAdmin):
 
 @admin.register(Curso)
 class CursoAdmin(admin.ModelAdmin):
-    # Desbloqueio barato, nao a tela de edicao de curso do Plano 3: sem isto, nada
-    # no sistema grava Curso.competencias (CursoForm exclui o campo de proposito -
-    # depende do referencial escolhido), entao um curso com referencial BNCC fica
-    # para sempre preso na faixa de competencias do Plano de Ensino (item 3 da
-    # revisao de branco). O Admin e a ferramenta do coordenador ate essa tela
-    # existir.
+    # Ate o Plano 6 este era o UNICO lugar do sistema que gravava
+    # Curso.competencias, e o comentario aqui dizia "ate essa tela existir". A
+    # tela existe: FichaCursoForm inclui competencias, e a equipe as escolhe pela
+    # ficha do curso. O registro fica assim mesmo por outro motivo, que continua
+    # valendo: a ficha congela quando o curso sai de producao (spec 4.5), e e por
+    # aqui que a coordenacao corrige um curso ja publicado sem abrir nova versao.
     list_display = ["titulo", "professor_responsavel", "edicao", "status", "referencial"]
     list_filter = ["status", "formato", "tipo_publico", "referencial"]
     search_fields = ["titulo"]

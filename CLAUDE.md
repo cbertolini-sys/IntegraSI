@@ -151,6 +151,34 @@ desses aparecendo aqui é sinal de que a fronteira foi atravessada sem querer.
 - `contas` **não** importa `cursos`. `alocar_aluno` (em `cursos`) importa
   `contas.services` dentro da função, como o arquivo já fazia com `Usuario`.
 
+## Equipe de produção (Plano 6)
+
+- `MembroEquipe.pessoa`, não `aluno`: a equipe tem alunos e professores. O modelo
+  **não tem `clean()`**, e não deve ganhar um: com a equipe aceitando aluno e
+  professor, e todo `Usuario` sendo um dos dois, qualquer guarda de papel ali
+  seria incapaz de falhar.
+- O professor responsável é membro do curso que responde, desde a criação. Ser
+  responsável é formalidade que atribui a revisão, e não dispensa de produzir.
+  Quem criar `Curso` fora de `criar_curso` (uma migração, um comando, um
+  `abrir_nova_versao` futuro) precisa criar o `MembroEquipe` junto: `meus_cursos`
+  filtra só por vínculo de equipe, e o curso somem dessa tela em silêncio.
+- A criação grava o `MembroEquipe` **direto**, sem `adicionar_membro`: aquele
+  serviço tira o curso de `RASCUNHO`, e o responsável entrando na criação faria
+  todo curso nascer `EM_PRODUCAO`, matando um estado que a spec 5 usa.
+- Professor da equipe de curso alheio produz e **não** aprova. Quem revisa é o
+  responsável, ou o coordenador. O responsável produz e aprova, e a spec §10 diz
+  isso por extenso em vez de deixar por descobrir.
+- A proposta nasce só com o título. O que impede curso incompleto de avançar é
+  `validacoes.dados_do_curso`, chamado na revisão do Plano de Ensino e na
+  submissão à coordenação. **Campo novo da ficha entra nessa função**, não como
+  obrigatoriedade no formulário de criação.
+- `STATUS_EDITAVEIS` mora em `choices.py`, e não em `services.py`, porque
+  `permissions.py` precisa dele e não pode importar `services` (o ciclo fecharia).
+- Campo da ficha é opcional no banco, então **template não interpola campo da
+  ficha direto**: `Curso.identidade` monta a linha só com o que existe. Interpolar
+  `{{ curso.carga_horaria }}h` numa proposta nova imprime `Noneh`, porque o Django
+  renderiza `None` como texto. Foi achado olhando a tela, com a suíte verde.
+
 ## Restrições entre planos
 
 - `Curso.referencial` precisa continuar `PROTECT` (Plano 2). É o que impede apagar um

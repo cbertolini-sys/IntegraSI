@@ -72,3 +72,29 @@ def test_professor_responsavel_precisa_ser_professor(dados_curso, aluno):
     dados_curso["professor_responsavel"] = aluno
     with pytest.raises(ValidationError):
         Curso.objects.create(**dados_curso)
+
+
+@pytest.mark.django_db
+def test_identidade_de_proposta_sem_ficha_nao_mostra_none(edicao, professor):
+    """Achado olhando a tela: a pagina de um curso recem-proposto mostrava
+    " . Noneh . ", porque o template do Django renderiza None como "None" e a
+    ficha nasce vazia (spec 4.3). A suite inteira passava com o defeito no ar."""
+    from apps.cursos import services
+
+    curso = services.criar_curso(titulo="Proposta nova", professor_responsavel=professor)
+    assert "None" not in curso.identidade
+    assert curso.identidade == "Ficha ainda não preenchida"
+
+
+@pytest.mark.django_db
+def test_identidade_monta_so_com_o_que_esta_preenchido(curso):
+    """Prende o outro lado: com a ficha completa a linha traz as tres partes."""
+    assert curso.identidade == "5º ano do Ensino Fundamental · 12h · Presencial"
+
+
+@pytest.mark.django_db
+def test_identidade_omite_a_parte_que_falta(curso):
+    """Ficha pela metade nao pode virar "12h . " nem "None": a parte ausente sai."""
+    curso.formato = ""
+    curso.save()
+    assert curso.identidade == "5º ano do Ensino Fundamental · 12h"

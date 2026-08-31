@@ -21,11 +21,7 @@
         <li class="registro">
           <div>
             <h3><a href="{% url 'curso' curso.pk %}">{{ curso.titulo }}</a></h3>
-            <p class="detalhe">
-              <span>{{ curso.publico_alvo }}</span>
-              <span class="sep">&middot;</span>
-              <span>{{ curso.carga_horaria }}h</span>
-            </p>
+            <p class="detalhe"><span>{{ curso.identidade }}</span></p>
           </div>
           <span class="estado {% if curso.status == 'PUBLICADO' %}ok{% elif curso.status == 'AGUARDANDO_COORDENADOR' %}espera{% elif curso.status == 'DEVOLVIDO' %}atencao{% endif %}">{{ curso.get_status_display }}</span>
         </li>

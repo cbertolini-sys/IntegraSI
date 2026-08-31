@@ -16,11 +16,14 @@ def test_curso_admin_usa_filtro_horizontal_para_competencias_e_temas():
 def test_coordenador_anexa_competencias_pelo_admin_libera_a_pendencia_do_plano(
     client, dados_curso, coordenador
 ):
-    """Sem Curso registrado no Admin, nada no sistema escreve Curso.competencias
-    (CursoForm exclui o campo de proposito), entao um curso com referencial fica
-    para sempre bloqueado nesta pendencia (item 3 da revisao de branco). Este teste
-    prova o desbloqueio ponta a ponta: o Admin grava a M2M e a mesma pendencia que
-    bloqueava o Plano de Ensino desaparece."""
+    """O Admin grava a M2M e a mesma pendencia que bloqueava o Plano de Ensino
+    desaparece.
+
+    Ate o Plano 6 este era o unico caminho para Curso.competencias, porque o
+    formulario de criacao excluia o campo. Hoje a equipe as escolhe pela ficha
+    (test_ficha.py), e o valor deste teste mudou de lugar: ele passa a guardar o
+    caminho da COORDENACAO, o unico que alcanca um curso ja publicado, cuja ficha
+    esta congelada (spec 4.5)."""
     curso = services.criar_curso(**dados_curso)
     referencial = Referencial.objects.create(
         nome="BNCC da Computacao", sigla="BNCC-COMP", min_competencias=1, max_competencias=5

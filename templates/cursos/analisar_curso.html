@@ -7,7 +7,7 @@
     <div class="faixa">
       <div>
         <h1>{{ curso.titulo }}</h1>
-        <p class="sub">{{ curso.publico_alvo }} &middot; {{ curso.carga_horaria }}h &middot; {{ curso.get_formato_display }}</p>
+        <p class="sub">{{ curso.identidade }}</p>
       </div>
       <div class="acoes">
         <span class="estado {% if curso.status == 'PUBLICADO' %}ok{% elif curso.status == 'AGUARDANDO_COORDENADOR' %}espera{% endif %}">{{ curso.get_status_display }}</span>
