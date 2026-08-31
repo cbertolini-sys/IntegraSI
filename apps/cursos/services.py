@@ -57,6 +57,11 @@ def criar_curso(**dados):
         if tipo == TipoEntregavel.PLANO_ENSINO:
             for ordem, titulo in enumerate(SECOES_PLANO_ENSINO, start=1):
                 Secao.objects.create(entregavel=entregavel, titulo=titulo, ordem=ordem)
+    # MembroEquipe direto, e nao adicionar_membro: aquele servico tira o curso de
+    # RASCUNHO no primeiro membro, e o responsavel entrando na criacao faria todo
+    # curso nascer EM_PRODUCAO, matando um estado que a spec 5 usa. Proposta com
+    # uma pessoa so ainda e proposta.
+    MembroEquipe.objects.create(curso=curso, pessoa=curso.professor_responsavel)
     return curso
 
 
@@ -574,6 +579,9 @@ def abrir_nova_versao(curso, por, motivo):
     # Foi uma tela escrevendo `temas` direto, sem reindexar, que sumiu com cursos
     # da busca no Plano 2.
     definir_temas(nova, curso.temas.all(), por=por)
+    # A equipe de alunos nao vem (spec 4.5), mas o responsavel vem: ele e membro
+    # de todo curso que responde (spec 4.1), e a v2 nasceria sem ninguem.
+    MembroEquipe.objects.create(curso=nova, pessoa=nova.professor_responsavel)
 
     for entregavel in curso.entregaveis.prefetch_related("secoes", "anexos"):
         copia = Entregavel.objects.create(curso=nova, tipo=entregavel.tipo)

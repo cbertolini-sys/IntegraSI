@@ -181,3 +181,30 @@ def test_criar_curso_e_atomico(dados_curso):
     assert Curso.objects.count() == 0
     assert Entregavel.objects.count() == 0
     assert Secao.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_responsavel_entra_na_equipe_ao_criar(dados_curso, professor):
+    """Ser responsavel e formalidade que atribui a revisao, e nao dispensa de
+    produzir (spec 4.1): ele e membro do curso que responde."""
+    curso = services.criar_curso(**dados_curso)
+    assert curso.tem_membro(professor)
+
+
+@pytest.mark.django_db
+def test_curso_recem_criado_continua_em_rascunho(dados_curso):
+    """O responsavel na equipe nao pode tirar o curso do rascunho: proposta com
+    uma pessoa so ainda e proposta. Se isto falhar, alguem trocou a escrita direta
+    do MembroEquipe por adicionar_membro, que transiciona o status."""
+    curso = services.criar_curso(**dados_curso)
+    assert curso.status == StatusCurso.RASCUNHO
+
+
+@pytest.mark.django_db
+def test_primeiro_aluno_alocado_tira_o_curso_do_rascunho(dados_curso, professor, aluno):
+    """Prende o outro lado do teste acima: a transicao continua existindo, so
+    mudou de gatilho - e o primeiro membro alem do responsavel."""
+    curso = services.criar_curso(**dados_curso)
+    services.adicionar_membro(curso, aluno, por=professor)
+    curso.refresh_from_db()
+    assert curso.status == StatusCurso.EM_PRODUCAO

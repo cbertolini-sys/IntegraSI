@@ -208,16 +208,20 @@ def test_historico_de_revisao_nao_e_copiado(curso_publicado, coordenador, profes
 
 
 @pytest.mark.django_db
-def test_equipe_nao_e_clonada(curso_publicado, coordenador, aluno):
+def test_equipe_de_alunos_nao_e_clonada(curso_publicado, coordenador, aluno, professor):
     """Spec 4.5, passo 3: "O professor monta a nova equipe. Pode ser outra turma
     inteira." Clonar os membros pareceria gentileza e daria a alunos de outro
-    semestre acesso de edicao a um curso que eles nao vao produzir - e faria a
-    nova versao nascer sem que ninguem precisasse assumi-la."""
+    semestre acesso de edicao a um curso que eles nao vao produzir.
+
+    A partir do Plano 6 a v2 nao nasce mais vazia: o responsavel e membro de todo
+    curso que responde (spec 4.1), entao ele vem, e mais ninguem. A assercao e por
+    lista exata, e nao por contagem: contar deixaria passar uma v2 que trocasse o
+    aluno pelo responsavel sem ninguem perceber."""
     nova = services.abrir_nova_versao(curso_publicado, por=coordenador, motivo="Outra equipe.")
 
-    assert curso_publicado.membros.count() == 1
-    assert nova.membros.count() == 0
+    assert curso_publicado.membros.count() == 2  # o responsavel e o aluno
     assert nova.tem_membro(aluno) is False
+    assert list(nova.membros.values_list("pessoa_id", flat=True)) == [professor.pk]
 
 
 # --- Regra 14: a edicao da nova versao ------------------------------------
@@ -705,3 +709,14 @@ def test_coordenacao_alcanca_o_material_da_versao_substituida(
     client.force_login(coordenador)
 
     assert client.get(url_do_material).status_code == 200
+
+
+# --- Regra 24: o responsavel e membro tambem na versao nova (Plano 6) ------
+
+
+@pytest.mark.django_db
+def test_nova_versao_nasce_com_o_responsavel_na_equipe(curso_publicado, professor):
+    """abrir_nova_versao cria Curso direto, sem passar por criar_curso: sem
+    tratamento proprio a v2 nasceria sem ninguem na equipe."""
+    nova = services.abrir_nova_versao(curso_publicado, por=professor, motivo="Atualizar dados")
+    assert nova.tem_membro(professor)

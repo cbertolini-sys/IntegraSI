@@ -1,7 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
-from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
@@ -15,9 +14,12 @@ from apps.cursos.views.upload import UUID_MODELO
 
 @login_required
 def meus_cursos(request):
-    cursos = Curso.objects.filter(
-        Q(membros__pessoa=request.user) | Q(professor_responsavel=request.user)
-    ).distinct()
+    # So o vinculo de equipe: desde o Plano 6 o professor responsavel e membro do
+    # curso que responde (spec 4.1), entao o `| Q(professor_responsavel=...)` que
+    # havia aqui virou termo morto. Foi apagado depois de a suite inteira passar
+    # sem ele. Quem criar Curso fora de criar_curso precisa criar o MembroEquipe
+    # junto, senao o curso some desta tela.
+    cursos = Curso.objects.filter(membros__pessoa=request.user).distinct()
     return render(request, "cursos/meus_cursos.html", {"cursos": cursos})
 
 

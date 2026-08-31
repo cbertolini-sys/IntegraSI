@@ -259,3 +259,32 @@ def test_recuo_conta_do_instante_da_falha_e_nao_do_inicio_do_lote(settings):
     # O lote de fato durou mais que a janela - sem isto o cenario nao seria o da
     # spec 9 e o teste passaria por acidente.
     assert falhas[-1] > inicio_do_lote + services.recuo(1)
+
+
+@pytest.mark.django_db
+def test_enfileirar_nao_repete_destinatario():
+    """A mesma pessoa em duas listas somadas nao pode virar dois e-mails iguais.
+
+    E o caso de publicar_curso, que soma a equipe ao e-mail do responsavel: desde
+    o Plano 6 o responsavel esta dentro da equipe, entao o endereco dele aparece
+    duas vezes na lista. Quem impede a duplicata de chegar na caixa e este `set`,
+    que existia desde sempre e nao tinha teste nenhum.
+    """
+    services.enfileirar(
+        evento="TESTE",
+        destinatarios=["ana@ufsm.br", "bruno@ufsm.br", "ana@ufsm.br"],
+        assunto="Assunto",
+        corpo="Corpo",
+    )
+    assert Notificacao.objects.filter(destinatario="ana@ufsm.br").count() == 1
+    assert Notificacao.objects.count() == 2
+
+
+@pytest.mark.django_db
+def test_enfileirar_ignora_destinatario_vazio():
+    """Prende a outra metade do mesmo `if d`: sem ela, uma lista com endereco
+    vazio gravaria notificacao que o cron tentaria entregar para sempre."""
+    services.enfileirar(
+        evento="TESTE", destinatarios=["ana@ufsm.br", "", None], assunto="A", corpo="C"
+    )
+    assert Notificacao.objects.count() == 1

@@ -370,3 +370,14 @@ def test_anexar_arquivo_e_link_juntos_e_recusado_sem_quebrar(client, curso_com_e
         nome for _, _, nomes in os.walk(settings.MEDIA_ROOT) for nome in nomes
     ]
     assert arquivos_em_disco == []
+
+
+@pytest.mark.django_db
+def test_responsavel_ve_o_proprio_curso_em_meus_cursos(client, dados_curso, professor):
+    """Depois que o `Q(professor_responsavel=...)` saiu da consulta de meus_cursos,
+    e o vinculo de equipe que poe o curso nesta tela. Se alguem criar Curso sem o
+    MembroEquipe do responsavel, este teste e quem avisa."""
+    curso = services.criar_curso(**dados_curso)
+    client.force_login(professor)
+    resposta = client.get(reverse("meus_cursos"))
+    assert curso.titulo in resposta.content.decode()
