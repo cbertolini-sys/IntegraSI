@@ -14,16 +14,101 @@
   {
     "model": "referenciais.categoria",
     "pk": 1,
-    "fields": {"referencial": 1, "nome": "Pensamento Computacional", "ordem": 1}
+    "fields": {
+      "referencial": 1,
+      "nome": "Pensamento Computacional",
+      "ordem": 1,
+      "descricao": ""
+    }
   },
   {
     "model": "referenciais.categoria",
     "pk": 2,
-    "fields": {"referencial": 1, "nome": "Mundo Digital", "ordem": 2}
+    "fields": {
+      "referencial": 1,
+      "nome": "Mundo Digital",
+      "ordem": 2,
+      "descricao": ""
+    }
   },
   {
     "model": "referenciais.categoria",
     "pk": 3,
-    "fields": {"referencial": 1, "nome": "Cultura Digital", "ordem": 3}
+    "fields": {
+      "referencial": 1,
+      "nome": "Cultura Digital",
+      "ordem": 3,
+      "descricao": ""
+    }
+  },
+  {
+    "model": "referenciais.categoria",
+    "pk": 4,
+    "fields": {
+      "referencial": 1,
+      "nome": "Possibilidades e limites da Computação",
+      "descricao": "Compreender as possibilidades e os limites da Computação para resolver problemas, tanto em termos de viabilidade quanto de eficiência, propondo e analisando soluções computacionais para diversos domínios do conhecimento, considerando diferentes aspectos.",
+      "ordem": 4
+    }
+  },
+  {
+    "model": "referenciais.categoria",
+    "pk": 5,
+    "fields": {
+      "referencial": 1,
+      "nome": "Análise crítica de artefatos computacionais",
+      "descricao": "Analisar criticamente artefatos computacionais, sendo capaz de identificar as vulnerabilidades dos ambientes e das soluções computacionais buscando garantir a integridade, privacidade, sigilo e segurança das informações.",
+      "ordem": 5
+    }
+  },
+  {
+    "model": "referenciais.categoria",
+    "pk": 6,
+    "fields": {
+      "referencial": 1,
+      "nome": "Técnicas computacionais para o mundo contemporâneo",
+      "descricao": "Analisar situações do mundo contemporâneo, selecionando técnicas computacionais apropriadas para a solução de problemas.",
+      "ordem": 6
+    }
+  },
+  {
+    "model": "referenciais.categoria",
+    "pk": 7,
+    "fields": {
+      "referencial": 1,
+      "nome": "Construção de conhecimento e artefatos",
+      "descricao": "Construir conhecimento usando técnicas e tecnologias computacionais, produzindo conteúdos e artefatos de forma criativa, com respeito às questões éticas e legais, que proporcionem experiências para si e os demais.",
+      "ordem": 7
+    }
+  },
+  {
+    "model": "referenciais.categoria",
+    "pk": 8,
+    "fields": {
+      "referencial": 1,
+      "nome": "Projetos e decisões socialmente responsáveis",
+      "descricao": "Desenvolver projetos para investigar desafios do mundo contemporâneo, construir soluções e tomar decisões éticas, democráticas e socialmente responsáveis, articulando conceitos, procedimentos e linguagens próprias da Computação preferencialmente de maneira colaborativa.",
+      "ordem": 8
+    }
+  },
+  {
+    "model": "referenciais.categoria",
+    "pk": 9,
+    "fields": {
+      "referencial": 1,
+      "nome": "Expressão e partilha com tecnologias",
+      "descricao": "Expressar e partilhar informações, ideias, sentimentos e soluções computacionais utilizando diferentes plataformas, ferramentas, linguagens e tecnologias da Computação de forma fluente, criativa, crítica, significativa, reflexiva e ética.",
+      "ordem": 9
+    }
+  },
+  {
+    "model": "referenciais.categoria",
+    "pk": 10,
+    "fields": {
+      "referencial": 1,
+      "nome": "Ação pessoal e coletiva com responsabilidade",
+      "descricao": "Agir pessoal e coletivamente com respeito, autonomia, responsabilidade, flexibilidade, resiliência e determinação, identificando e reconhecendo seus direitos e deveres, recorrendo aos conhecimentos da Computação e suas tecnologias para tomar decisões frente às questões de diferentes naturezas.",
+      "ordem": 10
+    }
   }
 ]

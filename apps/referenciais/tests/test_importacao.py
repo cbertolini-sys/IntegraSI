@@ -17,11 +17,37 @@ def bncc(db):
 
 
 @pytest.mark.django_db
-def test_fixture_traz_referencial_e_os_tres_eixos(bncc):
+def test_fixture_traz_os_tres_eixos_e_as_sete_competencias_do_medio(bncc):
+    """Ate o Plano 7 a fixture tinha so os tres eixos. O Ensino Medio da BNCC nao
+    os usa: suas 26 habilidades penduram em sete competencias especificas, que
+    entram como Categoria ao lado deles (spec 4.2).
+
+    Assercao pelo conjunto exato, e nao por contagem: contar deixaria passar uma
+    categoria trocada por outra."""
     assert bncc.min_competencias == 2
     assert bncc.max_competencias == 5
     nomes = set(bncc.categorias.values_list("nome", flat=True))
-    assert nomes == {"Pensamento Computacional", "Mundo Digital", "Cultura Digital"}
+    assert {"Pensamento Computacional", "Mundo Digital", "Cultura Digital"} <= nomes
+    assert len(nomes) == 10
+
+
+@pytest.mark.django_db
+def test_competencia_do_medio_guarda_o_texto_oficial(bncc):
+    """O `nome` e rotulo curto, redacao nossa, porque o texto oficial e um
+    paragrafo e nao cabe num select. O texto inteiro fica em `descricao`; sem ele,
+    o rotulo seria a unica versao e a fonte se perderia."""
+    categoria = bncc.categorias.get(nome="Possibilidades e limites da Computação")
+    assert categoria.descricao.startswith("Compreender as possibilidades e os limites")
+    assert len(categoria.descricao) > 120
+
+
+@pytest.mark.django_db
+def test_os_tres_eixos_nao_precisam_de_texto_oficial(bncc):
+    """Prende o outro lado: o nome dos eixos JA e o termo do documento, entao nao
+    ha rotulo nosso a justificar. Se `descricao` virasse obrigatoria, este teste
+    avisa que a regra mudou de forma."""
+    for eixo in ("Pensamento Computacional", "Mundo Digital", "Cultura Digital"):
+        assert bncc.categorias.get(nome=eixo).descricao == ""
 
 
 @pytest.mark.django_db
