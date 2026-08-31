@@ -141,3 +141,24 @@ def test_a_barra_nao_tem_mais_o_link_de_cursos(client):
     sozinho no canto."""
     conteudo = client.get(reverse("catalogo")).content.decode()
     assert ">Cursos</a>" not in conteudo
+
+
+@pytest.mark.django_db
+def test_o_rodape_traz_as_duas_marcas(client):
+    """IntegraSI e o brasao da UFSM, lado a lado, com o brasao apontando para a
+    pagina da unidade universitaria de Frederico Westphalen."""
+    conteudo = client.get(reverse("catalogo")).content.decode()
+    assert "img/integrasi-completo.png" in conteudo
+    assert "img/ufsm-brasao.svg" in conteudo
+    assert "https://www.ufsm.br/unidades-universitarias/frederico-westphalen" in conteudo
+
+
+@pytest.mark.django_db
+def test_o_link_externo_do_rodape_nao_entrega_a_aba(client):
+    """`target="_blank"` sem `rel="noopener"` da a pagina de destino acesso ao
+    `window.opener`. Sao dois links externos no rodape e os dois precisam disso."""
+    conteudo = client.get(reverse("catalogo")).content.decode()
+    for trecho in conteudo.split("<a ")[1:]:
+        cabeca = trecho.split(">")[0]
+        if 'target="_blank"' in cabeca:
+            assert "noopener" in cabeca, f"link externo sem noopener: {cabeca[:90]}"

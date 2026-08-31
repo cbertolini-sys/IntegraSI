@@ -847,16 +847,60 @@ textarea:focus {
 
 @media (min-width: 48rem) {
   .rodape .faixa {
-    grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
+    /* 26rem, e nao 20: as duas marcas lado a lado nao cabiam na coluna antiga e o
+       brasao encostava no texto. `auto` deixaria a coluna crescer com o conteudo
+       e o texto respiraria menos a cada logo novo. */
+    grid-template-columns: minmax(0, 26rem) minmax(0, 1fr);
+    gap: 3rem;
   }
 }
 
-.rodape img {
-  height: 5rem;
+.marcas-rodape {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+/* A marca do IntegraSI e um PNG com fundo branco: precisa da caixa clara para
+   nao recortar um retangulo no marinho do rodape. */
+.marca-integrasi img {
+  height: 6.25rem;
   width: auto;
+  display: block;
   background: var(--branco);
   border-radius: var(--raio-p);
   padding: 0.75rem 1rem;
+}
+
+/* O brasao oficial ja e desenhado para fundo escuro -- o "UFSM" sob o escudo e
+   branco --, entao ele assenta direto no rodape. Poe-lo numa caixa branca
+   apagaria essa palavra. */
+.marca-ufsm img {
+  height: 5.25rem;
+  width: auto;
+  display: block;
+}
+
+.marca-integrasi,
+.marca-ufsm {
+  display: inline-block;
+  border-radius: var(--raio-p);
+  transition: opacity 0.15s ease;
+}
+
+.marca-integrasi:hover,
+.marca-ufsm:hover {
+  opacity: 0.85;
+}
+
+@media (max-width: 30rem) {
+  .marca-integrasi img {
+    height: 5rem;
+  }
+  .marca-ufsm img {
+    height: 4.25rem;
+  }
 }
 
 .rodape a {

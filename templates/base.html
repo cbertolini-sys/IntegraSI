@@ -13,7 +13,7 @@
   <header class="barra">
     <div class="faixa">
       <a class="marca" href="{% url 'catalogo' %}">
-        <img src="{% static 'img/integrasi-marca.png' %}"
+        <img src="{% estatico 'img/integrasi-marca.png' %}"
              alt="IntegraSI — Sistemas de Informação, UFSM Frederico Westphalen">
       </a>
       <nav class="menu">
@@ -47,8 +47,17 @@
 
   <footer class="rodape">
     <div class="faixa">
-      <img src="{% static 'img/integrasi-completo.png' %}"
-           alt="IntegraSI — Sistema de gestão de cursos de extensão">
+      <div class="marcas-rodape">
+        <a href="{% url 'catalogo' %}" class="marca-integrasi">
+          <img src="{% estatico 'img/integrasi-completo.png' %}"
+               alt="IntegraSI — Sistema de gestão de cursos de extensão">
+        </a>
+        <a href="https://www.ufsm.br/unidades-universitarias/frederico-westphalen"
+           class="marca-ufsm" rel="noopener noreferrer" target="_blank">
+          <img src="{% estatico 'img/ufsm-brasao.svg' %}"
+               alt="Universidade Federal de Santa Maria — Campus Frederico Westphalen">
+        </a>
+      </div>
       <div>
         <p><strong style="color:#fff">Cursos de extensão de Sistemas de Informação</strong></p>
         <p>Produzidos por equipes de estudantes, revisados por professores e oferecidos
