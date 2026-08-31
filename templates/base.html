@@ -57,14 +57,25 @@
           <img src="{% estatico 'img/ufsm-brasao.svg' %}"
                alt="Universidade Federal de Santa Maria — Campus Frederico Westphalen">
         </a>
+        <a href="https://www.ufsm.br/cursos/graduacao/frederico-westphalen/sistemas-de-informacao"
+           class="marca-si" rel="noopener noreferrer" target="_blank">
+          <img src="{% estatico 'img/si-curso.png' %}"
+               alt="Curso de Sistemas de Informação — página do curso">
+        </a>
       </div>
       <div>
-        <p><strong style="color:#fff">Cursos de extensão de Sistemas de Informação</strong></p>
+        <p><strong style="color:#fff">Sistema de Gestão de Cursos de Extensão</strong></p>
         <p>Produzidos por equipes de estudantes, revisados por professores e oferecidos
            sem custo a escolas e grupos da comunidade.</p>
-        <p>Universidade Federal de Santa Maria &middot; Campus Frederico Westphalen &middot;
-           <a href="https://www.ufsm.br/cursos/graduacao/frederico-westphalen/sistemas-de-informacao"
-              rel="noopener noreferrer" target="_blank">página do curso</a></p>
+        {% comment %}
+          O link para a página do curso saiu daqui e vive na marca de Sistemas de
+          Informação, ao lado do brasão: um destino, um lugar.
+
+          {% comment %} e não {# #}: a sintaxe de cerquilha é de UMA linha só, e um
+          comentário de duas linhas sai renderizado como texto na página. Foi o que
+          aconteceu aqui antes de a captura de tela mostrar.
+        {% endcomment %}
+        <p>Universidade Federal de Santa Maria &middot; Campus Frederico Westphalen</p>
       </div>
     </div>
   </footer>

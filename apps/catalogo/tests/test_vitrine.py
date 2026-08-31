@@ -144,12 +144,14 @@ def test_a_barra_nao_tem_mais_o_link_de_cursos(client):
 
 
 @pytest.mark.django_db
-def test_o_rodape_traz_as_duas_marcas(client):
-    """IntegraSI e o brasao da UFSM, lado a lado, com o brasao apontando para a
-    pagina da unidade universitaria de Frederico Westphalen."""
+def test_o_rodape_traz_as_tres_marcas(client):
+    """IntegraSI, brasao da UFSM e o curso de Sistemas de Informacao, lado a lado.
+    O brasao aponta para a unidade universitaria; a marca do curso, para a pagina
+    do curso."""
     conteudo = client.get(reverse("catalogo")).content.decode()
     assert "img/integrasi-completo.png" in conteudo
     assert "img/ufsm-brasao.svg" in conteudo
+    assert "img/si-curso.png" in conteudo
     assert "https://www.ufsm.br/unidades-universitarias/frederico-westphalen" in conteudo
 
 
@@ -162,3 +164,35 @@ def test_o_link_externo_do_rodape_nao_entrega_a_aba(client):
         cabeca = trecho.split(">")[0]
         if 'target="_blank"' in cabeca:
             assert "noopener" in cabeca, f"link externo sem noopener: {cabeca[:90]}"
+
+
+@pytest.mark.django_db
+def test_nenhum_comentario_de_template_vaza_para_a_pagina(client, curso_publicado):
+    """`{# ... #}` e de UMA linha so. Um comentario de duas linhas nao e
+    reconhecido e sai renderizado como texto -- aconteceu no rodape, e so a
+    captura de tela mostrou. `{% comment %}` e a forma multilinha.
+
+    Vale para toda a pagina, nao so para o rodape: o proximo comentario mal
+    formado cai aqui antes de chegar ao ar.
+    """
+    conteudo = client.get(reverse("catalogo")).content.decode()
+    assert "{#" not in conteudo
+    assert "{% comment" not in conteudo
+
+
+@pytest.mark.django_db
+def test_o_link_do_curso_vive_so_na_marca(client):
+    """O endereco da pagina do curso aparece uma vez so, na marca de Sistemas de
+    Informacao. Estava tambem no texto da ultima linha e foi retirado de la: um
+    destino, um lugar."""
+    conteudo = client.get(reverse("catalogo")).content.decode()
+    assert conteudo.count(
+        "https://www.ufsm.br/cursos/graduacao/frederico-westphalen/sistemas-de-informacao"
+    ) == 1
+    assert "página do curso</a>" not in conteudo
+
+
+@pytest.mark.django_db
+def test_o_rodape_diz_o_que_o_sistema_e(client):
+    conteudo = client.get(reverse("catalogo")).content.decode()
+    assert "Sistema de Gestão de Cursos de Extensão" in conteudo

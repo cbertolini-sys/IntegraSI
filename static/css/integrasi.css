@@ -847,10 +847,10 @@ textarea:focus {
 
 @media (min-width: 48rem) {
   .rodape .faixa {
-    /* 26rem, e nao 20: as duas marcas lado a lado nao cabiam na coluna antiga e o
-       brasao encostava no texto. `auto` deixaria a coluna crescer com o conteudo
-       e o texto respiraria menos a cada logo novo. */
-    grid-template-columns: minmax(0, 26rem) minmax(0, 1fr);
+    /* 34rem: sao tres marcas lado a lado -- IntegraSI, brasao da UFSM e o curso.
+       Valor fixo, e nao `auto`: com `auto` a coluna cresceria a cada marca nova e
+       o texto respiraria menos sem ninguem decidir isso. */
+    grid-template-columns: minmax(0, 34rem) minmax(0, 1fr);
     gap: 3rem;
   }
 }
@@ -882,15 +882,29 @@ textarea:focus {
   display: block;
 }
 
+/* A marca do curso e PNG de fundo transparente com texto escuro: sobre o marinho
+   do rodape ela sumiria. Ganha a mesma caixa clara do IntegraSI -- ao contrario
+   do brasao, que e desenhado para fundo escuro e assenta direto. */
+.marca-si img {
+  height: 5.25rem;
+  width: auto;
+  display: block;
+  background: var(--branco);
+  border-radius: var(--raio-p);
+  padding: 0.5rem 0.875rem;
+}
+
 .marca-integrasi,
-.marca-ufsm {
+.marca-ufsm,
+.marca-si {
   display: inline-block;
   border-radius: var(--raio-p);
   transition: opacity 0.15s ease;
 }
 
 .marca-integrasi:hover,
-.marca-ufsm:hover {
+.marca-ufsm:hover,
+.marca-si:hover {
   opacity: 0.85;
 }
 
@@ -898,7 +912,8 @@ textarea:focus {
   .marca-integrasi img {
     height: 5rem;
   }
-  .marca-ufsm img {
+  .marca-ufsm img,
+  .marca-si img {
     height: 4.25rem;
   }
 }
