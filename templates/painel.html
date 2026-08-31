@@ -49,6 +49,10 @@
           <h3><a href="{% url 'solicitacoes' %}">Solicitações</a></h3>
           <p>Pedidos de escolas e grupos da comunidade, a aceitar ou recusar.</p>
         </li>
+        <li class="atalho">
+          <h3><a href="{% url 'pessoas' %}">Pessoas</a></h3>
+          <p>Professores e coordenação. Promova um professor a coordenador ou tire o acesso.</p>
+        </li>
       {% endif %}
       {% if user.e_professor or user.e_coordenador %}
         <li class="atalho">

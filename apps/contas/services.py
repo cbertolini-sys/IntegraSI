@@ -75,3 +75,54 @@ def consumir_convite(token, senha, cpf, matricula, telefone):
     convite.usado_em = timezone.now()
     convite.save(update_fields=["usado_em"])
     return usuario
+
+
+def _garante_coordenacao(por, mensagem):
+    """Checagem local, e não `cursos.permissions.pode_publicar`.
+
+    Duas razões. A dependência do projeto é de mão única -- `cursos` conhece
+    `contas`, e o contrário fecharia ciclo com o import de `alocar_aluno`. E a
+    regra é outra: `pode_publicar` responde "quem leva um curso ao catálogo";
+    aqui a pergunta é "quem administra pessoas". Coincidem hoje e podem divergir.
+    """
+    from django.core.exceptions import PermissionDenied
+
+    if por is None or not por.e_coordenador:
+        raise PermissionDenied(mensagem)
+
+
+@transaction.atomic
+def promover_a_coordenador(usuario, por):
+    """Dá nível de acesso Admin a um professor (regra 1 do Plano 5)."""
+    from apps.contas.models import Usuario
+
+    _garante_coordenacao(por, "Somente a coordenação promove.")
+    if not usuario.e_somente_professor:
+        raise ValidationError("Só professor vira coordenador.")
+    usuario.papel = Usuario.COORDENADOR
+    usuario.is_staff = True
+    # update_fields pula o full_clean pela guarda do modelo, e aqui e o que se
+    # quer: os campos mudados sao exatamente dois, e o objeto ja era valido.
+    usuario.save(update_fields=["papel", "is_staff"])
+    return usuario
+
+
+@transaction.atomic
+def rebaixar_a_professor(usuario, por):
+    """Tira o nível Admin, deixando a pessoa como professor.
+
+    Ninguém rebaixa a si mesmo: além da decisão registrada no Plano 5, é o que
+    impede o último coordenador de deixar o sistema sem quem publique curso,
+    aceite solicitação ou promova alguém de volta.
+    """
+    from apps.contas.models import Usuario
+
+    _garante_coordenacao(por, "Somente a coordenação rebaixa.")
+    if usuario.pk == por.pk:
+        raise ValidationError("Você não pode rebaixar a si mesmo.")
+    if not usuario.e_coordenador:
+        raise ValidationError("Esta pessoa não é coordenadora.")
+    usuario.papel = Usuario.PROFESSOR
+    usuario.is_staff = False
+    usuario.save(update_fields=["papel", "is_staff"])
+    return usuario

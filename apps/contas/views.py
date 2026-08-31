@@ -1,13 +1,14 @@
+from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
-from django.core.exceptions import ValidationError
-from django.shortcuts import redirect, render
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_http_methods
 
 from apps.catalogo.models import Solicitacao
 from apps.contas import services
 from apps.contas.forms_convite import PrimeiroAcessoForm
-from apps.contas.models import ConviteAluno
+from apps.contas.models import ConviteAluno, Usuario
 from apps.cursos.choices import StatusCurso, StatusEntregavel
 from apps.cursos.models import Curso
 from apps.turmas.models import Turma
@@ -113,3 +114,39 @@ def primeiro_acesso(request, token):
     return render(
         request, "contas/primeiro_acesso.html", {"form": form, "convite": convite}
     )
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def pessoas(request):
+    """Quem e professor, quem e coordenacao, e o botao para mudar isso."""
+    # Checagem local pelo mesmo motivo de `_garante_coordenacao`: `contas` nao
+    # importa `cursos`.
+    if not request.user.e_coordenador:
+        raise PermissionDenied("Área da coordenação.")
+
+    if request.method == "POST":
+        alvo = get_object_or_404(Usuario, pk=request.POST.get("usuario"))
+        acao = request.POST.get("acao")
+        try:
+            # Igualdade explicita nos dois ramos, sem pega-tudo: um valor
+            # inesperado nao pode cair na acao destrutiva. O mesmo defeito ja
+            # apareceu duas vezes neste projeto (decidir_curso e o ramo RECUSAR
+            # das solicitacoes).
+            if acao == "PROMOVER":
+                services.promover_a_coordenador(alvo, por=request.user)
+                messages.success(request, f"{alvo.nome_completo} agora é coordenador.")
+            elif acao == "REBAIXAR":
+                services.rebaixar_a_professor(alvo, por=request.user)
+                messages.success(request, f"{alvo.nome_completo} voltou a ser professor.")
+            else:
+                messages.error(request, "Ação não reconhecida.")
+        except ValidationError as erro:
+            for mensagem in erro.messages:
+                messages.error(request, mensagem)
+        return redirect("pessoas")
+
+    equipe = Usuario.objects.filter(
+        papel__in=[Usuario.PROFESSOR, Usuario.COORDENADOR]
+    ).order_by("nome_completo")
+    return render(request, "contas/pessoas.html", {"equipe": equipe})

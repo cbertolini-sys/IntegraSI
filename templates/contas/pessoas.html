@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block titulo %}Pessoas &mdash; IntegraSI{% endblock %}
+
+{% block conteudo %}
+<div class="trabalho">
+  <div class="cabecalho-pagina">
+    <div class="faixa">
+      <div>
+        <h1>Professores e coordenação</h1>
+        <p class="sub">Todo coordenador é também professor, com nível de acesso Admin.
+           Ninguém rebaixa a si mesmo.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="faixa corpo-trabalho">
+    <ul class="registros">
+      {% for pessoa in equipe %}
+        <li class="registro">
+          <div>
+            <h3>{{ pessoa.nome_completo }}</h3>
+            <p class="detalhe"><span>{{ pessoa.email }}</span></p>
+          </div>
+          <form method="post" style="display:flex;align-items:center;gap:.75rem">
+            {% csrf_token %}
+            <input type="hidden" name="usuario" value="{{ pessoa.pk }}">
+            {% if pessoa.e_coordenador %}
+              <span class="estado ok">Coordenador</span>
+              {% if pessoa.pk != user.pk %}
+                <button type="submit" name="acao" value="REBAIXAR" class="botao-linha">Rebaixar a professor</button>
+              {% endif %}
+            {% else %}
+              <span class="estado">Professor</span>
+              <button type="submit" name="acao" value="PROMOVER">Promover a coordenador</button>
+            {% endif %}
+          </form>
+        </li>
+      {% empty %}
+        <li class="vazio"><p>Ninguém cadastrado ainda.</p></li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+{% endblock %}
