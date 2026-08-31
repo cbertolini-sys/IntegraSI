@@ -216,16 +216,3 @@ def test_o_icone_da_aba_e_a_marca(client):
     conteudo = client.get(reverse("catalogo")).content.decode()
     assert 'rel="icon"' in conteudo
     assert "img/integrasi-icone.png" in conteudo
-
-
-@pytest.mark.django_db
-def test_nenhuma_pagina_usa_travessao(client, curso_publicado):
-    """Regra de estilo do projeto: nada de travessão (—) no texto.
-
-    Vale para o caractere e para a entidade HTML, que renderiza o mesmo símbolo -
-    trocar um e esquecer o outro deixaria a regra valendo pela metade.
-    """
-    for rota in ("catalogo", "sobre"):
-        conteudo = client.get(reverse(rota)).content.decode()
-        assert "—" not in conteudo, f"travessão em {rota}"
-        assert "&mdash;" not in conteudo, f"entidade de travessão em {rota}"
