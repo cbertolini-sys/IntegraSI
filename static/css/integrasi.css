@@ -122,13 +122,22 @@ a {
   font-size: 0.9375rem;
 }
 
-.menu a {
+/* `:not(.botao)` e essencial, nao estilistico: `.menu a` tem especificidade
+   (0,1,1) e `.botao` tem (0,1,0), entao sem a exclusao esta regra vence e pinta
+   o texto do botao "Entrar" com a cor da navegacao -- azul escuro sobre fundo
+   azul. Era o que fazia o "Entrar" parecer diferente do "Filtrar", que e o mesmo
+   componente e nao sofre disso por estar fora do `.menu`.
+
+   Excluir aqui, e nao subir a especificidade do `.botao`: um botao dentro da
+   navegacao nao e um link de navegacao, e dizer isso na propria regra evita que
+   o proximo botao no menu caia na mesma armadilha. */
+.menu a:not(.botao) {
   color: var(--texto);
   text-decoration: none;
   font-weight: 500;
 }
 
-.menu a:hover {
+.menu a:not(.botao):hover {
   color: var(--azul);
 }
 
