@@ -6,7 +6,7 @@ from apps.contas.validators import somente_digitos, valida_cpf
 
 
 class UsuarioManager(BaseUserManager):
-    def create_user(self, email, nome_completo, cpf, papel, password=None, **extra):
+    def create_user(self, email, nome_completo, papel, cpf=None, password=None, **extra):
         if not email:
             raise ValueError("E-mail é obrigatório.")
         usuario = self.model(
@@ -45,12 +45,15 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
 
     nome_completo = models.CharField("nome completo", max_length=150)
     email = models.EmailField("e-mail", unique=True)
-    cpf = models.CharField("CPF", max_length=11, unique=True, validators=[valida_cpf])
+    cpf = models.CharField(
+        "CPF", max_length=11, unique=True, null=True, blank=True, validators=[valida_cpf]
+    )
     papel = models.CharField("papel", max_length=20, choices=PAPEIS)
     matricula = models.CharField(
         "matrícula", max_length=20, unique=True, null=True, blank=True
     )
     siape = models.CharField("SIAPE", max_length=20, unique=True, null=True, blank=True)
+    telefone = models.CharField("telefone", max_length=20, blank=True)
 
     is_active = models.BooleanField("ativo", default=True)
     is_staff = models.BooleanField("acessa o admin", default=False)
@@ -106,10 +109,30 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
     def e_aluno(self):
         return self.papel == self.ALUNO
 
+    @property
+    def perfil_completo(self):
+        """Tem tudo o que o sistema precisa da pessoa.
+
+        Derivado dos campos, e não de uma coluna `perfil_completo` à parte: uma
+        flag paralela é uma segunda fonte de verdade que sai de sincronia na
+        primeira edição pelo Admin. Aqui não há o que sincronizar.
+
+        Professor e coordenador não passam pelo primeiro acesso -- são criados
+        pela coordenação com documento na mão --, então para eles o telefone não
+        entra na conta. O telefone é pedido ao aluno na tela de convite, junto
+        com CPF e matrícula, e é lá que a exigência dos três mora.
+        """
+        if not self.e_aluno:
+            return bool(self.cpf and self.siape)
+        return bool(self.cpf and self.matricula and self.telefone)
+
     def full_clean(self, *args, **kwargs):
         # Normaliza antes de qualquer validação: sem isso a unicidade não vale nada,
         # porque 529.982.247-25 e 52998224725 conviveriam no banco (spec 4.1).
-        self.cpf = somente_digitos(self.cpf)
+        # `or None` também no CPF: ele passou a ser opcional no Plano 5, e string
+        # vazia colidiria com string vazia no índice único, enquanto NULL não
+        # colide com NULL no Postgres.
+        self.cpf = somente_digitos(self.cpf) or None
         self.matricula = somente_digitos(self.matricula) or None
         self.siape = somente_digitos(self.siape) or None
         super().full_clean(*args, **kwargs)
@@ -118,11 +141,18 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
         super().clean()
         erros = {}
         if self.e_aluno:
-            if not self.matricula:
-                erros["matricula"] = "Matrícula é obrigatória para aluno."
+            # Aluno recém-alocado não tem documento nenhum (regra 2 do Plano 5):
+            # quem exige os três campos é a tela de primeiro acesso, e não o
+            # modelo -- senão a própria alocação por nome e e-mail seria
+            # impossível. O que o modelo continua garantindo é a coerência: com
+            # CPF, tem de haver matrícula; e aluno nunca tem SIAPE.
+            if self.cpf and not self.matricula:
+                erros["matricula"] = "Informe a matrícula junto com o CPF."
             if self.siape:
                 erros["siape"] = "Aluno não tem SIAPE."
         else:
+            if not self.cpf:
+                erros["cpf"] = "CPF é obrigatório para professor e coordenador."
             if not self.siape:
                 erros["siape"] = "SIAPE é obrigatório para professor e coordenador."
             if self.matricula:
