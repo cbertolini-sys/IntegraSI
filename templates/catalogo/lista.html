@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static estaticos %}
 {% block titulo %}Catálogo de cursos de extensão &mdash; IntegraSI{% endblock %}
 
 {% block topo %}
@@ -172,5 +172,5 @@
 {% endblock %}
 
 {% block rodape_scripts %}
-  <script src="{% static 'js/vitrine.js' %}" defer></script>
+  <script src="{% estatico 'js/vitrine.js' %}" defer></script>
 {% endblock %}

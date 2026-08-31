@@ -1,4 +1,4 @@
-{% load static %}
+{% load static estaticos %}
 <!doctype html>
 <html lang="pt-br">
 <head>
@@ -6,8 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#21376b">
   <title>{% block titulo %}IntegraSI{% endblock %}</title>
-  <link rel="stylesheet" href="{% static 'css/integrasi.css' %}">
-  <script src="{% static 'js/htmx.min.js' %}" defer></script>
+  <link rel="stylesheet" href="{% estatico 'css/integrasi.css' %}">
+  <script src="{% estatico 'js/htmx.min.js' %}" defer></script>
 </head>
 <body>
   <header class="barra">

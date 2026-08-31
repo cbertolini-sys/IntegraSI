@@ -110,3 +110,17 @@ def test_sem_javascript_o_primeiro_cartao_ja_aparece(client, curso_publicado):
     ainda ve um curso, e nao um bloco vazio."""
     conteudo = client.get(reverse("catalogo")).content.decode()
     assert 'class="vitrine-slide ativo"' in conteudo
+
+
+@pytest.mark.django_db
+def test_os_estaticos_saem_versionados(client, curso_publicado):
+    """A folha de estilo e o script levam a versao na URL.
+
+    Sem isto o navegador serve a folha antiga depois de uma alteracao -- o
+    servidor de desenvolvimento manda Last-Modified sem Cache-Control, e o
+    navegador cacheia por heuristica. Ja fez o carrossel aparecer sem estilo
+    nenhum, com o CSS correto no servidor.
+    """
+    conteudo = client.get(reverse("catalogo")).content.decode()
+    assert "css/integrasi.css?v=" in conteudo
+    assert "js/vitrine.js?v=" in conteudo

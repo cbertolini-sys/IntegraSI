@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static estaticos %}
 {% block titulo %}{{ entregavel.get_tipo_display }}{% endblock %}
 {% block conteudo %}
 <div class="trabalho">
@@ -90,7 +90,7 @@
         <p class="aviso"></p>
         <button type="submit">Enviar vídeo</button>
       </form>
-      <script src="{% static 'js/upload.js' %}" defer></script>
+      <script src="{% estatico 'js/upload.js' %}" defer></script>
       </div>
     {% endif %}
 
