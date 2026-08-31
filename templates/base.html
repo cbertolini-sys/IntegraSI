@@ -5,7 +5,15 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#21376b">
-  <title>{% block titulo %}IntegraSI{% endblock %}</title>
+  <title>IntegraSI{% block titulo %}{% endblock %}</title>
+  {% comment %}
+    O simbolo do IntegraSI recortado do proprio logo, quadrado. PNG e nao .ico:
+    todo navegador atual le PNG, e um .ico multi-resolucao so faria sentido para
+    IE. O `apple-touch-icon` e o mesmo arquivo -- ele so precisa ser quadrado e
+    grande o bastante, e 405px cobre os 180 que o iOS pede.
+  {% endcomment %}
+  <link rel="icon" type="image/png" href="{% estatico 'img/integrasi-icone.png' %}">
+  <link rel="apple-touch-icon" href="{% estatico 'img/integrasi-icone.png' %}">
   <link rel="stylesheet" href="{% estatico 'css/integrasi.css' %}">
   <script src="{% estatico 'js/htmx.min.js' %}" defer></script>
 </head>

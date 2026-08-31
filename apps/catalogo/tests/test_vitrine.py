@@ -196,3 +196,23 @@ def test_o_link_do_curso_vive_so_na_marca(client):
 def test_o_rodape_diz_o_que_o_sistema_e(client):
     conteudo = client.get(reverse("catalogo")).content.decode()
     assert "Sistema de Gestão de Cursos de Extensão" in conteudo
+
+
+@pytest.mark.django_db
+def test_a_aba_mostra_o_nome_do_sistema_primeiro(client, curso_publicado):
+    """"IntegraSI — Catálogo", e nao "Catálogo — IntegraSI": com muitas abas
+    abertas, o comeco e a unica parte legivel.
+
+    O nome vem da `base.html`, e nao de cada template: assim ele nao pode ser
+    esquecido numa pagina nova -- e tres templates ja estavam sem ele antes desta
+    mudanca (entregavel, equipe e o titulo padrao).
+    """
+    inicio = client.get(reverse("catalogo")).content.decode()
+    assert "<title>IntegraSI &mdash; Catálogo de cursos de extensão</title>" in inicio
+
+
+@pytest.mark.django_db
+def test_o_icone_da_aba_e_a_marca(client):
+    conteudo = client.get(reverse("catalogo")).content.decode()
+    assert 'rel="icon"' in conteudo
+    assert "img/integrasi-icone.png" in conteudo
