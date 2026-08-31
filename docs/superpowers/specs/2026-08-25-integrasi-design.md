@@ -48,13 +48,29 @@ Isso não é uma nota de rodapé — é uma restrição de projeto, e três regr
 
 | Ator | Quem é | O que faz |
 |---|---|---|
-| Coordenador | Coordenador do curso de SI | Cadastra pessoas e edições, aprova e publica cursos, recebe solicitações, cria turmas |
-| Professor | Professor responsável por um curso | Cria a proposta, monta a equipe, aprova ou devolve entregáveis, submete ao coordenador, conduz turmas |
+| Coordenador | Coordenador do curso de SI | Tudo o que um professor faz, mais: aprova e publica cursos, organiza turmas, recebe solicitações, cadastra edições e promove professores a coordenador |
+| Professor | Professor do curso de SI | Cria a proposta, aloca a equipe, aprova ou devolve entregáveis, submete ao coordenador, conduz turmas |
 | Aluno | Aluno de SI, membro de uma equipe | Produz seções e anexos, envia entregáveis para revisão, corrige devolutivas |
 | Visitante | Escola, professor da rede, grupo comunitário | Navega o catálogo público e solicita a realização de um curso |
 
-Contas de coordenador, professor e aluno são criadas pelo coordenador via Django
-Admin. O visitante não tem conta e nunca precisa de uma.
+**Todo coordenador é também professor**, com nível de acesso Admin por cima: ele
+cria curso, é responsável por curso e conduz turma como qualquer professor. O
+papel continua sendo um valor só por pessoa (`Usuario.papel`); a herança mora em
+`Usuario.e_professor`, e quem precisa da distinção usa `e_somente_professor`.
+
+Contas de professor e de coordenador são criadas pela coordenação, com CPF e
+SIAPE. **Contas de aluno são criadas pelo professor ao alocá-lo numa equipe,
+informando apenas nome e e-mail**; o aluno recebe um convite por e-mail e, no
+primeiro acesso, cria a senha e completa o cadastro com CPF, matrícula e
+telefone. O convite vale sete dias, serve uma vez só, e o professor pode
+reenviá-lo — o reenvio cancela o anterior. Enquanto o cadastro não estiver
+completo, o aluno só alcança a tela de primeiro acesso. O visitante não tem conta
+e nunca precisa de uma.
+
+> Esta seção mudou no Plano 5. Até o Plano 4, todas as contas eram criadas pela
+> coordenação pelo Django Admin, e o coordenador **não** era professor. As duas
+> regras foram substituídas por decisão do coordenador do curso, e não por
+> conveniência de implementação.
 
 ## 3. Fluxo principal
 
@@ -522,6 +538,20 @@ outra pessoa.
 professor da turma e ao coordenador, e retenção declarada. O formulário público é a
 única porta anônima que escreve no banco — recebe validação estrita, limite de
 tamanho de texto, *honeypot* e limite por IP, sem CAPTCHA de terceiro.
+
+**Promoção e rebaixamento (Plano 5).** Só a coordenação promove um professor a
+coordenador ou tira esse acesso, pela tela `coordenacao/pessoas/`, e sempre pelos
+serviços de `apps.contas` — nunca por edição do campo `papel` no Django Admin.
+Ninguém rebaixa a si mesmo: além de decisão registrada, é o que impede o último
+coordenador de deixar o sistema sem quem publique curso, aceite solicitação ou
+promova alguém de volta.
+
+**O convite de primeiro acesso (Plano 5)** carrega um token de uso único com
+prazo de sete dias, e nunca uma senha. A fila de notificações fica gravada no
+banco: uma senha em texto no corpo do e-mail sobreviveria ali, legível por quem
+tem acesso ao Admin. Enquanto o cadastro não está completo, um middleware prende
+a pessoa na própria tela — as exceções são explícitas, e `logout` está entre elas,
+senão quem entrou pela metade não conseguiria nem sair.
 
 ## 11. Erros e auditoria
 

@@ -283,3 +283,26 @@ sozinhas.
 Logs: `journalctl -u integrasi` (aplicação), `/var/log/integrasi/cron.log`
 (rotinas), `/var/log/integrasi/backup.log` (backup),
 `/var/log/nginx/{access,error}.log` (proxy).
+
+
+## 6. Convites de primeiro acesso
+
+O aluno entra no sistema por um convite que o professor dispara ao alocá-lo numa
+equipe (Plano 5). O e-mail sai pela mesma fila de tudo, então o diagnóstico é o
+mesmo — só o evento muda.
+
+- **Aluno diz que não recebeu:** procure em `/admin/notificacoes/` pelo evento
+  `CONVITE_ALUNO` e pelo e-mail dele. Com `ultimo_erro` preenchido, o problema é
+  SMTP e o recuo progressivo já está reagendando; a seção 4 explica os alertas do
+  cron. Se a notificação nem existe, o convite não chegou a ser criado — confira
+  em `/admin/contas/convitealuno/`.
+- **Reenvio:** pela tela da equipe do curso, pelo professor responsável ou pela
+  coordenação. O reenvio **cancela** o convite anterior: o link antigo para de
+  funcionar no ato, e é assim de propósito — dois links vivos dobram a janela em
+  que um token vazado ainda serve.
+- **Convite vencido:** sete dias, contados da criação. Não há como estender o
+  prazo de um convite existente; envie outro.
+- **Aluno preso na tela de primeiro acesso:** é o esperado enquanto CPF,
+  matrícula e telefone não estiverem preenchidos. Para destravar sem o convite —
+  aluno que perdeu o acesso ao e-mail, por exemplo — a coordenação completa os
+  três campos em `/admin/contas/usuario/` e define uma senha.

@@ -121,6 +121,26 @@ desses aparecendo aqui é sinal de que a fronteira foi atravessada sem querer.
   ponto de chamada deixava a suíte verde. O nome do teste não mentia — a regra estava provada
   onde não roda e desprovada onde roda. Prenda no ponto de chamada, não só na função.
 
+## Papéis e primeiro acesso (Plano 5)
+
+- `papel` é um valor só por pessoa. A herança está em `Usuario.e_professor`, que
+  vale para coordenador; `e_somente_professor` é para quem precisa da distinção.
+  **Não reescreva `papel == PROFESSOR` solto pelo código.**
+- Aluno é criado pelo professor com nome e e-mail, sem CPF e sem matrícula.
+  `Usuario.perfil_completo` é derivado dos campos — não existe flag paralela, e
+  não crie uma: seria segunda fonte de verdade, e sai de sincronia na primeira
+  edição pelo Admin.
+- O convite (`ConviteAluno`) vale 7 dias, serve uma vez e leva token, **nunca
+  senha**: a fila de notificações persiste no banco.
+- `PerfilCompletoMiddleware` prende quem não completou o cadastro na própria
+  tela. As exceções são explícitas em `LIBERADAS`; `logout` está lá de propósito,
+  senão a pessoa não consegue nem sair. Só age quando há convite pendente —
+  conta antiga sem convite não tem para onde ser redirecionada.
+- Promoção e rebaixamento passam por `contas.services`, nunca por edição do campo
+  `papel` no Admin: o Admin não tem como recusar o auto-rebaixamento.
+- `contas` **não** importa `cursos`. `alocar_aluno` (em `cursos`) importa
+  `contas.services` dentro da função, como o arquivo já fazia com `Usuario`.
+
 ## Restrições entre planos
 
 - `Curso.referencial` precisa continuar `PROTECT` (Plano 2). É o que impede apagar um
