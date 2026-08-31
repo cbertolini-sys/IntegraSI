@@ -7,7 +7,7 @@ from django.views.decorators.http import require_POST, require_http_methods
 from apps.contas.models import Usuario
 from apps.cursos import permissions, services, validacoes
 from apps.cursos.choices import StatusEntregavel
-from apps.cursos.forms import PropostaForm
+from apps.cursos.forms import FichaCursoForm, PropostaForm
 from apps.cursos.models import Curso, Entregavel
 
 
@@ -35,6 +35,28 @@ def nova_proposta(request):
             )
             return redirect("equipe", pk=curso.pk)
     return render(request, "cursos/nova_proposta.html", {"form": form})
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def ficha(request, pk):
+    curso = get_object_or_404(Curso, pk=pk)
+    # Guarda propria da view, alem da que atualizar_ficha ja faz: e esta que
+    # responde ao GET, onde o servico nem chega a ser chamado.
+    permissions.garante(
+        permissions.pode_editar_ficha(request.user, curso),
+        "Somente a equipe do curso edita a ficha, e apenas enquanto ele está em produção.",
+    )
+    form = FichaCursoForm(request.POST or None, instance=curso)
+    if request.method == "POST" and form.is_valid():
+        services.atualizar_ficha(curso, form.cleaned_data, por=request.user)
+        messages.success(request, "Ficha do curso atualizada.")
+        return redirect("curso", pk=curso.pk)
+    return render(
+        request,
+        "cursos/ficha.html",
+        {"curso": curso, "form": form, "pendencias": validacoes.dados_do_curso(curso)},
+    )
 
 
 @login_required

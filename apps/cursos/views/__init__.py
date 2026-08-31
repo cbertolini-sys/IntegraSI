@@ -14,7 +14,15 @@ from apps.cursos.views.coordenador import (
     nova_versao,
 )
 from apps.cursos.views.midia import baixar
-from apps.cursos.views.professor import decidir, equipe, fila_revisao, nova_proposta, revisar, submeter_curso
+from apps.cursos.views.professor import (
+    decidir,
+    equipe,
+    ficha,
+    fila_revisao,
+    nova_proposta,
+    revisar,
+    submeter_curso,
+)
 from apps.cursos.views.upload import (
     upload_bloco,
     upload_concluir,
@@ -25,6 +33,7 @@ from apps.cursos.views.upload import (
 __all__ = [
     "analisar_curso", "anexar", "baixar", "curso", "cursos_no_catalogo", "decidir", "decidir_curso",
     "entregavel",
+    "ficha",
     "enviar_entregavel", "equipe", "fila_coordenacao", "fila_revisao", "meus_cursos",
     "nova_proposta", "nova_versao", "revisar", "salvar_secao", "submeter_curso",
     "upload_bloco", "upload_concluir", "upload_estado", "upload_iniciar",

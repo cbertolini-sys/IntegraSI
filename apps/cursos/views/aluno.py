@@ -49,6 +49,9 @@ def curso(request, pk):
             # aparece no template (mesmo padrao de analisar_curso).
             "pode_abrir_versao": obj.status == StatusCurso.PUBLICADO
             and permissions.pode_abrir_versao(request.user, obj),
+            # Mesmo padrao: a decisao fica no Python, o template so pergunta pelo
+            # resultado (spec 10, nada de `if` de permissao em template).
+            "pode_editar_ficha": permissions.pode_editar_ficha(request.user, obj),
         },
     )
 

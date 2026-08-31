@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block titulo %} - Ficha de {{ curso.titulo }}{% endblock %}
+
+{% block conteudo %}
+<div class="trabalho">
+  <div class="cabecalho-pagina">
+    <div class="faixa">
+      <div>
+        <h1>Ficha do curso</h1>
+        <p class="sub">O que descreve o curso no catálogo. Preenchido pela equipe.</p>
+      </div>
+      <div class="acoes"><a class="botao botao-linha" href="{% url 'curso' curso.pk %}">Ver o curso</a></div>
+    </div>
+  </div>
+
+  <div class="faixa pagina-estreita">
+    {% if pendencias %}
+      <div class="cartao">
+        <h2>Ainda falta</h2>
+        <p>É esta a lista que o professor vai cobrar na revisão do Plano de Ensino
+           e a coordenação na submissão. Preencher agora evita a ida e volta.</p>
+        <ul class="pendencias">
+          {% for falta in pendencias %}<li>{{ falta }}</li>{% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+
+    <div class="cartao">
+      <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="botao-largo">Salvar ficha</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

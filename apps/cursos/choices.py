@@ -54,3 +54,10 @@ class TipoPratica(models.TextChoices):
     PLUGADA = "PLUGADA", "Atividade plugada"
     DESPLUGADA = "DESPLUGADA", "Atividade desplugada"
     AMBAS = "AMBAS", "Plugada e desplugada"
+
+
+# Onde a ficha do curso ainda pode mudar. PUBLICADO nao entra: curso no catalogo
+# muda por nova versao (spec 4.5), nunca por edicao no lugar. Vive aqui, e nao em
+# services.py, porque permissions.py precisa dele e nao pode importar services
+# (services importa permissions, e o ciclo fecharia).
+STATUS_EDITAVEIS = (StatusCurso.RASCUNHO, StatusCurso.EM_PRODUCAO, StatusCurso.DEVOLVIDO)

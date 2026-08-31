@@ -132,9 +132,18 @@ def test_filtro_comunitario(client, curso_publicado, dados_curso, outro_aluno, p
 
 
 @pytest.mark.django_db
-def test_filtro_por_tema(client, curso_publicado, professor):
+def test_filtro_por_tema(client, dados_curso, outro_aluno, professor, coordenador):
+    """O tema e marcado enquanto o curso esta em producao, e so depois ele publica.
+
+    Era o contrario ate o Plano 6, quando definir_temas aceitava curso publicado.
+    A autoridade dele passou a ser pode_editar_ficha, que congela a ficha fora da
+    producao (spec 4.5: curso no catalogo muda por nova versao). A coordenacao
+    segue podendo remarcar um curso publicado pelo Admin, cujo save_related
+    reindexa por conta propria."""
     tema = Tema.objects.create(nome="Robotica Educacional")
-    services.definir_temas(curso_publicado, [tema], por=professor)
+    curso = services.criar_curso(**dados_curso)
+    services.definir_temas(curso, [tema], por=professor)
+    curso_publicado = publica(curso, outro_aluno, professor, coordenador)
     # Sobre a grade, e nao sobre o HTML: o heroi ignora o filtro (test_vitrine.py).
     assert curso_publicado in client.get(reverse("catalogo"), {"tema": tema.slug}).context["cursos"]
     assert curso_publicado not in client.get(reverse("catalogo"), {"tema": "outro"}).context["cursos"]

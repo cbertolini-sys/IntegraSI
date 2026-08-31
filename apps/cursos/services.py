@@ -363,10 +363,42 @@ def despublicar_curso(curso, por, motivo):
 
 
 @transaction.atomic
+@transaction.atomic
+def atualizar_ficha(curso, dados, por):
+    """Grava a ficha preenchida pela equipe (spec 4.3 e 10).
+
+    `temas` sai por definir_temas, e nao por curso.temas.set(): coluna gerada nao
+    alcanca M2M, e e aquele servico que reindexa vetor_temas. Foi uma tela
+    escrevendo `temas` direto que sumiu com cursos da busca no Plano 2.
+    """
+    permissions.garante(
+        permissions.pode_editar_ficha(por, curso),
+        "Somente a equipe do curso edita a ficha, e apenas enquanto ele está em produção.",
+    )
+    dados = dict(dados)
+    temas = dados.pop("temas", None)
+    competencias = dados.pop("competencias", None)
+    for campo, valor in dados.items():
+        setattr(curso, campo, valor)
+    curso.save()
+    if competencias is not None:
+        curso.competencias.set(competencias)
+    if temas is not None:
+        definir_temas(curso, temas, por=por)
+    return curso
+
+
 def definir_temas(curso, temas, por):
     """Troca os temas do curso e reindexa. A reindexacao e explicita porque coluna
-    gerada nao alcanca M2M (spec 4.4)."""
-    permissions.garante(permissions.pode_gerir_equipe(por, curso), "Curso de outro professor.")
+    gerada nao alcanca M2M (spec 4.4).
+
+    A autoridade e pode_editar_ficha, e nao pode_gerir_equipe: tema e campo da
+    ficha (spec 4.3), e a ficha e de qualquer membro da equipe. Com a guarda
+    antiga, um aluno salvando a ficha levava PermissionDenied vindo daqui de
+    dentro, com a mensagem errada, ainda que a tela ja o tivesse autorizado.
+    Continua recusando quem esta fora da equipe e curso fora de producao.
+    """
+    permissions.garante(permissions.pode_editar_ficha(por, curso), "Curso de outro professor.")
     curso.temas.set(temas)
     atualizar_vetor_temas(curso)
     return curso

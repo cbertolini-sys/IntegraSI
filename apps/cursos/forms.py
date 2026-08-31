@@ -71,3 +71,32 @@ class AnexoForm(forms.ModelForm):
             self.instance.clean_fields(exclude=exclude)
         except ValidationError as erro:
             self._update_errors(erro)
+
+
+class FichaCursoForm(forms.ModelForm):
+    """A ficha que a equipe preenche depois da proposta (spec 4.3)."""
+
+    class Meta:
+        model = Curso
+        fields = [
+            "titulo", "resumo", "tipo_publico", "etapa_ano", "publico_descricao",
+            "referencial", "competencias", "carga_horaria", "formato", "pre_requisitos",
+            "temas", "palavras_chave",
+        ]
+        widgets = {"resumo": forms.Textarea(attrs={"rows": 4})}
+
+    def clean(self):
+        dados = super().clean()
+        referencial = dados.get("referencial")
+        competencias = dados.get("competencias") or []
+        # O select mostra todas as competencias, sem filtro por referencial:
+        # filtrar no cliente exigiria campo dependente em JavaScript, e este
+        # projeto so aceita JS proprio onde HTMX nao alcanca (o upload em blocos).
+        # A regra fica aqui, onde tem mensagem e teste.
+        fora = [c for c in competencias if c.referencial_id != getattr(referencial, "pk", None)]
+        if fora:
+            codigos = ", ".join(c.codigo for c in fora)
+            raise ValidationError(
+                {"competencias": f"Estas competências não são do referencial escolhido: {codigos}."}
+            )
+        return dados
