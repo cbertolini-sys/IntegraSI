@@ -75,9 +75,24 @@ desses aparecendo aqui é sinal de que a fronteira foi atravessada sem querer.
 - A BNCC é *um* referencial, não a estrutura do sistema. Curso sem referencial
   (Arduino, IA na Educação) é de primeira classe. **Nenhuma tela, filtro ou relatório
   pode pressupor BNCC.**
-- **Nunca invente códigos de habilidade da BNCC.** A fixture traz só o referencial e
-  os três eixos; as habilidades são transcritas da Resolução CNE/CEB nº 1/2022 para
-  um CSV e importadas.
+- **Nunca invente códigos de habilidade da BNCC.** As 120 habilidades estão
+  transcritas em `docs/dados/bncc_computacao_habilidades.csv` e entram por
+  `importar_competencias`. Onde a transcrição diverge do impresso (o `EF05CO011`
+  de três dígitos, os rótulos curtos das competências do Médio), a divergência
+  está registrada em `docs/dados/README.md`. Divergência calada é a mesma coisa
+  que invenção.
+- **A contagem por etapa é teste** (`apps/referenciais/tests/test_bncc.py`), com
+  números lidos do documento e não do arquivo. Dado ausente não levanta exceção:
+  CSV pela metade importa limpo e a falta só apareceria na tela, meses depois. Se
+  o teste reprovar, falta linha no CSV; não ajuste os números.
+- O **Ensino Médio da BNCC não usa os três eixos**: suas 26 habilidades penduram
+  em sete competências específicas, gravadas como `Categoria` ao lado dos eixos.
+- `Competencia.etapa` tem vocabulário próprio (`EM`, não `EM01`..`EM03`), porque
+  as habilidades do Médio valem para os três anos de uma vez.
+  **Use `etapa_do_referencial()`**, não compare strings à mão: a regra já escapou
+  uma vez, quando o importador continuou validando contra o vocabulário do curso.
+- A exigência de etapa vem de `Referencial.organiza_por_etapa`, derivada do dado.
+  **Não escreva `if referencial.sigla == "BNCC-COMP"`** em lugar nenhum.
 
 **Higiene de app**
 - Um app tem pacote `tests/`; nada de `tests.py` solto nem `views.py` vazio do

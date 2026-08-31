@@ -115,3 +115,26 @@ def test_importar_duas_vezes_nao_duplica():
     call_command("importar_competencias", referencial="BNCC-COMP", csv=str(CSV), verbosity=0)
     call_command("importar_competencias", referencial="BNCC-COMP", csv=str(CSV), verbosity=0)
     assert Referencial.objects.get(sigla="BNCC-COMP").competencias.count() == TOTAL
+
+
+@pytest.mark.django_db
+def test_habilidades_de_uma_etapa_vem_agrupadas_por_categoria():
+    """O agrupamento da tela e sequencial, e depende de a ordenacao trazer as
+    competencias de uma mesma categoria juntas. Se a ordem intercalar categorias,
+    o mesmo eixo apareceria duas vezes na tela, com um pedaco em cada lugar.
+
+    E pressuposto do CSV seguir a ordem do documento, que agrupa por eixo. Nada
+    no banco garante isso, entao garante aqui."""
+    from apps.referenciais.models import Referencial
+
+    call_command("loaddata", "bncc_computacao", verbosity=0)
+    call_command("importar_competencias", referencial="BNCC-COMP", csv=str(CSV), verbosity=0)
+    bncc = Referencial.objects.get(sigla="BNCC-COMP")
+
+    for etapa in POR_ETAPA:
+        vistas = []
+        for competencia in bncc.competencias.filter(etapa=etapa).select_related("categoria"):
+            nome = competencia.categoria.nome
+            if not vistas or vistas[-1] != nome:
+                vistas.append(nome)
+        assert len(vistas) == len(set(vistas)), f"{etapa}: categoria aparece em dois blocos"
