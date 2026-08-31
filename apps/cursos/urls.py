@@ -16,6 +16,11 @@ urlpatterns = [
         views.ficha_habilidades,
         name="ficha_habilidades",
     ),
+    path(
+        "cursos/<int:pk>/ficha/referencial/",
+        views.ficha_referencial,
+        name="ficha_referencial",
+    ),
     path("cursos/<int:pk>/equipe/", views.equipe, name="equipe"),
     path(
         "cursos/<int:pk>/equipe/remover/<int:membro_pk>/",

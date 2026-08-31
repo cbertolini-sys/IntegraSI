@@ -3,9 +3,10 @@ from django.core.exceptions import ValidationError
 from django.forms.models import construct_instance
 
 from apps.cursos.arquivos import valida_upload
-from apps.cursos.choices import PALAVRAS_CHAVE_EXIGIDAS
+from apps.cursos.choices import PALAVRAS_CHAVE_EXIGIDAS, TipoPublico
 from apps.cursos.models import Anexo, Curso, Secao
 from apps.referenciais.choices import etapa_do_referencial
+from apps.referenciais.models import Referencial
 
 
 class SecaoForm(forms.ModelForm):
@@ -156,6 +157,18 @@ class FichaCursoForm(forms.ModelForm):
         # e um referencial desativado que ja esteja gravado nao some do select
         # (sumir o descartaria em silencio no proximo salvamento).
         self.fields["referencial"].empty_label = "Nenhum"
+        self.fields["referencial"].queryset = Referencial.objects.para_publico_escolar(
+            self.publico_e_escolar()
+        )
+
+    def publico_e_escolar(self):
+        """O tipo de publico que a tela tem AGORA, e nao o gravado: a pessoa pode
+        ter acabado de trocar o select e ainda nao ter salvo."""
+        if self.is_bound:
+            tipo = self.data.get("tipo_publico", "")
+        else:
+            tipo = self.instance.tipo_publico if self.instance else ""
+        return tipo == TipoPublico.ESCOLAR
 
     def clean(self):
         dados = super().clean()

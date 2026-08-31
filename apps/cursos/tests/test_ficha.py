@@ -500,3 +500,94 @@ def test_a_ficha_desenha_todos_os_campos_do_formulario(client, proposta, profess
         and f'name="{nome}_0"' not in html
     ]
     assert ausentes == []
+
+
+# --- O referencial reage ao tipo de publico (a pedido) -----------------------
+
+
+def opcoes_de_referencial(html):
+    import re
+
+    select = re.search(r'<select name="referencial".*?</select>', html, re.S)
+    return re.findall(r"<option[^>]*>([^<]*)</option>", select.group(0)) if select else []
+
+
+@pytest.mark.django_db
+def test_bncc_nao_aparece_sem_publico_escolar(client, proposta, professor, habilidades):
+    """A BNCC organiza por etapa escolar: oferece-la a um curso comunitario e
+    oferecer o que nao serve. A regra vem do DADO (o referencial TEM competencias
+    por etapa), nunca da sigla: nenhuma tela pode pressupor BNCC (spec 4.2).
+
+    Usa `habilidades`, e nao `bncc`: sem o CSV importado o referencial nao tem
+    competencia nenhuma e por isso nao organiza por etapa, entao continuaria na
+    lista. E o mesmo criterio que impede um referencial recem-criado de travar
+    curso nenhum."""
+    from apps.cursos.choices import TipoPublico
+
+    client.force_login(professor)
+    for tipo in ("", TipoPublico.COMUNITARIO):
+        html = client.get(
+            reverse("ficha_referencial", args=[proposta.pk]), {"tipo_publico": tipo}
+        ).content.decode()
+        assert opcoes_de_referencial(html) == ["Nenhum"], tipo
+
+
+@pytest.mark.django_db
+def test_bncc_aparece_com_publico_escolar(client, proposta, professor, habilidades):
+    """Prende o outro lado: sem este par, esconder a BNCC sempre passaria."""
+    from apps.cursos.choices import TipoPublico
+
+    client.force_login(professor)
+    html = client.get(
+        reverse("ficha_referencial", args=[proposta.pk]),
+        {"tipo_publico": TipoPublico.ESCOLAR},
+    ).content.decode()
+    assert opcoes_de_referencial(html) == ["Nenhum", "BNCC da Computação"]
+
+
+@pytest.mark.django_db
+def test_referencial_sem_etapa_aparece_em_qualquer_publico(client, proposta, professor):
+    """A regra e sobre organizar por etapa, e nao sobre ser a BNCC: um referencial
+    sem competencias por etapa serve a curso comunitario e continua na lista."""
+    from apps.referenciais.models import Referencial
+
+    Referencial.objects.create(nome="Referencial Livre", sigla="LIVRE")
+    client.force_login(professor)
+    html = client.get(
+        reverse("ficha_referencial", args=[proposta.pk]), {"tipo_publico": ""}
+    ).content.decode()
+    assert opcoes_de_referencial(html) == ["Nenhum", "Referencial Livre"]
+
+
+@pytest.mark.django_db
+def test_trocar_para_comunitario_esvazia_as_habilidades(client, proposta, professor, habilidades):
+    """A troca precisa levar as habilidades junto: deixar a lista da BNCC na tela
+    de um curso que nao pode mais adota-la seria pior que nao mostrar nada."""
+    from apps.cursos.choices import TipoPublico
+
+    proposta.referencial = habilidades
+    proposta.tipo_publico = TipoPublico.ESCOLAR
+    proposta.etapa_ano = "EF05"
+    proposta.save()
+
+    client.force_login(professor)
+    html = client.get(
+        reverse("ficha_referencial", args=[proposta.pk]),
+        {"tipo_publico": TipoPublico.COMUNITARIO, "etapa_ano": ""},
+    ).content.decode()
+    assert opcoes_de_referencial(html) == ["Nenhum"]
+    assert "EF05CO01" not in html
+
+
+@pytest.mark.django_db
+def test_a_tela_explica_por_que_a_lista_esta_curta(client, proposta, professor, habilidades):
+    """Sumir sem explicacao vira defeito aos olhos de quem usa: foi assim que o
+    bloco de habilidades vazio virou "nao aparece nada"."""
+    import re
+
+    client.force_login(professor)
+    html = client.get(
+        reverse("ficha_referencial", args=[proposta.pk]), {"tipo_publico": ""}
+    ).content.decode()
+    texto = " ".join(re.sub(r"<[^>]+>", " ", html).split())
+    assert "aparecem aqui quando o tipo de público é escolar" in texto

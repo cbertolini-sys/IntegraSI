@@ -4,6 +4,23 @@ from django.db import models
 from apps.referenciais.choices import ETAPAS_REFERENCIAL
 
 
+class ReferencialManager(models.Manager):
+    def para_publico_escolar(self, escolar):
+        """Os referenciais que a ficha pode oferecer a um curso.
+
+        Referencial organizado por etapa (a BNCC) so serve a publico escolar: sem
+        etapa, suas competencias nao tem como ser listadas (spec 4.2). A pergunta e
+        sobre o DADO, e nao sobre a sigla, porque nenhuma tela pressupoe BNCC.
+
+        Recebe um booleano em vez do tipo de publico porque `referenciais` nao
+        conhece `cursos`: a dependencia entre apps e de mao unica, e importar
+        TipoPublico aqui a inverteria.
+        """
+        if escolar:
+            return self.all()
+        return self.filter(competencias__isnull=True)
+
+
 class Referencial(models.Model):
     """Um modelo pedagógico de referência. A BNCC da Computação é um deles, não o único:
     cursos de Arduino ou IA na Educação ficam sem referencial (spec 4.2)."""
@@ -14,6 +31,8 @@ class Referencial(models.Model):
     min_competencias = models.PositiveSmallIntegerField("mínimo de competências", default=1)
     max_competencias = models.PositiveSmallIntegerField("máximo de competências", default=5)
     ativo = models.BooleanField("ativo", default=True)
+
+    objects = ReferencialManager()
 
     class Meta:
         verbose_name = "referencial"

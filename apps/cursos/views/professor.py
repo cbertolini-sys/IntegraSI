@@ -9,6 +9,7 @@ from apps.cursos import permissions, services, validacoes
 from apps.cursos.choices import StatusEntregavel
 from apps.cursos.forms import FichaCursoForm, PropostaForm
 from apps.cursos.models import Curso, Entregavel, MembroEquipe
+from apps.referenciais.models import Referencial
 
 
 @login_required
@@ -54,6 +55,7 @@ def ficha(request, pk):
         return redirect("curso", pk=curso.pk)
     contexto = {"curso": curso, "form": form, "pendencias": validacoes.dados_do_curso(curso)}
     contexto.update(contexto_das_habilidades(request, curso))
+    contexto["publico_escolar"] = form.publico_e_escolar()
     return render(request, "cursos/ficha.html", contexto)
 
 
@@ -91,6 +93,48 @@ def contexto_das_habilidades(request, curso):
         "rotulo": rotulo_da_competencia(etapa, plural=True),
         "escolhidas": set(curso.competencias.values_list("pk", flat=True)),
     }
+
+
+@login_required
+def ficha_referencial(request, pk):
+    """O select de referencial mais o bloco de habilidades, trocados juntos quando
+    muda o tipo de publico.
+
+    Juntos porque a troca cascateia: sumindo o referencial, as habilidades dele
+    nao podem ficar na tela.
+    """
+    curso = get_object_or_404(Curso, pk=pk)
+    permissions.garante(
+        permissions.pode_editar_ficha(request.user, curso),
+        "Somente a equipe do curso edita a ficha, e apenas enquanto ele está em produção.",
+    )
+    return render(request, "cursos/_referencial.html", contexto_do_referencial(request, curso))
+
+
+def contexto_do_referencial(request, curso):
+    """Monta o formulario com o publico que a tela tem AGORA, para o select de
+    referencial ja vir filtrado, e junta o contexto do bloco de habilidades."""
+    from apps.cursos.choices import TipoPublico
+    from apps.cursos.forms import FichaCursoForm
+
+    tipo = request.GET["tipo_publico"] if "tipo_publico" in request.GET else curso.tipo_publico
+    escolar = tipo == TipoPublico.ESCOLAR
+    form = FichaCursoForm(instance=curso)
+    form.fields["referencial"].queryset = Referencial.objects.para_publico_escolar(escolar)
+    # O referencial escolhido so continua marcado se ainda estiver na lista: quando
+    # o publico deixa de ser escolar, o select volta para "Nenhum" na cara da
+    # pessoa, em vez de manter uma escolha que nao vale mais.
+    escolhido = request.GET.get("referencial") or ""
+    if escolhido and not form.fields["referencial"].queryset.filter(pk=escolhido).exists():
+        escolhido = ""
+    form.initial["referencial"] = escolhido or None
+
+    contexto = {"form": form, "publico_escolar": escolar}
+    contexto.update(contexto_das_habilidades(request, curso))
+    if not escolhido:
+        contexto["referencial"] = None
+        contexto["grupos"] = []
+    return contexto
 
 
 @login_required

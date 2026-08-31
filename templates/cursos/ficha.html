@@ -56,13 +56,7 @@
 
       <fieldset class="ficha-secao">
         <legend>Referencial pedagógico</legend>
-        <div class="campos">
-          {% include "cursos/_campo.html" with campo=form.referencial largo=1 %}
-        </div>
-        {% if form.errors.competencias %}
-          <p class="erro">{{ form.errors.competencias }}</p>
-        {% endif %}
-        {% include "cursos/_habilidades.html" %}
+        {% include "cursos/_referencial.html" %}
       </fieldset>
 
       <fieldset class="ficha-secao">

@@ -1,0 +1,24 @@
+{% comment %}
+  O referencial e as habilidades numa regiao so, trocada por HTMX quando muda o
+  tipo de publico: referencial organizado por etapa (a BNCC) some da lista quando
+  o publico deixa de ser escolar, e as habilidades vao junto. Deixar a lista da
+  BNCC na tela de um curso que nao pode mais adota-la seria pior que nao mostrar.
+{% endcomment %}
+<div id="referencial"
+     hx-get="{% url 'ficha_referencial' curso.pk %}"
+     hx-trigger="change from:#id_tipo_publico"
+     hx-include="#id_tipo_publico, #id_etapa_ano, #id_referencial"
+     hx-target="this"
+     hx-swap="outerHTML">
+  <div class="campos">
+    {% include "cursos/_campo.html" with campo=form.referencial largo=1 %}
+  </div>
+  {% if not publico_escolar %}
+    <p class="ajuda">Referenciais organizados por etapa escolar, como a BNCC da
+       Computação, aparecem aqui quando o tipo de público é escolar.</p>
+  {% endif %}
+  {% if form.errors.competencias %}
+    <p class="erro">{{ form.errors.competencias }}</p>
+  {% endif %}
+  {% include "cursos/_habilidades.html" %}
+</div>
