@@ -27,6 +27,12 @@
         <section class="bloco"><h2>{{ secao.titulo }}</h2><div>{{ secao.conteudo|safe }}</div></section>
       {% endfor %}
 
+      {% comment %}
+        O Plano de Ensino nao tem materiais: ele e escrito nas secoes. Um bloco
+        "Materiais" sempre vazio na tela de revisao faria o professor procurar um
+        anexo que nunca vai existir.
+      {% endcomment %}
+      {% if entregavel.tipo != "PLANO_ENSINO" %}
       <div class="bloco">
         <h2>Materiais</h2>
         <ul class="registros">
@@ -49,6 +55,7 @@
           {% endfor %}
         </ul>
       </div>
+      {% endif %}
     </div>
 
     <aside class="lateral coluna-pendencias">

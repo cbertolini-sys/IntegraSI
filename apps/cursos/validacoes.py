@@ -1,3 +1,5 @@
+import re
+
 from django.core.exceptions import ValidationError
 
 from apps.cursos.choices import (
@@ -36,12 +38,32 @@ def _arquivos(entregavel):
     return entregavel.anexos.exclude(tipo_midia=TipoMidia.LINK)
 
 
+def _tem_texto(html):
+    """Uma secao com `<p></p>` esta vazia para quem le, e o campo nao esta em branco.
+
+    O editor grava marcacao mesmo quando ninguem escreveu nada, entao comparar com
+    string vazia deixaria o plano passar em branco.
+    """
+    return bool(re.sub(r"<[^>]*>", "", html or "").replace("\xa0", " ").strip())
+
+
 def _plano_de_ensino(entregavel):
+    """TODAS as secoes precisam estar escritas.
+
+    Antes bastava uma. O plano de ensino e o documento que descreve o curso
+    inteiro: ementa sem metodologia, ou sem avaliacao, nao e plano, e era esse o
+    caso que passava.
+
+    Nao ha mais cobranca de anexo: o plano e escrito nas secoes, e a tela deixou de
+    oferecer materiais. Cobrar PDF aqui travaria o envio para sempre.
+
+    A mensagem nomeia as secoes que faltam, e nao diz apenas que falta alguma: e a
+    mensagem que evita a ida e volta com o professor (spec 6).
+    """
     faltas = []
-    if not _arquivos(entregavel).filter(arquivo__mime="application/pdf").exists():
-        faltas.append("Anexe o plano de ensino em PDF.")
-    if not entregavel.secoes.exclude(conteudo="").exists():
-        faltas.append("Preencha ao menos uma seção do plano de ensino.")
+    vazias = [s.titulo for s in entregavel.secoes.all() if not _tem_texto(s.conteudo)]
+    if vazias:
+        faltas.append("Preencha estas seções do plano de ensino: " + ", ".join(vazias) + ".")
     faltas.extend(dados_do_curso(entregavel.curso))
     return faltas
 

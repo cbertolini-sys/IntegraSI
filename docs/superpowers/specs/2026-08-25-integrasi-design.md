@@ -434,9 +434,20 @@ exatamente o que falta - é ela que evita a ida e volta com o professor.
 A numeração vai de 1 a 6 e é a ordem em que o roteiro pede o trabalho. Ela vive
 nos rótulos de `TipoEntregavel`, e não nos valores gravados, que nunca mudam.
 
-**1 - Plano de Ensino e Mapeamento Pedagógico**: ao menos um anexo PDF; ao menos uma seção com conteúdo; e
+**1 - Plano de Ensino e Mapeamento Pedagógico**: **todas** as seções escritas, e
 os dados pedagógicos do **curso** preenchidos - público-alvo, carga horária, formato
 e, se houver referencial, número de competências dentro da faixa dele.
+
+Não tem anexo. O plano é escrito nas seções, e a tela dele não oferece materiais:
+oferecer convidava a mandar o plano como PDF, que é o oposto do que a tela quer, e
+a lista de materiais ficava sempre vazia.
+
+Todas as seções, e não uma: o plano é o documento que descreve o curso inteiro, e
+ementa sem metodologia, ou sem avaliação, não é plano. A mensagem **nomeia** as
+seções que faltam.
+
+Seção com `<p></p>` conta como vazia: o editor grava marcação mesmo quando ninguém
+escreveu nada, e comparar com string vazia deixaria o plano passar em branco.
 
 Esses últimos são campos do `Curso`, não do `Entregavel` (§4.3): a validação lê
 `entregavel.curso`. A checagem é repetida em `submeter_ao_coordenador`, porque o

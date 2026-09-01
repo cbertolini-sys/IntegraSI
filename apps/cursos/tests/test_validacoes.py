@@ -23,53 +23,34 @@ def anexa(entregavel, aluno, arquivo, **extra):
 
 
 @pytest.mark.django_db
-def test_plano_de_ensino_sem_anexo_e_sem_conteudo_lista_as_duas_faltas(curso_criado):
+def test_plano_de_ensino_em_branco_nomeia_as_secoes_que_faltam(curso_criado):
+    """Regra trocada a pedido: nao ha mais anexo em PDF, e todas as sete secoes
+    passaram a ser exigidas. A mensagem NOMEIA as que faltam, e nao diz apenas que
+    falta alguma: e a mensagem que evita a ida e volta com o professor (spec 6)."""
     plano = curso_criado.entregaveis.get(tipo=TipoEntregavel.PLANO_ENSINO)
     faltas = validacoes.pendencias(plano)
-    assert any("PDF" in f for f in faltas)
-    assert any("seção" in f.lower() for f in faltas)
+    assert not any("PDF" in f for f in faltas)
+    cobranca = [f for f in faltas if "Preencha estas seções" in f]
+    assert len(cobranca) == 1
+    for titulo in plano.secoes.values_list("titulo", flat=True):
+        assert titulo in cobranca[0]
 
 
 @pytest.mark.django_db
-def test_plano_de_ensino_completo_nao_tem_pendencia(curso_criado, aluno, arquivo_qualquer):
+def test_plano_de_ensino_completo_nao_tem_pendencia(curso_criado):
+    """Completo passou a significar as sete secoes escritas, e nenhum anexo."""
     plano = curso_criado.entregaveis.get(tipo=TipoEntregavel.PLANO_ENSINO)
-    anexa(plano, aluno, arquivo_qualquer)
-    secao = plano.secoes.first()
-    secao.conteudo = "<p>Ementa da oficina.</p>"
-    secao.save()
+    for secao in plano.secoes.all():
+        secao.conteudo = f"<p>Conteúdo de {secao.titulo}.</p>"
+        secao.save()
     assert validacoes.pendencias(plano) == []
 
 
-@pytest.mark.django_db
-def test_plano_de_ensino_com_anexo_que_nao_e_pdf_continua_com_a_pendencia(curso_criado, aluno):
-    """_plano_de_ensino filtra por arquivo__mime="application/pdf"; o unico Arquivo
-    que qualquer teste desta suite cria e um PDF (arquivo_qualquer), entao a regra
-    "precisa ser PDF" nunca tinha como falhar - trocar o filtro por um exists() bare
-    deixaria a suite inteira passando do mesmo jeito (item 10 da revisao de branco,
-    setima instancia deste padrao no projeto). Este teste anexa um arquivo que nao e
-    PDF e confere que a pendencia continua."""
-    from django.core.files.base import ContentFile
-
-    from apps.cursos.models import Arquivo
-
-    arquivo_nao_pdf = Arquivo(
-        nome_original="material.png",
-        tamanho=12,
-        mime="image/png",
-        hash_conteudo="1" * 64,
-        enviado_por=aluno,
-    )
-    arquivo_nao_pdf.arquivo.save("material.png", ContentFile(b"\x89PNG\r\n\x1a\n..."), save=False)
-    arquivo_nao_pdf.save()
-
-    plano = curso_criado.entregaveis.get(tipo=TipoEntregavel.PLANO_ENSINO)
-    anexa(plano, aluno, arquivo_nao_pdf)
-    secao = plano.secoes.first()
-    secao.conteudo = "<p>Ementa</p>"
-    secao.save()
-
-    assert "Anexe o plano de ensino em PDF." in validacoes.pendencias(plano)
-
+# O teste que prendia "o anexo do plano precisa ser PDF" saiu daqui junto com a
+# regra: o Plano de Ensino deixou de ter anexo, e a tela nao oferece mais materiais
+# para ele. Ele existia porque a regra do PDF nunca tinha como falhar na suite (o
+# unico Arquivo criado por ela era um PDF), e essa licao continua valendo para
+# qualquer filtro por mime que apareca depois.
 
 @pytest.mark.django_db
 def test_cards_sem_nenhum_anexo_e_apontado(curso_criado):
@@ -554,3 +535,59 @@ def test_avaliacao_aceita_link(curso_criado, aluno):
         enviado_por=aluno,
     )
     assert validacoes.pendencias(avaliacao) == []
+
+
+# --- O Plano de Ensino exige todas as secoes (a pedido) ----------------------
+
+
+@pytest.mark.django_db
+def test_plano_exige_todas_as_secoes(curso_criado):
+    """Antes bastava UMA secao preenchida. O plano e o documento que descreve o
+    curso inteiro: ementa sem metodologia, ou sem avaliacao, nao e plano."""
+    from apps.cursos.choices import TipoEntregavel
+
+    plano = curso_criado.entregaveis.get(tipo=TipoEntregavel.PLANO_ENSINO)
+    secao = plano.secoes.first()
+    secao.conteudo = "<p>Ementa escrita.</p>"
+    secao.save()
+
+    faltas = validacoes.pendencias(plano)
+    assert any("Metodologia" in f for f in faltas)
+    assert any("Avaliação" in f for f in faltas)
+    # A que foi preenchida nao pode ser cobrada.
+    assert not any(f.count(secao.titulo) and "Preencha" in f for f in faltas)
+
+
+@pytest.mark.django_db
+def test_plano_com_todas_as_secoes_nao_cobra_secao(curso_criado):
+    """Prende o outro lado: com as sete escritas, a cobranca some."""
+    from apps.cursos.choices import TipoEntregavel
+
+    plano = curso_criado.entregaveis.get(tipo=TipoEntregavel.PLANO_ENSINO)
+    for secao in plano.secoes.all():
+        secao.conteudo = f"<p>Conteúdo de {secao.titulo}.</p>"
+        secao.save()
+    assert not any("Preencha" in f for f in validacoes.pendencias(plano))
+
+
+@pytest.mark.django_db
+def test_secao_so_com_marcacao_vazia_conta_como_vazia(curso_criado):
+    """`<p></p>` nao e conteudo: o editor grava marcacao mesmo quando a pessoa nao
+    escreveu nada, e comparar com string vazia deixaria o plano passar em branco."""
+    from apps.cursos.choices import TipoEntregavel
+
+    plano = curso_criado.entregaveis.get(tipo=TipoEntregavel.PLANO_ENSINO)
+    for secao in plano.secoes.all():
+        secao.conteudo = "<p></p>"
+        secao.save()
+    assert any("Preencha" in f for f in validacoes.pendencias(plano))
+
+
+@pytest.mark.django_db
+def test_plano_nao_exige_mais_anexo(curso_criado):
+    """O plano deixou de ter materiais: a tela nao oferece anexar, entao cobrar
+    anexo travaria o envio para sempre."""
+    from apps.cursos.choices import TipoEntregavel
+
+    plano = curso_criado.entregaveis.get(tipo=TipoEntregavel.PLANO_ENSINO)
+    assert not any("PDF" in f or "Anexe" in f for f in validacoes.pendencias(plano))

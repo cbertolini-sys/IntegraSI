@@ -83,16 +83,22 @@ def test_entregavel_de_outra_equipe_devolve_403(client, curso_com_equipe, outro_
     assert resposta.status_code == 403
 
 
+def escrever_o_plano_inteiro(plano):
+    """Preenche as sete secoes, para o plano poder ir a revisao.
+
+    O envio passou a exigir TODAS as secoes escritas. Estes testes sao sobre o
+    congelamento do entregavel em revisao, e nao sobre a regra do plano: sem este
+    preparo eles falhariam por um motivo que nao e o que medem.
+    """
+    for secao in plano.secoes.all():
+        secao.conteudo = f"<p>Conteúdo de {secao.titulo}.</p>"
+        secao.save()
+
+
 @pytest.mark.django_db
 def test_anexar_em_entregavel_em_revisao_e_bloqueado(client, curso_com_equipe, aluno, arquivo_qualquer):
     plano = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.PLANO_ENSINO)
-    secao = plano.secoes.first()
-    secao.conteudo = "<p>Ementa</p>"
-    secao.save()
-    Anexo.objects.create(
-        entregavel=plano, tipo_midia=TipoMidia.ARQUIVO, titulo="Plano",
-        arquivo=arquivo_qualquer, enviado_por=aluno,
-    )
+    escrever_o_plano_inteiro(plano)
     services.enviar_para_revisao(plano, por=aluno)
     client.force_login(aluno)
     resposta = client.post(reverse("anexar", args=[plano.pk]), {"titulo": "Outro", "url": "https://exemplo.org"})
@@ -139,15 +145,10 @@ def test_salvar_secao_mostra_o_erro_real_do_formulario(client, curso_com_equipe,
 
 
 @pytest.mark.django_db
-def test_salvar_secao_de_entregavel_em_revisao_e_bloqueado(client, curso_com_equipe, aluno, arquivo_qualquer):
+def test_salvar_secao_de_entregavel_em_revisao_e_bloqueado(client, curso_com_equipe, aluno):
     plano = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.PLANO_ENSINO)
     secao = plano.secoes.first()
-    secao.conteudo = "<p>Ementa</p>"
-    secao.save()
-    Anexo.objects.create(
-        entregavel=plano, tipo_midia=TipoMidia.ARQUIVO, titulo="Plano",
-        arquivo=arquivo_qualquer, enviado_por=aluno,
-    )
+    escrever_o_plano_inteiro(plano)
     services.enviar_para_revisao(plano, por=aluno)
     client.force_login(aluno)
     resposta = client.post(reverse("salvar_secao", args=[secao.pk]), {"conteudo": "<p>Mudanca</p>"})
@@ -182,16 +183,13 @@ def test_enviar_com_pendencia_mostra_a_lista(client, curso_com_equipe, aluno):
 
 @pytest.mark.django_db
 def test_secao_de_entregavel_congelado_mostra_conteudo_sem_formulario(
-    client, curso_com_equipe, aluno, arquivo_qualquer
+    client, curso_com_equipe, aluno
 ):
     plano = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.PLANO_ENSINO)
+    escrever_o_plano_inteiro(plano)
     secao = plano.secoes.first()
     secao.conteudo = "<p>Ementa fixada</p>"
     secao.save()
-    Anexo.objects.create(
-        entregavel=plano, tipo_midia=TipoMidia.ARQUIVO, titulo="Plano",
-        arquivo=arquivo_qualquer, enviado_por=aluno,
-    )
     services.enviar_para_revisao(plano, por=aluno)
     client.force_login(aluno)
     resposta = client.get(reverse("entregavel", args=[plano.pk]))
@@ -463,3 +461,28 @@ def test_secoes_do_plano_ficam_em_cartao(client, curso_com_equipe, aluno):
     secoes = re.findall(r'<section id="secao-\d+"[^>]*class="([^"]*)"', html)
     assert secoes, "nenhuma seção renderizada"
     assert all("bloco" in c for c in secoes), secoes
+
+
+@pytest.mark.django_db
+def test_plano_de_ensino_nao_oferece_materiais(client, curso_com_equipe, aluno):
+    """O plano e escrito nas secoes, e nao anexado: a tela nao mostra Materiais
+    nem Anexar material."""
+    from apps.cursos.choices import TipoEntregavel
+
+    plano = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.PLANO_ENSINO)
+    client.force_login(aluno)
+    html = client.get(reverse("entregavel", args=[plano.pk])).content.decode()
+    assert "Anexar material" not in html
+    assert "<h2>Materiais</h2>" not in html
+
+
+@pytest.mark.django_db
+def test_os_outros_entregaveis_continuam_oferecendo(client, curso_com_equipe, aluno):
+    """Prende o outro lado: so o plano perdeu os materiais."""
+    from apps.cursos.choices import TipoEntregavel
+
+    slides = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.SLIDES)
+    client.force_login(aluno)
+    html = client.get(reverse("entregavel", args=[slides.pk])).content.decode()
+    assert "Anexar material" in html
+    assert "<h2>Materiais</h2>" in html

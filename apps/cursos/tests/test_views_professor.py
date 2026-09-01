@@ -294,17 +294,22 @@ def test_aluno_nao_acessa_revisar(client, aluno, slides_em_revisao):
 
 
 @pytest.fixture
-def plano_em_revisao(dados_curso, aluno, arquivo_qualquer):
+def plano_em_revisao(dados_curso, aluno):
+    """O plano exige as SETE secoes escritas e nao tem mais anexo.
+
+    O conteudo da primeira e proprio de proposito: "Plano de Ensino" aparece no
+    <h1> pelo get_tipo_display mesmo que o laco de secoes quebre por completo, e um
+    texto exclusivo e o que distingue as duas coisas.
+    """
     curso = services.criar_curso(**dados_curso)
     services.adicionar_membro(curso, aluno, por=curso.professor_responsavel)
     plano = curso.entregaveis.get(tipo=TipoEntregavel.PLANO_ENSINO)
-    secao = plano.secoes.first()
-    secao.conteudo = "<p>Texto exclusivo da ementa de teste.</p>"
-    secao.save()
-    Anexo.objects.create(
-        entregavel=plano, tipo_midia=TipoMidia.ARQUIVO, titulo="Plano de Ensino Definitivo",
-        arquivo=arquivo_qualquer, enviado_por=aluno,
-    )
+    for secao in plano.secoes.all():
+        secao.conteudo = f"<p>Conteúdo de {secao.titulo}.</p>"
+        secao.save()
+    primeira = plano.secoes.first()
+    primeira.conteudo = "<p>Texto exclusivo da ementa de teste.</p>"
+    primeira.save()
     services.enviar_para_revisao(plano, por=aluno)
     return plano
 
@@ -325,14 +330,24 @@ def test_revisar_mostra_pendencia_que_surgiu_depois_do_envio(client, professor, 
 
 
 @pytest.mark.django_db
-def test_revisar_mostra_conteudo_e_materiais(client, professor, plano_em_revisao):
-    # "Slides" nao serve de pista aqui: aparece no <h1> via get_tipo_display mesmo
-    # que a lista de materiais e o loop de secoes quebrem por completo (falso
-    # positivo apontado na revisao). Por isso o fixture usa titulo e conteudo de
-    # secao proprios, que so aparecem se os respectivos loops do template rodarem.
+def test_revisar_mostra_o_conteudo_das_secoes(client, professor, plano_em_revisao):
+    # O nome do entregavel nao serve de pista: aparece no <h1> via get_tipo_display
+    # mesmo que o laco de secoes quebre por completo (falso positivo apontado na
+    # revisao). Por isso o fixture usa um conteudo de secao proprio, que so aparece
+    # se o laco rodar.
     client.force_login(professor)
     resposta = client.get(reverse("revisar", args=[plano_em_revisao.pk]))
     conteudo = resposta.content.decode()
     assert resposta.status_code == 200
-    assert "Plano de Ensino Definitivo" in conteudo
     assert "Texto exclusivo da ementa de teste." in conteudo
+    # O plano nao tem materiais, e a tela de revisao nao mostra o bloco vazio.
+    assert "<h2>Materiais</h2>" not in conteudo
+
+
+@pytest.mark.django_db
+def test_revisar_mostra_os_materiais_de_quem_tem(client, professor, slides_em_revisao):
+    """A outra metade do teste anterior, no entregavel que de fato tem material."""
+    client.force_login(professor)
+    conteudo = client.get(reverse("revisar", args=[slides_em_revisao.pk])).content.decode()
+    assert "<h2>Materiais</h2>" in conteudo
+    assert "Slides" in conteudo

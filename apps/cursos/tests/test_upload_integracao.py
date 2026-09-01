@@ -111,7 +111,9 @@ def test_entregavel_de_videos_aberto_mostra_o_formulario_de_upload(
 @pytest.mark.parametrize(
     "tipo",
     [
-        TipoEntregavel.PLANO_ENSINO,
+        # PLANO_ENSINO saiu da lista: ele deixou de ter materiais, entao nao mostra
+        # nem o formulario de upload nem o de anexar. Quem prende isso e
+        # test_plano_de_ensino_nao_oferece_materiais, em test_views_aluno.py.
         TipoEntregavel.CARDS,
         TipoEntregavel.CADERNO,
         TipoEntregavel.SLIDES,

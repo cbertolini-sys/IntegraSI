@@ -31,6 +31,12 @@
     {% include "cursos/_secao.html" with pode_editar=pode_editar %}
   {% endfor %}
 
+  {% comment %}
+    O Plano de Ensino nao tem materiais: ele e escrito nas secoes acima. Oferecer
+    "Anexar material" ali convidava a mandar o plano como PDF, que e o oposto do
+    que a tela quer, e a lista de Materiais ficaria sempre vazia.
+  {% endcomment %}
+  {% if entregavel.tipo != "PLANO_ENSINO" %}
   <div class="bloco">
   <h2>Materiais</h2>
   <ul class="registros">
@@ -60,6 +66,12 @@
       </form>
     </div>
 
+    {% comment %}
+      O upload de video fica DENTRO de `pode_editar`. Ao envolver este trecho no
+      teste de tipo, o `endif` do `pode_editar` acabou fechando antes da hora e o
+      formulario de upload passou a aparecer em entregavel congelado: nao era so
+      layout, era estado vazando. Quem pegou foi o teste do video em revisao.
+    {% endcomment %}
     {% if entregavel.tipo == "VIDEOS" %}
       <div class="bloco">
       <h2>Enviar vídeo-aula</h2>
@@ -89,7 +101,7 @@
       <script src="{% estatico 'js/upload.js' %}" defer></script>
       </div>
     {% endif %}
-
+  {% endif %}
   {% endif %}
   </div>
 
