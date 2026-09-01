@@ -75,6 +75,22 @@ class TipoPratica(models.TextChoices):
 STATUS_EDITAVEIS = (StatusCurso.RASCUNHO, StatusCurso.EM_PRODUCAO, StatusCurso.DEVOLVIDO)
 
 
+# Curso que ainda esta sendo feito. Nao e o complemento de PUBLICADO: DESPUBLICADO
+# ja foi ao catalogo e voltou, e SUBSTITUIDO e a versao anterior de um curso que
+# seguiu adiante. Nenhum dos dois e trabalho por fazer, e contar os dois aqui
+# encheria o painel do professor de curso que ele nao vai abrir.
+#
+# AGUARDANDO_COORDENADOR entra, ao contrario de STATUS_EDITAVEIS: o curso nao pode
+# mais ser editado, mas continua sendo trabalho aberto do professor ate a
+# coordenacao decidir.
+STATUS_EM_DESENVOLVIMENTO = (
+    StatusCurso.RASCUNHO,
+    StatusCurso.EM_PRODUCAO,
+    StatusCurso.AGUARDANDO_COORDENADOR,
+    StatusCurso.DEVOLVIDO,
+)
+
+
 # Quantas palavras-chave o curso precisa ter para ir ao catalogo. Vive aqui, e nao
 # em validacoes.py, porque o formulario tambem precisa dela para desenhar as
 # caixas, e choices.py nao importa nada do app.

@@ -9,8 +9,8 @@ from apps.catalogo.models import Solicitacao
 from apps.contas import services
 from apps.contas.forms_convite import PrimeiroAcessoForm
 from apps.contas.models import ConviteAluno, Usuario
-from apps.cursos.choices import StatusCurso, StatusEntregavel
-from apps.cursos.models import Curso
+from apps.cursos.choices import STATUS_EM_DESENVOLVIMENTO, StatusCurso, StatusEntregavel
+from apps.cursos.models import Curso, Entregavel
 from apps.turmas.models import Turma
 
 
@@ -48,24 +48,35 @@ def _resumo(usuario):
         ]
 
     if usuario.e_professor:
-        meus = Curso.objects.filter(professor_responsavel=usuario)
+        # Por vinculo de equipe, e nao por `professor_responsavel`: e o mesmo
+        # recorte de `meus_cursos`, que e a tela para onde os dois cartoes levam.
+        # Contado de um jeito e listado de outro, o numero do cartao nunca batia
+        # com o que a pessoa via depois de clicar.
+        meus = Curso.objects.filter(membros__pessoa=usuario)
         return [
             {
-                "rotulo": "Cursos sob sua responsabilidade",
-                "valor": meus.count(),
+                "rotulo": "Cursos publicados",
+                "valor": meus.filter(status=StatusCurso.PUBLICADO).distinct().count(),
                 "url": "meus_cursos",
             },
             {
-                "rotulo": "Entregáveis para revisar",
+                "rotulo": "Cursos em desenvolvimento",
                 "valor": meus.filter(
-                    entregaveis__status=StatusEntregavel.EM_REVISAO
+                    status__in=STATUS_EM_DESENVOLVIMENTO
                 ).distinct().count(),
-                "url": "fila_revisao",
+                "url": "meus_cursos",
             },
             {
-                "rotulo": "Turmas sob sua condução",
-                "valor": Turma.objects.filter(professor=usuario).count(),
-                "url": "minhas_turmas",
+                # Conta ENTREGAVEIS, e nao cursos com entregavel em revisao: e o
+                # mesmo recorte da `fila_revisao`, que lista um item por
+                # entregavel. Dois entregaveis do mesmo curso sao dois na fila, e
+                # o `.distinct()` por curso que havia aqui dizia um.
+                "rotulo": "Entregáveis para revisar",
+                "valor": Entregavel.objects.filter(
+                    status=StatusEntregavel.EM_REVISAO,
+                    curso__professor_responsavel=usuario,
+                ).count(),
+                "url": "fila_revisao",
             },
         ]
 
