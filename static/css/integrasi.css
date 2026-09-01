@@ -2622,25 +2622,141 @@ textarea:focus {
 
 /* ---------- editor das seções ---------- */
 
-/* O Quill vem com o tema "snow", que traz a barra e a borda. Aqui só o que
-   encaixa no sistema: mesmo raio, mesma linha, mesma tipografia dos outros
-   campos. Não sobrescreve o tema inteiro, para não brigar com a biblioteca a
-   cada atualização. */
+/* O tema "snow" do Quill vem com botao de 24px e bastante respiro. Sao SETE
+   editores na mesma pagina, e o peso soma: a barra ocupava mais altura que o
+   texto que ela edita. Aqui ela e compactada e trazida para o sistema, sem
+   sobrescrever o tema inteiro, para nao brigar com a biblioteca a cada
+   atualizacao. */
+
 .editor-secao {
   border-radius: 0 0 var(--raio-p) var(--raio-p);
-  border-color: var(--linha);
-  min-height: 12rem;
   background: var(--branco);
 }
 
+/* ---- a barra ---- */
+
 .ql-toolbar.ql-snow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.125rem;
+  padding: 0.25rem 0.375rem;
+  border: 1px solid var(--linha);
   border-radius: var(--raio-p) var(--raio-p) 0 0;
-  border-color: var(--linha);
   background: var(--nevoa);
+  font-family: var(--display);
 }
 
+.ql-toolbar.ql-snow .ql-formats {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.125rem;
+}
+
+/* Um fio separando os grupos, no lugar da margem larga do tema. */
+.ql-toolbar.ql-snow .ql-formats + .ql-formats {
+  margin-left: 0.375rem;
+  padding-left: 0.375rem;
+  border-left: 1px solid var(--linha);
+}
+
+.ql-toolbar.ql-snow button {
+  all: unset;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: var(--raio-p);
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.ql-toolbar.ql-snow button:hover {
+  background: var(--azul-suave);
+}
+
+.ql-toolbar.ql-snow button.ql-active {
+  background: var(--azul-suave);
+}
+
+.ql-toolbar.ql-snow button svg {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+/* O tema pinta os traços do ícone; aqui eles seguem a cor do texto e o azul
+   quando o formato está ligado. */
+.ql-snow.ql-toolbar button .ql-stroke,
+.ql-snow .ql-picker-label .ql-stroke {
+  stroke: var(--cinza);
+  stroke-width: 2;
+}
+
+.ql-snow.ql-toolbar button .ql-fill {
+  fill: var(--cinza);
+}
+
+.ql-snow.ql-toolbar button:hover .ql-stroke,
+.ql-snow.ql-toolbar button.ql-active .ql-stroke {
+  stroke: var(--azul);
+}
+
+.ql-snow.ql-toolbar button:hover .ql-fill,
+.ql-snow.ql-toolbar button.ql-active .ql-fill {
+  fill: var(--azul);
+}
+
+/* ---- o seletor de título ---- */
+
+.ql-snow .ql-picker {
+  height: 1.5rem;
+  font-size: 0.75rem;
+  color: var(--cinza);
+}
+
+.ql-snow .ql-picker.ql-header {
+  width: 6.5rem;
+}
+
+.ql-snow .ql-picker-label {
+  padding: 0 0.375rem;
+  border-radius: var(--raio-p);
+  border: none;
+  display: flex;
+  align-items: center;
+}
+
+.ql-snow .ql-picker-label:hover,
+.ql-snow .ql-picker.ql-expanded .ql-picker-label {
+  background: var(--azul-suave);
+  color: var(--azul);
+}
+
+.ql-snow .ql-picker-options {
+  border: 1px solid var(--linha);
+  border-radius: var(--raio-p);
+  box-shadow: var(--sombra);
+  padding: 0.25rem;
+}
+
+.ql-snow .ql-picker-item {
+  border-radius: var(--raio-p);
+  padding: 0.25rem 0.5rem;
+}
+
+.ql-snow .ql-picker-item:hover {
+  background: var(--azul-suave);
+  color: var(--azul);
+}
+
+/* ---- a área de escrita ---- */
+
 .ql-container.ql-snow {
-  border-color: var(--linha);
+  border: 1px solid var(--linha);
+  border-top: none;
+  border-radius: 0 0 var(--raio-p) var(--raio-p);
 }
 
 .editor-secao .ql-editor {
@@ -2648,17 +2764,32 @@ textarea:focus {
   font-size: 0.9375rem;
   line-height: 1.6;
   color: var(--texto);
-  min-height: 11rem;
+  /* Sete editores numa pagina so: um minimo generoso multiplicava por sete e
+     fazia a rolagem nunca acabar. Ele cresce com o texto de qualquer forma. */
+  min-height: 6.5rem;
+  padding: 0.875rem 1rem;
 }
 
 .editor-secao .ql-editor.ql-blank::before {
   color: var(--cinza-claro);
   font-style: normal;
+  left: 1rem;
+  right: 1rem;
+}
+
+.editor-secao .ql-editor p {
+  margin: 0 0 0.5rem;
+}
+
+.editor-secao .ql-editor h2,
+.editor-secao .ql-editor h3 {
+  font-family: var(--display);
+  margin: 0.75rem 0 0.375rem;
 }
 
 /* O botão de salvar respira depois do editor. */
-.bloco form .editor-secao + button,
-.bloco form .ql-container + button {
+.bloco form .ql-container + button,
+.bloco form .editor-secao + button {
   margin-top: 1rem;
 }
 

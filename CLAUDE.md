@@ -194,6 +194,27 @@ desses aparecendo aqui é sinal de que a fronteira foi atravessada sem querer.
   `{{ curso.carga_horaria }}h` numa proposta nova imprime `Noneh`, porque o Django
   renderiza `None` como texto. Foi achado olhando a tela, com a suíte verde.
 
+## Interface
+
+- **O CSS pinta todo `<button>`**: a base é `.botao, .botao-linha, .botao-largo,
+  button`, com 2,75rem de altura, preenchimento largo e fundo azul. Qualquer
+  `<button>` que não seja botão de ação (o gatilho de ajuda, a barra do Quill,
+  o que vier depois) precisa de `all: unset` e do próprio desenho. Já aconteceu
+  duas vezes: o `?` da ajuda virou um botão azul grande ao lado de cada rótulo, e
+  a barra do editor ficou com sete botões de ação por seção.
+- Biblioteca de terceiros é **vendorizada**, nunca CDN, e
+  `tests/test_ajuda.py::test_nenhum_template_carrega_biblioteca_de_fora` reprova.
+  Hoje: HTMX, Tippy, Popper e Quill.
+- A ajuda de campo mora no `help_text` do formulário, em Python;
+  `tests/test_ajuda.py` exige uma para todo campo visível de todo formulário. A
+  das seções do Plano de Ensino mora em `AJUDA_DAS_SECOES`, ao lado da lista que
+  as cria.
+- **A barra do editor só pode oferecer o que `Secao.save()` preserva.** Ela
+  sanitiza com nh3 contra `TAGS_PERMITIDAS`, sempre: um botão de cor ou imagem
+  faria a pessoa formatar, salvar e ver a formatação sumir, como se o sistema
+  tivesse perdido o trabalho dela. Dois testes ligam os dois arquivos.
+- Nada de `style` inline em template: `tests/test_estilo.py` reprova.
+
 ## Restrições entre planos
 
 - `Curso.referencial` precisa continuar `PROTECT` (Plano 2). É o que impede apagar um
