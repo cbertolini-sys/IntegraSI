@@ -2764,9 +2764,11 @@ textarea:focus {
   font-size: 0.9375rem;
   line-height: 1.6;
   color: var(--texto);
-  /* Sete editores numa pagina so: um minimo generoso multiplicava por sete e
-     fazia a rolagem nunca acabar. Ele cresce com o texto de qualquer forma. */
-  min-height: 6.5rem;
+  /* O dobro do minimo anterior, a pedido: escrever ementa e metodologia numa
+     janela de seis linhas obrigava a rolar dentro do proprio campo. Sao sete
+     editores na mesma pagina, entao o numero pesa sete vezes, mas escrever
+     apertado pesa mais. O campo cresce com o texto de qualquer forma. */
+  min-height: 13rem;
   padding: 0.875rem 1rem;
 }
 
