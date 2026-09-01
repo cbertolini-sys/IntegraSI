@@ -323,10 +323,14 @@ def test_anexar_arquivo_grande_preserva_hash_e_conteudo(client, curso_com_equipe
 
 @pytest.mark.django_db
 def test_anexar_link_cria_o_anexo_sem_arquivo(client, curso_com_equipe, aluno):
-    slides = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.SLIDES)
+    """Usa a Avaliacao, e nao os Slides: o formulario dos slides deixou de ter
+    campo de link, porque a regra deles conta apenas anexo que NAO e link. A
+    Avaliacao aceita link de proposito (um instrumento pode ser um formulario
+    online), entao e nela que o comportamento de link tem de ser provado."""
+    avaliacao = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.AVALIACAO)
     client.force_login(aluno)
     resposta = client.post(
-        reverse("anexar", args=[slides.pk]),
+        reverse("anexar", args=[avaliacao.pk]),
         {
             "titulo": "Slides no Drive", "url": "https://exemplo.org/slides",
             "rotulo": Rotulo.NENHUM, "tipo_pratica": TipoPratica.NENHUM,
@@ -334,7 +338,7 @@ def test_anexar_link_cria_o_anexo_sem_arquivo(client, curso_com_equipe, aluno):
         follow=True,
     )
     assert resposta.status_code == 200
-    anexo = slides.anexos.get(titulo="Slides no Drive")
+    anexo = avaliacao.anexos.get(titulo="Slides no Drive")
     assert anexo.tipo_midia == TipoMidia.LINK
     assert anexo.arquivo is None
     assert not Arquivo.objects.exists()
@@ -342,7 +346,9 @@ def test_anexar_link_cria_o_anexo_sem_arquivo(client, curso_com_equipe, aluno):
 
 @pytest.mark.django_db
 def test_anexar_arquivo_e_link_juntos_e_recusado_sem_quebrar(client, curso_com_equipe, aluno):
-    slides = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.SLIDES)
+    # Na Avaliacao pelo mesmo motivo do teste acima: e o entregavel cujo
+    # formulario ainda oferece os dois caminhos.
+    slides = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.AVALIACAO)
     upload = SimpleUploadedFile(
         "slides.pdf", b"%PDF-1.7\n%conteudo de teste\n", content_type="application/pdf"
     )
@@ -527,3 +533,53 @@ def test_o_campo_enviado_continua_sendo_o_textarea(client, curso_com_equipe, alu
     client.force_login(aluno)
     html = client.get(reverse("entregavel", args=[plano.pk])).content.decode()
     assert html.count('<textarea name="conteudo" rows="10" data-editor>') == 7
+
+
+@pytest.mark.django_db
+def test_slides_pede_so_o_essencial_para_anexar(client, curso_com_equipe, aluno):
+    """Cada entregavel tem regras proprias, e o formulario oferecia os campos de
+    todos: referencia bibliografica e dos cards, rotulo e tipo de pratica sao do
+    caderno de exercicios. Nos slides eram quatro campos que nao servem a nada.
+
+    O link sai junto por um motivo de regra, e nao de tela: `_slides` conta apenas
+    anexo que NAO e link, entao hoje da para anexar um link aos slides e ele nao
+    conta para o envio. Tirar o campo fecha essa armadilha."""
+    from apps.cursos.choices import TipoEntregavel
+
+    slides = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.SLIDES)
+    client.force_login(aluno)
+    html = client.get(reverse("entregavel", args=[slides.pk])).content.decode()
+    for campo in ("referencia_bibliografica", "rotulo", "tipo_pratica", "url"):
+        assert f'name="{campo}"' not in html, campo
+    for campo in ("titulo", "descricao", "upload"):
+        assert f'name="{campo}"' in html, campo
+
+
+@pytest.mark.django_db
+def test_os_outros_entregaveis_mantem_os_campos(client, curso_com_equipe, aluno):
+    """Prende o outro lado: so os slides foram enxugados. O caderno precisa de
+    rotulo e tipo de pratica, e os cards da referencia bibliografica."""
+    from apps.cursos.choices import TipoEntregavel
+
+    caderno = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.CADERNO)
+    client.force_login(aluno)
+    html = client.get(reverse("entregavel", args=[caderno.pk])).content.decode()
+    for campo in ("referencia_bibliografica", "rotulo", "tipo_pratica", "url"):
+        assert f'name="{campo}"' in html, campo
+
+
+@pytest.mark.django_db
+def test_anexar_slides_sem_arquivo_avisa_sem_falar_em_link(client, curso_com_equipe, aluno):
+    """A mensagem antiga dizia "envie um arquivo ou informe um link" num
+    formulario que nao tem mais campo de link: instrucao para um campo que a
+    pessoa nao encontra e pior que nenhuma."""
+    from apps.cursos.choices import TipoEntregavel
+
+    slides = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.SLIDES)
+    client.force_login(aluno)
+    resposta = client.post(
+        reverse("anexar", args=[slides.pk]), {"titulo": "Aula 1"}, follow=True
+    )
+    texto = resposta.content.decode()
+    assert "Envie o arquivo." in texto
+    assert "informe um link" not in texto

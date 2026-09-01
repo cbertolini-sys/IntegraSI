@@ -3,7 +3,12 @@ from django.core.exceptions import ValidationError
 from django.forms.models import construct_instance
 
 from apps.cursos.arquivos import valida_upload
-from apps.cursos.choices import PALAVRAS_CHAVE_EXIGIDAS, Formato, TipoPublico
+from apps.cursos.choices import (
+    PALAVRAS_CHAVE_EXIGIDAS,
+    Formato,
+    TipoEntregavel,
+    TipoPublico,
+)
 from apps.cursos.models import Anexo, Curso, Secao
 from apps.referenciais.choices import ETAPAS, etapa_do_referencial
 from apps.referenciais.models import Referencial
@@ -39,6 +44,20 @@ class PropostaForm(forms.ModelForm):
                 "do curso é preenchido em seguida, na tela de editar."
             ),
         }
+
+
+# Quais campos o formulario de anexar oferece em cada entregavel.
+#
+# Cada entregavel tem regras proprias (spec 6), e o formulario oferecia os campos
+# de TODOS: referencia bibliografica e dos cards, rotulo e tipo de pratica sao do
+# caderno de exercicios. Nos slides eram quatro campos que nao servem a nada.
+#
+# Entregavel que nao esta aqui mantem o formulario inteiro, ate alguem decidir o
+# que ele pede. E de proposito: enxugar por adivinhacao esconderia campo que a
+# regra daquele entregavel usa.
+CAMPOS_DO_ANEXO = {
+    TipoEntregavel.SLIDES: ["titulo", "descricao", "upload"],
+}
 
 
 class AnexoForm(forms.ModelForm):
@@ -85,6 +104,19 @@ class AnexoForm(forms.ModelForm):
             ),
         }
 
+    def __init__(self, *args, tipo=None, **kwargs):
+        """`tipo` e o entregavel que esta sendo preenchido.
+
+        Sem ele o formulario vem inteiro, que e o comportamento de antes: os
+        chamadores que ainda nao passam o tipo continuam funcionando.
+        """
+        super().__init__(*args, **kwargs)
+        permitidos = CAMPOS_DO_ANEXO.get(tipo)
+        if permitidos:
+            for campo in list(self.fields):
+                if campo not in permitidos:
+                    del self.fields[campo]
+
     def clean(self):
         dados = super().clean()
         upload = dados.get("upload")
@@ -93,7 +125,12 @@ class AnexoForm(forms.ModelForm):
             upload.seek(0)
             dados["mime"] = valida_upload(upload.name, upload.size, cabecalho)
         elif not dados.get("url"):
-            raise forms.ValidationError("Envie um arquivo ou informe um link.")
+            # A mensagem acompanha o formulario: mandar "informe um link" num
+            # formulario sem campo de link e instrucao para um campo que a pessoa
+            # nao encontra, o que e pior que nenhuma.
+            if "url" in self.fields:
+                raise forms.ValidationError("Envie um arquivo ou informe um link.")
+            raise forms.ValidationError("Envie o arquivo.")
         return dados
 
     def _post_clean(self):

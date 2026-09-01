@@ -66,7 +66,7 @@ def entregavel(request, pk):
         {
             "entregavel": obj,
             "pendencias": validacoes.pendencias(obj),
-            "form_anexo": AnexoForm(),
+            "form_anexo": AnexoForm(tipo=obj.tipo),
             "pode_editar": permissions.pode_editar_producao(request.user, obj),
             "ultima_revisao": obj.revisoes.last(),
             # O formulario de upload em blocos (so em VIDEOS) precisa levar ao JS o
@@ -115,7 +115,7 @@ def anexar(request, pk):
     permissions.garante(
         permissions.pode_editar_producao(request.user, obj), "Este entregável não está aberto para edição."
     )
-    form = AnexoForm(request.POST, request.FILES)
+    form = AnexoForm(request.POST, request.FILES, tipo=obj.tipo)
     if not form.is_valid():
         for lista in form.errors.values():
             for mensagem in lista:
