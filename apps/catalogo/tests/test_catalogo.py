@@ -413,3 +413,46 @@ def test_previa_de_curso_vazio_nao_imprime_none(client, dados_curso, professor):
     client.force_login(professor)
     html = client.get(reverse("previa_do_curso", args=[curso.pk])).content.decode()
     assert "None" not in html
+
+
+@pytest.mark.django_db
+def test_previa_esconde_secao_de_campo_opcional_vazio(client, dados_curso, professor):
+    """Pre-requisito vazio e estado final legitimo, e nao pendencia: o curso parte
+    do zero, e o portao de completude nao o cobra.
+
+    Mostrar a secao mesmo assim fazia a previa mentir sobre o layout, porque a
+    pagina publica a esconde. Previa que nao bate com o publicado nao serve para
+    conferir nada.
+    """
+    from apps.cursos import services
+
+    curso = services.criar_curso(**dados_curso)
+    assert curso.pre_requisitos == ""
+    client.force_login(professor)
+    html = client.get(reverse("previa_do_curso", args=[curso.pk])).content.decode()
+    assert "O que a turma precisa saber antes" not in html
+
+
+@pytest.mark.django_db
+def test_previa_mostra_a_secao_quando_ha_pre_requisito(client, dados_curso, professor):
+    """Prende o outro lado: com texto, a secao aparece."""
+    from apps.cursos import services
+
+    dados_curso["pre_requisitos"] = "Saber ligar o computador."
+    curso = services.criar_curso(**dados_curso)
+    client.force_login(professor)
+    html = client.get(reverse("previa_do_curso", args=[curso.pk])).content.decode()
+    assert "O que a turma precisa saber antes" in html
+
+
+@pytest.mark.django_db
+def test_previa_continua_avisando_o_que_o_portao_cobra(client, dados_curso, professor):
+    """A outra metade do criterio: o que o portao EXIGE continua sendo apontado na
+    previa, porque ali a ausencia e falta, e nao decisao."""
+    from apps.cursos import services
+
+    dados_curso["resumo"] = ""
+    curso = services.criar_curso(**dados_curso)
+    client.force_login(professor)
+    html = client.get(reverse("previa_do_curso", args=[curso.pk])).content.decode()
+    assert "O resumo ainda não foi escrito" in html

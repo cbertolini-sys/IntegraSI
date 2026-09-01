@@ -70,15 +70,20 @@
         {% endif %}
       </section>
 
-      {% if curso.pre_requisitos or previa %}
+      {% comment %}
+        Sem `or previa` aqui, ao contrario das outras secoes: pre-requisito vazio e
+        estado final legitimo, e nao pendencia, entao a pagina publica esconde a
+        secao e a previa precisa esconder tambem. Previa que nao bate com o
+        publicado nao serve para conferir nada.
+
+        O criterio das outras secoes e o oposto e continua valendo: resumo, publico
+        e palavras-chave sao exigidos pelo portao de completude, e ali a ausencia e
+        falta, nao decisao.
+      {% endcomment %}
+      {% if curso.pre_requisitos %}
         <section class="secao-publica">
           <h2>O que a turma precisa saber antes</h2>
-          {% if curso.pre_requisitos %}
-            <p>{{ curso.pre_requisitos }}</p>
-          {% else %}
-            <p class="por-preencher">Nenhum pré-requisito informado. O curso parte
-               do zero.</p>
-          {% endif %}
+          <p>{{ curso.pre_requisitos }}</p>
         </section>
       {% endif %}
 
