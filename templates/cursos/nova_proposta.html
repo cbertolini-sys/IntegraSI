@@ -14,6 +14,12 @@
         {% csrf_token %}
         {{ form.as_p }}
         <button type="submit" class="botao botao-largo">Criar proposta</button>
+        {% comment %}
+          Aqui a volta fica junto do botao, e nao no cabecalho: esta tela nao usa
+          `.cabecalho-pagina`, e um link solto acima do formulario ficaria longe
+          do unico ponto onde a pessoa decide sair.
+        {% endcomment %}
+        <a class="botao botao-linha botao-largo" href="{% url 'painel' %}">&larr; Voltar ao painel</a>
       </form>
     </div>
   </div>
