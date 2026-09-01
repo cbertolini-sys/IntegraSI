@@ -2572,3 +2572,50 @@ textarea:focus {
 .tippy-box[data-theme~="integrasi"][data-placement^="bottom"] > .tippy-arrow::before {
   border-bottom-color: var(--marinho-fundo);
 }
+
+/* ---------- lista de caixas de marcar ---------- */
+
+/* O `<select multiple>` do Django pede Ctrl para escolher mais de um, que e
+   conhecimento que ninguem tem por obrigacao. As caixas mostram todas as opcoes
+   de uma vez e nao escondem nada atras de um atalho.
+
+   O seletor casa o CONTAINER pelo id, e nao por classe: `CheckboxSelectMultiple`
+   poe os atributos em cada <input>, e nao no elemento que os envolve, entao nao ha
+   como marcar o container pelo formulario. O Django o desenha como <div>, e nao
+   <ul> - foi o que a primeira versao deste bloco errou. */
+.campo div[id$="_temas"] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+}
+
+/* O Django envolve cada opcao num <div> proprio; sao eles os itens da flex. */
+.campo div[id$="_temas"] > div {
+  min-width: 0;
+}
+
+.campo div[id$="_temas"] label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4375rem;
+  margin: 0;
+  font-weight: 400;
+  font-size: 0.9375rem;
+  color: var(--texto);
+  cursor: pointer;
+}
+
+.campo div[id$="_temas"] input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+  accent-color: var(--azul);
+}
+
+/* Campo de escolha sem opção cadastrada: dizer que está vazio é mais honesto que
+   desenhar nada, que a pessoa lê como defeito. */
+.sem-opcoes {
+  font-size: 0.875rem;
+  color: var(--cinza);
+  font-style: italic;
+  margin: 0;
+}

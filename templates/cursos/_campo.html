@@ -18,7 +18,18 @@
       data-ajuda="{{ campo.help_text }}" tabindex="-1"
       aria-label="O que é {{ campo.label }}">?</button>{% endif %}
   </span>
-  {{ campo }}
+  {% comment %}
+    Campo de escolha sem opcao nenhuma nao desenha nada: as caixas de marcar dos
+    temas sumiam por inteiro num sistema sem tema cadastrado, e a pessoa via o
+    rotulo "Temas" com o vazio embaixo, sem saber se era erro. O <select multiple>
+    que havia antes ao menos aparecia vazio. Dizer isso e mais honesto que os dois.
+  {% endcomment %}
+  {% if campo.field.choices is not None and not campo.field.choices|length %}
+    <p class="sem-opcoes">Nada cadastrado ainda. A coordenação cadastra pelo
+       painel de administração.</p>
+  {% else %}
+    {{ campo }}
+  {% endif %}
   {% if campo.help_text %}
     {% comment %}
       Escondido, mas presente. O Django poe `aria-describedby="<id>_helptext"` no

@@ -490,6 +490,13 @@ def test_a_ficha_desenha_todos_os_campos_do_formulario(client, proposta, profess
     caixas de nome `competencias` sem `id_competencias`, e tem teste proprio.
     """
     from apps.cursos.forms import FichaCursoForm
+    from apps.cursos.models import Tema
+
+    # Campo de escolha sem opcao nenhuma nao desenha `name=`, e mostra um aviso no
+    # lugar. Um tema cadastrado deixa o campo aparecer de verdade, que e o que este
+    # teste mede; sem ele, a ausencia legitima do campo vazio se confundiria com a
+    # ausencia por esquecimento no template, e a regra deixaria de prender.
+    Tema.objects.create(nome="Robótica Educacional")
 
     client.force_login(professor)
     html = client.get(reverse("ficha", args=[proposta.pk])).content.decode()
@@ -791,3 +798,54 @@ def test_a_grade_das_palavras_chave_so_tem_as_cinco_caixas(client, proposta, pro
     # escondida. Qualquer elemento visível a mais quebra o alinhamento.
     assert bloco.count('class="rotulo-campo"') == 1
     assert 'class="ajuda"' not in bloco, "texto de ajuda visível voltou para a grade"
+
+
+@pytest.mark.django_db
+def test_temas_sao_caixas_de_marcar(client, proposta, professor):
+    """O `<select multiple>` do Django pede Ctrl para escolher mais de um, que e
+    conhecimento que ninguem tem por obrigacao.
+
+    Continua sendo multipla escolha: um dos cursos do sistema ja tem dois temas, e
+    trocar por escolha unica faria ele perder um."""
+    import re
+
+    from apps.cursos.models import Tema
+
+    Tema.objects.create(nome="Robótica Educacional")
+    Tema.objects.create(nome="Segurança Digital")
+    client.force_login(professor)
+    html = client.get(reverse("ficha", args=[proposta.pk])).content.decode()
+
+    assert '<select name="temas"' not in html
+    caixas = re.findall(r'<input type="checkbox" name="temas"', html)
+    assert len(caixas) == 2
+
+
+@pytest.mark.django_db
+def test_temas_continuam_aceitando_mais_de_um(proposta, professor):
+    """Prende o que a troca de widget nao podia quebrar."""
+    from apps.cursos import services
+    from apps.cursos.models import Tema
+
+    a = Tema.objects.create(nome="Robótica Educacional")
+    b = Tema.objects.create(nome="Segurança Digital")
+    services.atualizar_ficha(proposta, ficha_valida(temas=[a.pk, b.pk]), por=professor)
+    assert proposta.temas.count() == 2
+
+
+@pytest.mark.django_db
+def test_campo_sem_opcao_cadastrada_diz_que_esta_vazio(client, proposta, professor):
+    """As caixas de marcar somem por inteiro num sistema sem tema cadastrado, e a
+    pessoa via o rotulo "Temas" com o vazio embaixo, sem saber se era erro.
+
+    Foi o teste de completude do formulario que apanhou isso: ele exigia o campo
+    no HTML e o campo nao estava la. O <select multiple> anterior ao menos
+    aparecia vazio; dizer o que houve e mais honesto que os dois.
+    """
+    from apps.cursos.models import Tema
+
+    assert Tema.objects.count() == 0
+    client.force_login(professor)
+    html = client.get(reverse("ficha", args=[proposta.pk])).content.decode()
+    assert "Nada cadastrado ainda" in html
+    assert 'name="temas"' not in html

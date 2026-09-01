@@ -188,7 +188,14 @@ class FichaCursoForm(forms.ModelForm):
             "tipo_publico", "etapa_ano", "publico_descricao", "referencial",
             "competencias", "pre_requisitos",
         ]
-        widgets = {"resumo": forms.Textarea(attrs={"rows": 4})}
+        widgets = {
+            "resumo": forms.Textarea(attrs={"rows": 4}),
+            # Caixas de marcar, e nao o <select multiple> padrao do Django: aquele
+            # exige segurar Ctrl para escolher mais de um, que e conhecimento que
+            # ninguem tem por obrigacao. Com poucos temas cadastrados, as caixas
+            # cabem em duas linhas e mostram todas as opcoes de uma vez.
+            "temas": forms.CheckboxSelectMultiple(),
+        }
         help_texts = {
             "titulo": (
                 "O nome do curso como a escola vai lê-lo no catálogo. Pode mudar "
@@ -200,7 +207,7 @@ class FichaCursoForm(forms.ModelForm):
             ),
             "temas": (
                 "Assuntos gerais em que o curso se encaixa, usados para filtrar o "
-                "catálogo. Segure Ctrl (ou Command) para escolher mais de um."
+                "catálogo. Marque quantos fizerem sentido."
             ),
             "carga_horaria": (
                 "Total de horas do curso, somando todos os encontros. Só o número."
