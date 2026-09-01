@@ -6,7 +6,8 @@
   <div class="cabecalho-pagina">
     <div class="faixa">
       <div>
-        <h1>{{ entregavel.get_tipo_display }}</h1>
+        <span class="selo-etapa etapa-{{ entregavel.numero }}">Etapa {{ entregavel.numero }}</span>
+        <h1>{{ entregavel.nome }}</h1>
         <p class="sub">{{ entregavel.curso.titulo }}</p>
       </div>
       <div class="acoes">
@@ -17,14 +18,7 @@
   </div>
 
   <div class="faixa corpo-trabalho duas-colunas">
-    <div>
-      {% if pendencias %}
-        <section class="bloco pendencias">
-          <h2>O que falta</h2>
-          <ul class="registros">{% for falta in pendencias %}<li class="registro"><span class="estado atencao">{{ falta }}</span></li>{% endfor %}</ul>
-        </section>
-      {% endif %}
-
+    <div class="coluna-trabalho">
       {% for secao in entregavel.secoes.all %}
         {# O |safe abaixo e seguro: Secao.save() sanitiza o conteudo com nh3 antes de
            gravar, incondicionalmente, mesmo em update_fields (Task 4). E o unico lugar
@@ -57,7 +51,9 @@
       </div>
     </div>
 
-    <aside class="lateral">
+    <aside class="lateral coluna-pendencias">
+      {% include "cursos/_pendencias.html" with apoio="A equipe enviou assim mesmo. Vale conferir antes de decidir." tudo_certo="Nada. O entregável cumpre o que o roteiro pede." %}
+
       <h2>Sua decisão</h2>
       <form method="post" action="{% url 'decidir' entregavel.pk %}">
         {% csrf_token %}

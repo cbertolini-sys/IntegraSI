@@ -406,3 +406,38 @@ def test_telas_de_trabalho_tem_volta(client, curso_com_equipe, aluno):
     html = client.get(reverse("entregavel", args=[entregavel.pk])).content.decode()
     assert "voltar" in html.lower()
     assert reverse("curso", args=[curso_com_equipe.pk]) in html
+
+
+@pytest.mark.django_db
+def test_as_tres_telas_de_trabalho_usam_o_mesmo_painel(
+    client, curso_com_equipe, aluno, professor
+):
+    """Curso, entregável e revisão desenhavam a mesma lista de tres jeitos: bloco
+    no topo, coluna esquerda, lateral. Passam a incluir o mesmo painel, na mesma
+    coluna, e este teste e o que impede a proxima tela de reinventar.
+
+    A assercao e sobre a marcacao compartilhada (`painel-pendencias` dentro de
+    `coluna-pendencias`), e nao sobre o texto, que muda por tela de proposito.
+    """
+    from apps.cursos.choices import StatusEntregavel, TipoEntregavel
+
+    entregavel = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.PLANO_ENSINO)
+    entregavel.status = StatusEntregavel.EM_REVISAO
+    entregavel.save(update_fields=["status"])
+
+    client.force_login(aluno)
+    telas = {
+        "curso": client.get(reverse("ficha", args=[curso_com_equipe.pk])),
+        "entregavel": client.get(reverse("entregavel", args=[entregavel.pk])),
+    }
+    client.force_login(professor)
+    telas["revisao"] = client.get(reverse("revisar", args=[entregavel.pk]))
+
+    for nome, resposta in telas.items():
+        html = resposta.content.decode()
+        assert resposta.status_code == 200, nome
+        assert "painel-pendencias" in html, nome
+        assert "coluna-pendencias" in html, nome
+        assert "duas-colunas" in html, nome
+        # O painel fica DEPOIS do corpo no HTML, ou seja, na coluna da direita.
+        assert html.index("duas-colunas") < html.index("painel-pendencias"), nome

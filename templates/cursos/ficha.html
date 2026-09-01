@@ -72,18 +72,8 @@
       </div>
     </form>
 
-    <aside class="lateral ficha-pendencias">
-      <h2>Ainda falta</h2>
-      {% if pendencias %}
-        <p>É esta a lista que o professor cobra na revisão do Plano de Ensino e a
-           coordenação na submissão. Preencher agora evita a ida e volta.</p>
-        <ul class="pendencias">
-          {% for falta in pendencias %}<li>{{ falta }}</li>{% endfor %}
-        </ul>
-      {% else %}
-        <p class="tudo-certo">Nada. O curso está completo para o que o catálogo
-           precisa.</p>
-      {% endif %}
+    <aside class="lateral coluna-pendencias">
+      {% include "cursos/_pendencias.html" with apoio="É esta a lista que o professor cobra na revisão do Plano de Ensino e a coordenação na submissão. Preencher agora evita a ida e volta." tudo_certo="Nada. O curso está completo para o que o catálogo precisa." %}
     </aside>
   </div>
 </div>

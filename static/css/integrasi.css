@@ -2180,9 +2180,28 @@ textarea:focus {
   background: var(--branco);
 }
 
-/* ---------- pendencias da ficha ---------- */
+/* ---------- painel do que falta ---------- */
 
-.ficha-pendencias .pendencias {
+/* Um componente so para as tres telas (curso, entregavel, revisao). Antes cada
+   uma desenhava a mesma lista de um jeito: bloco no topo, coluna esquerda,
+   lateral. Tres marcacoes para a mesma informacao faziam as telas parecerem de
+   sistemas diferentes. */
+
+.painel-pendencias h2 {
+  font-family: var(--display);
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem;
+}
+
+.painel-pendencias .apoio-pendencias {
+  font-size: 0.875rem;
+  color: var(--cinza);
+  margin: 0 0 1rem;
+  line-height: 1.45;
+}
+
+.painel-pendencias .pendencias {
   list-style: none;
   padding: 0;
   margin: 0;
@@ -2190,7 +2209,7 @@ textarea:focus {
   gap: 0.625rem;
 }
 
-.ficha-pendencias .pendencias li {
+.painel-pendencias .pendencias li {
   font-size: 0.875rem;
   color: var(--texto);
   line-height: 1.45;
@@ -2198,7 +2217,7 @@ textarea:focus {
   position: relative;
 }
 
-.ficha-pendencias .pendencias li::before {
+.painel-pendencias .pendencias li::before {
   content: "";
   position: absolute;
   left: 0;
@@ -2209,16 +2228,32 @@ textarea:focus {
   background: var(--ciano);
 }
 
-.ficha-pendencias .tudo-certo {
+.painel-pendencias .tudo-certo {
   color: var(--azul);
   font-weight: 600;
+  margin: 0;
 }
 
+/* A lateral acompanha a rolagem: a lista do que falta so serve enquanto a pessoa
+   preenche, e um bloco no topo sai da tela no primeiro rolar. */
 @media (min-width: 58rem) {
-  .ficha-pendencias {
+  .coluna-pendencias {
     position: sticky;
     top: 1.5rem;
   }
+}
+
+/* Separa o painel do que vem depois dele na lateral (a decisao do professor, o
+   envio para revisao), sem margem inline em cada tela. */
+.coluna-pendencias .painel-pendencias + h2,
+.coluna-pendencias .painel-pendencias + form {
+  margin-top: 1.75rem;
+  padding-top: 1.75rem;
+  border-top: 1px solid var(--linha);
+}
+
+.coluna-trabalho {
+  min-width: 0;
 }
 
 /* ---------- aviso de prévia ---------- */

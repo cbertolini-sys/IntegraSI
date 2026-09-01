@@ -1,0 +1,22 @@
+{% comment %}
+  O painel do que falta, um so para as tres telas: curso, entregavel e revisao.
+
+  A lista vem sempre de `validacoes`, e ate aqui cada tela a desenhava de um jeito
+  (bloco no topo numa, coluna esquerda noutra, lateral na terceira). Tres
+  marcacoes para a mesma informacao era o que fazia as telas parecerem de sistemas
+  diferentes.
+
+  `apoio` e `tudo_certo` sao textos do chamador: o que falta e sempre a mesma
+  ideia, mas quem cobra e o que acontece quando nao falta nada mudam por tela.
+{% endcomment %}
+<div class="painel-pendencias">
+  <h2>Ainda falta</h2>
+  {% if pendencias %}
+    {% if apoio %}<p class="apoio-pendencias">{{ apoio }}</p>{% endif %}
+    <ul class="pendencias">
+      {% for falta in pendencias %}<li>{{ falta }}</li>{% endfor %}
+    </ul>
+  {% else %}
+    <p class="tudo-certo">{{ tudo_certo|default:"Nada. Está completo." }}</p>
+  {% endif %}
+</div>
