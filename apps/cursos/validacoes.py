@@ -25,6 +25,7 @@ def pendencias(entregavel):
         TipoEntregavel.CADERNO: _caderno,
         TipoEntregavel.VIDEOS: _videos,
         TipoEntregavel.SLIDES: _slides,
+        TipoEntregavel.AVALIACAO: _avaliacao,
     }
     # regras cobre todo TipoEntregavel; um tipo fora do enum e erro de dado, nao de
     # fluxo, entao o KeyError sobe cru para quem chama (Tasks 7, 9 e 10).
@@ -132,4 +133,19 @@ def _videos(entregavel):
 def _slides(entregavel):
     if not _arquivos(entregavel).exists():
         return ["Anexe ao menos um arquivo de slides."]
+    return []
+
+
+def _avaliacao(entregavel):
+    """O material de avaliacao do curso: instrumento, roteiro de correcao, rubrica.
+
+    Aceita link, e nao so arquivo (por isso `anexos`, e nao `_arquivos`): um
+    instrumento de avaliacao pode ser um formulario online, e exigir upload
+    obrigaria a equipe a imprimir para anexar.
+
+    Nao e a nota de quem assiste ao curso, que pertence ao modulo de execucao
+    (spec 1.1) junto com frequencia e certificado.
+    """
+    if not entregavel.anexos.exists():
+        return ["Anexe o material de avaliação, como arquivo ou link."]
     return []

@@ -518,3 +518,39 @@ def test_cinco_palavras_chave_completas_nao_sao_cobradas(curso_criado):
     curso_criado.palavras_chave = "robotica, sucata, reciclagem, motor, oficina"
     curso_criado.save()
     assert not any("palavras-chave" in f for f in validacoes.dados_do_curso(curso_criado))
+
+
+@pytest.mark.django_db
+def test_avaliacao_exige_ao_menos_um_anexo(curso_criado):
+    """O entregavel e o MATERIAL de avaliacao (instrumento, roteiro de correcao,
+    rubrica), e nao a nota de quem assiste, que e do modulo de execucao."""
+    from apps.cursos.choices import TipoEntregavel
+
+    avaliacao = curso_criado.entregaveis.get(tipo=TipoEntregavel.AVALIACAO)
+    assert validacoes.pendencias(avaliacao) != []
+
+
+@pytest.mark.django_db
+def test_avaliacao_com_anexo_pode_ser_enviada(curso_criado, aluno, arquivo_qualquer):
+    """Prende o outro lado: com anexo, a pendencia some."""
+    from apps.cursos.choices import TipoEntregavel
+
+    avaliacao = curso_criado.entregaveis.get(tipo=TipoEntregavel.AVALIACAO)
+    anexa(avaliacao, aluno, arquivo_qualquer)
+    assert validacoes.pendencias(avaliacao) == []
+
+
+@pytest.mark.django_db
+def test_avaliacao_aceita_link(curso_criado, aluno):
+    """Aceita link, e nao so arquivo: um instrumento de avaliacao pode ser um
+    formulario online, e exigir upload obrigaria a equipe a imprimir para anexar."""
+    from apps.cursos.choices import TipoEntregavel, TipoMidia
+    from apps.cursos.models import Anexo
+
+    avaliacao = curso_criado.entregaveis.get(tipo=TipoEntregavel.AVALIACAO)
+    Anexo.objects.create(
+        entregavel=avaliacao, tipo_midia=TipoMidia.LINK,
+        titulo="Formulário de avaliação", url="https://exemplo.ufsm.br/form",
+        enviado_por=aluno,
+    )
+    assert validacoes.pendencias(avaliacao) == []

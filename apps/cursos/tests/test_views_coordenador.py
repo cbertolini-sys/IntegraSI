@@ -171,7 +171,7 @@ def test_professor_nao_decide_pela_tela(client, professor, curso_submetido):
 def test_analise_mostra_todos_os_entregaveis(client, coordenador, curso_submetido):
     client.force_login(coordenador)
     resposta = client.get(reverse("analisar_curso", args=[curso_submetido.pk]))
-    assert resposta.content.decode().count("entregavel-analise") == 5
+    assert resposta.content.decode().count("entregavel-analise") == 6
 
 
 # --- despublicar e republicar pela tela ---------------------------------------

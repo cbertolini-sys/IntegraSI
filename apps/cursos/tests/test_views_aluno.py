@@ -36,11 +36,11 @@ def test_curso_de_outra_equipe_devolve_403(client, curso_com_equipe, outro_aluno
 
 
 @pytest.mark.django_db
-def test_painel_do_curso_mostra_os_cinco_entregaveis(client, curso_com_equipe, aluno):
+def test_painel_do_curso_mostra_os_seis_entregaveis(client, curso_com_equipe, aluno):
     client.force_login(aluno)
     resposta = client.get(reverse("curso", args=[curso_com_equipe.pk]))
     conteudo = resposta.content.decode()
-    assert conteudo.count("entregavel-card") == 5
+    assert conteudo.count("entregavel-card") == 6
 
 
 @pytest.mark.django_db

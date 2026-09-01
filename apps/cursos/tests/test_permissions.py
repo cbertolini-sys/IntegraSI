@@ -225,7 +225,7 @@ def test_coordenador_cria_curso_via_servico(dados_curso, coordenador):
     dados_curso["professor_responsavel"] = coordenador
     curso = services.criar_curso(**dados_curso)
     assert curso.professor_responsavel == coordenador
-    assert curso.entregaveis.count() == 5
+    assert curso.entregaveis.count() == 6
 
 
 @pytest.mark.django_db

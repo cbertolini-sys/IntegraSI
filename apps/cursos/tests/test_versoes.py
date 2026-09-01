@@ -123,7 +123,7 @@ def test_nova_versao_clona_conteudo_e_zera_os_estados(curso_publicado, coordenad
     assert nova.raiz_id == curso_publicado.pk
     assert nova.linhagem_id == curso_publicado.pk
     assert nova.status == StatusCurso.RASCUNHO
-    assert nova.entregaveis.count() == 5
+    assert nova.entregaveis.count() == 6
     assert set(nova.entregaveis.values_list("status", flat=True)) == {StatusEntregavel.RASCUNHO}
     plano = nova.entregaveis.get(tipo=TipoEntregavel.PLANO_ENSINO)
     assert plano.secoes.count() == 7

@@ -121,5 +121,11 @@ def test_entregaveis_saem_na_ordem_do_roteiro(dados_curso):
 
     curso = services.criar_curso(**dados_curso)
     rotulos = [e.get_tipo_display() for e in curso.entregaveis.all()]
-    assert [r[0] for r in rotulos] == ["A", "B", "C", "D", "E"]
-    assert rotulos == sorted(rotulos)
+    assert rotulos == [
+        "1 - Plano de Ensino e Mapeamento Pedagógico",
+        "2 - Slides e Apresentações",
+        "3 - Vídeo-Aulas",
+        "4 - Infográficos e Cards Educativos",
+        "5 - Caderno de Exercícios e Atividades Práticas",
+        "6 - Avaliação",
+    ]

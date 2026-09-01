@@ -19,11 +19,23 @@ class StatusEntregavel(models.TextChoices):
 
 
 class TipoEntregavel(models.TextChoices):
-    PLANO_ENSINO = "PLANO_ENSINO", "A - Plano de Ensino e Mapeamento Pedagógico"
-    CARDS = "CARDS", "B - Infográficos e Cards Educativos"
-    CADERNO = "CADERNO", "C - Caderno de Exercícios e Atividades Práticas"
-    VIDEOS = "VIDEOS", "D - Vídeo-Aulas"
-    SLIDES = "SLIDES", "E - Slides e Apresentações"
+    """Os seis pacotes do roteiro, na ordem em que ele os pede.
+
+    A numeracao vive no ROTULO, e nunca no valor gravado. Rotulo e texto e pode ser
+    renumerado; valor gravado nunca muda, senao toda linha ja no banco vira lixo.
+    Foi por isso que a passagem de letras para numeros nao precisou de migracao de
+    dados: PLANO_ENSINO continua PLANO_ENSINO.
+
+    A ORDEM DE DECLARACAO importa: `ORDEM_DO_ROTEIRO`, em models/producao.py,
+    monta a ordenacao das telas a partir dela. Reordenar aqui reordena a tela.
+    """
+
+    PLANO_ENSINO = "PLANO_ENSINO", "1 - Plano de Ensino e Mapeamento Pedagógico"
+    SLIDES = "SLIDES", "2 - Slides e Apresentações"
+    VIDEOS = "VIDEOS", "3 - Vídeo-Aulas"
+    CARDS = "CARDS", "4 - Infográficos e Cards Educativos"
+    CADERNO = "CADERNO", "5 - Caderno de Exercícios e Atividades Práticas"
+    AVALIACAO = "AVALIACAO", "6 - Avaliação"
 
 
 class TipoPublico(models.TextChoices):

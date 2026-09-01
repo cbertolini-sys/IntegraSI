@@ -42,7 +42,7 @@ def test_professor_cria_proposta(client, professor, edicao):
     curso = Curso.objects.get(titulo="Robotica com sucata")
     assert curso.professor_responsavel == professor
     assert curso.edicao == edicao
-    assert curso.entregaveis.count() == 5
+    assert curso.entregaveis.count() == 6
 
 
 @pytest.mark.django_db

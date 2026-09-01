@@ -230,3 +230,39 @@ def test_proposta_sem_edicao_aberta_e_recusada(professor, db):
     with pytest.raises(ValidationError) as erro:
         services.criar_curso(titulo="Robotica com sucata", professor_responsavel=professor)
     assert "edição" in str(erro.value).lower()
+
+
+# --- Seis entregaveis, numerados (a pedido) ----------------------------------
+
+
+@pytest.mark.django_db
+def test_criar_curso_gera_os_seis_entregaveis(dados_curso):
+    curso = services.criar_curso(**dados_curso)
+    assert curso.entregaveis.count() == 6
+    assert curso.entregaveis.filter(tipo=TipoEntregavel.AVALIACAO).exists()
+
+
+@pytest.mark.django_db
+def test_os_valores_gravados_nao_mudaram(dados_curso):
+    """A renumeracao mexeu no rotulo, e nao no valor. Trocar o valor faria toda
+    linha ja gravada virar lixo, e e regra do projeto nunca fazer isso."""
+    curso = services.criar_curso(**dados_curso)
+    assert set(curso.entregaveis.values_list("tipo", flat=True)) == {
+        "PLANO_ENSINO", "SLIDES", "VIDEOS", "CARDS", "CADERNO", "AVALIACAO",
+    }
+
+
+@pytest.mark.django_db
+def test_curso_so_vai_a_coordenacao_com_os_seis_aprovados(dados_curso):
+    """A contagem vem de len(TipoEntregavel.values), entao passou de cinco para
+    seis sozinha. Este teste e o que prova que passou."""
+    from apps.cursos.choices import StatusEntregavel
+
+    curso = services.criar_curso(**dados_curso)
+    curso.entregaveis.exclude(tipo=TipoEntregavel.AVALIACAO).update(
+        status=StatusEntregavel.APROVADO
+    )
+    assert curso.pronto_para_o_coordenador is False
+
+    curso.entregaveis.update(status=StatusEntregavel.APROVADO)
+    assert curso.pronto_para_o_coordenador is True
