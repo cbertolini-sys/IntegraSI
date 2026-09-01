@@ -2,6 +2,25 @@
 {% block titulo %} - {{ curso.titulo }}{% endblock %}
 
 {% block topo %}
+  {% comment %}
+    O aviso vem ANTES do heroi, e nao no bloco de conteudo. La ele caia depois do
+    cabecalho grande e usava a mesma cor dele, entao lia como um pedaco solto do
+    heroi no meio da pagina em vez de um aviso do sistema.
+  {% endcomment %}
+  {% if previa %}
+    <div class="aviso-previa">
+      <div class="faixa">
+        <div class="painel-previa">
+          <p>
+            <strong>Prévia.</strong> É assim que {{ curso.titulo }} vai aparecer no
+            catálogo. Ainda não está publicado: só a equipe e a coordenação
+            enxergam esta página.
+          </p>
+          <a class="botao botao-linha" href="{% url 'curso' curso.pk %}">Voltar ao curso</a>
+        </div>
+      </div>
+    </div>
+  {% endif %}
   <section class="topo-curso">
     <div class="faixa">
       <p class="migalha">
@@ -25,15 +44,6 @@
 {% endblock %}
 
 {% block conteudo %}
-{% if previa %}
-  <div class="tarja-previa">
-    <div class="faixa">
-      <strong>Prévia</strong> de como {{ curso.titulo }} vai aparecer no catálogo.
-      Ainda não está publicado, e só a equipe e a coordenação enxergam esta página.
-      <a class="botao botao-linha" href="{% url 'curso' curso.pk %}">Voltar ao curso</a>
-    </div>
-  </div>
-{% endif %}
   <div class="faixa colunas">
     <div class="conteudo">
       <section class="secao-publica">

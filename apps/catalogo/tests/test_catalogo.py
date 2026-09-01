@@ -456,3 +456,18 @@ def test_previa_continua_avisando_o_que_o_portao_cobra(client, dados_curso, prof
     client.force_login(professor)
     html = client.get(reverse("previa_do_curso", args=[curso.pk])).content.decode()
     assert "O resumo ainda não foi escrito" in html
+
+
+@pytest.mark.django_db
+def test_o_aviso_de_previa_vem_antes_do_heroi(client, dados_curso, professor):
+    """O aviso estava no bloco de conteudo, logo depois do heroi, e usava a mesma
+    cor dele: lia como um pedaco solto do cabecalho, no meio da pagina.
+
+    A assercao e sobre a POSICAO no HTML, porque e disso que a queixa tratava e
+    nada mais no sistema garante ordem de bloco de template."""
+    from apps.cursos import services
+
+    curso = services.criar_curso(**dados_curso)
+    client.force_login(professor)
+    html = client.get(reverse("previa_do_curso", args=[curso.pk])).content.decode()
+    assert html.index("aviso-previa") < html.index("topo-curso")

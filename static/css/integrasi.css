@@ -2212,54 +2212,41 @@ textarea:focus {
   }
 }
 
-/* ---------- tarja da prévia ---------- */
+/* ---------- aviso de prévia ---------- */
 
-/* A prévia usa o MESMO template da página pública, para mostrar a tela que
-   existe de verdade. A tarja é o que impede a equipe de confundir uma com a
-   outra e achar que o curso já está publicado. */
-.tarja-previa {
-  background: var(--marinho);
-  color: var(--branco);
-  padding: 0.875rem 0;
-  font-size: 0.9375rem;
+/* Segue o padrao de aviso que o sistema ja tem em `.mensagens`: painel claro com
+   borda, dentro da faixa. A primeira versao era uma tarja escura em `--marinho`,
+   a mesma cor do heroi logo abaixo, e lia como um pedaco solto dele. */
+.aviso-previa {
+  padding-top: 1.5rem;
 }
 
-.tarja-previa .faixa {
+.painel-previa {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 1rem 1.5rem;
   flex-wrap: wrap;
+  background: var(--azul-suave);
+  border: 1px solid #cfe1f0;
+  border-radius: var(--raio-p);
+  padding: 0.875rem 1.25rem;
 }
 
-.tarja-previa strong {
-  font-family: var(--display);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  font-size: 0.8125rem;
-}
-
-.tarja-previa .botao-linha {
-  margin-left: auto;
-  background: transparent;
-  color: var(--branco);
-  border-color: rgba(255, 255, 255, 0.45);
-}
-
-.tarja-previa .botao-linha:hover {
-  background: rgba(255, 255, 255, 0.12);
-  color: var(--branco);
-}
-
-/* Pilha de ações da lateral do curso: o espaço entre os botões vem do `gap`, e
-   não de margem inline em cada um, para que acrescentar ou tirar um botão não
-   dependa de alguém lembrar da margem. */
-.acoes-empilhadas {
-  display: grid;
-  gap: 0.5rem;
-}
-
-.acoes-empilhadas form {
+.painel-previa p {
   margin: 0;
+  flex: 1 1 22rem;
+  font-size: 0.9375rem;
+  color: var(--texto);
+}
+
+.painel-previa strong {
+  font-family: var(--display);
+  font-weight: 700;
+  color: var(--azul);
+}
+
+.painel-previa .botao-linha {
+  background: var(--branco);
 }
 
 /* ---------- seções da página pública do curso ---------- */
