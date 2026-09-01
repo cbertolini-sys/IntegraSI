@@ -38,7 +38,19 @@
       modules: { toolbar: BARRA },
       placeholder: campo.getAttribute('placeholder') || 'Escreva aqui.'
     });
-    editor.clipboard.dangerouslyPasteHTML(campo.value || '');
+    // `setContents`, e nao `dangerouslyPasteHTML`: aquele chama `setSelection(0)`
+    // logo depois de gravar o conteudo (esta assim no bundle vendorizado), e
+    // `setSelection` foca o editor. A pagina abria com o cursor dentro da
+    // descricao; no Plano de Ensino, dentro da ultima das sete secoes, depois de
+    // rolar ate ela. `setContents` sozinho nao mexe na selecao.
+    //
+    // Fonte 'silent' porque carregar o valor nao e edicao: com a fonte padrao o
+    // `text-change` abaixo disparava na abertura e reescrevia o campo com o que
+    // ele ja tinha.
+    editor.setContents(
+      editor.clipboard.convert({ html: campo.value || '', text: '' }),
+      'silent'
+    );
 
     // Sincroniza a cada tecla, e nao no submit: o formulario e enviado por HTMX,
     // que le o valor do campo direto, sem disparar o evento de submit onde um

@@ -144,3 +144,43 @@ def test_o_que_a_barra_oferece_sobrevive_ao_nh3():
     for marca in ("<h2>", "<h3>", "<strong>", "<em>", "<u>", "<ol>", "<ul>", "<li>",
                   "<blockquote>", "<a "):
         assert marca in limpo, f"{marca} não sobreviveu ao sanitizador"
+
+
+def test_o_editor_nao_rouba_o_foco_ao_abrir_a_pagina():
+    """Abrir um entregável não pode jogar o cursor dentro de um campo.
+
+    `dangerouslyPasteHTML` faz `setContents` e, logo depois, `setSelection(0)` -
+    está escrito assim no próprio bundle vendorizado. `setSelection` foca o
+    editor, então a página abria com o cursor na descrição (e, no Plano de Ensino,
+    na última das sete seções, depois de rolar até ela).
+
+    `setContents` sozinho não mexe na seleção, e é o que o editor.js usa. Este
+    teste é estático porque `editor.js` precisa de DOM para rodar: o harness de
+    node que existe é do `upload.js`, que não depende de nenhum.
+    """
+    fonte = (RAIZ / "static" / "js" / "editor.js").read_text(encoding="utf-8")
+    # Sem as linhas de comentario: a regra e sobre o codigo, e o comentario que
+    # explica a decisao precisa poder citar a API pelo nome. A primeira versao
+    # deste teste reprovava por causa do proprio comentario que ele motivou.
+    codigo = "\n".join(
+        linha for linha in fonte.splitlines() if not linha.strip().startswith("//")
+    )
+    assert "dangerouslyPasteHTML" not in codigo, (
+        "esta API foca o editor; use setContents com o delta de clipboard.convert"
+    )
+    assert "setContents" in codigo
+
+
+def test_a_razao_de_evitar_o_dangerously_paste_continua_valendo():
+    """Prende o PORQUÊ, e não só o quê.
+
+    Sem isto, o teste acima vira regra sem motivo no dia em que uma versão nova do
+    Quill parar de mexer na seleção: ninguém saberia que dá para voltar atrás, e a
+    proibição sobreviveria à razão dela.
+    """
+    bundle = (RAIZ / "static" / "js" / "quill.min.js").read_text(encoding="utf-8")
+    inicio = bundle.index("dangerouslyPasteHTML")
+    assert "setSelection" in bundle[inicio : inicio + 400], (
+        "o Quill vendorizado mudou e talvez não foque mais; reveja "
+        "test_o_editor_nao_rouba_o_foco_ao_abrir_a_pagina"
+    )
