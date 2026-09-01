@@ -591,3 +591,34 @@ def test_a_tela_explica_por_que_a_lista_esta_curta(client, proposta, professor, 
     ).content.decode()
     texto = " ".join(re.sub(r"<[^>]+>", " ", html).split())
     assert "aparecem aqui quando o tipo de público é escolar" in texto
+
+
+@pytest.mark.django_db
+def test_escolha_que_saiu_da_lista_nao_fica_marcada(client, proposta, professor, habilidades):
+    """O caso real da troca, que o teste anterior nao alcancava.
+
+    O HTMX manda o valor ATUAL do select junto com o novo tipo de publico, entao a
+    requisicao chega com tipo_publico=COMUNITARIO e referencial=BNCC ao mesmo
+    tempo. Sem limpar, o select voltaria com a BNCC marcada numa lista que nao a
+    contem mais, e as habilidades dela seguiriam na tela.
+    """
+    import re
+
+    client.force_login(professor)
+    html = client.get(
+        reverse("ficha_referencial", args=[proposta.pk]),
+        {
+            "tipo_publico": "COMUNITARIO",
+            "etapa_ano": "EF05",
+            "referencial": str(habilidades.pk),
+        },
+    ).content.decode()
+
+    assert opcoes_de_referencial(html) == ["Nenhum"]
+    # A opcao marcada precisa ser "Nenhum", e nao "nenhuma marcada": select sem
+    # marcacao alguma cairia no primeiro item de qualquer jeito, e o teste passaria
+    # sem provar que a escolha antiga foi desfeita.
+    select = re.search(r'<select name="referencial".*?</select>', html, re.S).group(0)
+    marcada = re.search(r"<option[^>]*selected[^>]*>([^<]*)</option>", select)
+    assert marcada is not None and marcada.group(1) == "Nenhum"
+    assert "EF05CO01" not in html
