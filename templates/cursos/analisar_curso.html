@@ -11,6 +11,7 @@
       </div>
       <div class="acoes">
         <span class="estado {% if curso.status == 'PUBLICADO' %}ok{% elif curso.status == 'AGUARDANDO_COORDENADOR' %}espera{% endif %}">{{ curso.get_status_display }}</span>
+        <a class="botao botao-linha" href="{% url 'fila_coordenacao' %}">&larr; Voltar à fila</a>
       </div>
     </div>
   </div>

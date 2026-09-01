@@ -129,3 +129,32 @@ def test_entregaveis_saem_na_ordem_do_roteiro(dados_curso):
         "5 - Caderno de Exercícios e Atividades Práticas",
         "6 - Avaliação",
     ]
+
+
+# --- O card do entregavel: etapa e nome separados (a pedido) -----------------
+
+
+@pytest.mark.django_db
+def test_entregavel_sabe_o_numero_da_etapa(dados_curso):
+    """A posicao vem da ordem de declaracao de TipoEntregavel, a mesma fonte de
+    ORDEM_DO_ROTEIRO: dois lugares lendo a mesma lista nao saem de sincronia."""
+    from apps.cursos import services
+    from apps.cursos.choices import TipoEntregavel
+
+    curso = services.criar_curso(**dados_curso)
+    numeros = {e.tipo: e.numero for e in curso.entregaveis.all()}
+    assert numeros[TipoEntregavel.PLANO_ENSINO] == 1
+    assert numeros[TipoEntregavel.AVALIACAO] == 6
+
+
+@pytest.mark.django_db
+def test_entregavel_tem_nome_sem_o_numero(dados_curso):
+    """A tela mostra "Etapa 1" ao lado; repetir o numero no titulo o diria duas
+    vezes na mesma linha."""
+    from apps.cursos import services
+    from apps.cursos.choices import TipoEntregavel
+
+    curso = services.criar_curso(**dados_curso)
+    plano = curso.entregaveis.get(tipo=TipoEntregavel.PLANO_ENSINO)
+    assert plano.nome == "Plano de Ensino e Mapeamento Pedagógico"
+    assert plano.get_tipo_display() == "1 - Plano de Ensino e Mapeamento Pedagógico"

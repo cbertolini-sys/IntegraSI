@@ -28,9 +28,10 @@
         <h2>Entregáveis</h2>
         <ul class="registros">
           {% for entregavel in entregaveis %}
-            <li class="registro entregavel-card">
+            <li class="registro entregavel-card etapa-{{ entregavel.numero }}">
               <div>
-                <h3><a href="{% url 'entregavel' entregavel.pk %}">{{ entregavel.get_tipo_display }}</a></h3>
+                <span class="selo-etapa">Etapa {{ entregavel.numero }}</span>
+                <h3><a href="{% url 'entregavel' entregavel.pk %}">{{ entregavel.nome }}</a></h3>
               </div>
               <span class="estado {% if entregavel.status == 'APROVADO' %}ok{% elif entregavel.status == 'EM_REVISAO' %}espera{% elif entregavel.status == 'DEVOLVIDO' %}atencao{% endif %}">{{ entregavel.get_status_display }}</span>
             </li>

@@ -16,7 +16,10 @@
           <label for="motivo">Por que esta versão está sendo aberta?</label>
           <textarea id="motivo" name="motivo" rows="4" required></textarea>
         </div>
-        <button type="submit" class="botao botao-largo">Abrir nova versão</button>
+        <div class="acoes-empilhadas">
+          <button type="submit" class="botao botao-largo">Abrir nova versão</button>
+          <a class="botao botao-linha botao-largo" href="{% url 'curso' curso.pk %}">&larr; Voltar ao curso</a>
+        </div>
       </form>
     </div>
   </div>

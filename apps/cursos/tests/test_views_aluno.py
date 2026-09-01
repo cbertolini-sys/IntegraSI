@@ -381,3 +381,28 @@ def test_responsavel_ve_o_proprio_curso_em_meus_cursos(client, dados_curso, prof
     client.force_login(professor)
     resposta = client.get(reverse("meus_cursos"))
     assert curso.titulo in resposta.content.decode()
+
+
+@pytest.mark.django_db
+def test_card_do_entregavel_traz_a_etapa_em_selo(client, curso_com_equipe, aluno):
+    """"Etapa 1" num selo, e o nome sem o numero: o numero solto no titulo nao
+    dizia que aquilo era uma sequencia."""
+    client.force_login(aluno)
+    html = client.get(reverse("curso", args=[curso_com_equipe.pk])).content.decode()
+    assert "Etapa 1" in html
+    assert "Etapa 6" in html
+    # O titulo do card nao repete o numero.
+    assert "1 - Plano de Ensino" not in html
+
+
+@pytest.mark.django_db
+def test_telas_de_trabalho_tem_volta(client, curso_com_equipe, aluno):
+    """Toda tela funda precisa de saida. Sem ela, a unica volta e o botao do
+    navegador, que perde o que foi digitado num formulario aberto."""
+    from apps.cursos.choices import TipoEntregavel
+
+    entregavel = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.PLANO_ENSINO)
+    client.force_login(aluno)
+    html = client.get(reverse("entregavel", args=[entregavel.pk])).content.decode()
+    assert "voltar" in html.lower()
+    assert reverse("curso", args=[curso_com_equipe.pk]) in html

@@ -2313,3 +2313,64 @@ textarea:focus {
   padding: 0.75rem 1rem;
   margin: 0;
 }
+
+/* ---------- cards dos entregáveis ---------- */
+
+/* Uma cor por etapa. A sequência vai do azul institucional ao verde, passando
+   pelo ciano da marca: são seis passos de um mesmo caminho, e não seis avisos
+   disputando atenção. A cor entra na borda esquerda e no selo, nunca no fundo do
+   card inteiro, que deixaria o texto de estado ilegível. */
+:root {
+  --etapa-1: #055695;
+  --etapa-2: #0f6ea8;
+  --etapa-3: #1d8ba4;
+  --etapa-4: #2aa79b;
+  --etapa-5: #38c2c2;
+  --etapa-6: #2f8f6b;
+}
+
+.entregavel-card {
+  border-left: 4px solid var(--cor-etapa, var(--linha));
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.entregavel-card:hover {
+  box-shadow: 0 2px 4px rgba(22, 32, 46, 0.08), 0 8px 20px rgba(22, 32, 46, 0.1);
+  transform: translateY(-1px);
+}
+
+.entregavel-card.etapa-1 { --cor-etapa: var(--etapa-1); }
+.entregavel-card.etapa-2 { --cor-etapa: var(--etapa-2); }
+.entregavel-card.etapa-3 { --cor-etapa: var(--etapa-3); }
+.entregavel-card.etapa-4 { --cor-etapa: var(--etapa-4); }
+.entregavel-card.etapa-5 { --cor-etapa: var(--etapa-5); }
+.entregavel-card.etapa-6 { --cor-etapa: var(--etapa-6); }
+
+/* "Etapa N" pequeno, acima do nome: o número solto no título não dizia que
+   aquilo era uma sequência de seis passos. */
+.selo-etapa {
+  display: inline-block;
+  font-family: var(--display);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--cor-etapa, var(--azul));
+  background: color-mix(in srgb, var(--cor-etapa, var(--azul)) 12%, white);
+  border-radius: 999px;
+  padding: 0.1875rem 0.625rem;
+  margin-bottom: 0.375rem;
+}
+
+.entregavel-card h3 {
+  margin: 0;
+}
+
+/* O selo no cabeçalho da própria página do entregável usa a mesma cor da etapa,
+   para a pessoa reconhecer de onde veio. */
+.cabecalho-pagina .selo-etapa.etapa-1 { --cor-etapa: var(--etapa-1); }
+.cabecalho-pagina .selo-etapa.etapa-2 { --cor-etapa: var(--etapa-2); }
+.cabecalho-pagina .selo-etapa.etapa-3 { --cor-etapa: var(--etapa-3); }
+.cabecalho-pagina .selo-etapa.etapa-4 { --cor-etapa: var(--etapa-4); }
+.cabecalho-pagina .selo-etapa.etapa-5 { --cor-etapa: var(--etapa-5); }
+.cabecalho-pagina .selo-etapa.etapa-6 { --cor-etapa: var(--etapa-6); }

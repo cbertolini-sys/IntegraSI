@@ -79,6 +79,26 @@ class Entregavel(models.Model):
         return f"{self.get_tipo_display()} - {self.curso.titulo}"
 
     @property
+    def numero(self):
+        """A posicao no roteiro, de 1 a 6.
+
+        Lida da ordem de declaracao de TipoEntregavel, a MESMA fonte de
+        ORDEM_DO_ROTEIRO: dois lugares lendo a mesma lista nao saem de sincronia,
+        e reordenar o enum reordena a tela e renumera os selos de uma vez.
+        """
+        return TipoEntregavel.values.index(self.tipo) + 1
+
+    @property
+    def nome(self):
+        """O rotulo sem o numero.
+
+        A tela mostra "Etapa 1" num selo ao lado; repetir o numero no titulo o
+        diria duas vezes na mesma linha. Se um rotulo futuro nao tiver o prefixo,
+        devolve o rotulo inteiro em vez de recortar errado.
+        """
+        return self.get_tipo_display().split(" - ", 1)[-1]
+
+    @property
     def editavel(self):
         return self.status in (StatusEntregavel.RASCUNHO, StatusEntregavel.DEVOLVIDO)
 
