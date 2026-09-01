@@ -622,3 +622,74 @@ def test_escolha_que_saiu_da_lista_nao_fica_marcada(client, proposta, professor,
     marcada = re.search(r"<option[^>]*selected[^>]*>([^<]*)</option>", select)
     assert marcada is not None and marcada.group(1) == "Nenhum"
     assert "EF05CO01" not in html
+
+
+# --- A etapa reage ao tipo de publico (a pedido) -----------------------------
+
+
+def opcoes_de_etapa(html):
+    import re
+
+    select = re.search(r'<select name="etapa_ano".*?</select>', html, re.S)
+    return re.findall(r"<option[^>]*>([^<]*)</option>", select.group(0)) if select else []
+
+
+@pytest.mark.django_db
+def test_publico_comunitario_deixa_so_nenhum_na_etapa(client, proposta, professor):
+    """Curso.clean() ja recusa etapa em curso comunitario. O select oferecia as
+    treze mesmo assim, e a pessoa so descobria ao salvar."""
+    client.force_login(professor)
+    html = client.get(
+        reverse("ficha_etapa", args=[proposta.pk]), {"tipo_publico": "COMUNITARIO"}
+    ).content.decode()
+    assert opcoes_de_etapa(html) == ["Nenhum"]
+
+
+@pytest.mark.django_db
+def test_publico_escolar_oferece_as_etapas(client, proposta, professor):
+    """Prende o outro lado: sem este par, esvaziar sempre passaria."""
+    client.force_login(professor)
+    html = client.get(
+        reverse("ficha_etapa", args=[proposta.pk]), {"tipo_publico": "ESCOLAR"}
+    ).content.decode()
+    opcoes = opcoes_de_etapa(html)
+    assert opcoes[0] == "Nenhum"
+    assert "5º ano do Ensino Fundamental" in opcoes
+    assert len(opcoes) == 14
+
+
+@pytest.mark.django_db
+def test_o_vazio_da_etapa_se_chama_nenhum(client, proposta, professor):
+    """O "---------" do Django nao diz nada. Curso sem etapa e legitimo (publico
+    comunitario), entao a opcao precisa se chamar pelo nome."""
+    import re
+
+    client.force_login(professor)
+    html = client.get(reverse("ficha", args=[proposta.pk])).content.decode()
+    assert opcoes_de_etapa(html)[0] == "Nenhum"
+    # Nenhum select da ficha mostra o "---------" do Django.
+    assert "---------" not in html
+    # E os rotulos sao diferentes de proposito: "Nenhum" e estado legitimo da
+    # etapa; tipo de publico e formato vazios sao pendencia que o portao cobra, e
+    # chama-los de "Nenhum" diria que estao resolvidos.
+    for campo in ("tipo_publico", "formato"):
+        select = re.search(rf'<select name="{campo}".*?</select>', html, re.S).group(0)
+        assert re.findall(r"<option[^>]*>([^<]*)</option>", select)[0] == "A definir"
+
+
+@pytest.mark.django_db
+def test_trocar_para_comunitario_desmarca_a_etapa(client, proposta, professor):
+    """Mesmo caso do referencial: o HTMX manda o valor atual do select junto com o
+    novo tipo de publico, entao a etapa antiga chega na mesma requisicao."""
+    import re
+
+    proposta.etapa_ano = "EF05"
+    proposta.save()
+    client.force_login(professor)
+    html = client.get(
+        reverse("ficha_etapa", args=[proposta.pk]),
+        {"tipo_publico": "COMUNITARIO", "etapa_ano": "EF05"},
+    ).content.decode()
+    select = re.search(r'<select name="etapa_ano".*?</select>', html, re.S).group(0)
+    marcada = re.search(r"<option[^>]*selected[^>]*>([^<]*)</option>", select)
+    assert marcada is not None and marcada.group(1) == "Nenhum"

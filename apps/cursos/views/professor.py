@@ -95,6 +95,36 @@ def contexto_das_habilidades(request, curso):
     }
 
 
+def publico_da_tela(request, curso):
+    """O tipo de publico que a tela tem agora: o enviado, se veio, senao o gravado."""
+    return request.GET["tipo_publico"] if "tipo_publico" in request.GET else curso.tipo_publico
+
+
+@login_required
+def ficha_etapa(request, pk):
+    """O campo de etapa, trocado quando muda o tipo de publico.
+
+    Regiao propria, e nao junto do referencial: os dois reagem ao mesmo evento mas
+    ficam em secoes diferentes da ficha, e uni-los obrigaria a trocar metade do
+    formulario para mexer num select.
+    """
+    from apps.cursos.forms import FichaCursoForm
+
+    curso = get_object_or_404(Curso, pk=pk)
+    permissions.garante(
+        permissions.pode_editar_ficha(request.user, curso),
+        "Somente a equipe do curso edita a ficha, e apenas enquanto ele está em produção.",
+    )
+    form = FichaCursoForm(instance=curso, publico=publico_da_tela(request, curso))
+    escolhida = request.GET.get("etapa_ano") or ""
+    # A etapa antiga chega na mesma requisicao que o tipo novo, porque o HTMX manda
+    # o valor atual do select junto. So continua marcada se ainda existir na lista.
+    if escolhida not in dict(form.fields["etapa_ano"].choices):
+        escolhida = ""
+    form.initial["etapa_ano"] = escolhida
+    return render(request, "cursos/_etapa.html", {"curso": curso, "form": form})
+
+
 @login_required
 def ficha_referencial(request, pk):
     """O select de referencial mais o bloco de habilidades, trocados juntos quando
@@ -114,13 +144,10 @@ def ficha_referencial(request, pk):
 def contexto_do_referencial(request, curso):
     """Monta o formulario com o publico que a tela tem AGORA, para o select de
     referencial ja vir filtrado, e junta o contexto do bloco de habilidades."""
-    from apps.cursos.choices import TipoPublico
     from apps.cursos.forms import FichaCursoForm
 
-    tipo = request.GET["tipo_publico"] if "tipo_publico" in request.GET else curso.tipo_publico
-    escolar = tipo == TipoPublico.ESCOLAR
-    form = FichaCursoForm(instance=curso)
-    form.fields["referencial"].queryset = Referencial.objects.para_publico_escolar(escolar)
+    form = FichaCursoForm(instance=curso, publico=publico_da_tela(request, curso))
+    escolar = form.publico_e_escolar()
     # O referencial escolhido so continua marcado se ainda estiver na lista: quando
     # o publico deixa de ser escolar, o select volta para "Nenhum" na cara da
     # pessoa, em vez de manter uma escolha que nao vale mais.

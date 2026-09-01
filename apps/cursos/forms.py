@@ -3,9 +3,9 @@ from django.core.exceptions import ValidationError
 from django.forms.models import construct_instance
 
 from apps.cursos.arquivos import valida_upload
-from apps.cursos.choices import PALAVRAS_CHAVE_EXIGIDAS, TipoPublico
+from apps.cursos.choices import PALAVRAS_CHAVE_EXIGIDAS, Formato, TipoPublico
 from apps.cursos.models import Anexo, Curso, Secao
-from apps.referenciais.choices import etapa_do_referencial
+from apps.referenciais.choices import ETAPAS, etapa_do_referencial
 from apps.referenciais.models import Referencial
 
 
@@ -147,28 +147,56 @@ class FichaCursoForm(forms.ModelForm):
         ]
         widgets = {"resumo": forms.Textarea(attrs={"rows": 4})}
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, publico=None, **kwargs):
+        """`publico` deixa a view dizer qual tipo a tela tem agora.
+
+        As trocas por HTMX chegam num GET, com o formulario nao vinculado: sem esse
+        parametro, o formulario leria o tipo GRAVADO e desenharia os selects do
+        estado anterior, que e justamente o que a troca esta desfazendo.
+        """
         super().__init__(*args, **kwargs)
+        self._publico = publico
+
         # O vazio que o Django gera e "---------", que nao diz nada. Curso sem
-        # referencial e de primeira classe (spec 4.2), entao a opcao se chama pelo
-        # nome; senao parece campo que a pessoa esqueceu de preencher.
+        # referencial e sem etapa sao legitimos (spec 4.2 e publico comunitario),
+        # entao as opcoes se chamam pelo nome; senao parecem campo esquecido.
         #
-        # Aqui, e nao redeclarando o campo: assim o queryset continua vindo da FK,
-        # e um referencial desativado que ja esteja gravado nao some do select
-        # (sumir o descartaria em silencio no proximo salvamento).
+        # `empty_label` aqui, e nao redeclarando o campo: assim o queryset continua
+        # vindo da FK, e um referencial desativado que ja esteja gravado nao some
+        # do select (sumir o descartaria em silencio no proximo salvamento).
         self.fields["referencial"].empty_label = "Nenhum"
         self.fields["referencial"].queryset = Referencial.objects.para_publico_escolar(
             self.publico_e_escolar()
         )
 
-    def publico_e_escolar(self):
+        # Curso.clean() ja recusa etapa em curso comunitario. O select oferecia as
+        # treze mesmo assim, e a pessoa so descobria ao salvar.
+        vazio = [("", "Nenhum")]
+        comunitario = self.tipo_publico_em_uso() == TipoPublico.COMUNITARIO
+        self.fields["etapa_ano"].choices = vazio if comunitario else vazio + list(ETAPAS)
+
+        # Os outros dois selects opcionais tambem mostravam "---------". O rotulo
+        # e diferente de proposito: "Nenhum" e estado LEGITIMO da etapa (curso
+        # comunitario nao tem etapa), enquanto tipo de publico e formato vazios sao
+        # pendencia que o portao cobra. Chamar os tres de "Nenhum" diria que estao
+        # resolvidos.
+        for campo, choices in (
+            ("tipo_publico", TipoPublico.choices),
+            ("formato", Formato.choices),
+        ):
+            self.fields[campo].choices = [("", "A definir")] + list(choices)
+
+    def tipo_publico_em_uso(self):
         """O tipo de publico que a tela tem AGORA, e nao o gravado: a pessoa pode
         ter acabado de trocar o select e ainda nao ter salvo."""
+        if self._publico is not None:
+            return self._publico
         if self.is_bound:
-            tipo = self.data.get("tipo_publico", "")
-        else:
-            tipo = self.instance.tipo_publico if self.instance else ""
-        return tipo == TipoPublico.ESCOLAR
+            return self.data.get("tipo_publico", "")
+        return self.instance.tipo_publico if self.instance else ""
+
+    def publico_e_escolar(self):
+        return self.tipo_publico_em_uso() == TipoPublico.ESCOLAR
 
     def clean(self):
         dados = super().clean()

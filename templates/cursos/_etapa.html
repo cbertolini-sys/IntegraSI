@@ -1,0 +1,13 @@
+{% comment %}
+  A etapa numa regiao propria, trocada por HTMX quando muda o tipo de publico:
+  curso comunitario nao tem etapa (Curso.clean() recusa), entao a lista fica so
+  com "Nenhum" em vez de oferecer treze opcoes que o salvamento vai rejeitar.
+{% endcomment %}
+<div id="etapa"
+     hx-get="{% url 'ficha_etapa' curso.pk %}"
+     hx-trigger="change from:#id_tipo_publico"
+     hx-include="#id_tipo_publico, #id_etapa_ano"
+     hx-target="this"
+     hx-swap="outerHTML">
+  {% include "cursos/_campo.html" with campo=form.etapa_ano %}
+</div>
