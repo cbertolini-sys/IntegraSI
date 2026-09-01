@@ -266,3 +266,49 @@ def test_curso_so_vai_a_coordenacao_com_os_seis_aprovados(dados_curso):
 
     curso.entregaveis.update(status=StatusEntregavel.APROVADO)
     assert curso.pronto_para_o_coordenador is True
+
+
+@pytest.mark.django_db
+def test_descricao_do_anexo_e_sanitizada(dados_curso, aluno):
+    """A descricao passou a ser escrita num editor rico e renderizada com |safe na
+    lista de materiais. Sem esta sanitizacao ela e o segundo caminho para script
+    no navegador de quem le - o primeiro, `Secao.conteudo`, ja esta fechado."""
+    from apps.cursos.choices import TipoMidia
+    from apps.cursos.models import Anexo
+
+    curso = services.criar_curso(**dados_curso)
+    anexo = Anexo(
+        entregavel=curso.entregaveis.get(tipo=TipoEntregavel.SLIDES),
+        tipo_midia=TipoMidia.LINK,
+        titulo="Aula 1",
+        descricao='<p>Texto</p><script>alert(1)</script><img src="x" onerror="alert(2)">',
+        url="https://exemplo.org/a",
+        enviado_por=aluno,
+    )
+    anexo.save()
+    anexo.refresh_from_db()
+    assert "<p>Texto</p>" in anexo.descricao
+    assert "script" not in anexo.descricao
+    assert "onerror" not in anexo.descricao
+
+
+@pytest.mark.django_db
+def test_sanitizacao_da_descricao_roda_mesmo_com_update_fields(dados_curso, aluno):
+    """Pelo mesmo motivo da secao: o save direcionado e o caminho de uma edicao
+    rapida, e e o que mais precisa ficar seguro."""
+    from apps.cursos.choices import TipoMidia
+    from apps.cursos.models import Anexo
+
+    curso = services.criar_curso(**dados_curso)
+    anexo = Anexo.objects.create(
+        entregavel=curso.entregaveis.get(tipo=TipoEntregavel.SLIDES),
+        tipo_midia=TipoMidia.LINK,
+        titulo="Aula 1",
+        url="https://exemplo.org/a",
+        enviado_por=aluno,
+    )
+    anexo.descricao = "<p>Texto</p><script>alert(1)</script>"
+    anexo.save(update_fields=["descricao"])
+    anexo.refresh_from_db()
+    assert "<p>Texto</p>" in anexo.descricao
+    assert "script" not in anexo.descricao

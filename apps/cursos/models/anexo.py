@@ -1,10 +1,13 @@
 import uuid
 
+import nh3
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 
 from apps.cursos.choices import Rotulo, TipoMidia, TipoPratica
+from apps.cursos.models.producao import TAGS_PERMITIDAS
 
 
 def caminho_do_arquivo(instance, filename):
@@ -97,6 +100,12 @@ class Anexo(models.Model):
             raise ValidationError(erros)
 
     def save(self, *args, **kwargs):
+        # Sanitiza sempre, pelo mesmo motivo de `Secao.save()`: a descricao e
+        # escrita num editor de texto rico e renderizada com |safe na lista de
+        # materiais, entao esta linha e a unica barreira entre ela e um script no
+        # navegador de quem le. Fica FORA do guarda do update_fields - um save
+        # direcionado e justamente o caminho de uma edicao rapida.
+        self.descricao = nh3.clean(self.descricao or "", tags=TAGS_PERMITIDAS)
         if "update_fields" not in kwargs:
             self.full_clean()
         super().save(*args, **kwargs)

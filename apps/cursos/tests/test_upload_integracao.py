@@ -296,7 +296,7 @@ def test_a_barra_fica_abaixo_do_video_e_o_aviso_nasce_escondido(
     assert 'value="0"' in barra, "a barra precisa nascer zerada"
     # Colada ao campo do video, e antes do titulo: e o envio do arquivo que ela
     # mede, e no fim do formulario ela media visualmente a duracao.
-    assert conteudo.index("video-arquivo") < conteudo.index("<progress")
+    assert conteudo.index("video-upload") < conteudo.index("<progress")
     assert conteudo.index("<progress") < conteudo.index("video-titulo")
     # O numero ao lado: barra sem porcentagem nao diz quanto falta de um giga.
     assert 'class="envio-numero"' in conteudo
@@ -351,3 +351,50 @@ def test_o_formulario_de_video_usa_o_campo_padrao_da_interface(
     # Rotulo que nao embrulha mais o campo precisa apontar para ele pelo `for`,
     # senao clicar no texto deixa de focar o campo.
     assert formulario.count("<label for=") >= 4
+
+
+# Regra 12: todo campo do formulario de video explica como preencher
+@pytest.mark.django_db
+def test_os_campos_do_video_tem_tooltip(client, aluno, entregavel_videos):
+    """Escrito a mao, este formulario era o unico da interface sem ajuda nenhuma.
+    A explicacao mora no `help_text`, em Python (tests/test_ajuda.py cobra uma para
+    todo campo de todo formulario), e chega a tela pelo mesmo `_campo.html` do
+    resto do sistema."""
+    client.force_login(aluno)
+    formulario = formulario_de_video(tela(client, entregavel_videos))
+    assert formulario.count('class="ajuda-campo"') == 4, "faltou tooltip em algum campo"
+    for rotulo in ("Vídeo-aula", "Título", "Descrição", "Duração"):
+        assert rotulo in formulario, rotulo
+
+
+# Regra 12b: a descricao do video tem editor, como as secoes do plano
+@pytest.mark.django_db
+def test_a_descricao_do_video_tem_editor(client, aluno, entregavel_videos):
+    client.force_login(aluno)
+    formulario = formulario_de_video(tela(client, entregavel_videos))
+    assert "data-editor" in formulario
+    assert 'name="descricao"' in formulario
+
+
+# Regra 12c: a formatacao escrita no editor chega inteira a lista
+@pytest.mark.django_db
+def test_a_formatacao_da_descricao_sobrevive_ate_a_lista(client, aluno, entregavel_videos):
+    """Com escape, o editor seria uma armadilha: a pessoa formata, salva, e a tela
+    mostra `<strong>` como texto. Renderizar como HTML so e seguro porque
+    `Anexo.save()` sanitiza - as duas metades andam juntas."""
+    from apps.cursos.models import Anexo
+    from apps.cursos.choices import TipoMidia
+
+    Anexo.objects.create(
+        entregavel=entregavel_videos,
+        tipo_midia=TipoMidia.LINK,
+        titulo="Aula 1",
+        descricao="<p>Abertura <strong>do curso</strong>.</p>",
+        url="https://exemplo.org/a",
+        duracao_minutos=7,
+        enviado_por=aluno,
+    )
+    client.force_login(aluno)
+    conteudo = tela(client, entregavel_videos)
+    assert "<strong>do curso</strong>" in conteudo
+    assert "&lt;strong&gt;" not in conteudo

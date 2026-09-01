@@ -3,6 +3,7 @@ from django.core.exceptions import ValidationError
 from django.forms.models import construct_instance
 
 from apps.cursos.arquivos import valida_upload
+from apps.cursos.validacoes import DURACAO_MAXIMA, DURACAO_MINIMA
 from apps.cursos.choices import (
     PALAVRAS_CHAVE_EXIGIDAS,
     Formato,
@@ -71,6 +72,63 @@ def oferece_anexo(tipo):
     """Se este entregavel recebe material pelo formulario comum de anexar."""
     campos = CAMPOS_DO_ANEXO.get(tipo)
     return campos is None or bool(campos)
+
+
+class EnvioDeVideoForm(forms.Form):
+    """Os campos do envio de video-aula. Serve para DESENHAR a tela, e nao para
+    validar: o envio e fatiado em blocos pelo upload.js, que le os campos pelo
+    `name` e manda JSON para `upload_concluir` (spec 8). Quem valida e o servico,
+    com `Anexo` como autoridade.
+
+    Existe como formulario, e nao como HTML escrito a mao, por causa da ajuda: a
+    explicacao de campo mora no `help_text`, em Python, e `tests/test_ajuda.py`
+    cobra uma para todo campo de todo formulario do projeto. Escrito a mao, este
+    era o unico da interface sem tooltip nenhum, e ficaria de fora dessa regra
+    para sempre.
+
+    Os limites saem das mesmas fontes de antes (o campo do `Anexo` e as constantes
+    de `validacoes`), so que agora atraves dos widgets. Numero repetido aqui
+    divergiria da regra no dia em que ela mudasse.
+    """
+
+    upload = forms.FileField(
+        label="Vídeo-aula (MP4, até 1 GB)",
+        # Sem `required`: quem recusa o envio sem arquivo e o upload.js, com uma
+        # mensagem no aviso. O `required` do navegador barraria o submit antes, e
+        # o caminho que o cenario do harness exercita nunca rodaria.
+        required=False,
+        widget=forms.FileInput(attrs={"accept": "video/mp4"}),
+        help_text=(
+            "O arquivo do vídeo, em MP4. Se a conexão cair no meio, escolha o "
+            "mesmo arquivo de novo: o envio retoma de onde parou."
+        ),
+    )
+    titulo = forms.CharField(
+        label="Título",
+        max_length=Anexo._meta.get_field("titulo").max_length,
+        help_text=(
+            "Como a vídeo-aula aparece na lista de materiais. Ex.: \u201cAula 1: "
+            "o que é um algoritmo\u201d."
+        ),
+    )
+    descricao = forms.CharField(
+        label="Descrição",
+        required=False,
+        widget=forms.Textarea(attrs={"rows": 3, "data-editor": True}),
+        help_text=(
+            "O que esta aula cobre, em uma ou duas linhas. Aceita negrito, listas "
+            "e links. Opcional."
+        ),
+    )
+    duracao_minutos = forms.IntegerField(
+        label="Duração em minutos",
+        min_value=DURACAO_MINIMA,
+        max_value=DURACAO_MAXIMA,
+        help_text=(
+            f"Quanto tempo o vídeo tem, em minutos inteiros. O roteiro pede de "
+            f"{DURACAO_MINIMA} a {DURACAO_MAXIMA} minutos por aula."
+        ),
+    )
 
 
 class AnexoForm(forms.ModelForm):

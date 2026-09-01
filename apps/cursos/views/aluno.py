@@ -7,7 +7,7 @@ from django.views.decorators.http import require_POST
 from apps.cursos import permissions, services, validacoes
 from apps.cursos.arquivos import TAMANHO_BLOCO, calcula_hash
 from apps.cursos.choices import StatusCurso, TipoMidia
-from apps.cursos.forms import AnexoForm, SecaoForm, oferece_anexo
+from apps.cursos.forms import AnexoForm, EnvioDeVideoForm, SecaoForm, oferece_anexo
 from apps.cursos.models import Anexo, Arquivo, Curso, Entregavel, Secao
 from apps.cursos.views.upload import UUID_MODELO
 
@@ -77,14 +77,15 @@ def entregavel(request, pk):
             # revertidas - nenhum dos dois pode estar escrito de novo dentro do JS.
             "tamanho_bloco": TAMANHO_BLOCO,
             "uuid_modelo": UUID_MODELO,
-            "duracao_minima": validacoes.DURACAO_MINIMA,
-            "duracao_maxima": validacoes.DURACAO_MAXIMA,
-            # Sai do proprio campo do Anexo, e nao de um 200 escrito no HTML: sem o
+            # `auto_id` proprio porque os `id_...` do Django colidiriam com os do
+            # AnexoForm no dia em que uma tela mostrasse os dois formularios.
+            #
+            # A faixa de duracao e o `maxlength` do titulo sairam daqui para dentro
+            # do formulario, junto da ajuda de cada campo. Continuam vindo do campo
+            # do Anexo e das constantes de validacoes, que e o que importa: sem o
             # `maxlength`, um titulo colado depois de meia hora de upload so era
-            # recusado no servidor, e o aluno tentava de novo - outro giga em disco a
-            # cada tentativa. O numero duplicado no template divergiria do model no
-            # dia em que o campo mudasse.
-            "titulo_maximo": Anexo._meta.get_field("titulo").max_length,
+            # recusado no servidor, e o aluno tentava de novo, outro giga em disco.
+            "form_video": EnvioDeVideoForm(auto_id="video-%s"),
         },
     )
 

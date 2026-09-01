@@ -1225,6 +1225,17 @@ textarea:focus {
   line-height: 1.5;
 }
 
+/* A descrição vem do editor, então chega embrulhada em <p> (e pode trazer lista
+   ou citação). Sem isto o primeiro parágrafo abre uma margem de navegador dentro
+   do cartão do material. */
+.descricao-anexo > :first-child {
+  margin-top: 0;
+}
+
+.descricao-anexo > :last-child {
+  margin-bottom: 0;
+}
+
 .registro:hover {
   box-shadow: var(--sombra);
   border-color: #cfdae6;
@@ -2849,6 +2860,13 @@ textarea:focus {
 .envio-progresso progress::-moz-progress-bar {
   background: linear-gradient(90deg, var(--azul), var(--ciano));
   border-radius: 999px;
+}
+
+/* O editor da descrição do vídeo é mais baixo que o das seções: aquele tem
+   13rem porque uma ementa inteira cabe dentro dele, e aqui são uma ou duas
+   linhas. O campo cresce com o texto de qualquer forma. */
+[data-upload-video] .editor-secao .ql-editor {
+  min-height: 5.5rem;
 }
 
 .envio-numero {

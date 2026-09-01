@@ -52,8 +52,13 @@
         {% comment %}
           Ate aqui `descricao` era campo que so entrava: pedido no formulario de
           anexar, gravado no banco e nunca mostrado em tela nenhuma.
+
+          O |safe e seguro porque `Anexo.save()` sanitiza com nh3 contra
+          TAGS_PERMITIDAS, incondicionalmente, do mesmo jeito que `Secao.save()`.
+          Sem o |safe o editor seria uma armadilha: a pessoa formata, salva, e a
+          tela mostra <strong> como texto. As duas metades andam juntas.
         {% endcomment %}
-        {% if anexo.descricao %}<p class="descricao-anexo">{{ anexo.descricao }}</p>{% endif %}
+        {% if anexo.descricao %}<div class="descricao-anexo">{{ anexo.descricao|safe }}</div>{% endif %}
       </li>
     {% empty %}
       <li class="vazio"><p>Nenhum material anexado.</p></li>
@@ -98,16 +103,12 @@
             data-url-concluir="{% url 'upload_concluir' uuid_modelo %}">
         {% csrf_token %}
         {% comment %}
-          Cada campo no `.campo` que o resto do sistema usa: e de la que vem o
-          espaco entre um campo e o seguinte. Escrito a mao com <label> inline,
-          este era o unico formulario da interface sem esse ritmo, e os campos
-          ficavam colados. O rotulo deixou de embrulhar o campo, entao precisa do
-          `for`: sem ele, clicar no texto para de focar o campo.
+          O mesmo `_campo.html` do resto do sistema: dele vem o `.campo` que da o
+          espaco entre um campo e o seguinte, o rotulo com `for` e o tooltip de
+          ajuda. Escrito a mao, este era o unico formulario da interface sem ajuda
+          nenhuma, e ficava fora da regra que tests/test_ajuda.py cobra.
         {% endcomment %}
-        <div class="campo">
-          <label for="video-arquivo">Vídeo-aula (MP4, até 1 GB)</label>
-          <input type="file" id="video-arquivo" accept="video/mp4">
-        </div>
+        {% include "cursos/_campo.html" with campo=form_video.upload %}
         {% comment %}
           Colada ao campo que ela mede, e nao no fim do formulario. Permanente:
           escondida ate o envio, ela aparecia e sumia, mexendo a altura do
@@ -119,20 +120,9 @@
                     aria-label="Progresso do envio"></progress>
           <span class="envio-numero">0%</span>
         </div>
-        <div class="campo">
-          <label for="video-titulo">Título</label>
-          <input type="text" id="video-titulo" name="titulo"
-                 maxlength="{{ titulo_maximo }}" required>
-        </div>
-        <div class="campo">
-          <label for="video-descricao">Descrição</label>
-          <textarea id="video-descricao" name="descricao" rows="3"></textarea>
-        </div>
-        <div class="campo">
-          <label for="video-duracao">Duração em minutos</label>
-          <input type="number" id="video-duracao" name="duracao_minutos"
-                 min="{{ duracao_minima }}" max="{{ duracao_maxima }}" required>
-        </div>
+        {% include "cursos/_campo.html" with campo=form_video.titulo %}
+        {% include "cursos/_campo.html" with campo=form_video.descricao %}
+        {% include "cursos/_campo.html" with campo=form_video.duracao_minutos %}
         {% comment %}
           Escondido ate haver o que dizer: paragrafo vazio so abriria um buraco no
           meio do formulario. Quem o mostra e o upload.js. Nenhuma regra de CSS
