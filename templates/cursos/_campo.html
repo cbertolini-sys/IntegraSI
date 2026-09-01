@@ -7,9 +7,17 @@
   continua vindo do `help_text`, em Python.
 {% endcomment %}
 <div class="campo{% if largo %} campo-largo{% endif %}{% if extra %} {{ extra }}{% endif %}">
-  {{ campo.label_tag }}{% if campo.help_text %}<button type="button" class="ajuda-campo"
-    data-ajuda="{{ campo.help_text }}" tabindex="-1"
-    aria-label="O que é {{ campo.label }}">?</button>{% endif %}
+  {% comment %}
+    O rotulo e o gatilho num invólucro proprio: `.campo label` e `display: block`,
+    entao o botao caia na linha DE BAIXO, solto sob o texto. O invólucro os poe
+    lado a lado sem tirar o comportamento de bloco do rotulo, que o resto do
+    formulario usa.
+  {% endcomment %}
+  <span class="rotulo-campo">
+    {{ campo.label_tag }}{% if campo.help_text %}<button type="button" class="ajuda-campo"
+      data-ajuda="{{ campo.help_text }}" tabindex="-1"
+      aria-label="O que é {{ campo.label }}">?</button>{% endif %}
+  </span>
   {{ campo }}
   {% if campo.help_text %}
     {% comment %}

@@ -743,3 +743,23 @@ def test_nenhuma_referencia_de_acessibilidade_fica_pendurada(client, proposta, p
     assert apontados, "nenhum aria-describedby na tela"
     penduradas = sorted(a for a in apontados if a not in existentes)
     assert penduradas == [], f"aria-describedby sem alvo: {penduradas}"
+
+
+@pytest.mark.django_db
+def test_gatilho_de_ajuda_fica_na_linha_do_rotulo(client, proposta, professor):
+    """`.campo label` e `display: block`, entao o gatilho solto caia na linha de
+    baixo, sob o texto. Fica dentro do invólucro que os poe lado a lado.
+
+    A assercao e sobre a estrutura, e nao sobre pixels: CSS nao da para testar
+    aqui, mas o invólucro e a condicao para o layout funcionar, e apaga-lo devolve
+    o defeito."""
+    import re
+
+    client.force_login(professor)
+    html = client.get(reverse("ficha", args=[proposta.pk])).content.decode()
+    invólucros = re.findall(r'<span class="rotulo-campo">(.*?)</span>', html, re.S)
+    assert invólucros, "nenhum invólucro de rótulo"
+    com_gatilho = [i for i in invólucros if "ajuda-campo" in i]
+    assert len(com_gatilho) >= 9
+    for trecho in com_gatilho:
+        assert "<label" in trecho, "gatilho fora do invólucro do rótulo"
