@@ -175,11 +175,14 @@ def _avaliacao(entregavel):
 
     Aceita link, e nao so arquivo (por isso `anexos`, e nao `_arquivos`): um
     instrumento de avaliacao pode ser um formulario online, e exigir upload
-    obrigaria a equipe a imprimir para anexar.
+    obrigaria a equipe a imprimir para anexar. A REGRA continua aceitando; o
+    formulario e que deixou de oferecer o campo de link, a pedido, entao a
+    mensagem abaixo nao fala mais dele - mandar preencher um campo que a tela
+    nao tem e pior que nao dizer nada.
 
     Nao e a nota de quem assiste ao curso, que pertence ao modulo de execucao
     (spec 1.1) junto com frequencia e certificado.
     """
     if not entregavel.anexos.all():
-        return ["Anexe o material de avaliação, como arquivo ou link."]
+        return ["Anexe o material de avaliação."]
     return []

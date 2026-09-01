@@ -53,17 +53,25 @@
       {% endcomment %}
       {% with p=curso.progresso %}
         <div class="cartao-progresso">
-          <h2>Progresso da produção</h2>
+          {% comment %}
+            A explicacao no mesmo balao do resto do sistema. "Prontos 1 de 6" nao
+            dizia prontos de que, nem o que torna um pronto - e como o percentual
+            e a divisao desses dois numeros, quem nao entendia a contagem tambem
+            achava o percentual errado.
+          {% endcomment %}
+          <h2>Progresso da produção<button type="button" class="ajuda-campo"
+            data-ajuda="Pronta é a etapa sem nenhuma pendência na coluna “Ainda falta”. Revisada é a que o professor responsável já aprovou. A porcentagem é quantas das seis estão prontas."
+            tabindex="-1" aria-label="Como o progresso é contado">?</button></h2>
           <p class="progresso-numero">{{ p.percentual }}%</p>
           <progress class="barra-progresso" value="{{ p.prontos }}" max="{{ p.total }}"
                     aria-label="Progresso da produção"></progress>
           <dl class="progresso-contas">
             <div>
-              <dt>Prontos</dt>
+              <dt>Etapas prontas</dt>
               <dd>{{ p.prontos }} de {{ p.total }}</dd>
             </div>
             <div>
-              <dt>Revisados</dt>
+              <dt>Etapas revisadas</dt>
               <dd>{{ p.revisados }} de {{ p.total }}</dd>
             </div>
           </dl>

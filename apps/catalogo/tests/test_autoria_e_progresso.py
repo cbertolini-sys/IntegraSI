@@ -146,8 +146,8 @@ def test_o_cartao_de_progresso_fica_ao_lado_dos_entregaveis(
     client.force_login(professor)
     html = client.get(reverse("curso", args=[curso_em_producao.pk])).content.decode()
     assert "Progresso da produção" in html
-    assert "Prontos" in html
-    assert "Revisados" in html
+    assert "Etapas prontas" in html
+    assert "Etapas revisadas" in html
 
 
 @pytest.mark.django_db
@@ -218,3 +218,51 @@ def test_o_painel_le_os_anexos_e_as_secoes_numa_consulta_so(
     for tabela in (Anexo._meta.db_table, Secao._meta.db_table):
         batidas = [c for c in consultas if tabela in c["sql"]]
         assert len(batidas) == 1, f"{tabela}: {len(batidas)} consultas"
+
+
+# --- O cartao precisa dizer o que ele conta ------------------------------------
+
+
+@pytest.mark.django_db
+def test_o_cartao_diz_que_conta_etapas(client, curso_em_producao, professor):
+    """"Prontos 1 de 6" nao dizia prontos DE QUE, nem o que torna um pronto.
+
+    O percentual e a divisao desses dois numeros, entao quem nao entende o que
+    esta sendo contado tambem nao entende o percentual: um curso com o Plano de
+    Ensino inteiro escrito mostra 17%, e o numero parece errado ate a pessoa
+    descobrir que a conta e por etapa, e nao por trabalho feito.
+    """
+    client.force_login(professor)
+    html = client.get(reverse("curso", args=[curso_em_producao.pk])).content.decode()
+    cartao = html[html.index("cartao-progresso") : html.index("</dl>", html.index("progresso-contas"))]
+    assert "Etapas prontas" in cartao
+    assert "Etapas revisadas" in cartao
+
+
+@pytest.mark.django_db
+def test_o_cartao_explica_pronto_e_revisado(client, curso_em_producao, professor):
+    """A explicacao vai no mesmo balao de ajuda do resto do sistema, e precisa
+    dizer as duas coisas: pronto e ausencia de pendencia, revisado e aprovacao do
+    professor. Sao medidas diferentes, e e por isso que sao dois numeros."""
+    client.force_login(professor)
+    html = client.get(reverse("curso", args=[curso_em_producao.pk])).content.decode()
+    cartao = html[html.index("cartao-progresso") : html.index("</dl>", html.index("progresso-contas"))]
+    assert 'class="ajuda-campo"' in cartao
+    ajuda = cartao[cartao.index("data-ajuda=") : cartao.index('"', cartao.index("data-ajuda=") + 12)]
+    assert "pendência" in ajuda.lower()
+    assert "aprov" in ajuda.lower()
+
+
+@pytest.mark.django_db
+def test_a_pendencia_da_avaliacao_nao_fala_mais_em_link(curso_em_producao):
+    """A mensagem mandava anexar "como arquivo ou link" num entregavel cujo
+    formulario nao tem mais campo de link. Instrucao para um campo que a pessoa
+    nao encontra e pior que nenhuma - a mesma licao que a mensagem do
+    `AnexoForm.clean()` ja tinha aprendido."""
+    from apps.cursos import validacoes
+    from apps.cursos.choices import TipoEntregavel
+
+    avaliacao = curso_em_producao.entregaveis.get(tipo=TipoEntregavel.AVALIACAO)
+    faltas = validacoes.pendencias(avaliacao)
+    assert faltas, "a avaliação vazia precisa continuar sendo pendência"
+    assert "link" not in " ".join(faltas).lower()
