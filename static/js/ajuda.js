@@ -17,7 +17,7 @@
   var OPCOES = {
     theme: 'integrasi',
     placement: 'right',
-    maxWidth: 300,
+    maxWidth: 260,
     // Atraso na entrada e nao na saida: passar o mouse por cima a caminho de
     // outro campo nao pode disparar uma nuvem de balões.
     delay: [250, 0],
