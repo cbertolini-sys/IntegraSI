@@ -130,6 +130,18 @@ class Secao(models.Model):
         verbose_name_plural = "seções"
         ordering = ["entregavel", "ordem", "id"]
 
+    @property
+    def ajuda(self):
+        """O que escrever nesta secao, para o balao da tela.
+
+        Import adiado: `services` importa `models`, e trazer o dicionario no topo
+        fecharia o ciclo. Devolve vazio para secao que o professor criou por conta
+        propria, e a tela simplesmente nao desenha balao nenhum.
+        """
+        from apps.cursos.services import AJUDA_DAS_SECOES
+
+        return AJUDA_DAS_SECOES.get(self.titulo, "")
+
     def __str__(self):
         return self.titulo
 

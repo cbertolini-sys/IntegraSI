@@ -1,12 +1,20 @@
 <section id="secao-{{ secao.pk }}" class="bloco">
-  <h3>{{ secao.titulo }}</h3>
+  <h3>{{ secao.titulo }}{% if secao.ajuda %}<button type="button" class="ajuda-campo"
+    data-ajuda="{{ secao.ajuda }}" tabindex="-1"
+    aria-label="O que escrever em {{ secao.titulo }}">?</button>{% endif %}</h3>
   {% if pode_editar %}
     {% if salvo %}<p class="mensagem">Salvo.</p>{% endif %}
     {% if erro %}<p class="mensagem">{{ erro }}</p>{% endif %}
     <form hx-post="{% url 'salvar_secao' secao.pk %}" hx-target="#secao-{{ secao.pk }}" hx-swap="outerHTML">
       {% csrf_token %}
-      <textarea name="conteudo" rows="10">{{ secao.conteudo }}</textarea>
-      <button type="submit">Salvar seção</button>
+      {% comment %}
+        O textarea continua sendo o campo enviado. O editor.js poe o Quill na
+        frente dele e o esconde; sem JS, a pessoa continua escrevendo no textarea e
+        salvando, so que sem formatacao. Trocar o textarea por um <div> deixaria a
+        tela sem saida nesse caso.
+      {% endcomment %}
+      <textarea name="conteudo" rows="10" data-editor>{{ secao.conteudo }}</textarea>
+      <button type="submit" class="botao">Salvar seção</button>
     </form>
   {% else %}
     {# O |safe abaixo e seguro: Secao.save() sanitiza o conteudo com nh3 antes de

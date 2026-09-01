@@ -2619,3 +2619,52 @@ textarea:focus {
   font-style: italic;
   margin: 0;
 }
+
+/* ---------- editor das seções ---------- */
+
+/* O Quill vem com o tema "snow", que traz a barra e a borda. Aqui só o que
+   encaixa no sistema: mesmo raio, mesma linha, mesma tipografia dos outros
+   campos. Não sobrescreve o tema inteiro, para não brigar com a biblioteca a
+   cada atualização. */
+.editor-secao {
+  border-radius: 0 0 var(--raio-p) var(--raio-p);
+  border-color: var(--linha);
+  min-height: 12rem;
+  background: var(--branco);
+}
+
+.ql-toolbar.ql-snow {
+  border-radius: var(--raio-p) var(--raio-p) 0 0;
+  border-color: var(--linha);
+  background: var(--nevoa);
+}
+
+.ql-container.ql-snow {
+  border-color: var(--linha);
+}
+
+.editor-secao .ql-editor {
+  font-family: inherit;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--texto);
+  min-height: 11rem;
+}
+
+.editor-secao .ql-editor.ql-blank::before {
+  color: var(--cinza-claro);
+  font-style: normal;
+}
+
+/* O botão de salvar respira depois do editor. */
+.bloco form .editor-secao + button,
+.bloco form .ql-container + button {
+  margin-top: 1rem;
+}
+
+/* O gatilho de ajuda dentro do título da seção: o <h3> do cartão é versalete
+   pequeno, e o círculo precisa acompanhar sem empurrar a linha. */
+.bloco > h3 .ajuda-campo {
+  margin-left: 0.4375rem;
+  vertical-align: middle;
+}

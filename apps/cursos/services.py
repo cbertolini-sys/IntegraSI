@@ -39,6 +39,44 @@ SECOES_PLANO_ENSINO = [
     "Referências",
 ]
 
+# O que escrever em cada secao. Fica ao lado da lista que as cria, e nao no
+# template, pelo mesmo motivo do `help_text` dos formularios: e aqui que alguem
+# que acrescentar uma secao ve que falta explica-la.
+#
+# A busca e pelo TITULO, e nao por posicao: a spec 15 diz que as secoes sao livres
+# ("entregaveis fixos, secoes livres"), entao o professor pode acrescentar uma que
+# nao esta nesta lista, e ela simplesmente fica sem balao.
+AJUDA_DAS_SECOES = {
+    "Ementa": (
+        "Um paragrafo dizendo do que o curso trata. E o resumo do conteudo, nao "
+        "dos objetivos: o que sera visto, e nao o que a turma vai conseguir fazer."
+    ),
+    "Objetivos": (
+        "O que a turma sera capaz de fazer ao terminar. Comece cada um com um "
+        "verbo: reconhecer, criar, comparar, avaliar."
+    ),
+    "Conteúdo programático": (
+        "Os assuntos, na ordem em que serao trabalhados. Uma lista costuma "
+        "funcionar melhor que um paragrafo corrido."
+    ),
+    "Metodologia": (
+        "Como as aulas acontecem: exposicao, pratica em duplas, atividade "
+        "desplugada, uso de laboratorio. Diga tambem o que a escola precisa ter."
+    ),
+    "Cronograma": (
+        "A divisao das horas por encontro ou por assunto. A soma precisa bater com "
+        "a carga horaria informada no curso."
+    ),
+    "Avaliação": (
+        "Como se percebe que a turma aprendeu: observacao, producao, exercicio, "
+        "apresentacao. E o criterio, nao a nota."
+    ),
+    "Referências": (
+        "De onde veio o conteudo: livros, artigos, sites, materiais de terceiros. "
+        "Serve tambem para a escola aprofundar depois."
+    ),
+}
+
 
 @transaction.atomic
 def criar_curso(**dados):

@@ -99,3 +99,48 @@ def test_nenhum_template_carrega_biblioteca_de_fora():
             if re.search(r'(src|href)="https?://(?!www\.ufsm\.br)', linha):
                 fora.append(f"{caminho.relative_to(RAIZ)}:{numero}")
     assert fora == [], "biblioteca carregada de fora em:\n" + "\n".join(fora)
+
+
+# --- O editor e o sanitizador precisam concordar ------------------------------
+
+# Formatos do Quill cujas tags ou atributos `Secao.save()` apaga. Oferecer um
+# deles na barra faria a pessoa formatar, salvar, e ver a formatacao sumir sem
+# explicacao nenhuma - o pior tipo de defeito, porque parece que o sistema perdeu
+# o trabalho dela.
+FORMATOS_QUE_O_SANITIZADOR_APAGA = (
+    "image", "video", "color", "background", "align",
+    "code-block", "script", "size", "font", "table", "formula", "indent",
+)
+
+
+def test_a_barra_do_editor_so_oferece_o_que_sobrevive_ao_salvar():
+    """A lista de tags permitidas e a barra do editor sao dois arquivos, um em
+    Python e outro em JavaScript, e nada no sistema os liga. Este teste liga."""
+    editor = (RAIZ / "static" / "js" / "editor.js").read_text(encoding="utf-8")
+    inicio = editor.index("var BARRA")
+    barra = editor[inicio:editor.index("];", inicio)]
+    oferecidos = [f for f in FORMATOS_QUE_O_SANITIZADOR_APAGA if f"'{f}'" in barra or f"{f}:" in barra]
+    assert oferecidos == [], (
+        "a barra oferece formatos que o sanitizador apaga: " + ", ".join(oferecidos)
+    )
+
+
+def test_o_que_a_barra_oferece_sobrevive_ao_nh3():
+    """Ponta a ponta com o sanitizador de verdade, e nao com uma lista de tags
+    copiada: negrito, italico, listas, citacao, link e titulo precisam chegar
+    inteiros ao banco."""
+    import nh3
+
+    from apps.cursos.models.producao import TAGS_PERMITIDAS
+
+    html = (
+        "<h2>Título</h2><h3>Subtítulo</h3><p><strong>negrito</strong> "
+        "<em>itálico</em> <u>sublinhado</u></p>"
+        "<ol><li>um</li></ol><ul><li>dois</li></ul>"
+        "<blockquote>citação</blockquote>"
+        '<p><a href="https://ufsm.br">link</a></p>'
+    )
+    limpo = nh3.clean(html, tags=TAGS_PERMITIDAS)
+    for marca in ("<h2>", "<h3>", "<strong>", "<em>", "<u>", "<ol>", "<ul>", "<li>",
+                  "<blockquote>", "<a "):
+        assert marca in limpo, f"{marca} não sobreviveu ao sanitizador"

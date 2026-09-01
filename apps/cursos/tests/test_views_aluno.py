@@ -486,3 +486,44 @@ def test_os_outros_entregaveis_continuam_oferecendo(client, curso_com_equipe, al
     html = client.get(reverse("entregavel", args=[slides.pk])).content.decode()
     assert "Anexar material" in html
     assert "<h2>Materiais</h2>" in html
+
+
+@pytest.mark.django_db
+def test_secoes_do_plano_explicam_o_que_escrever(client, curso_com_equipe, aluno):
+    """As secoes eram a unica area de escrita sem balao: `_secao.html` e escrito a
+    mao, sem `help_text`, entao nem o gatilho do template nem a conversao do JS
+    alcancavam. A explicacao vive ao lado da lista que cria as secoes."""
+    import re
+
+    from apps.cursos.choices import TipoEntregavel
+
+    plano = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.PLANO_ENSINO)
+    client.force_login(aluno)
+    html = client.get(reverse("entregavel", args=[plano.pk])).content.decode()
+    ajudas = re.findall(r'class="ajuda-campo"\s+data-ajuda="([^"]+)"', html)
+    assert len(ajudas) == 7, f"{len(ajudas)} balões para 7 seções"
+    assert any("verbo" in a for a in ajudas)
+
+
+@pytest.mark.django_db
+def test_toda_secao_padrao_tem_explicacao():
+    """As sete criadas por `criar_curso` precisam estar todas explicadas: uma nova
+    na lista sem entrada no dicionario passaria despercebida, e a tela ficaria com
+    seis balões e um buraco."""
+    from apps.cursos.services import AJUDA_DAS_SECOES, SECOES_PLANO_ENSINO
+
+    sem = [t for t in SECOES_PLANO_ENSINO if not AJUDA_DAS_SECOES.get(t)]
+    assert sem == [], f"seções sem explicação: {sem}"
+
+
+@pytest.mark.django_db
+def test_o_campo_enviado_continua_sendo_o_textarea(client, curso_com_equipe, aluno):
+    """O Quill entra na frente do textarea, que fica escondido mas presente: e ele
+    que o Django recebe, e e ele que salva quando o JS nao roda. Trocar por um
+    <div> deixaria a tela sem saida nesse caso."""
+    from apps.cursos.choices import TipoEntregavel
+
+    plano = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.PLANO_ENSINO)
+    client.force_login(aluno)
+    html = client.get(reverse("entregavel", args=[plano.pk])).content.decode()
+    assert html.count('<textarea name="conteudo" rows="10" data-editor>') == 7
