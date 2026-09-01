@@ -33,9 +33,21 @@ class Progresso(NamedTuple):
 
     @property
     def percentual(self):
+        """Quanto do material esta terminado."""
+        return self._parte(self.prontos)
+
+    @property
+    def percentual_revisado(self):
+        """Quanto o professor ja aprovou. Anda atras do outro, e nao junto: da
+        para ter tudo pronto e nada revisado."""
+        return self._parte(self.revisados)
+
+    def _parte(self, quantos):
+        # `total` vem de uma consulta, e curso sem entregavel e estado alcancavel
+        # (uma migracao, um comando): a divisao por zero moraria na propriedade.
         if not self.total:
             return 0
-        return round(100 * self.prontos / self.total)
+        return round(100 * quantos / self.total)
 
 
 class Praticas(NamedTuple):

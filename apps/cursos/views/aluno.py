@@ -73,6 +73,11 @@ def curso(request, pk):
             # Mesmo padrao: a decisao fica no Python, o template so pergunta pelo
             # resultado (spec 10, nada de `if` de permissao em template).
             "pode_editar_ficha": permissions.pode_editar_ficha(request.user, obj),
+            # Mesmo padrao: a decisao no Python, o template so pergunta pelo
+            # resultado. A tela de equipe existia desde o Plano 6 e nenhum
+            # template linkava para ela - quem quisesse acrescentar um aluno
+            # tinha que digitar a URL.
+            "pode_gerir_equipe": permissions.pode_gerir_equipe(request.user, obj),
         },
     )
 

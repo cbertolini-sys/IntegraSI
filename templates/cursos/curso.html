@@ -40,70 +40,76 @@
       </div>
     </div>
 
-    <aside class="lateral">
-      {% comment %}
-        Ao lado da lista de entregaveis, que e o que ele mede, e nao na previa: a
-        previa e a pagina publica vista por dentro, e ali o numero fala de
-        producao para quem foi ver o curso.
-
-        Sao dois numeros porque sao duas perguntas. `prontos` e quanto do material
-        esta completo segundo a regra de cada entregavel (o mesmo criterio que
-        barra o envio para revisao); `revisados` e quanto o professor ja aprovou.
-        A barra acompanha o primeiro.
-      {% endcomment %}
+    {% comment %}
+      Uma pilha de cartoes, e nao um cartao so com tudo dentro: producao, revisao,
+      equipe e acoes sao quatro assuntos, e empilhados sem separacao o olho lia
+      tudo como uma lista continua.
+    {% endcomment %}
+    <aside class="lateral lateral-pilha">
       {% with p=curso.progresso %}
-        <div class="cartao-progresso">
-          {% comment %}
-            A explicacao no mesmo balao do resto do sistema. "Prontos 1 de 6" nao
-            dizia prontos de que, nem o que torna um pronto - e como o percentual
-            e a divisao desses dois numeros, quem nao entendia a contagem tambem
-            achava o percentual errado.
-          {% endcomment %}
+        {% comment %}
+          Dois cartoes, e nao dois numeros no mesmo: producao e revisao nao sao
+          medidas do mesmo fenomeno, e juntas passavam por isso. Da para ter tudo
+          pronto e nada revisado.
+
+          Cada um com a sua cor: producao no azul do sistema, revisao no ciano.
+        {% endcomment %}
+        <div class="cartao-progresso producao">
           <h2>Progresso da produção<button type="button" class="ajuda-campo"
-            data-ajuda="Pronta é a etapa sem nenhuma pendência na coluna “Ainda falta”. Revisada é a que o professor responsável já aprovou. A porcentagem é quantas das seis estão prontas."
-            tabindex="-1" aria-label="Como o progresso é contado">?</button></h2>
+            data-ajuda="Pronta é a etapa sem nenhuma pendência na coluna “Ainda falta”. A porcentagem é quantas das seis etapas estão prontas."
+            tabindex="-1" aria-label="Como a produção é contada">?</button></h2>
           <p class="progresso-numero">{{ p.percentual }}%</p>
           <progress class="barra-progresso" value="{{ p.prontos }}" max="{{ p.total }}"
                     aria-label="Progresso da produção"></progress>
-          <dl class="progresso-contas">
-            <div>
-              <dt>Etapas prontas</dt>
-              <dd>{{ p.prontos }} de {{ p.total }}</dd>
-            </div>
-            <div>
-              <dt>Etapas revisadas</dt>
-              <dd>{{ p.revisados }} de {{ p.total }}</dd>
-            </div>
-          </dl>
+          <p class="progresso-conta">{{ p.prontos }} de {{ p.total }} etapas prontas</p>
+        </div>
+
+        <div class="cartao-progresso revisao">
+          <h2>Progresso da revisão<button type="button" class="ajuda-campo"
+            data-ajuda="Revisada é a etapa que o professor responsável já aprovou. Com as seis revisadas, o curso pode ser submetido à coordenação."
+            tabindex="-1" aria-label="Como a revisão é contada">?</button></h2>
+          <p class="progresso-numero">{{ p.percentual_revisado }}%</p>
+          <progress class="barra-progresso" value="{{ p.revisados }}" max="{{ p.total }}"
+                    aria-label="Progresso da revisão"></progress>
+          <p class="progresso-conta">{{ p.revisados }} de {{ p.total }} etapas revisadas</p>
         </div>
       {% endwith %}
 
-      <h2>Equipe</h2>
-      <ul class="etiquetas afastada-abaixo">
-        {% for membro in membros %}<li>{{ membro.pessoa.nome_completo }}</li>{% empty %}<li>Sem equipe ainda</li>{% endfor %}
-      </ul>
+      <div class="cartao-lateral">
+        <div class="cabecalho-cartao">
+          <h2>Equipe</h2>
+          {% if pode_gerir_equipe %}
+            <a class="botao botao-linha" href="{% url 'equipe' curso.pk %}">Editar</a>
+          {% endif %}
+        </div>
+        <ul class="etiquetas">
+          {% for membro in membros %}<li>{{ membro.pessoa.nome_completo }}</li>{% empty %}<li>Sem equipe ainda</li>{% endfor %}
+        </ul>
+      </div>
 
       {% comment %}
         Os espacos entre os botoes vinham de `style` inline em cada um. Viraram uma
         pilha com `gap`, para que acrescentar ou tirar um botao daqui nao dependa
         de alguem lembrar da margem.
       {% endcomment %}
-      <div class="acoes-empilhadas">
-        {% if pode_editar_ficha %}
-          <a class="botao botao-largo" href="{% url 'ficha' curso.pk %}">Editar curso</a>
-          <a class="botao botao-linha botao-largo" href="{% url 'previa_do_curso' curso.pk %}">Visualizar curso</a>
-        {% endif %}
+      <div class="cartao-lateral">
+        <div class="acoes-empilhadas">
+          {% if pode_editar_ficha %}
+            <a class="botao botao-largo" href="{% url 'ficha' curso.pk %}">Editar curso</a>
+            <a class="botao botao-linha botao-largo" href="{% url 'previa_do_curso' curso.pk %}">Visualizar curso</a>
+          {% endif %}
 
-        {% if pode_abrir_versao %}
-          <a class="botao botao-linha botao-largo" href="{% url 'nova_versao' curso.pk %}">Abrir nova versão</a>
-        {% endif %}
+          {% if pode_abrir_versao %}
+            <a class="botao botao-linha botao-largo" href="{% url 'nova_versao' curso.pk %}">Abrir nova versão</a>
+          {% endif %}
 
-        {% if curso.pronto_para_o_coordenador and user == curso.professor_responsavel %}
-          <form method="post" action="{% url 'submeter_curso' curso.pk %}">
-            {% csrf_token %}
-            <button type="submit" class="botao botao-largo">Submeter à coordenação</button>
-          </form>
-        {% endif %}
+          {% if curso.pronto_para_o_coordenador and user == curso.professor_responsavel %}
+            <form method="post" action="{% url 'submeter_curso' curso.pk %}">
+              {% csrf_token %}
+              <button type="submit" class="botao botao-largo">Submeter à coordenação</button>
+            </form>
+          {% endif %}
+        </div>
       </div>
     </aside>
   </div>

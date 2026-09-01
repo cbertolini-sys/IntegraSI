@@ -146,8 +146,9 @@ def test_o_cartao_de_progresso_fica_ao_lado_dos_entregaveis(
     client.force_login(professor)
     html = client.get(reverse("curso", args=[curso_em_producao.pk])).content.decode()
     assert "Progresso da produção" in html
-    assert "Etapas prontas" in html
-    assert "Etapas revisadas" in html
+    assert "Progresso da revisão" in html
+    assert "etapas prontas" in html
+    assert "etapas revisadas" in html
 
 
 @pytest.mark.django_db
@@ -224,7 +225,7 @@ def test_o_painel_le_os_anexos_e_as_secoes_numa_consulta_so(
 
 
 @pytest.mark.django_db
-def test_o_cartao_diz_que_conta_etapas(client, curso_em_producao, professor):
+def test_cada_cartao_diz_o_que_conta(client, curso_em_producao, professor):
     """"Prontos 1 de 6" nao dizia prontos DE QUE, nem o que torna um pronto.
 
     O percentual e a divisao desses dois numeros, entao quem nao entende o que
@@ -234,23 +235,28 @@ def test_o_cartao_diz_que_conta_etapas(client, curso_em_producao, professor):
     """
     client.force_login(professor)
     html = client.get(reverse("curso", args=[curso_em_producao.pk])).content.decode()
-    cartao = html[html.index("cartao-progresso") : html.index("</dl>", html.index("progresso-contas"))]
-    assert "Etapas prontas" in cartao
-    assert "Etapas revisadas" in cartao
+    for classe, legenda in (("producao", "etapas prontas"), ("revisao", "etapas revisadas")):
+        inicio = html.index(f'cartao-progresso {classe}')
+        cartao = html[inicio : html.index("</div>", inicio)]
+        assert legenda in cartao, classe
+        assert "de 6" in cartao, classe
 
 
 @pytest.mark.django_db
-def test_o_cartao_explica_pronto_e_revisado(client, curso_em_producao, professor):
+def test_cada_cartao_explica_o_proprio_criterio(client, curso_em_producao, professor):
     """A explicacao vai no mesmo balao de ajuda do resto do sistema, e precisa
     dizer as duas coisas: pronto e ausencia de pendencia, revisado e aprovacao do
     professor. Sao medidas diferentes, e e por isso que sao dois numeros."""
     client.force_login(professor)
     html = client.get(reverse("curso", args=[curso_em_producao.pk])).content.decode()
-    cartao = html[html.index("cartao-progresso") : html.index("</dl>", html.index("progresso-contas"))]
-    assert 'class="ajuda-campo"' in cartao
-    ajuda = cartao[cartao.index("data-ajuda=") : cartao.index('"', cartao.index("data-ajuda=") + 12)]
-    assert "pendência" in ajuda.lower()
-    assert "aprov" in ajuda.lower()
+    # Cada cartao explica o SEU criterio: separados, uma explicacao que falasse
+    # dos dois deixaria de novo a duvida de qual numero e qual.
+    for classe, palavra in (("producao", "pendência"), ("revisao", "aprov")):
+        inicio = html.index(f'cartao-progresso {classe}')
+        cartao = html[inicio : html.index("</div>", inicio)]
+        assert 'class="ajuda-campo"' in cartao, classe
+        ajuda = cartao[cartao.index("data-ajuda=") : cartao.index('"', cartao.index("data-ajuda=") + 12)]
+        assert palavra in ajuda.lower(), classe
 
 
 @pytest.mark.django_db
@@ -266,3 +272,74 @@ def test_a_pendencia_da_avaliacao_nao_fala_mais_em_link(curso_em_producao):
     faltas = validacoes.pendencias(avaliacao)
     assert faltas, "a avaliação vazia precisa continuar sendo pendência"
     assert "link" not in " ".join(faltas).lower()
+
+
+# --- Producao e revisao viram dois cartoes -------------------------------------
+
+
+@pytest.mark.django_db
+def test_o_progresso_da_revisao_tem_percentual_proprio(curso_em_producao):
+    """Somados num cartao so, os dois numeros passavam por medidas do mesmo
+    fenomeno. Nao sao: da para ter tudo pronto e nada revisado."""
+    curso_em_producao.entregaveis.filter(
+        tipo__in=[TipoEntregavel.SLIDES, TipoEntregavel.CARDS, TipoEntregavel.VIDEOS]
+    ).update(status=StatusEntregavel.APROVADO)
+    p = curso_em_producao.progresso
+    assert p.revisados == 3
+    assert p.percentual_revisado == 50
+
+
+@pytest.mark.django_db
+def test_o_percentual_de_revisao_e_zero_num_curso_sem_entregavel():
+    """Divisao por zero: `total` vem de uma consulta, e um curso sem entregavel e
+    estado alcancavel (uma migracao, um comando). O da producao ja se protegia."""
+    from apps.cursos.models.curso import Progresso
+
+    assert Progresso(total=0, prontos=0, revisados=0).percentual_revisado == 0
+
+
+@pytest.mark.django_db
+def test_a_tela_traz_os_dois_cartoes_separados(client, curso_em_producao, professor):
+    client.force_login(professor)
+    html = client.get(reverse("curso", args=[curso_em_producao.pk])).content.decode()
+    assert "Progresso da produção" in html
+    assert "Progresso da revisão" in html
+    assert html.count("cartao-progresso") == 2
+
+
+@pytest.mark.django_db
+def test_cada_barra_mede_o_proprio_numero(client, curso_em_producao, professor):
+    """Duas barras com o mesmo `value` seria pior que uma: pareceriam dois dados
+    e seriam o mesmo."""
+    import re
+
+    curso_em_producao.entregaveis.filter(tipo=TipoEntregavel.SLIDES).update(
+        status=StatusEntregavel.APROVADO
+    )
+    client.force_login(professor)
+    html = client.get(reverse("curso", args=[curso_em_producao.pk])).content.decode()
+    valores = re.findall(r'<progress class="barra-progresso" value="(\d+)"', html)
+    assert valores == ["0", "1"], valores  # nada pronto, um revisado
+
+
+# --- A equipe precisa de porta ------------------------------------------------
+
+
+@pytest.mark.django_db
+def test_o_cartao_de_equipe_leva_a_tela_de_gerir(client, curso_em_producao, professor):
+    """A tela de equipe existia, com alocar e remover, e NENHUM template linkava
+    para ela: quem quisesse acrescentar um aluno tinha que digitar a URL."""
+    client.force_login(professor)
+    html = client.get(reverse("curso", args=[curso_em_producao.pk])).content.decode()
+    assert reverse("equipe", args=[curso_em_producao.pk]) in html
+
+
+@pytest.mark.django_db
+def test_quem_nao_gere_a_equipe_nao_ve_o_botao(client, curso_em_producao, aluno):
+    """`pode_gerir_equipe` e do professor responsavel e da coordenacao. O aluno da
+    equipe ve o cartao e nao ve o botao - e a decisao fica no Python, nao num
+    `{% if %}` de papel no template (spec 10)."""
+    client.force_login(aluno)
+    html = client.get(reverse("curso", args=[curso_em_producao.pk])).content.decode()
+    assert "Equipe" in html
+    assert reverse("equipe", args=[curso_em_producao.pk]) not in html
