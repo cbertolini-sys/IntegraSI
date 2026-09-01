@@ -273,16 +273,33 @@ def test_o_formulario_de_video_pede_descricao(client, aluno, entregavel_videos):
     assert "Descrição" in conteudo
 
 
-# Regra 9: a barra e o aviso nao aparecem antes de haver envio
+# Regra 9: a barra e permanente, logo abaixo do video; o aviso e que se esconde
 @pytest.mark.django_db
-def test_a_barra_e_o_aviso_nascem_escondidos(client, aluno, entregavel_videos):
-    """Uma `<progress>` em 0% desenha uma barra cinza vazia logo abaixo da duracao,
-    sem rotulo nenhum: na tela parece mais um campo do formulario. O aviso vazio
-    ocupa espaco pelo mesmo motivo. Os dois so tem o que dizer durante o envio."""
+def test_a_barra_fica_abaixo_do_video_e_o_aviso_nasce_escondido(
+    client, aluno, entregavel_videos
+):
+    """A barra ficava solta abaixo da duracao, sem rotulo, parecendo mais um campo.
+    Escondida ate o envio ela resolvia isso e criava outro problema: aparecia e
+    sumia, mexendo a altura do formulario. Agora e permanente e fica colada ao
+    campo do video, que e o que ela mede.
+
+    O aviso continua nascendo escondido: um paragrafo vazio nao tem o que dizer,
+    e mostra-lo so abriria um buraco no meio do formulario.
+    """
     client.force_login(aluno)
     conteudo = tela(client, entregavel_videos)
-    assert "<progress value=\"0\" max=\"100\" hidden>" in conteudo
+
     assert '<p class="aviso" hidden>' in conteudo
+    assert "<progress" in conteudo
+    barra = conteudo[conteudo.index("<progress") : conteudo.index("</progress>")]
+    assert "hidden" not in barra, "a barra voltou a se esconder"
+    assert 'value="0"' in barra, "a barra precisa nascer zerada"
+    # Colada ao campo do video, e antes do titulo: e o envio do arquivo que ela
+    # mede, e no fim do formulario ela media visualmente a duracao.
+    assert conteudo.index("video-arquivo") < conteudo.index("<progress")
+    assert conteudo.index("<progress") < conteudo.index("video-titulo")
+    # O numero ao lado: barra sem porcentagem nao diz quanto falta de um giga.
+    assert 'class="envio-numero"' in conteudo
 
 
 # Regra 10: a descricao gravada aparece na lista de materiais

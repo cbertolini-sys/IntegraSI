@@ -2810,14 +2810,60 @@ textarea:focus {
    aviso passam a maior parte do tempo `hidden`, ou seja, `display: none`, sem
    altura nenhuma: sem esta margem o botão encosta no campo de duração e parece
    fazer parte dele. Os campos em si vêm de `.campo`, como no resto do sistema. */
-[data-upload-video] progress {
-  display: block;
-  width: 100%;
-  margin-bottom: 0.75rem;
+/* A barra do envio de vídeo. Nasce zerada e fica logo abaixo do campo do
+   arquivo, com o número à direita: sem ele a barra não diz quanto falta de um
+   arquivo de um giga, e é justamente nessa espera de meia hora que alguém olha.
+
+   `appearance: none` é o que permite pintá-la; sem isso o navegador desenha a
+   barra do sistema e ignora tudo abaixo. Cada motor expõe o preenchimento por um
+   pseudoelemento próprio, e eles não podem ser agrupados numa regra só: um
+   seletor desconhecido invalida a regra inteira para o outro motor. */
+.envio-progresso {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: -0.375rem 0 1rem;
+}
+
+.envio-progresso progress {
+  appearance: none;
+  -webkit-appearance: none;
+  flex: 1;
+  height: 0.5rem;
+  border: none;
+  border-radius: 999px;
+  background: var(--linha);
+  overflow: hidden;
+}
+
+.envio-progresso progress::-webkit-progress-bar {
+  background: var(--linha);
+  border-radius: 999px;
+}
+
+.envio-progresso progress::-webkit-progress-value {
+  background: linear-gradient(90deg, var(--azul), var(--ciano));
+  border-radius: 999px;
+}
+
+.envio-progresso progress::-moz-progress-bar {
+  background: linear-gradient(90deg, var(--azul), var(--ciano));
+  border-radius: 999px;
+}
+
+.envio-numero {
+  font-family: var(--dado);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--cinza);
+  min-width: 3.5ch;
+  text-align: right;
 }
 
 [data-upload-video] .aviso {
   margin: 0 0 0.75rem;
+  font-size: 0.875rem;
+  color: var(--cinza);
 }
 
 [data-upload-video] button[type="submit"] {

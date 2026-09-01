@@ -262,3 +262,78 @@ def test_a_varredura_de_cerquilha_enxerga_comentario_de_uma_linha():
             1 for linha in conteudo.splitlines() if "{#" in linha and "#}" in linha
         )
     assert de_uma_linha > 0, "a varredura não achou nenhum comentário de cerquilha"
+
+
+# --- Regra de CSS que anula um `hidden` do template ---------------------------
+
+
+def alvos_marcados_hidden():
+    """Seletores dos elementos que algum template marca com o atributo `hidden`.
+
+    Elemento com classe entra pela classe; sem classe, pela tag. `aria-hidden`
+    fica de fora: exige um hífen antes de "hidden", e o `\\s` do padrão não casa.
+    """
+    alvos = set()
+    for caminho in arquivos_versionados():
+        if not caminho.startswith("templates/") or not caminho.endswith(".html"):
+            continue
+        conteudo = texto_de(caminho)
+        if conteudo is None:
+            continue
+        for abertura in re.finditer(r"<(\w+)([^>]*)\shidden(?=[\s/>])", conteudo):
+            tag, atributos = abertura.group(1), abertura.group(2)
+            classes = re.search(r'class="([^"]*)"', atributos)
+            if classes:
+                alvos.update("." + c for c in classes.group(1).split())
+            else:
+                alvos.add(tag)
+    return alvos
+
+
+def regras_que_definem_display():
+    """(seletor, corpo) de cada regra da folha de estilo que define `display`."""
+    css = texto_de("static/css/integrasi.css") or ""
+    # Sem chaves aninhadas nesta folha (nada de @media com regra interna que
+    # importe aqui), entao dividir por "}" e suficiente e nao precisa de parser.
+    regras = []
+    for pedaco in css.split("}"):
+        if "{" not in pedaco:
+            continue
+        seletor, corpo = pedaco.rsplit("{", 1)
+        if re.search(r"(^|;|\s)display\s*:", corpo):
+            regras.append((seletor.split("*/")[-1].strip(), corpo))
+    return regras
+
+
+def test_nenhuma_regra_de_css_anula_um_hidden_do_template():
+    """`hidden` é uma decisão de HTML que o CSS não pode desfazer sem querer.
+
+    O atributo funciona por `[hidden] { display: none }` na folha do navegador,
+    que tem especificidade 0-1-0. Qualquer regra nossa um pouco mais específica
+    ganha dela: `[data-upload-video] progress { display: block }` fez a barra de
+    progresso aparecer sempre, com o `hidden` no HTML e a suíte inteira verde.
+
+    Se este teste reprovar, o conserto é não definir `display` nesse elemento
+    (dar a ele um invólucro, ou usar outra propriedade). Voltar a esconder por
+    classe em vez de `hidden` também resolve, mas aí o `hidden` some do template
+    e o JavaScript precisa saber o nome da classe.
+    """
+    alvos = alvos_marcados_hidden()
+    achados = []
+    for seletor, corpo in regras_que_definem_display():
+        for parte in seletor.split(","):
+            # A última porção do seletor é o elemento que a regra pinta; o resto
+            # é contexto. `::-webkit-progress-value` e afins não contam.
+            final = parte.strip().split()[-1].split("::")[0].split(":")[0] if parte.strip() else ""
+            if final and final in alvos:
+                achados.append(f"{parte.strip()} {{{corpo.strip()[:60]}}}")
+    assert not achados, (
+        "regra de CSS define `display` num elemento que o template marca "
+        "`hidden`, o que anula o atributo:\n" + "\n".join(achados)
+    )
+
+
+def test_a_varredura_de_hidden_acha_os_elementos_e_as_regras():
+    """Duas listas vazias deixariam o teste acima verde para sempre."""
+    assert alvos_marcados_hidden(), "nenhum elemento `hidden` encontrado"
+    assert len(regras_que_definem_display()) > 20

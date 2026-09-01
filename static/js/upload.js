@@ -198,13 +198,16 @@ async function iniciarUpload(form) {
   const arquivo = form.querySelector('input[type=file]').files[0];
   const barra = form.querySelector('progress');
   const aviso = form.querySelector('.aviso');
-  // Os dois nascem `hidden` no template e aparecem no primeiro uso: antes disso
-  // nao ha envio nenhum a relatar, e a barra vazia parecia mais um campo do
-  // formulario, logo abaixo da duracao.
+  const numero = form.querySelector('.envio-numero');
+  // A barra e permanente; o aviso nasce `hidden` e aparece no primeiro uso, para
+  // nao abrir um buraco no formulario enquanto nao ha o que dizer.
   const aoAvisar = (texto) => { aviso.hidden = false; aviso.textContent = texto; };
   const aoProgredir = (fracao) => {
-    barra.hidden = false;
-    barra.value = Math.round(fracao * 100);
+    const porcento = Math.round(fracao * 100);
+    barra.value = porcento;
+    // O numero sai da MESMA conta da barra, e nao de outra: duas contas para o
+    // mesmo valor divergem no arredondamento e a tela mostra 99% num envio cheio.
+    numero.textContent = `${porcento}%`;
   };
 
   if (!arquivo) {

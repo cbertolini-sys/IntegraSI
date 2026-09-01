@@ -37,8 +37,8 @@ As regras, todas do lado do navegador:
 17. A barra de progresso acompanha o envio.
 18. Servidor que aceita bloco sem avancar nao vira laco infinito.
 19. A conclusao leva titulo, duracao e descricao do formulario.
-19b. A barra e o aviso nascem escondidos e so aparecem quando ha envio.
-19c. Sem arquivo escolhido a barra continua escondida: aparece so o aviso.
+19b. O numero ao lado da barra acompanha o envio e fecha em 100%.
+19c. O aviso nasce escondido e aparece quando ha o que dizer.
 20. O `submit` do formulario de video e interceptado: sem isso o formulario
     faria um POST comum para a propria pagina e NADA do upload.js rodaria,
     com a suite inteira verde.
@@ -79,8 +79,8 @@ CENARIOS = [
     "a_barra_de_progresso_acompanha_o_envio",
     "servidor_que_nao_avanca_nao_vira_laco_infinito",
     "conclui_com_titulo_e_duracao_do_formulario",
-    "a_barra_e_o_aviso_so_aparecem_durante_o_envio",
-    "sem_arquivo_a_barra_continua_escondida",
+    "o_numero_acompanha_a_barra_e_fecha_em_cem",
+    "o_aviso_aparece_quando_ha_o_que_dizer",
     "o_submit_do_formulario_de_video_e_interceptado",
     "submit_de_outro_formulario_nao_e_interceptado",
 ]

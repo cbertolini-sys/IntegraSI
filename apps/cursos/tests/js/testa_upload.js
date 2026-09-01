@@ -53,8 +53,9 @@ function formulario(arquivo, dataset) {
     'input[name=duracao_minutos]': { value: '7' },
     'textarea[name=descricao]': { value: 'Abertura do curso.' },
     '[name=csrfmiddlewaretoken]': { value: TOKEN },
-    // `hidden: true` como no template: os dois so aparecem durante o envio.
-    progress: { value: 0, hidden: true },
+    // A barra e permanente e nasce zerada; so o aviso nasce escondido.
+    progress: { value: 0 },
+    '.envio-numero': { textContent: '0%' },
     '.aviso': { textContent: '', hidden: true },
   };
   return {
@@ -458,23 +459,24 @@ cenario('conclui_com_titulo_e_duracao_do_formulario', async () => {
   );
 });
 
-// Regra: a barra e o aviso nascem escondidos e so aparecem quando ha envio. Uma
-// `<progress>` em 0% desenha uma barra cinza sem rotulo logo abaixo da duracao, e
-// na tela ela parece mais um campo do formulario.
-cenario('a_barra_e_o_aviso_so_aparecem_durante_o_envio', async () => {
+// Regra: o numero ao lado da barra acompanha o envio e fecha em 100%. Barra sem
+// porcentagem nao diz quanto falta de um arquivo de um giga.
+cenario('o_numero_acompanha_a_barra_e_fecha_em_cem', async () => {
   const est = novoEstado();
   const r = await rodar({ responder: servidor(est) });
-  afirmaIgual(r.form.nos.progress.hidden, false, 'a barra continuou escondida');
-  afirmaIgual(r.form.nos['.aviso'].hidden, false, 'o aviso continuou escondido');
+  afirmaIgual(r.form.nos['.envio-numero'].textContent, '100%', 'número final');
+  afirmaIgual(r.form.nos.progress.value, 100, 'barra final');
 });
 
-// E sem arquivo escolhido a barra NAO aparece: nao ha envio nenhum para mostrar,
-// so o aviso pedindo o arquivo.
-cenario('sem_arquivo_a_barra_continua_escondida', async () => {
+// Regra: o aviso nasce escondido e aparece quando ha o que dizer - inclusive sem
+// arquivo escolhido, que e o unico caso em que ele fala sem haver envio nenhum.
+cenario('o_aviso_aparece_quando_ha_o_que_dizer', async () => {
   const est = novoEstado();
   const r = await rodar({ responder: servidor(est), arquivo: null });
-  afirmaIgual(r.form.nos.progress.hidden, true, 'a barra apareceu sem haver envio');
   afirmaIgual(r.form.nos['.aviso'].hidden, false, 'o pedido do arquivo precisa aparecer');
+  afirmaIgual(r.aviso, 'Escolha o arquivo de vídeo.', 'aviso');
+  // E a barra nao se mexe: nao houve envio nenhum.
+  afirmaIgual(r.form.nos.progress.value, 0, 'a barra andou sem haver envio');
 });
 
 // Regra: o `submit` do formulario de video e interceptado pelo ouvinte do

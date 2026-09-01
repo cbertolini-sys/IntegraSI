@@ -108,6 +108,17 @@
           <label for="video-arquivo">Vídeo-aula (MP4, até 1 GB)</label>
           <input type="file" id="video-arquivo" accept="video/mp4">
         </div>
+        {% comment %}
+          Colada ao campo que ela mede, e nao no fim do formulario. Permanente:
+          escondida ate o envio, ela aparecia e sumia, mexendo a altura do
+          formulario debaixo da mao de quem preenche. Em 0% ela nao promete nada,
+          so mostra onde a resposta vai aparecer.
+        {% endcomment %}
+        <div class="envio-progresso">
+          <progress id="video-progresso" value="0" max="100"
+                    aria-label="Progresso do envio"></progress>
+          <span class="envio-numero">0%</span>
+        </div>
         <div class="campo">
           <label for="video-titulo">Título</label>
           <input type="text" id="video-titulo" name="titulo"
@@ -123,12 +134,11 @@
                  min="{{ duracao_minima }}" max="{{ duracao_maxima }}" required>
         </div>
         {% comment %}
-          Escondidos ate haver envio. Uma <progress> em 0% desenha uma barra cinza
-          sem rotulo logo abaixo da duracao, e na tela ela parece mais um campo do
-          formulario; o aviso vazio ocupa espaco pelo mesmo motivo. Quem os mostra
-          e o upload.js, no primeiro sinal de que ha o que dizer.
+          Escondido ate haver o que dizer: paragrafo vazio so abriria um buraco no
+          meio do formulario. Quem o mostra e o upload.js. Nenhuma regra de CSS
+          pode definir `display` na `.aviso` - isso anularia o `hidden`, e
+          test_estilo reprova.
         {% endcomment %}
-        <progress value="0" max="100" hidden></progress>
         <p class="aviso" hidden></p>
         <button type="submit">Enviar vídeo</button>
       </form>
