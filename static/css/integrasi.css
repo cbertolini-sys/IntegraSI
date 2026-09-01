@@ -2117,6 +2117,17 @@ textarea:focus {
     align-items: start;
   }
 
+  /* Tudo o que nao e caixa atravessa a linha inteira.
+     
+     O seletor aponta para `.rotulo-campo`, e nao para `label`: o rotulo passou a
+     viver dentro desse invólucro (para o gatilho de ajuda ficar ao lado dele), e a
+     regra antiga deixou de casar. O invólucro virou item de grade comum, ocupou
+     UMA coluna e empurrou as cinco caixas para fora do lugar.
+     
+     `.ajuda` continua na lista de proposito: e a classe que qualquer campo com
+     texto de apoio usaria, e tira-la agora faria a proxima ajuda visivel quebrar a
+     grade do mesmo jeito. */
+  .caixas-palavras > .rotulo-campo,
   .caixas-palavras > label,
   .caixas-palavras > .ajuda,
   .caixas-palavras > .erro {

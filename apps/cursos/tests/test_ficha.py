@@ -763,3 +763,31 @@ def test_gatilho_de_ajuda_fica_na_linha_do_rotulo(client, proposta, professor):
     assert len(com_gatilho) >= 9
     for trecho in com_gatilho:
         assert "<label" in trecho, "gatilho fora do invólucro do rótulo"
+
+
+@pytest.mark.django_db
+def test_a_grade_das_palavras_chave_so_tem_as_cinco_caixas(client, proposta, professor):
+    """As cinco caixas sao uma grade de cinco colunas, e todo filho direto vira
+    item dela.
+
+    Foi assim que o gatilho de ajuda as desalinhou: o invólucro do rotulo virou
+    filho direto, ocupou UMA coluna e empurrou as caixas. O teste nao mede pixels;
+    ele lista quem esta na grade, que e a condicao para o alinhamento existir.
+
+    O `helptext` escondido entra na lista porque esta no HTML, mas e
+    `position: absolute` e por isso nao ocupa celula.
+    """
+    import re
+
+    client.force_login(professor)
+    html = client.get(reverse("ficha", args=[proposta.pk])).content.decode()
+    i = html.index("caixas-palavras")
+    bloco = html[i:html.index("</div>", i)]
+
+    caixas = re.findall(r'name="palavras_chave_\d"', bloco)
+    assert len(caixas) == 5
+
+    # Filhos diretos, na ordem: o invólucro do rótulo, as cinco caixas e a ajuda
+    # escondida. Qualquer elemento visível a mais quebra o alinhamento.
+    assert bloco.count('class="rotulo-campo"') == 1
+    assert 'class="ajuda"' not in bloco, "texto de ajuda visível voltou para a grade"
