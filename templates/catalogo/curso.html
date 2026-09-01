@@ -115,6 +115,28 @@
         </section>
       {% endif %}
 
+      {% comment %}
+        Quem produziu o curso, so pelo nome. Fica na pagina publica tambem, e nao
+        so na previa: um curso de extensao e produzido por uma equipe de
+        estudantes, e o credito e parte do que a escola le. Nada de e-mail,
+        matricula ou SIAPE aqui - dado pessoal nao vai para pagina publica.
+      {% endcomment %}
+      <section class="secao-publica" id="quem-produziu">
+        <h2>Quem produziu</h2>
+        <dl class="fatos-lista">
+          <dt>Professor responsável</dt>
+          <dd>{{ curso.professor_responsavel.nome_completo }}</dd>
+          {% if curso.equipe %}
+            <dt>Equipe</dt>
+            <dd>
+              <ul class="etiquetas">
+                {% for membro in curso.equipe %}<li>{{ membro.pessoa.nome_completo }}</li>{% endfor %}
+              </ul>
+            </dd>
+          {% endif %}
+        </dl>
+      </section>
+
       {% if curso.temas.exists or curso.palavras_chave or previa %}
         <section class="secao-publica">
           <h2>Onde este curso se encaixa</h2>
@@ -150,6 +172,33 @@
         </span>
       {% endwith %}
       {% if previa %}
+        {% comment %}
+          O cartao de progresso e so da previa. Curso publicado esta pronto por
+          definicao, e quanto do material ficou pronto e assunto de quem produz,
+          nao de quem procura curso.
+
+          Sao dois numeros porque sao duas perguntas: `prontos` e quanto do
+          material esta completo, e `revisados` e quanto o professor ja aprovou. A
+          barra acompanha o primeiro.
+        {% endcomment %}
+        {% with p=curso.progresso %}
+          <div class="cartao-progresso">
+            <h2>Progresso da produção</h2>
+            <p class="progresso-numero">{{ p.percentual }}%</p>
+            <progress class="barra-progresso" value="{{ p.prontos }}" max="{{ p.total }}"
+                      aria-label="Progresso da produção"></progress>
+            <dl class="progresso-contas">
+              <div>
+                <dt>Prontos</dt>
+                <dd>{{ p.prontos }} de {{ p.total }}</dd>
+              </div>
+              <div>
+                <dt>Revisados</dt>
+                <dd>{{ p.revisados }} de {{ p.total }}</dd>
+              </div>
+            </dl>
+          </div>
+        {% endwith %}
         {% comment %}
           O cartao inteiro sai da previa, e nao so o botao: o titulo "Solicitar
           este curso" e o convite abaixo dele prometem algo que o curso ainda nao

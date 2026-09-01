@@ -14,6 +14,30 @@ from apps.cursos.choices import Formato, StatusCurso, TipoPratica, TipoPublico
 from apps.referenciais.choices import ETAPAS
 
 
+class Progresso(NamedTuple):
+    """Quanto do curso esta feito, em duas medidas que nao sao a mesma.
+
+    `prontos` e ausencia de pendencia: o material daquele entregavel esta
+    completo segundo a regra dele. `revisados` e o status APROVADO: o professor
+    olhou e aceitou. Um entregavel pode estar completo e ainda nao revisado, e e
+    por isso que sao dois numeros e nao um.
+
+    O percentual acompanha `prontos`, e nao `revisados`: a pergunta e quanto do
+    material esta terminado. Ver `pronto_para_o_coordenador` para a outra
+    pergunta, a de quando o curso pode subir.
+    """
+
+    total: int
+    prontos: int
+    revisados: int
+
+    @property
+    def percentual(self):
+        if not self.total:
+            return 0
+        return round(100 * self.prontos / self.total)
+
+
 class Praticas(NamedTuple):
     """Resposta a "precisa de computador?", nas duas dimensoes que nao se excluem:
     um curso pode ter as duas metades, uma so, ou -- enquanto o caderno nao foi
@@ -277,6 +301,37 @@ class Curso(models.Model):
 
     def tem_membro(self, usuario):
         return self.membros.filter(pessoa=usuario).exists()
+
+    @property
+    def equipe(self):
+        """Os membros alem do responsavel.
+
+        Desde o Plano 6 o responsavel e membro da equipe do curso que responde
+        (spec 4.1), entao listar `membros` cru imprime o nome dele duas vezes: uma
+        como responsavel e outra no meio da equipe.
+
+        Usa `.all()` de proposito, para aproveitar o `prefetch_related` das telas;
+        um `.exclude()` aqui dispararia consulta nova e desfaria o prefetch.
+        """
+        return [m for m in self.membros.all() if m.pessoa_id != self.professor_responsavel_id]
+
+    @property
+    def progresso(self):
+        """Quantos dos seis entregaveis estao prontos e quantos ja foram revisados.
+
+        `pendencias` cobra a regra de cada entregavel (o roteiro do Plano 2), que e
+        a mesma que o envio para revisao usa: o numero da tela e o mesmo criterio
+        que barra o envio, e nao uma segunda contagem que divergiria dele.
+        """
+        from apps.cursos import validacoes
+        from apps.cursos.choices import StatusEntregavel
+
+        entregaveis = list(self.entregaveis.all())
+        return Progresso(
+            total=len(entregaveis),
+            prontos=sum(1 for e in entregaveis if not validacoes.pendencias(e)),
+            revisados=sum(1 for e in entregaveis if e.status == StatusEntregavel.APROVADO),
+        )
 
     @property
     def pronto_para_o_coordenador(self):

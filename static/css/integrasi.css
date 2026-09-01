@@ -2838,7 +2838,8 @@ textarea:focus {
   margin: -0.375rem 0 1rem;
 }
 
-.envio-progresso progress {
+.envio-progresso progress,
+.barra-progresso {
   appearance: none;
   -webkit-appearance: none;
   flex: 1;
@@ -2849,17 +2850,20 @@ textarea:focus {
   overflow: hidden;
 }
 
-.envio-progresso progress::-webkit-progress-bar {
+.envio-progresso progress::-webkit-progress-bar,
+.barra-progresso::-webkit-progress-bar {
   background: var(--linha);
   border-radius: 999px;
 }
 
-.envio-progresso progress::-webkit-progress-value {
+.envio-progresso progress::-webkit-progress-value,
+.barra-progresso::-webkit-progress-value {
   background: linear-gradient(90deg, var(--azul), var(--ciano));
   border-radius: 999px;
 }
 
-.envio-progresso progress::-moz-progress-bar {
+.envio-progresso progress::-moz-progress-bar,
+.barra-progresso::-moz-progress-bar {
   background: linear-gradient(90deg, var(--azul), var(--ciano));
   border-radius: 999px;
 }
@@ -2870,6 +2874,55 @@ textarea:focus {
    cresce com o texto de qualquer forma. */
 .editor-curto .ql-editor {
   min-height: 5.5rem;
+}
+
+/* ---------- cartão de progresso da produção (previa do curso) ---------- */
+
+/* Fica dentro da `.lateral`, que ja e um cartao: aqui e so a separacao do bloco
+   que vem depois. A barra reaproveita a pintura da barra do envio de video, pelo
+   seletor compartilhado acima - duas barras com desenhos diferentes na mesma
+   interface seria o defeito que esta rodada foi corrigir. */
+.cartao-progresso {
+  border-bottom: 1px solid var(--linha);
+  margin-bottom: 1.25rem;
+  padding-bottom: 1.25rem;
+}
+
+.progresso-numero {
+  font-family: var(--display);
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--marinho);
+  /* Sobrescreve o `.lateral p`, que e cinza pequeno com margem de 1.25rem. */
+  margin: 0 0 0.5rem;
+}
+
+.barra-progresso {
+  width: 100%;
+}
+
+.progresso-contas {
+  display: flex;
+  gap: 1.5rem;
+  margin: 0.875rem 0 0;
+}
+
+.progresso-contas dt {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--cinza);
+}
+
+.progresso-contas dd {
+  font-family: var(--dado);
+  font-size: 0.9375rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--texto);
+  margin: 0.125rem 0 0;
 }
 
 .envio-numero {

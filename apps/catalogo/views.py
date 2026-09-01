@@ -103,7 +103,12 @@ def catalogo(request):
 
 
 def catalogo_curso(request, pk):
-    curso = get_object_or_404(cursos_publicados().prefetch_related("temas", "competencias"), pk=pk)
+    curso = get_object_or_404(
+        # `membros__pessoa`: a autoria le o nome de cada membro, e sem isto e uma
+        # consulta por pessoa. O painel interno do curso ja tinha aprendido isso.
+        cursos_publicados().prefetch_related("temas", "competencias", "membros__pessoa"),
+        pk=pk,
+    )
     return render(request, "catalogo/curso.html", {"curso": curso})
 
 
@@ -124,7 +129,15 @@ def previa_do_curso(request, pk):
     from apps.cursos import permissions
 
     curso = get_object_or_404(
-        Curso.objects.prefetch_related("temas", "competencias", "entregaveis__anexos"), pk=pk
+        # `entregaveis__secoes` e `membros__pessoa` entraram com o cartao de
+        # progresso e a autoria: o progresso chama `validacoes.pendencias` nos seis
+        # entregaveis (o do Plano de Ensino le as secoes) e a autoria le o nome de
+        # cada membro. Sem eles, uma consulta por entregavel e uma por pessoa.
+        Curso.objects.select_related("professor_responsavel").prefetch_related(
+            "temas", "competencias", "entregaveis__anexos", "entregaveis__secoes",
+            "membros__pessoa",
+        ),
+        pk=pk,
     )
     permissions.garante(
         permissions.pode_ver_curso(request.user, curso), "Curso de outra equipe."
