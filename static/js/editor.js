@@ -23,7 +23,11 @@
     campo.dataset.editorLigado = '1';
 
     var caixa = document.createElement('div');
-    caixa.className = 'editor-secao';
+    // A altura curta acompanha as `rows` do textarea, e nao o formulario em que
+    // ele esta: era uma regra presa a `[data-upload-video]`, e o campo seguinte a
+    // pedir um editor baixo nasceria com as 13rem das secoes do Plano de Ensino.
+    var linhas = parseInt(campo.getAttribute('rows'), 10) || 10;
+    caixa.className = linhas <= 4 ? 'editor-secao editor-curto' : 'editor-secao';
     campo.parentNode.insertBefore(caixa, campo);
     // O textarea continua no formulario, escondido: e ele que o Django recebe, e
     // e ele que guarda o valor quando o JS nao roda.

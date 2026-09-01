@@ -337,3 +337,29 @@ def test_a_varredura_de_hidden_acha_os_elementos_e_as_regras():
     """Duas listas vazias deixariam o teste acima verde para sempre."""
     assert alvos_marcados_hidden(), "nenhum elemento `hidden` encontrado"
     assert len(regras_que_definem_display()) > 20
+
+
+def test_nenhum_button_fica_sem_classe():
+    """`<button>` sem classe herda o desenho de botao de acao por acidente.
+
+    A base do CSS e `.botao, .botao-linha, .botao-largo, button`: o seletor de
+    elemento pinta qualquer botao, entao um `<button>` sem classe PARECE certo e a
+    diferenca so aparece quando `.botao` ganha um estado novo. Cinco estavam
+    assim, entre eles `Anexar` e `Enviar vídeo`.
+
+    Botao que nao e de acao (o gatilho de ajuda, as setas e os pontos do
+    carrossel) tem classe propria e `all: unset`; o que este teste proibe e a
+    ausencia de classe, nao a classe diferente.
+    """
+    achados = []
+    for caminho in arquivos_versionados():
+        if not caminho.startswith("templates/") or not caminho.endswith(".html"):
+            continue
+        conteudo = texto_de(caminho)
+        if conteudo is None:
+            continue
+        for abertura in re.finditer(r"<button[^>]*>", conteudo):
+            if "class=" not in abertura.group(0):
+                linha = conteudo[: abertura.start()].count("\n") + 1
+                achados.append(f"{caminho}:{linha}: {abertura.group(0)[:70]}")
+    assert not achados, "botão sem classe em:\n" + "\n".join(achados)

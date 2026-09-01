@@ -441,7 +441,7 @@ def test_os_outros_entregaveis_continuam_oferecendo(client, curso_com_equipe, al
     client.force_login(aluno)
     html = client.get(reverse("entregavel", args=[slides.pk])).content.decode()
     assert "Anexar material" in html
-    assert "<h2>Materiais</h2>" in html
+    assert "<h3>Materiais</h3>" in html
 
 
 @pytest.mark.django_db
@@ -757,3 +757,88 @@ def test_nenhum_entregavel_oferece_campo_de_link(client, curso_com_equipe, aluno
         entregavel = curso_com_equipe.entregaveis.get(tipo=tipo)
         html = client.get(reverse("entregavel", args=[entregavel.pk])).content.decode()
         assert 'name="url"' not in html, tipo
+
+
+# --- As seis telas seguem a estrutura do Plano de Ensino ----------------------
+#
+# O Plano de Ensino e o padrao: `<section class="bloco">` com `<h3>` e o gatilho
+# de ajuda no titulo, campos no `.campo` com tooltip, e botao de acao com a classe
+# `.botao`. As outras cinco telas usavam `<div class="bloco">` com `<h2>`, o
+# formulario de anexar saia pelo `as_p` do Django (com a ajuda em paragrafo
+# visivel, e nao em balao) e os botoes iam sem classe nenhuma.
+
+
+def coluna_de_trabalho(html):
+    """So a coluna da esquerda: a lateral e o cabecalho ja eram iguais nas seis."""
+    return html[html.index("coluna-trabalho") : html.index("<aside")]
+
+
+def tela_do_entregavel(client, curso, tipo):
+    entregavel = curso.entregaveis.get(tipo=tipo)
+    return client.get(reverse("entregavel", args=[entregavel.pk])).content.decode()
+
+
+@pytest.mark.django_db
+def test_os_cartoes_das_seis_telas_sao_section_com_h3(client, curso_com_equipe, aluno):
+    """`.bloco` e `<section>` com `<h3>` no Plano de Ensino, e o CSS desenha o
+    titulo do cartao por `.bloco > h3`. Com `<h2>`, os outros cinco pegavam outro
+    tamanho de fonte no mesmo lugar da tela."""
+    client.force_login(aluno)
+    for tipo in TipoEntregavel:
+        corpo = coluna_de_trabalho(tela_do_entregavel(client, curso_com_equipe, tipo))
+        assert '<div class="bloco"' not in corpo, tipo
+        assert "<h2" not in corpo, tipo
+        assert corpo.count('class="bloco"') >= 1, tipo
+        # Todo `.bloco` da coluna e <section>: no Plano de Ensino ele vem com id
+        # antes da classe (`<section id="secao-N" class="bloco">`), entao a conta
+        # e sobre a classe, e o <div> e proibido pela linha acima.
+        assert corpo.count('class="bloco"') == corpo.count("<section")
+
+
+@pytest.mark.django_db
+def test_o_formulario_de_anexar_usa_o_campo_padrao_com_tooltip(client, curso_com_equipe, aluno):
+    """O `as_p` do Django punha a ajuda como paragrafo visivel sob cada campo, sem
+    `.campo` e sem balao: a mesma explicacao aparecia de dois jeitos na mesma tela,
+    porque o formulario de video ja passava pelo `_campo.html`."""
+    client.force_login(aluno)
+    for tipo, quantos in (
+        (TipoEntregavel.SLIDES, 3),
+        (TipoEntregavel.CARDS, 5),
+        (TipoEntregavel.CADERNO, 5),
+        (TipoEntregavel.AVALIACAO, 3),
+    ):
+        corpo = coluna_de_trabalho(tela_do_entregavel(client, curso_com_equipe, tipo))
+        assert corpo.count('class="ajuda-campo"') == quantos, tipo
+        assert corpo.count('<div class="campo') == quantos, tipo
+        # A ajuda vai para o balao; o texto continua no HTML so para o leitor de
+        # tela, escondido. Visivel, ele dobrava a altura do formulario.
+        assert 'class="helptext"' not in corpo, tipo
+
+
+@pytest.mark.django_db
+def test_todo_botao_de_acao_das_telas_de_entregavel_tem_a_classe(client, curso_com_equipe, aluno):
+    """`Anexar` e `Enviar vídeo` iam sem classe. O CSS pinta todo `<button>`, entao
+    eles PARECIAM certos: a diferenca so aparece quando `.botao` ganha um estado
+    novo (foco, carregando) e esses dois ficam para tras."""
+    import re
+
+    client.force_login(aluno)
+    for tipo in TipoEntregavel:
+        corpo = coluna_de_trabalho(tela_do_entregavel(client, curso_com_equipe, tipo))
+        for abertura in re.findall(r"<button[^>]*>", corpo):
+            assert "class=" in abertura, f"{tipo}: {abertura}"
+
+
+@pytest.mark.django_db
+def test_a_descricao_tem_o_mesmo_editor_em_todo_entregavel(client, curso_com_equipe, aluno):
+    """`Anexo.descricao` e o mesmo campo, sanitizado do mesmo jeito e mostrado com
+    |safe na mesma lista. Ter editor so na video-aula fazia a mesma coisa aceitar
+    formatacao numa tela e nao aceitar na de baixo."""
+    client.force_login(aluno)
+    for tipo in (
+        TipoEntregavel.SLIDES, TipoEntregavel.VIDEOS, TipoEntregavel.CARDS,
+        TipoEntregavel.CADERNO, TipoEntregavel.AVALIACAO,
+    ):
+        corpo = coluna_de_trabalho(tela_do_entregavel(client, curso_com_equipe, tipo))
+        assert 'name="descricao"' in corpo, tipo
+        assert "data-editor" in corpo, tipo

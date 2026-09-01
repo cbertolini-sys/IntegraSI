@@ -2864,10 +2864,11 @@ textarea:focus {
   border-radius: 999px;
 }
 
-/* O editor da descrição do vídeo é mais baixo que o das seções: aquele tem
-   13rem porque uma ementa inteira cabe dentro dele, e aqui são uma ou duas
-   linhas. O campo cresce com o texto de qualquer forma. */
-[data-upload-video] .editor-secao .ql-editor {
+/* O editor de uma descrição é mais baixo que o de uma seção do Plano de Ensino:
+   aquele tem 13rem porque uma ementa inteira cabe dentro dele, e aqui são uma ou
+   duas linhas. Quem escolhe é o `rows` do campo, lido pelo editor.js. O campo
+   cresce com o texto de qualquer forma. */
+.editor-curto .ql-editor {
   min-height: 5.5rem;
 }
 

@@ -22,7 +22,7 @@
 
   {% if ultima_revisao and ultima_revisao.decisao == "DEVOLVIDO" %}
     <section class="bloco devolutiva">
-      <h2>Devolvido pelo professor</h2>
+      <h3>Devolvido pelo professor</h3>
       <p>{{ ultima_revisao.comentario }}</p>
     </section>
   {% endif %}
@@ -37,8 +37,8 @@
     que a tela quer, e a lista de Materiais ficaria sempre vazia.
   {% endcomment %}
   {% if entregavel.tipo != "PLANO_ENSINO" %}
-  <div class="bloco">
-  <h2>Materiais</h2>
+  <section class="bloco">
+  <h3>Materiais</h3>
   <ul class="registros">
     {% for anexo in entregavel.anexos.all %}
       <li class="registro">
@@ -64,18 +64,24 @@
       <li class="vazio"><p>Nenhum material anexado.</p></li>
     {% endfor %}
   </ul>
-  </div>
+  </section>
 
   {% if pode_editar %}
     {% if form_anexo %}
-    <div class="bloco">
-      <h2>Anexar material</h2>
+    <section class="bloco">
+      <h3>Anexar material</h3>
       <form method="post" action="{% url 'anexar' entregavel.pk %}" enctype="multipart/form-data">
         {% csrf_token %}
-        {{ form_anexo.as_p }}
-        <button type="submit">Anexar</button>
+        {% comment %}
+          Pelo `_campo.html`, e nao pelo `as_p` do Django: e dele que vem o
+          `.campo`, o rotulo com gatilho de ajuda e o balao. Com `as_p` a mesma
+          explicacao aparecia de dois jeitos na mesma tela, porque o formulario de
+          video ja passava por aqui.
+        {% endcomment %}
+        {% for campo in form_anexo %}{% include "cursos/_campo.html" %}{% endfor %}
+        <button type="submit" class="botao">Anexar</button>
       </form>
-    </div>
+    </section>
     {% endif %}
 
     {% comment %}
@@ -85,8 +91,8 @@
       layout, era estado vazando. Quem pegou foi o teste do video em revisao.
     {% endcomment %}
     {% if entregavel.tipo == "VIDEOS" %}
-      <div class="bloco">
-      <h2>Enviar vídeo-aula</h2>
+      <section class="bloco">
+      <h3>Enviar vídeo-aula</h3>
       {% comment %}
         Upload fatiado e retomavel: e o unico ponto do sistema com JS proprio,
         porque HTMX nao fatia arquivo (spec 8). Tudo o que o JS precisa saber sobre
@@ -130,10 +136,10 @@
           test_estilo reprova.
         {% endcomment %}
         <p class="aviso" hidden></p>
-        <button type="submit">Enviar vídeo</button>
+        <button type="submit" class="botao">Enviar vídeo</button>
       </form>
       <script src="{% estatico 'js/upload.js' %}" defer></script>
-      </div>
+      </section>
     {% endif %}
   {% endif %}
   {% endif %}

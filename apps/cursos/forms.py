@@ -177,7 +177,7 @@ class EnvioDeVideoForm(forms.Form):
 
 class AnexoForm(forms.ModelForm):
     upload = forms.FileField(
-        label="arquivo",
+        label="Arquivo",
         required=False,
         help_text="O arquivo em si: PDF, imagem, apresentação ou documento.",
     )
@@ -206,6 +206,13 @@ class AnexoForm(forms.ModelForm):
     class Meta:
         model = Anexo
         fields = ["titulo", "descricao", "referencia_bibliografica", "rotulo", "tipo_pratica", "url"]
+        widgets = {
+            # O mesmo editor da descricao da video-aula: e o mesmo campo, sanitizado
+            # do mesmo jeito em `Anexo.save()` e mostrado com |safe na mesma lista.
+            # As `rows` do padrao (10) tambem faziam uma caixa de dez linhas para
+            # "uma linha dizendo para que serve".
+            "descricao": forms.Textarea(attrs={"rows": 3, "data-editor": True}),
+        }
         help_texts = {
             "titulo": (
                 "Como o material aparece na lista. Ex.: \u201cCartaz sobre senhas "
