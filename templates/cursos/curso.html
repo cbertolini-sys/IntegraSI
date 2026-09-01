@@ -56,7 +56,7 @@
       {% if curso.pronto_para_o_coordenador and user == curso.professor_responsavel %}
         <form method="post" action="{% url 'submeter_curso' curso.pk %}" style="margin-top:.75rem">
           {% csrf_token %}
-          <button type="submit" class="botao-largo">Submeter à coordenação</button>
+          <button type="submit" class="botao botao-largo">Submeter à coordenação</button>
         </form>
       {% endif %}
     </aside>

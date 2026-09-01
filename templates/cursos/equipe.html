@@ -25,7 +25,7 @@
             {% else %}
               <form method="post" action="{% url 'remover_da_equipe' curso.pk membro.pk %}" class="remover">
                 {% csrf_token %}
-                <button type="submit" class="botao-linha">Remover</button>
+                <button type="submit" class="botao botao-linha">Remover</button>
               </form>
             {% endif %}
           </li>
@@ -48,7 +48,7 @@
           <label for="id_email">E-mail</label>
           <input type="email" name="email" id="id_email" required>
         </div>
-        <button type="submit" class="botao-largo">Alocar e convidar</button>
+        <button type="submit" class="botao botao-largo">Alocar e convidar</button>
       </form>
 
       <h2>Alocar professor</h2>
@@ -68,7 +68,7 @@
             {% endfor %}
           </select>
         </div>
-        <button type="submit" class="botao-largo">Alocar professor</button>
+        <button type="submit" class="botao botao-largo">Alocar professor</button>
       </form>
     </aside>
   </div>

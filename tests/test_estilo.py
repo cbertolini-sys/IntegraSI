@@ -8,6 +8,7 @@ partir do código Unicode. Sem isso, o próprio teste precisaria estar na lista 
 exceções, e uma regra que não vale para quem a aplica é uma regra pela metade.
 """
 
+import re
 import subprocess
 from pathlib import Path
 
@@ -111,3 +112,62 @@ def test_a_varredura_alcanca_o_repositorio_todo():
     assert len(arquivos) > 100, f"esperava o repositório inteiro, vi {len(arquivos)}"
     legiveis = [c for c in arquivos if texto_de(c) is not None]
     assert len(legiveis) > 100, "quase nada foi lido como texto"
+
+
+# --- O padrao dos botoes ------------------------------------------------------
+
+MODIFICADORES = ("botao-linha", "botao-largo")
+
+
+def classes_de_botao():
+    """Toda combinacao de classe que contem "botao", com o arquivo onde aparece."""
+    achados = []
+    for caminho in arquivos_versionados():
+        if not caminho.startswith("templates/") or not caminho.endswith(".html"):
+            continue
+        conteudo = texto_de(caminho)
+        if conteudo is None:
+            continue
+        for numero, linha in enumerate(conteudo.splitlines(), start=1):
+            for atributo in re.findall(r'class="([^"]*)"', linha):
+                classes = atributo.split()
+                if any(c.startswith("botao") for c in classes):
+                    achados.append((caminho, numero, classes))
+    return achados
+
+
+def test_todo_botao_traz_a_classe_base():
+    """Um modificador sozinho nao e botao.
+
+    A base do CSS era `.botao, button`, um seletor de ELEMENTO: `botao-linha` num
+    <button> herdava tudo, mas num <a> nao herdava nada e virava link pelado. O
+    CSS foi corrigido para nao depender mais do elemento, e este teste mantem a
+    marcacao num padrao so, para que a proxima tela nao reinvente a combinacao.
+    """
+    fora = [
+        f"{caminho}:{numero}: {' '.join(classes)}"
+        for caminho, numero, classes in classes_de_botao()
+        if "botao" not in classes
+    ]
+    assert not fora, "modificador de botão sem a classe base em:\n" + "\n".join(fora)
+
+
+def test_nao_ha_classe_de_botao_inventada():
+    """So existem tres: a base e dois modificadores. Uma quarta classe seria um
+    botao com regra propria, que e como o padrao se perde."""
+    conhecidas = {"botao", *MODIFICADORES}
+    inventadas = sorted(
+        {
+            c
+            for _, _, classes in classes_de_botao()
+            for c in classes
+            if c.startswith("botao") and c not in conhecidas
+        }
+    )
+    assert inventadas == [], f"classes de botão fora do padrão: {inventadas}"
+
+
+def test_a_varredura_de_botoes_acha_alguma_coisa():
+    """Um seletor errado devolveria lista vazia e os dois testes acima ficariam
+    verdes para sempre."""
+    assert len(classes_de_botao()) > 20

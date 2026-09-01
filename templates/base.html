@@ -46,7 +46,12 @@
           <span class="quem">{{ user.nome_completo }} &middot; {{ user.get_papel_display }}</span>
           <form method="post" action="{% url 'logout' %}">
             {% csrf_token %}
-            <button type="submit" class="botao-linha">Sair</button>
+            {% comment %}
+              O mesmo `botao` do "Entrar" que ocupa este lugar quando ninguem
+              entrou. Eram dois pesos diferentes no mesmo canto da barra, e a
+              pessoa via a cor de fundo mudar so por estar autenticada.
+            {% endcomment %}
+            <button type="submit" class="botao">Sair</button>
           </form>
         {% else %}
           <a class="botao" href="{% url 'login' %}">Entrar</a>

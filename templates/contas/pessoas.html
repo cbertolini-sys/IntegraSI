@@ -27,7 +27,7 @@
             {% if pessoa.e_coordenador %}
               <span class="estado ok">Coordenador</span>
               {% if pessoa.pk != user.pk %}
-                <button type="submit" name="acao" value="REBAIXAR" class="botao-linha">Rebaixar a professor</button>
+                <button type="submit" name="acao" value="REBAIXAR" class="botao botao-linha">Rebaixar a professor</button>
               {% endif %}
             {% else %}
               <span class="estado">Professor</span>

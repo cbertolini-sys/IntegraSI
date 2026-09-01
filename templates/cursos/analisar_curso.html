@@ -55,8 +55,8 @@
             <label for="comentario">Comentário</label>
             <textarea id="comentario" name="comentario" rows="5"></textarea>
           </div>
-          <button type="submit" name="decisao" value="PUBLICAR" class="botao-largo">Publicar</button>
-          <button type="submit" name="decisao" value="DEVOLVER" class="botao-linha botao-largo" style="margin-top:.5rem">Devolver ao professor</button>
+          <button type="submit" name="decisao" value="PUBLICAR" class="botao botao-largo">Publicar</button>
+          <button type="submit" name="decisao" value="DEVOLVER" class="botao botao-linha botao-largo" style="margin-top:.5rem">Devolver ao professor</button>
         </form>
       {% elif pode_despublicar %}
         <h2>Tirar do catálogo</h2>
@@ -66,14 +66,14 @@
             <label for="comentario">Motivo da despublicação</label>
             <textarea id="comentario" name="comentario" rows="5"></textarea>
           </div>
-          <button type="submit" name="decisao" value="DESPUBLICAR" class="botao-largo">Despublicar</button>
+          <button type="submit" name="decisao" value="DESPUBLICAR" class="botao botao-largo">Despublicar</button>
         </form>
       {% elif pode_republicar %}
         <h2>Fora do catálogo</h2>
         <p>Este curso foi despublicado e está fora do catálogo público.</p>
         <form method="post" action="{% url 'decidir_curso' curso.pk %}">
           {% csrf_token %}
-          <button type="submit" name="decisao" value="PUBLICAR" class="botao-largo">Republicar</button>
+          <button type="submit" name="decisao" value="PUBLICAR" class="botao botao-largo">Republicar</button>
         </form>
       {% else %}
         <h2>Nada a decidir</h2>
