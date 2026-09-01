@@ -13,6 +13,15 @@
         {% if user.e_professor or user.e_coordenador %}
           <a class="botao" href="{% url 'nova_proposta' %}">Nova proposta</a>
         {% endif %}
+        {% comment %}
+          Turmas so aqui para quem e SO professor: a secao "Onde trabalhar", que
+          era a unica porta dele para esta tela, saiu do painel dele. O
+          coordenador continua com a secao, e ganhar o botao tambem seria o mesmo
+          link duas vezes na mesma pagina.
+        {% endcomment %}
+        {% if user.e_somente_professor %}
+          <a class="botao botao-linha" href="{% url 'minhas_turmas' %}">Turmas</a>
+        {% endif %}
         <a class="botao botao-linha" href="{% url 'catalogo' %}">Ver o catálogo</a>
       </div>
     </div>
@@ -23,44 +32,52 @@
       {% for item in resumo %}
         <li class="indicador {% if not item.valor %}zerado{% endif %}">
           <strong>{{ item.valor }}</strong>
-          <a href="{% url item.url %}">{{ item.rotulo }}</a>
+          <a href="{% url item.url %}{% if item.estado %}?estado={{ item.estado }}{% endif %}">{{ item.rotulo }}</a>
         </li>
       {% endfor %}
     </ul>
 
-    <h2 class="titulo-bloco">Onde trabalhar</h2>
-    <ul class="atalhos">
-      <li class="atalho">
-        <h3><a href="{% url 'meus_cursos' %}">Meus cursos</a></h3>
-        <p>Os cursos em que você participa, com o andamento de cada entregável.</p>
-      </li>
-      {% if user.e_professor or user.e_coordenador %}
+    {% comment %}
+      Só para a coordenação. Para professor e aluno a seção repetia, um por um, os
+      destinos que os cartões acima já abrem. Para o coordenador não: Pessoas,
+      Revisão e Meus cursos não têm porta em lugar nenhum além daqui, e tirá-la
+      dele não seria enxugar repetição, seria deixar três telas sem caminho.
+    {% endcomment %}
+    {% if user.e_coordenador %}
+      <h2 class="titulo-bloco">Onde trabalhar</h2>
+      <ul class="atalhos">
         <li class="atalho">
-          <h3><a href="{% url 'fila_revisao' %}">Revisão</a></h3>
-          <p>Entregáveis enviados pelas equipes, aguardando aprovação ou devolução.</p>
+          <h3><a href="{% url 'meus_cursos' %}">Meus cursos</a></h3>
+          <p>Os cursos em que você participa, com o andamento de cada entregável.</p>
         </li>
-      {% endif %}
-      {% if user.e_coordenador %}
-        <li class="atalho">
-          <h3><a href="{% url 'fila_coordenacao' %}">Fila da coordenação</a></h3>
-          <p>Cursos com os seis entregáveis aprovados, prontos para publicar.</p>
-        </li>
-        <li class="atalho">
-          <h3><a href="{% url 'solicitacoes' %}">Solicitações</a></h3>
-          <p>Pedidos de escolas e grupos da comunidade, a aceitar ou recusar.</p>
-        </li>
-        <li class="atalho">
-          <h3><a href="{% url 'pessoas' %}">Pessoas</a></h3>
-          <p>Professores e coordenação. Promova um professor a coordenador ou tire o acesso.</p>
-        </li>
-      {% endif %}
-      {% if user.e_professor or user.e_coordenador %}
-        <li class="atalho">
-          <h3><a href="{% url 'minhas_turmas' %}">Turmas</a></h3>
-          <p>Realizações agendadas a partir das solicitações aceitas.</p>
-        </li>
-      {% endif %}
-    </ul>
+        {% if user.e_professor or user.e_coordenador %}
+          <li class="atalho">
+            <h3><a href="{% url 'fila_revisao' %}">Revisão</a></h3>
+            <p>Entregáveis enviados pelas equipes, aguardando aprovação ou devolução.</p>
+          </li>
+        {% endif %}
+        {% if user.e_coordenador %}
+          <li class="atalho">
+            <h3><a href="{% url 'fila_coordenacao' %}">Fila da coordenação</a></h3>
+            <p>Cursos com os seis entregáveis aprovados, prontos para publicar.</p>
+          </li>
+          <li class="atalho">
+            <h3><a href="{% url 'solicitacoes' %}">Solicitações</a></h3>
+            <p>Pedidos de escolas e grupos da comunidade, a aceitar ou recusar.</p>
+          </li>
+          <li class="atalho">
+            <h3><a href="{% url 'pessoas' %}">Pessoas</a></h3>
+            <p>Professores e coordenação. Promova um professor a coordenador ou tire o acesso.</p>
+          </li>
+        {% endif %}
+        {% if user.e_professor or user.e_coordenador %}
+          <li class="atalho">
+            <h3><a href="{% url 'minhas_turmas' %}">Turmas</a></h3>
+            <p>Realizações agendadas a partir das solicitações aceitas.</p>
+          </li>
+        {% endif %}
+      </ul>
+    {% endif %}
   </div>
 </div>
 {% endblock %}

@@ -6,7 +6,7 @@ from django.views.decorators.http import require_POST
 
 from apps.cursos import permissions, services, validacoes
 from apps.cursos.arquivos import TAMANHO_BLOCO, calcula_hash
-from apps.cursos.choices import StatusCurso, TipoMidia
+from apps.cursos.choices import STATUS_EM_DESENVOLVIMENTO, StatusCurso, TipoMidia
 from apps.cursos.forms import AnexoForm, EnvioDeVideoForm, SecaoForm, oferece_anexo
 from apps.cursos.models import Anexo, Arquivo, Curso, Entregavel, Secao
 from apps.cursos.views.upload import UUID_MODELO
@@ -20,7 +20,23 @@ def meus_cursos(request):
     # sem ele. Quem criar Curso fora de criar_curso precisa criar o MembroEquipe
     # junto, senao o curso some desta tela.
     cursos = Curso.objects.filter(membros__pessoa=request.user).distinct()
-    return render(request, "cursos/meus_cursos.html", {"cursos": cursos})
+    # O mesmo recorte que o cartao do painel conta: contado de um jeito e listado
+    # de outro, o numero nunca batia com o que a pessoa via depois de clicar.
+    #
+    # Igualdade explicita nos dois ramos, sem pega-tudo: um `estado` inesperado
+    # mostra a lista inteira, e nao uma tela vazia que a pessoa leria como "perdi
+    # meus cursos". O ramo pega-tudo ja mordeu este projeto duas vezes
+    # (decidir_curso e o RECUSAR das solicitacoes).
+    estado = request.GET.get("estado")
+    if estado == "publicados":
+        cursos = cursos.filter(status=StatusCurso.PUBLICADO)
+    elif estado == "desenvolvimento":
+        cursos = cursos.filter(status__in=STATUS_EM_DESENVOLVIMENTO)
+    return render(
+        request,
+        "cursos/meus_cursos.html",
+        {"cursos": cursos, "estado": estado},
+    )
 
 
 @login_required

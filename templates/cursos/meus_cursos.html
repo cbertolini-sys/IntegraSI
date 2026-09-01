@@ -6,12 +6,23 @@
   <div class="cabecalho-pagina">
     <div class="faixa">
       <div>
-        <h1>Meus cursos</h1>
-        <p class="sub">Os cursos em que você participa, com a situação de cada um.</p>
+        {% if estado == "publicados" %}
+          <h1>Cursos publicados</h1>
+          <p class="sub">Os cursos em que você participa que já estão no catálogo.</p>
+        {% elif estado == "desenvolvimento" %}
+          <h1>Cursos em desenvolvimento</h1>
+          <p class="sub">Os cursos em que você participa que ainda não foram publicados.</p>
+        {% else %}
+          <h1>Meus cursos</h1>
+          <p class="sub">Os cursos em que você participa, com a situação de cada um.</p>
+        {% endif %}
       </div>
-      {% if user.e_professor or user.e_coordenador %}
-        <div class="acoes"><a class="botao" href="{% url 'nova_proposta' %}">Nova proposta</a></div>
-      {% endif %}
+      <div class="acoes">
+        {% if user.e_professor or user.e_coordenador %}
+          <a class="botao" href="{% url 'nova_proposta' %}">Nova proposta</a>
+        {% endif %}
+        <a class="botao botao-linha" href="{% url 'painel' %}">&larr; Voltar ao painel</a>
+      </div>
     </div>
   </div>
 

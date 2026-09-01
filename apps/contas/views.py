@@ -58,6 +58,9 @@ def _resumo(usuario):
                 "rotulo": "Cursos publicados",
                 "valor": meus.filter(status=StatusCurso.PUBLICADO).distinct().count(),
                 "url": "meus_cursos",
+                # O recorte viaja com o cartao: `meus_cursos` filtra pelo mesmo
+                # criterio, entao o numero e a lista nao tem como divergir.
+                "estado": "publicados",
             },
             {
                 "rotulo": "Cursos em desenvolvimento",
@@ -65,6 +68,7 @@ def _resumo(usuario):
                     status__in=STATUS_EM_DESENVOLVIMENTO
                 ).distinct().count(),
                 "url": "meus_cursos",
+                "estado": "desenvolvimento",
             },
             {
                 # Conta ENTREGAVEIS, e nao cursos com entregavel em revisao: e o
