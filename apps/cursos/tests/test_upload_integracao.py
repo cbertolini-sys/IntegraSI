@@ -306,3 +306,31 @@ def test_a_descricao_do_material_aparece_na_lista(client, aluno, entregavel_vide
     client.force_login(aluno)
     conteudo = tela(client, entregavel_videos)
     assert "Abertura do curso, com o mapa das aulas." in conteudo
+
+
+# Regra 11: o formulario de video segue a convencao de campo do resto do sistema
+@pytest.mark.django_db
+def test_o_formulario_de_video_usa_o_campo_padrao_da_interface(
+    client, aluno, entregavel_videos
+):
+    """Todo formulario do sistema envolve cada campo num `<div class="campo">`, e
+    e de la que vem o espaco entre um campo e o seguinte (`.campo` tem
+    `margin-bottom`; `.campo label` e bloco). Este era o unico escrito a mao, com
+    <label> inline soltos: os campos ficavam colados uns nos outros e o botao
+    encostava no ultimo, ainda mais depois que a barra de progresso passou a
+    nascer escondida (`display: none` nao ocupa altura nenhuma).
+
+    Prende a estrutura, e nao os pixels: o espaco em si e CSS, e nenhum teste
+    desta suite mede altura.
+    """
+    client.force_login(aluno)
+    conteudo = tela(client, entregavel_videos)
+    inicio = conteudo.index("data-upload-video")
+    formulario = conteudo[inicio : conteudo.index("</form>", inicio)]
+
+    assert formulario.count('<div class="campo">') >= 4, "campos fora do padrão"
+    for campo in ('name="titulo"', 'name="descricao"', 'name="duracao_minutos"', 'type="file"'):
+        assert campo in formulario, campo
+    # Rotulo que nao embrulha mais o campo precisa apontar para ele pelo `for`,
+    # senao clicar no texto deixa de focar o campo.
+    assert formulario.count("<label for=") >= 4

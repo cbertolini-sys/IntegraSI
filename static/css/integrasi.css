@@ -2806,6 +2806,24 @@ textarea:focus {
   margin-top: 1rem;
 }
 
+/* O envio de vídeo é o único formulário desta tela escrito à mão. A barra e o
+   aviso passam a maior parte do tempo `hidden`, ou seja, `display: none`, sem
+   altura nenhuma: sem esta margem o botão encosta no campo de duração e parece
+   fazer parte dele. Os campos em si vêm de `.campo`, como no resto do sistema. */
+[data-upload-video] progress {
+  display: block;
+  width: 100%;
+  margin-bottom: 0.75rem;
+}
+
+[data-upload-video] .aviso {
+  margin: 0 0 0.75rem;
+}
+
+[data-upload-video] button[type="submit"] {
+  margin-top: 0.5rem;
+}
+
 /* O gatilho de ajuda dentro do título da seção: o <h3> do cartão é versalete
    pequeno, e o círculo precisa acompanhar sem empurrar a linha. */
 .bloco > h3 .ajuda-campo {

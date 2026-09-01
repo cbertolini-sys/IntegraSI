@@ -97,14 +97,31 @@
             data-url-estado="{% url 'upload_estado' uuid_modelo %}"
             data-url-concluir="{% url 'upload_concluir' uuid_modelo %}">
         {% csrf_token %}
-        <label>Vídeo-aula (MP4, até 1 GB) <input type="file" accept="video/mp4"></label>
-        <label>Título <input type="text" name="titulo"
-                          maxlength="{{ titulo_maximo }}" required></label>
-        <label>Descrição
-          <textarea name="descricao" rows="3"></textarea></label>
-        <label>Duração em minutos
-          <input type="number" name="duracao_minutos"
-                 min="{{ duracao_minima }}" max="{{ duracao_maxima }}" required></label>
+        {% comment %}
+          Cada campo no `.campo` que o resto do sistema usa: e de la que vem o
+          espaco entre um campo e o seguinte. Escrito a mao com <label> inline,
+          este era o unico formulario da interface sem esse ritmo, e os campos
+          ficavam colados. O rotulo deixou de embrulhar o campo, entao precisa do
+          `for`: sem ele, clicar no texto para de focar o campo.
+        {% endcomment %}
+        <div class="campo">
+          <label for="video-arquivo">Vídeo-aula (MP4, até 1 GB)</label>
+          <input type="file" id="video-arquivo" accept="video/mp4">
+        </div>
+        <div class="campo">
+          <label for="video-titulo">Título</label>
+          <input type="text" id="video-titulo" name="titulo"
+                 maxlength="{{ titulo_maximo }}" required>
+        </div>
+        <div class="campo">
+          <label for="video-descricao">Descrição</label>
+          <textarea id="video-descricao" name="descricao" rows="3"></textarea>
+        </div>
+        <div class="campo">
+          <label for="video-duracao">Duração em minutos</label>
+          <input type="number" id="video-duracao" name="duracao_minutos"
+                 min="{{ duracao_minima }}" max="{{ duracao_maxima }}" required>
+        </div>
         {% comment %}
           Escondidos ate haver envio. Uma <progress> em 0% desenha uma barra cinza
           sem rotulo logo abaixo da duracao, e na tela ela parece mais um campo do
