@@ -441,3 +441,25 @@ def test_as_tres_telas_de_trabalho_usam_o_mesmo_painel(
         assert "duas-colunas" in html, nome
         # O painel fica DEPOIS do corpo no HTML, ou seja, na coluna da direita.
         assert html.index("duas-colunas") < html.index("painel-pendencias"), nome
+
+
+@pytest.mark.django_db
+def test_secoes_do_plano_ficam_em_cartao(client, curso_com_equipe, aluno):
+    """As secoes do Plano de Ensino renderizavam soltas, sem cartao, enquanto a
+    tela de editar curso punha tudo em cartao. Era a maior parte da diferenca
+    visual entre as duas telas, e nada no sistema garantia o contrario.
+
+    O cartao precisa estar no proprio <section>, e nao num embrulho por fora: e
+    esse elemento que o HTMX troca por outerHTML ao salvar, e um embrulho ficaria
+    para tras na primeira edicao.
+    """
+    import re
+
+    from apps.cursos.choices import TipoEntregavel
+
+    entregavel = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.PLANO_ENSINO)
+    client.force_login(aluno)
+    html = client.get(reverse("entregavel", args=[entregavel.pk])).content.decode()
+    secoes = re.findall(r'<section id="secao-\d+"[^>]*class="([^"]*)"', html)
+    assert secoes, "nenhuma seção renderizada"
+    assert all("bloco" in c for c in secoes), secoes

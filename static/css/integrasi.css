@@ -1298,19 +1298,41 @@ textarea:focus {
 
 /* ---------- blocos de conteúdo interno ---------- */
 
-.bloco {
+/* O cartao das telas de trabalho. UM so, usado por `.bloco` e por
+   `.ficha-secao`: os dois eram quase iguais e divergiam em duas coisas (sombra e
+   estilo do titulo), o bastante para a tela de editar curso e a do entregavel
+   parecerem de sistemas diferentes. */
+.bloco,
+.ficha-secao {
   background: var(--branco);
   border: 1px solid var(--linha);
   border-radius: var(--raio);
+  box-shadow: var(--sombra);
   padding: 1.5rem;
+  margin: 0;
+  min-width: 0;
+}
+
+/* Quem nao esta numa grade com `gap` carrega a propria margem. */
+.bloco {
   margin-bottom: 1.5rem;
 }
 
-.bloco > h2 {
+.coluna-trabalho > .bloco {
+  margin-bottom: 0;
+}
+
+/* O titulo do cartao e um rotulo, e nao uma manchete: pequeno, em versalete, na
+   cor da marca. Era assim so na tela de editar curso. */
+.bloco > h2,
+.bloco > h3,
+.ficha-secao legend {
   font-family: var(--display);
-  font-size: 1.125rem;
+  font-size: 0.8125rem;
   font-weight: 700;
-  letter-spacing: -0.015em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--azul);
   margin: 0 0 1rem;
 }
 
@@ -2253,6 +2275,9 @@ textarea:focus {
 }
 
 .coluna-trabalho {
+  display: grid;
+  gap: 1.25rem;
+  align-content: start;
   min-width: 0;
 }
 
