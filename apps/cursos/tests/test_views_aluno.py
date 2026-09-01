@@ -327,61 +327,6 @@ def test_anexar_arquivo_grande_preserva_hash_e_conteudo(client, curso_com_equipe
 
 
 @pytest.mark.django_db
-def test_anexar_link_cria_o_anexo_sem_arquivo(client, curso_com_equipe, aluno):
-    """Usa a Avaliacao, e nao os Slides: o formulario dos slides deixou de ter
-    campo de link, porque a regra deles conta apenas anexo que NAO e link. A
-    Avaliacao aceita link de proposito (um instrumento pode ser um formulario
-    online), entao e nela que o comportamento de link tem de ser provado."""
-    avaliacao = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.AVALIACAO)
-    client.force_login(aluno)
-    resposta = client.post(
-        reverse("anexar", args=[avaliacao.pk]),
-        {
-            "titulo": "Slides no Drive", "url": "https://exemplo.org/slides",
-            "rotulo": Rotulo.NENHUM,
-        },
-        follow=True,
-    )
-    assert resposta.status_code == 200
-    anexo = avaliacao.anexos.get(titulo="Slides no Drive")
-    assert anexo.tipo_midia == TipoMidia.LINK
-    assert anexo.arquivo is None
-    assert not Arquivo.objects.exists()
-
-
-@pytest.mark.django_db
-def test_anexar_arquivo_e_link_juntos_e_recusado_sem_quebrar(client, curso_com_equipe, aluno):
-    # Na Avaliacao pelo mesmo motivo do teste acima: e o entregavel cujo
-    # formulario ainda oferece os dois caminhos.
-    slides = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.AVALIACAO)
-    upload = SimpleUploadedFile(
-        "slides.pdf", b"%PDF-1.7\n%conteudo de teste\n", content_type="application/pdf"
-    )
-    client.force_login(aluno)
-    resposta = client.post(
-        reverse("anexar", args=[slides.pk]),
-        {
-            "titulo": "Slides duplos", "url": "https://exemplo.org/slides",
-            "rotulo": Rotulo.NENHUM,
-            "upload": upload,
-        },
-        follow=True,
-    )
-    assert resposta.status_code == 200
-    conteudo = resposta.content.decode()
-    assert "Anexo de arquivo não tem link." in conteudo
-    assert not Anexo.objects.filter(titulo="Slides duplos").exists()
-    # A rejeicao nao pode deixar o Arquivo (linha e arquivo em disco) pra tras: o
-    # aluno so tentou de novo, mas sem isso cada tentativa acumularia um registro e
-    # um arquivo orfaos, e limpar_arquivos_orfaos so existe no Plano 4.
-    assert Arquivo.objects.count() == 0
-    arquivos_em_disco = [
-        nome for _, _, nomes in os.walk(settings.MEDIA_ROOT) for nome in nomes
-    ]
-    assert arquivos_em_disco == []
-
-
-@pytest.mark.django_db
 def test_responsavel_ve_o_proprio_curso_em_meus_cursos(client, dados_curso, professor):
     """Depois que o `Q(professor_responsavel=...)` saiu da consulta de meus_cursos,
     e o vinculo de equipe que poe o curso nesta tela. Se alguem criar Curso sem o
@@ -562,15 +507,18 @@ def test_slides_pede_so_o_essencial_para_anexar(client, curso_com_equipe, aluno)
 
 @pytest.mark.django_db
 def test_os_outros_entregaveis_mantem_os_campos(client, curso_com_equipe, aluno):
-    """Prende o outro lado: so os slides foram enxugados. O caderno precisa de
-    rotulo e tipo de pratica, e os cards da referencia bibliografica."""
+    """Prende o outro lado do enxugamento: o caderno guarda rotulo e tipo de
+    pratica porque `_caderno` cobra os dois (versao com e sem gabarito, atividade
+    plugada e desplugada). Sao os unicos campos que sobreviveram nele."""
     from apps.cursos.choices import TipoEntregavel
 
     caderno = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.CADERNO)
     client.force_login(aluno)
     html = client.get(reverse("entregavel", args=[caderno.pk])).content.decode()
-    for campo in ("referencia_bibliografica", "rotulo", "tipo_pratica", "url"):
+    for campo in ("titulo", "descricao", "rotulo", "tipo_pratica", "upload"):
         assert f'name="{campo}"' in html, campo
+    for campo in ("referencia_bibliografica", "url"):
+        assert f'name="{campo}"' not in html, campo
 
 
 @pytest.mark.django_db
@@ -669,8 +617,13 @@ def test_o_formulario_de_anexo_nasce_vazio_onde_a_lista_e_vazia():
     assert list(AnexoForm(tipo=TipoEntregavel.SLIDES).fields) == [
         "titulo", "descricao", "upload",
     ]
-    # Quem nao esta no mapa continua com o formulario inteiro.
-    assert len(AnexoForm(tipo=TipoEntregavel.CADERNO).fields) > 3
+    assert list(AnexoForm(tipo=TipoEntregavel.CADERNO).fields) == [
+        "titulo", "descricao", "rotulo", "tipo_pratica", "upload",
+    ]
+    # Sem tipo, o formulario inteiro. Hoje os seis entregaveis estao no mapa, entao
+    # este e o unico jeito de alcancar o padrao - que continua existindo para que
+    # um entregavel novo apareca com todos os campos, e nao com nenhum.
+    assert len(AnexoForm().fields) > 5
 
 
 # --- Infograficos e Cards: sem rotulo, sem link, pratica em caixas de marcar ---
@@ -758,3 +711,49 @@ def test_nenhuma_pratica_marcada_grava_nenhum(client, curso_com_equipe, aluno):
     client.force_login(aluno)
     anexa_card(client, cards)
     assert cards.anexos.get().tipo_pratica == TipoPratica.NENHUM
+
+
+# --- Caderno e Avaliacao: so o que a regra de cada um usa ----------------------
+
+
+@pytest.mark.django_db
+def test_avaliacao_pede_so_o_essencial(client, curso_com_equipe, aluno):
+    """Referencia bibliografica e dos cards, rotulo e tipo de pratica sao do
+    caderno. Na avaliacao os quatro nao dizem nada sobre um instrumento."""
+    avaliacao = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.AVALIACAO)
+    client.force_login(aluno)
+    html = client.get(reverse("entregavel", args=[avaliacao.pk])).content.decode()
+    for campo in ("referencia_bibliografica", "rotulo", "tipo_pratica", "url"):
+        assert f'name="{campo}"' not in html, campo
+    for campo in ("titulo", "descricao", "upload"):
+        assert f'name="{campo}"' in html, campo
+
+
+@pytest.mark.django_db
+def test_so_os_cards_pedem_referencia_bibliografica(client, curso_com_equipe, aluno):
+    """`_cards` e a unica regra que cobra a referencia. Nos outros ela era campo
+    que ninguem le: aparecia na tela, ia para o banco e nao entrava em decisao
+    nenhuma."""
+    client.force_login(aluno)
+    for tipo in TipoEntregavel:
+        entregavel = curso_com_equipe.entregaveis.get(tipo=tipo)
+        html = client.get(reverse("entregavel", args=[entregavel.pk])).content.decode()
+        tem = 'name="referencia_bibliografica"' in html
+        assert tem == (tipo == TipoEntregavel.CARDS), tipo
+
+
+@pytest.mark.django_db
+def test_nenhum_entregavel_oferece_campo_de_link(client, curso_com_equipe, aluno):
+    """Consequencia assumida de tirar o link da avaliacao, escrita para nao ficar
+    calada: nenhuma tela do sistema cria mais anexo de link.
+
+    `validacoes._avaliacao` continua ACEITANDO link (um instrumento pode ser um
+    formulario online), e `test_avaliacao_aceita_link` continua provando isso do
+    lado do modelo. O que sumiu foi o caminho da interface ate la. Se o campo
+    voltar a algum entregavel, este teste e o primeiro a reprovar, e ai a decisao
+    volta a ser tomada de propria vontade em vez de por descuido."""
+    client.force_login(aluno)
+    for tipo in TipoEntregavel:
+        entregavel = curso_com_equipe.entregaveis.get(tipo=tipo)
+        html = client.get(reverse("entregavel", args=[entregavel.pk])).content.decode()
+        assert 'name="url"' not in html, tipo

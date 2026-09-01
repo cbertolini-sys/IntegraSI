@@ -67,8 +67,10 @@ CAMPOS_DO_ANEXO = {
     TipoEntregavel.CARDS: [
         "titulo", "descricao", "referencia_bibliografica", "tipo_pratica", "upload",
     ],
+    TipoEntregavel.CADERNO: ["titulo", "descricao", "rotulo", "tipo_pratica", "upload"],
     TipoEntregavel.SLIDES: ["titulo", "descricao", "upload"],
     TipoEntregavel.VIDEOS: [],
+    TipoEntregavel.AVALIACAO: ["titulo", "descricao", "upload"],
 }
 
 
@@ -211,12 +213,12 @@ class AnexoForm(forms.ModelForm):
             ),
             "descricao": "Uma linha dizendo para que serve o material. Opcional.",
             "referencia_bibliografica": (
-                "De onde veio o conteúdo ou a imagem. Obrigatória nos infográficos "
-                "e cards."
+                "De onde veio o conteúdo ou a imagem de cada card. É o único "
+                "entregável que a pede."
             ),
             "rotulo": (
-                "No caderno de exercícios, diz se este arquivo é a versão com ou "
-                "sem gabarito."
+                "Diz se este arquivo é a versão com ou sem gabarito. O caderno "
+                "precisa das duas."
             ),
         }
 
@@ -241,11 +243,10 @@ class AnexoForm(forms.ModelForm):
             upload.seek(0)
             dados["mime"] = valida_upload(upload.name, upload.size, cabecalho)
         elif not dados.get("url"):
-            # A mensagem acompanha o formulario: mandar "informe um link" num
-            # formulario sem campo de link e instrucao para um campo que a pessoa
-            # nao encontra, o que e pior que nenhuma.
-            if "url" in self.fields:
-                raise forms.ValidationError("Envie um arquivo ou informe um link.")
+            # Sem ramo para "ou informe um link": nenhum entregavel oferece o campo
+            # desde que ele saiu da avaliacao, e uma mensagem que manda preencher um
+            # campo inexistente e pior que nenhuma. `test_nenhum_entregavel_oferece_
+            # campo_de_link` reprova se o campo voltar sem que esta mensagem volte.
             raise forms.ValidationError("Envie o arquivo.")
         return dados
 
