@@ -35,7 +35,18 @@ def pendencias(entregavel):
 
 
 def _arquivos(entregavel):
-    return entregavel.anexos.exclude(tipo_midia=TipoMidia.LINK)
+    """Os anexos que nao sao link, filtrados em Python.
+
+    `.exclude()` no banco seria o natural, e era o que estava aqui: o problema e
+    que `prefetch_related` so guarda o resultado de `.all()`, entao qualquer
+    `.filter()`/`.exclude()`/`.exists()` desce ao banco de novo e desfaz o
+    prefetch. O painel do curso chama `pendencias` nos seis entregaveis, e eram
+    seis consultas que o prefetch nao alcancava. `Curso.praticas` ja tinha
+    aprendido isso e diz o mesmo no proprio docstring.
+
+    Sao poucos anexos por entregavel; filtrar em memoria custa menos que a viagem.
+    """
+    return [a for a in entregavel.anexos.all() if a.tipo_midia != TipoMidia.LINK]
 
 
 def _tem_texto(html):
@@ -136,7 +147,8 @@ def _caderno(entregavel):
 
 
 def _videos(entregavel):
-    videos = list(entregavel.anexos.filter(tipo_midia=TipoMidia.VIDEO))
+    # `.all()` pelo mesmo motivo de `_arquivos`: e o unico que o prefetch guarda.
+    videos = [a for a in entregavel.anexos.all() if a.tipo_midia == TipoMidia.VIDEO]
     faltas = []
     if not 2 <= len(videos) <= 3:
         faltas.append(f"Envie de 2 a 3 vídeos; há {len(videos)}.")
@@ -153,7 +165,7 @@ def _videos(entregavel):
 
 
 def _slides(entregavel):
-    if not _arquivos(entregavel).exists():
+    if not _arquivos(entregavel):
         return ["Anexe ao menos um arquivo de slides."]
     return []
 
@@ -168,6 +180,6 @@ def _avaliacao(entregavel):
     Nao e a nota de quem assiste ao curso, que pertence ao modulo de execucao
     (spec 1.1) junto com frequencia e certificado.
     """
-    if not entregavel.anexos.exists():
+    if not entregavel.anexos.all():
         return ["Anexe o material de avaliação, como arquivo ou link."]
     return []

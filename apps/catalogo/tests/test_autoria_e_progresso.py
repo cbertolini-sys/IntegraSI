@@ -192,33 +192,29 @@ def test_a_previa_nao_cresce_uma_consulta_por_membro(
 
 
 @pytest.mark.django_db
-def test_o_painel_nao_cresce_uma_consulta_por_entregavel(
-    client, dados_curso, aluno, professor, arquivo_qualquer
+def test_o_painel_le_os_anexos_e_as_secoes_numa_consulta_so(
+    client, dados_curso, aluno, professor
 ):
-    """O progresso roda `pendencias` nos seis, e a regra de cada um le anexos ou
-    secoes. Sem prefetch e uma consulta por entregavel na tela que a equipe mais
-    abre - e o numero so cresceria quando alguem acrescentasse um entregavel, que
-    e tarde demais para descobrir."""
+    """O cartao roda `pendencias` nos seis entregaveis, e a regra de cada um le
+    anexos ou secoes.
+
+    Contar consultas antes e depois de acrescentar anexos NAO prende isto: a conta
+    e uma consulta por entregavel de qualquer jeito, com ou sem anexo, entao o
+    numero nao muda e o teste passa com o prefetch apagado. Foi o que a primeira
+    versao deste teste fez. O que separa os dois casos e QUANTAS consultas batem
+    em cada tabela: uma, com o prefetch; seis, sem ele.
+    """
     from django.db import connection
     from django.test.utils import CaptureQueriesContext
 
-    from apps.cursos.choices import TipoMidia
-    from apps.cursos.models import Anexo
+    from apps.cursos.models import Anexo, Secao
 
     curso = services.criar_curso(**dados_curso)
     services.adicionar_membro(curso, aluno, por=professor)
     client.force_login(professor)
-    with CaptureQueriesContext(connection) as antes:
+    with CaptureQueriesContext(connection) as consultas:
         client.get(reverse("curso", args=[curso.pk]))
 
-    # Um anexo em cada entregavel que aceita: se as consultas fossem por objeto, o
-    # numero subiria junto.
-    for entregavel in curso.entregaveis.all():
-        Anexo.objects.create(
-            entregavel=entregavel, tipo_midia=TipoMidia.ARQUIVO, titulo="Material",
-            arquivo=arquivo_qualquer, enviado_por=aluno,
-        )
-    with CaptureQueriesContext(connection) as depois:
-        client.get(reverse("curso", args=[curso.pk]))
-
-    assert len(depois) == len(antes)
+    for tabela in (Anexo._meta.db_table, Secao._meta.db_table):
+        batidas = [c for c in consultas if tabela in c["sql"]]
+        assert len(batidas) == 1, f"{tabela}: {len(batidas)} consultas"

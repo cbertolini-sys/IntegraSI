@@ -6,7 +6,6 @@
 # descoberta automatica do conftest de cursos ao rodar a suite inteira).
 from apps.cursos.tests.conftest import (  # noqa: F401
     aluno,
-    arquivo_qualquer,
     coordenador,
     dados_curso,
     edicao,
