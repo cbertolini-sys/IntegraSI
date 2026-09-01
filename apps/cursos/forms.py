@@ -137,10 +137,12 @@ class EnvioDeVideoForm(forms.Form):
 
     upload = forms.FileField(
         label="Vídeo-aula (MP4, até 1 GB)",
-        # Sem `required`: quem recusa o envio sem arquivo e o upload.js, com uma
-        # mensagem no aviso. O `required` do navegador barraria o submit antes, e
-        # o caminho que o cenario do harness exercita nunca rodaria.
-        required=False,
+        # `required` de verdade: video-aula sem arquivo nao sobe, e o campo mais
+        # importante do formulario ficaria sem o asterisco que todos os outros
+        # obrigatorios tem. O navegador passa a barrar o envio vazio antes do JS,
+        # o que e melhor que o aviso depois - e a guarda do upload.js continua la,
+        # exercitada pelo cenario `sem_arquivo_nao_fala_com_o_servidor`, que chama
+        # `iniciarUpload` direto e nao passa pela validacao do navegador.
         widget=forms.FileInput(attrs={"accept": "video/mp4"}),
         help_text=(
             "O arquivo do vídeo, em MP4. Se a conexão cair no meio, escolha o "
@@ -178,7 +180,10 @@ class EnvioDeVideoForm(forms.Form):
 class AnexoForm(forms.ModelForm):
     upload = forms.FileField(
         label="Arquivo",
-        required=False,
+        # Obrigatorio de verdade: nenhum entregavel oferece mais o campo de link,
+        # entao nao existe anexo sem arquivo. Era `required=False` com o `clean()`
+        # recusando depois, e a pessoa so descobria ao enviar o formulario.
+        error_messages={"required": "Envie o arquivo."},
         help_text="O arquivo em si: PDF, imagem, apresentação ou documento.",
     )
     # Declarado explicitamente (em vez de deixar o ModelForm derivar de Anexo.url)
@@ -241,6 +246,12 @@ class AnexoForm(forms.ModelForm):
             for campo in list(self.fields):
                 if campo not in permitidos:
                     del self.fields[campo]
+        # A referencia bibliografica e obrigatoria SO nos cards, porque so
+        # `validacoes._cards` a cobra - e cobra de cada card, um por um. Deixa-la
+        # opcional no formulario adiava a recusa para o envio a revisao, longe do
+        # campo que a resolve.
+        if tipo == TipoEntregavel.CARDS:
+            self.fields["referencia_bibliografica"].required = True
 
     def clean(self):
         dados = super().clean()
@@ -249,12 +260,10 @@ class AnexoForm(forms.ModelForm):
             cabecalho = upload.read(16)
             upload.seek(0)
             dados["mime"] = valida_upload(upload.name, upload.size, cabecalho)
-        elif not dados.get("url"):
-            # Sem ramo para "ou informe um link": nenhum entregavel oferece o campo
-            # desde que ele saiu da avaliacao, e uma mensagem que manda preencher um
-            # campo inexistente e pior que nenhuma. `test_nenhum_entregavel_oferece_
-            # campo_de_link` reprova se o campo voltar sem que esta mensagem volte.
-            raise forms.ValidationError("Envie o arquivo.")
+        # Sem ramo para arquivo ausente: `upload` e obrigatorio no proprio campo,
+        # e a mensagem ("Envie o arquivo.") mora no `error_messages` dele. Recusar
+        # aqui tambem mostraria a mesma frase duas vezes, uma no campo e outra no
+        # topo do formulario.
         return dados
 
     def _post_clean(self):

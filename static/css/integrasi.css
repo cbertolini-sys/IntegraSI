@@ -2565,6 +2565,30 @@ textarea:focus {
   margin-bottom: 0;
 }
 
+/* O asterisco de campo obrigatorio. Laranja como o gatilho de ajuda, que e a
+   unica cor do sistema reservada a meta-informacao sobre o campo (o resto e azul
+   e ciano), so que mais apagado: a ajuda convida a clicar, o asterisco so
+   informa. Sobe meio corpo com `super` para nao brigar com os dois-pontos do
+   rotulo, e vem sem peso proprio para nao virar um segundo acento na linha. */
+.obrigatorio {
+  color: var(--laranja);
+  opacity: 0.75;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+  vertical-align: super;
+  margin-left: 0.1875rem;
+  /* Não seleciona junto com o rótulo ao copiar o texto do formulário. */
+  user-select: none;
+}
+
+/* No titulo da secao do Plano de Ensino o rotulo e versalete pequeno, entao o
+   asterisco acompanha o tamanho de la em vez de ficar maior que a palavra. */
+.bloco > h3 .obrigatorio {
+  font-size: 0.625rem;
+  margin-left: 0.125rem;
+}
+
 /* Laranja de proposito, e a unica coisa laranja do sistema: o resto da interface
    e azul e ciano, entao a ajuda se destaca por ser a excecao. Cinza discreto era
    o que fazia ninguem reparar que havia ajuda ali. */

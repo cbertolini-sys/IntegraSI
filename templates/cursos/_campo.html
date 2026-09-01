@@ -20,7 +20,12 @@
     formulario usa.
   {% endcomment %}
   <span class="rotulo-campo">
-    {{ campo.label_tag }}{% if campo.help_text %}<button type="button" class="ajuda-campo"
+    {% comment %}
+      `aria-hidden` de proposito: o campo ja carrega o `required`, e e ele que o
+      leitor de tela anuncia. Sem isto a pessoa ouviria "asterisco" no meio do
+      rotulo, a mesma informacao duas vezes e uma delas sem sentido.
+    {% endcomment %}
+    {{ campo.label_tag }}{% if campo.field.required %}<span class="obrigatorio" aria-hidden="true">*</span>{% endif %}{% if campo.help_text %}<button type="button" class="ajuda-campo"
       data-ajuda="{{ campo.help_text }}" tabindex="-1"
       aria-label="O que é {{ campo.label }}">?</button>{% endif %}
   </span>

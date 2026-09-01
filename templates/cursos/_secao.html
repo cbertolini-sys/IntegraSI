@@ -1,5 +1,10 @@
 <section id="secao-{{ secao.pk }}" class="bloco">
-  <h3>{{ secao.titulo }}{% if secao.ajuda %}<button type="button" class="ajuda-campo"
+  {% comment %}
+    Todas as secoes sao obrigatorias: `validacoes._plano_de_ensino` reprova
+    qualquer uma vazia. O asterisco e fixo porque a regra e fixa; se um dia uma
+    secao virar opcional, ele passa a sair de um campo da propria Secao.
+  {% endcomment %}
+  <h3>{{ secao.titulo }}<span class="obrigatorio" aria-hidden="true">*</span>{% if secao.ajuda %}<button type="button" class="ajuda-campo"
     data-ajuda="{{ secao.ajuda }}" tabindex="-1"
     aria-label="O que escrever em {{ secao.titulo }}">?</button>{% endif %}</h3>
   {% if pode_editar %}
