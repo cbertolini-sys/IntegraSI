@@ -25,7 +25,12 @@ def meus_cursos(request):
 
 @login_required
 def curso(request, pk):
-    obj = get_object_or_404(Curso, pk=pk)
+    # O cartao de progresso roda `validacoes.pendencias` nos seis entregaveis, e a
+    # regra de cada um le anexos ou secoes: sem estes dois prefetch e uma consulta
+    # por entregavel, na tela que a equipe mais abre.
+    obj = get_object_or_404(
+        Curso.objects.prefetch_related("entregaveis__anexos", "entregaveis__secoes"), pk=pk
+    )
     permissions.garante(permissions.pode_ver_curso(request.user, obj), "Curso de outra equipe.")
     entregaveis = obj.entregaveis.all()
     # select_related("pessoa"): o template le membro.pessoa.nome_completo para cada

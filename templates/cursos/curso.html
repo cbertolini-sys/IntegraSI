@@ -41,6 +41,35 @@
     </div>
 
     <aside class="lateral">
+      {% comment %}
+        Ao lado da lista de entregaveis, que e o que ele mede, e nao na previa: a
+        previa e a pagina publica vista por dentro, e ali o numero fala de
+        producao para quem foi ver o curso.
+
+        Sao dois numeros porque sao duas perguntas. `prontos` e quanto do material
+        esta completo segundo a regra de cada entregavel (o mesmo criterio que
+        barra o envio para revisao); `revisados` e quanto o professor ja aprovou.
+        A barra acompanha o primeiro.
+      {% endcomment %}
+      {% with p=curso.progresso %}
+        <div class="cartao-progresso">
+          <h2>Progresso da produção</h2>
+          <p class="progresso-numero">{{ p.percentual }}%</p>
+          <progress class="barra-progresso" value="{{ p.prontos }}" max="{{ p.total }}"
+                    aria-label="Progresso da produção"></progress>
+          <dl class="progresso-contas">
+            <div>
+              <dt>Prontos</dt>
+              <dd>{{ p.prontos }} de {{ p.total }}</dd>
+            </div>
+            <div>
+              <dt>Revisados</dt>
+              <dd>{{ p.revisados }} de {{ p.total }}</dd>
+            </div>
+          </dl>
+        </div>
+      {% endwith %}
+
       <h2>Equipe</h2>
       <ul class="etiquetas afastada-abaixo">
         {% for membro in membros %}<li>{{ membro.pessoa.nome_completo }}</li>{% empty %}<li>Sem equipe ainda</li>{% endfor %}

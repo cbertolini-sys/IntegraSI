@@ -129,13 +129,11 @@ def previa_do_curso(request, pk):
     from apps.cursos import permissions
 
     curso = get_object_or_404(
-        # `entregaveis__secoes` e `membros__pessoa` entraram com o cartao de
-        # progresso e a autoria: o progresso chama `validacoes.pendencias` nos seis
-        # entregaveis (o do Plano de Ensino le as secoes) e a autoria le o nome de
-        # cada membro. Sem eles, uma consulta por entregavel e uma por pessoa.
+        # `membros__pessoa` entrou com a autoria, que le o nome de cada membro:
+        # sem ele e uma consulta por pessoa. `entregaveis__anexos` continua sendo
+        # do `praticas`.
         Curso.objects.select_related("professor_responsavel").prefetch_related(
-            "temas", "competencias", "entregaveis__anexos", "entregaveis__secoes",
-            "membros__pessoa",
+            "temas", "competencias", "entregaveis__anexos", "membros__pessoa",
         ),
         pk=pk,
     )

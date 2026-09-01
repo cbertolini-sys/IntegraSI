@@ -139,23 +139,34 @@ def test_o_percentual_acompanha_os_prontos(curso_em_producao, monkeypatch):
 
 
 @pytest.mark.django_db
-def test_o_cartao_de_progresso_aparece_na_previa(client, curso_em_producao, professor):
+def test_o_cartao_de_progresso_fica_ao_lado_dos_entregaveis(
+    client, curso_em_producao, professor
+):
+    """No painel do curso, que e onde a lista de entregaveis esta."""
     client.force_login(professor)
-    html = previa(client, curso_em_producao)
+    html = client.get(reverse("curso", args=[curso_em_producao.pk])).content.decode()
     assert "Progresso da produção" in html
+    assert "Prontos" in html
     assert "Revisados" in html
 
 
 @pytest.mark.django_db
-def test_o_cartao_de_progresso_nao_vai_para_a_pagina_publica(
+def test_o_cartao_de_progresso_nao_vai_para_a_previa_nem_para_a_pagina_publica(
     client, dados_curso, aluno, professor, coordenador
 ):
-    """Curso publicado esta pronto por definicao, e quanto do material ficou
-    pronto e assunto de quem produz, nao de quem procura curso."""
+    """A previa e a pagina publica vista por dentro. Ali o numero falaria de
+    producao para quem foi ver o curso, e num curso publicado ele e 100% por
+    definicao."""
     from apps.catalogo.tests.test_catalogo import publica
 
     curso = services.criar_curso(**dados_curso)
+    client.force_login(professor)
+    assert "Progresso da produção" not in previa(client, curso)
+
+    # `publica` ja aloca o aluno na equipe; aloca-lo antes bateria na unicidade
+    # de membro por curso.
     publica(curso, aluno, professor, coordenador)
+    client.logout()
     html = client.get(reverse("catalogo_curso", args=[curso.pk])).content.decode()
     assert "Progresso da produção" not in html
 
@@ -178,3 +189,36 @@ def test_a_previa_nao_cresce_uma_consulta_por_membro(
     with CaptureQueriesContext(connection) as com_dois:
         previa(client, curso)
     assert len(com_dois) == len(com_um)
+
+
+@pytest.mark.django_db
+def test_o_painel_nao_cresce_uma_consulta_por_entregavel(
+    client, dados_curso, aluno, professor, arquivo_qualquer
+):
+    """O progresso roda `pendencias` nos seis, e a regra de cada um le anexos ou
+    secoes. Sem prefetch e uma consulta por entregavel na tela que a equipe mais
+    abre - e o numero so cresceria quando alguem acrescentasse um entregavel, que
+    e tarde demais para descobrir."""
+    from django.db import connection
+    from django.test.utils import CaptureQueriesContext
+
+    from apps.cursos.choices import TipoMidia
+    from apps.cursos.models import Anexo
+
+    curso = services.criar_curso(**dados_curso)
+    services.adicionar_membro(curso, aluno, por=professor)
+    client.force_login(professor)
+    with CaptureQueriesContext(connection) as antes:
+        client.get(reverse("curso", args=[curso.pk]))
+
+    # Um anexo em cada entregavel que aceita: se as consultas fossem por objeto, o
+    # numero subiria junto.
+    for entregavel in curso.entregaveis.all():
+        Anexo.objects.create(
+            entregavel=entregavel, tipo_midia=TipoMidia.ARQUIVO, titulo="Material",
+            arquivo=arquivo_qualquer, enviado_por=aluno,
+        )
+    with CaptureQueriesContext(connection) as depois:
+        client.get(reverse("curso", args=[curso.pk]))
+
+    assert len(depois) == len(antes)

@@ -173,33 +173,6 @@
       {% endwith %}
       {% if previa %}
         {% comment %}
-          O cartao de progresso e so da previa. Curso publicado esta pronto por
-          definicao, e quanto do material ficou pronto e assunto de quem produz,
-          nao de quem procura curso.
-
-          Sao dois numeros porque sao duas perguntas: `prontos` e quanto do
-          material esta completo, e `revisados` e quanto o professor ja aprovou. A
-          barra acompanha o primeiro.
-        {% endcomment %}
-        {% with p=curso.progresso %}
-          <div class="cartao-progresso">
-            <h2>Progresso da produção</h2>
-            <p class="progresso-numero">{{ p.percentual }}%</p>
-            <progress class="barra-progresso" value="{{ p.prontos }}" max="{{ p.total }}"
-                      aria-label="Progresso da produção"></progress>
-            <dl class="progresso-contas">
-              <div>
-                <dt>Prontos</dt>
-                <dd>{{ p.prontos }} de {{ p.total }}</dd>
-              </div>
-              <div>
-                <dt>Revisados</dt>
-                <dd>{{ p.revisados }} de {{ p.total }}</dd>
-              </div>
-            </dl>
-          </div>
-        {% endwith %}
-        {% comment %}
           O cartao inteiro sai da previa, e nao so o botao: o titulo "Solicitar
           este curso" e o convite abaixo dele prometem algo que o curso ainda nao
           pode cumprir, e uma solicitacao criada daqui apontaria para um curso que
