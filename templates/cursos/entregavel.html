@@ -6,9 +6,18 @@
   <div class="cabecalho-pagina">
     <div class="faixa">
       <div>
-        <span class="selo-etapa etapa-{{ entregavel.numero }}">Etapa {{ entregavel.numero }}</span>
+        {% comment %}
+          O curso, a etapa e o entregavel na mesma linha de caminho, com a migalha
+          que o catalogo ja usa. Antes o nome do curso era um <a> cru num
+          paragrafo sob o titulo: azul e sublinhado, sem dizer que era de onde a
+          pessoa veio, e brigando com o "Voltar ao curso" ao lado.
+        {% endcomment %}
+        <p class="migalha">
+          <a href="{% url 'curso' entregavel.curso.pk %}">{{ entregavel.curso.titulo }}</a>
+          <span class="separador" aria-hidden="true">&rsaquo;</span>
+          <span class="selo-etapa etapa-{{ entregavel.numero }}">Etapa {{ entregavel.numero }}</span>
+        </p>
         <h1>{{ entregavel.nome }}</h1>
-        <p class="sub"><a href="{% url 'curso' entregavel.curso.pk %}">{{ entregavel.curso.titulo }}</a></p>
       </div>
       <div class="acoes">
         <span class="estado {% if entregavel.status == 'APROVADO' %}ok{% elif entregavel.status == 'EM_REVISAO' %}espera{% elif entregavel.status == 'DEVOLVIDO' %}atencao{% endif %}">{{ entregavel.get_status_display }}</span>

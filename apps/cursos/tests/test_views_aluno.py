@@ -842,3 +842,42 @@ def test_a_descricao_tem_o_mesmo_editor_em_todo_entregavel(client, curso_com_equ
         corpo = coluna_de_trabalho(tela_do_entregavel(client, curso_com_equipe, tipo))
         assert 'name="descricao"' in corpo, tipo
         assert "data-editor" in corpo, tipo
+
+
+@pytest.mark.django_db
+def test_o_curso_aparece_como_migalha_e_nao_como_link_solto(client, curso_com_equipe, aluno):
+    """O nome do curso ficava num `<p class="sub">` com um `<a>` cru embaixo do
+    titulo: azul, sublinhado, sem dizer que era o caminho de volta. Vira a mesma
+    migalha que o catalogo ja usa, com o selo da etapa dentro dela - curso,
+    depois etapa, depois o nome do entregavel no `<h1>`.
+    """
+    slides = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.SLIDES)
+    client.force_login(aluno)
+    html = client.get(reverse("entregavel", args=[slides.pk])).content.decode()
+    cabecalho = html[html.index("cabecalho-pagina") : html.index("corpo-trabalho")]
+
+    assert 'class="migalha"' in cabecalho
+    migalha = cabecalho[cabecalho.index('class="migalha"') : cabecalho.index("</p>", cabecalho.index('class="migalha"'))]
+    assert curso_com_equipe.titulo in migalha
+    assert reverse("curso", args=[curso_com_equipe.pk]) in migalha
+    assert "selo-etapa" in migalha, "o selo da etapa faz parte do caminho"
+    assert 'class="sub"' not in cabecalho, "a linha solta sob o título saiu"
+
+
+def test_a_migalha_nao_depende_do_fundo_escuro_do_catalogo():
+    """A cor branca da migalha era da regra base, feita para o herói do catálogo.
+
+    Reusada no cabeçalho branco do entregável, ela ficaria branca sobre branco:
+    invisível. A cor clara passa a viver no contexto (`.topo-curso .migalha`), e a
+    regra base fica com a cor do texto comum.
+    """
+    from pathlib import Path
+
+    from django.conf import settings
+
+    css = (Path(settings.BASE_DIR) / "static" / "css" / "integrasi.css").read_text(
+        encoding="utf-8"
+    )
+    base = css[css.index(".migalha {") : css.index("}", css.index(".migalha {"))]
+    assert "255, 255, 255" not in base, "a regra base voltou a ser branca"
+    assert ".topo-curso .migalha" in css, "o herói do catálogo perdeu a cor clara"

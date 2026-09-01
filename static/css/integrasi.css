@@ -680,13 +680,50 @@ textarea:focus {
   padding-block: 2.5rem 3rem;
 }
 
+/* A migalha desenha o caminho; QUEM a pinta e o contexto. A cor clara era da
+   regra base porque o unico lugar que a usava era o heroi escuro do catalogo -
+   reusada no cabecalho branco do entregavel, ela ficaria branca sobre branco. */
 .migalha {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4375rem;
   font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.72);
-  margin: 0 0 1rem;
+  color: var(--cinza);
+  margin: 0 0 0.5rem;
 }
 
 .migalha a {
+  color: var(--texto);
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: color 0.16s ease, border-color 0.16s ease;
+}
+
+.migalha a:hover,
+.migalha a:focus-visible {
+  color: var(--azul);
+  border-bottom-color: currentColor;
+}
+
+.migalha .separador {
+  color: var(--cinza-claro);
+}
+
+/* O selo da etapa entra na migalha, entao perde a margem que ele tinha como
+   elemento solto acima do titulo. */
+.migalha .selo-etapa {
+  margin-bottom: 0;
+}
+
+/* O heroi do catalogo, que e escuro. */
+.topo-curso .migalha {
+  color: rgba(255, 255, 255, 0.72);
+  margin-bottom: 1rem;
+}
+
+.topo-curso .migalha a {
   color: rgba(255, 255, 255, 0.92);
 }
 
