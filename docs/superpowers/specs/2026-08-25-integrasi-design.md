@@ -81,12 +81,12 @@ e nunca precisa de uma.
 3. A equipe preenche a ficha do curso (resumo, público-alvo, carga horária,
    formato e, se houver, referencial pedagógico e competências) enquanto produz
    os entregáveis. Nada disso é pedido ao professor na criação.
-4. O sistema cria automaticamente os cinco entregáveis obrigatórios.
+4. O sistema cria automaticamente os seis entregáveis obrigatórios.
 5. Os alunos preenchem seções e anexam materiais em cada entregável.
 6. O aluno envia um entregável para revisão; o sistema valida as regras daquele
    entregável antes de aceitar o envio.
 7. O professor aprova ou devolve com comentário. Devolvido volta a ser editável.
-8. Com os cinco entregáveis aprovados, o professor submete o curso ao coordenador.
+8. Com os seis entregáveis aprovados, o professor submete o curso ao coordenador.
 9. O coordenador publica (ou devolve ao professor).
 10. O curso publicado aparece no catálogo público, filtrável por público-alvo,
     referencial, categoria e formato.
@@ -314,8 +314,9 @@ onde o anterior parou.
 O roteiro da disciplina fixa **o que** deve ser entregue; o professor decide **como**
 o conteúdo se organiza dentro de cada entrega.
 
-**Entregavel** - os cinco do roteiro, criados automaticamente na abertura do curso.
-Campos: curso, `tipo` (`PLANO_ENSINO`, `CARDS`, `CADERNO`, `VIDEOS`, `SLIDES`),
+**Entregavel** - os seis do roteiro, criados automaticamente na abertura do curso.
+Campos: curso, `tipo` (`PLANO_ENSINO`, `SLIDES`, `VIDEOS`, `CARDS`, `CADERNO`,
+`AVALIACAO`),
 status, responsável (aluno, opcional), atualizado em. Único por (curso, tipo).
 É a unidade de revisão: o professor aprova ou devolve o entregável, não itens
 individuais.
@@ -326,7 +327,7 @@ monta as seções que quiser.
 
 Na abertura do curso, `criar_curso()` já cria as seções usuais do Plano de Ensino
 vazias (ementa, objetivos, conteúdo programático, metodologia, cronograma,
-avaliação, referências), junto com os cinco entregáveis e na mesma transação. O
+avaliação, referências), junto com os seis entregáveis e na mesma transação. O
 aluno abre e encontra a estrutura pronta para preencher. **Isso não é feito por
 sinal `post_save`**: sinal é invisível no fluxo, difícil de testar e não dispara de
 forma confiável em fixtures e criações em lote - e contraria a regra do §7.2 de que
@@ -412,7 +413,7 @@ Regras de transição:
 - Entregável em `EM_REVISAO` ou `APROVADO` é somente leitura para o aluno.
 - Professor aprova ou devolve apenas entregáveis em `EM_REVISAO`; devolver exige
   comentário não vazio.
-- Curso vai a `AGUARDANDO_COORDENADOR` somente com os cinco entregáveis
+- Curso vai a `AGUARDANDO_COORDENADOR` somente com os seis entregáveis
   `APROVADO`.
 - Somente o coordenador publica, devolve ao professor ou despublica.
 - Curso `DESPUBLICADO` sai do catálogo público imediatamente; pode ser republicado.
@@ -430,7 +431,10 @@ nada acontece.
 Aplicadas quando o aluno envia o entregável para revisão. A mensagem de erro lista
 exatamente o que falta - é ela que evita a ida e volta com o professor.
 
-**A - Plano de Ensino**: ao menos um anexo PDF; ao menos uma seção com conteúdo; e
+A numeração vai de 1 a 6 e é a ordem em que o roteiro pede o trabalho. Ela vive
+nos rótulos de `TipoEntregavel`, e não nos valores gravados, que nunca mudam.
+
+**1 - Plano de Ensino e Mapeamento Pedagógico**: ao menos um anexo PDF; ao menos uma seção com conteúdo; e
 os dados pedagógicos do **curso** preenchidos - público-alvo, carga horária, formato
 e, se houver referencial, número de competências dentro da faixa dele.
 
@@ -439,16 +443,25 @@ Esses últimos são campos do `Curso`, não do `Entregavel` (§4.3): a validaç�
 curso pode ser editado depois que o Plano de Ensino foi aprovado - validar só no
 envio do entregável deixaria passar um curso submetido sem carga horária.
 
-**B - Infográficos e Cards**: ao menos um anexo; **todo** anexo com
+**2 - Slides e Apresentações**: ao menos um anexo.
+
+**3 - Vídeo-Aulas**: de 2 a 3 vídeos, cada um com `duracao_minutos` entre 5 e 10.
+
+**4 - Infográficos e Cards Educativos**: ao menos um anexo; **todo** anexo com
 `referencia_bibliografica` preenchida.
 
-**C - Caderno de Exercícios**: ao menos um anexo com rótulo `SEM_GABARITO` e um
-com `COM_GABARITO`; entre os anexos, ao menos um marcado como prática plugada
-(`PLUGADA` ou `AMBAS`) e ao menos um como desplugada (`DESPLUGADA` ou `AMBAS`).
+**5 - Caderno de Exercícios e Atividades Práticas**: ao menos um anexo com rótulo
+`SEM_GABARITO` e um com `COM_GABARITO`; entre os anexos, ao menos um marcado como
+prática plugada (`PLUGADA` ou `AMBAS`) e ao menos um como desplugada
+(`DESPLUGADA` ou `AMBAS`).
 
-**D - Vídeo-Aulas**: de 2 a 3 vídeos, cada um com `duracao_minutos` entre 5 e 10.
+**6 - Avaliação**: ao menos um anexo, arquivo ou link.
 
-**E - Slides**: ao menos um anexo.
+É o **material de avaliação** que a equipe produz: instrumento, roteiro de
+correção, rubrica. Não é a nota de quem assiste ao curso, que pertence ao módulo
+de execução (§1.1) junto com frequência e certificado. O Plano de Ensino já tinha
+uma seção "Avaliação" pelo mesmo motivo: descrever como avaliar é trabalho de
+produzir o curso; avaliar alguém é trabalho de executá-lo.
 
 ## 7. Arquitetura
 
@@ -492,7 +505,7 @@ três lugares que publicam um curso de jeitos ligeiramente diferentes.
 
 ### 7.3 Telas
 
-**Aluno** - meus cursos → curso → editar a ficha do curso → painel dos cinco
+**Aluno** - meus cursos → curso → editar a ficha do curso → painel dos seis
 entregáveis com status e o que falta → editar seção → anexar arquivo ou vídeo →
 enviar para revisão → ver devolutivas.
 
@@ -728,8 +741,10 @@ Decidido deliberadamente, para não inflar a entrega:
 | Decisão | Motivo |
 |---|---|
 | Django monolítico com templates, não API + SPA | Sistema é CRUD com estados e permissões; manutenção futura por bolsistas |
-| Revisão no nível do entregável, não da seção ou do anexo | Cinco decisões por curso em vez de vinte; casa com a ideia de pacote do roteiro |
+| Revisão no nível do entregável, não da seção ou do anexo | Seis decisões por curso em vez de dezenas; casa com a ideia de pacote do roteiro |
 | Entregáveis fixos, seções livres | Roteiro fixa o que entregar; professor decide como organizar |
+| A numeração dos entregáveis vive no rótulo, nunca no valor gravado | Rótulo é texto e pode ser renumerado; valor gravado nunca muda, senão toda linha do banco vira lixo |
+| "Avaliação" como entregável não cruza a fronteira do módulo | É o material de avaliação que a equipe produz; avaliar quem assiste é do módulo de execução, e o Plano de Ensino já tinha seção com esse nome |
 | Referencial genérico em vez de campos BNCC | BNCC é um foco possível, não o único; abre para outros modelos sem tocar no código |
 | As 7 competências específicas do Ensino Médio entram como Categoria | Categoria sempre foi agrupamento genérico; forçar as 26 habilidades nos três eixos seria classificação inventada, que o documento não faz |
 | Blocos consolidados da BNCC (`EF15CO`, `EF69CO`) não são importados | Reagrupam o mesmo conteúdo com outro código; importar os dois listaria cada habilidade duas vezes e ninguém saberia qual escolher |
