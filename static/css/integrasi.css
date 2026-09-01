@@ -1702,19 +1702,28 @@ textarea:focus {
 }
 
 /* Cada fluxo tem sua cor, para que as quatro seções se distingam de relance
-   ao rolar a página. */
+   ao rolar a página.
+   
+   A classe vale no `.fluxo` (o <article>) e no `.fluxograma` (o <ol>) ao mesmo
+   tempo. Só no <ol> não bastava: `.fluxo-quem` é irmão dele, fora do elemento, e
+   a variável não chegava lá. Era por isso que aquele rótulo trazia a cor num
+   `style` inline, furando o sistema de acentos que já existia. */
+.fluxo.comunidade,
 .fluxograma.comunidade {
   --acento: #0e6a6a;
   --acento-fraco: #e4f7f7;
 }
+.fluxo.coordenacao,
 .fluxograma.coordenacao {
   --acento: var(--azul);
   --acento-fraco: var(--azul-suave);
 }
+.fluxo.professor,
 .fluxograma.professor {
   --acento: #5a3ea9;
   --acento-fraco: #f1ecfb;
 }
+.fluxo.estudante,
 .fluxograma.estudante {
   --acento: #1b6b42;
   --acento-fraco: #e9f7ef;
@@ -2374,3 +2383,30 @@ textarea:focus {
 .cabecalho-pagina .selo-etapa.etapa-4 { --cor-etapa: var(--etapa-4); }
 .cabecalho-pagina .selo-etapa.etapa-5 { --cor-etapa: var(--etapa-5); }
 .cabecalho-pagina .selo-etapa.etapa-6 { --cor-etapa: var(--etapa-6); }
+
+
+/* ---------- peças que substituíram `style` inline ---------- */
+
+/* Onze `style` inline foram limpos de uma vez. Cada um virou classe, e não uma
+   utilidade genérica: `margin-top` solto no HTML é decisão de layout escondida
+   onde ninguém procura quando o espaçamento sai errado. */
+
+.rodape-titulo {
+  color: var(--branco);
+}
+
+/* Separação entre duas seções da mesma página. Um valor só, e não os 2,5rem e
+   1,5rem que estavam espalhados: dois números ad hoc não são uma escala. */
+.afastado {
+  margin-top: 2rem;
+}
+
+.afastada-abaixo {
+  margin-bottom: 1.25rem;
+}
+
+.form-em-linha {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}

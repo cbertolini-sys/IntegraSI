@@ -21,7 +21,7 @@
             <h3>{{ pessoa.nome_completo }}</h3>
             <p class="detalhe"><span>{{ pessoa.email }}</span></p>
           </div>
-          <form method="post" style="display:flex;align-items:center;gap:.75rem">
+          <form method="post" class="form-em-linha">
             {% csrf_token %}
             <input type="hidden" name="usuario" value="{{ pessoa.pk }}">
             {% if pessoa.e_coordenador %}

@@ -171,3 +171,41 @@ def test_a_varredura_de_botoes_acha_alguma_coisa():
     """Um seletor errado devolveria lista vazia e os dois testes acima ficariam
     verdes para sempre."""
     assert len(classes_de_botao()) > 20
+
+
+# --- Nada de `style` inline nos templates ------------------------------------
+
+
+def test_nenhum_template_usa_style_inline():
+    """Decisão de layout mora na folha de estilo, não no HTML.
+
+    Onze `style` inline foram limpos de uma vez: quatro cores que furavam o
+    sistema de acentos que já existia, quatro margens ad hoc e três arranjos de
+    botão. O problema não é estético: `margin-top` solto no HTML é decisão
+    escondida onde ninguém procura quando o espaçamento sai errado, e uma cor
+    fixa ignora o tema.
+
+    Se este teste reprovar num template novo, a correção é criar a classe, não
+    acrescentar o arquivo a uma lista de exceções.
+    """
+    achados = []
+    for caminho in arquivos_versionados():
+        if not caminho.startswith("templates/") or not caminho.endswith(".html"):
+            continue
+        conteudo = texto_de(caminho)
+        if conteudo is None:
+            continue
+        for numero, linha in enumerate(conteudo.splitlines(), start=1):
+            if re.search(r'\sstyle="', linha):
+                achados.append(f"{caminho}:{numero}: {linha.strip()[:90]}")
+    assert not achados, "style inline em:\n" + "\n".join(achados)
+
+
+def test_a_varredura_de_style_alcanca_os_templates():
+    """Um seletor errado devolveria lista vazia e o teste acima ficaria verde para
+    sempre. Confere que a varredura enxerga os templates de verdade."""
+    html = [
+        c for c in arquivos_versionados()
+        if c.startswith("templates/") and c.endswith(".html") and texto_de(c)
+    ]
+    assert len(html) > 15

@@ -56,8 +56,10 @@
             <label for="comentario">Comentário</label>
             <textarea id="comentario" name="comentario" rows="5"></textarea>
           </div>
-          <button type="submit" name="decisao" value="PUBLICAR" class="botao botao-largo">Publicar</button>
-          <button type="submit" name="decisao" value="DEVOLVER" class="botao botao-linha botao-largo" style="margin-top:.5rem">Devolver ao professor</button>
+          <div class="acoes-empilhadas">
+            <button type="submit" name="decisao" value="PUBLICAR" class="botao botao-largo">Publicar</button>
+            <button type="submit" name="decisao" value="DEVOLVER" class="botao botao-linha botao-largo">Devolver ao professor</button>
+          </div>
         </form>
       {% elif pode_despublicar %}
         <h2>Tirar do catálogo</h2>
