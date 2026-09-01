@@ -184,3 +184,21 @@ def test_a_razao_de_evitar_o_dangerously_paste_continua_valendo():
         "o Quill vendorizado mudou e talvez não foque mais; reveja "
         "test_o_editor_nao_rouba_o_foco_ao_abrir_a_pagina"
     )
+
+
+def test_nenhum_campo_obrigatorio_se_diz_opcional():
+    """A ajuda nao pode contradizer o asterisco.
+
+    A descricao dizia "Opcional." e ganhou o asterisco de obrigatorio na mesma
+    tela: a pessoa lia as duas coisas, uma ao lado da outra, e nenhuma das duas
+    ficava confiavel. Achado olhando a tela renderizada, com a suite verde.
+    """
+    mentirosos = []
+    for nome, Formulario in formularios():
+        formulario = Formulario()
+        for campo, definicao in formulario.fields.items():
+            if definicao.required and "opcional" in str(definicao.help_text).lower():
+                mentirosos.append(f"{nome}.{campo}")
+    assert mentirosos == [], (
+        "campo obrigatório cuja ajuda diz que é opcional:\n" + "\n".join(mentirosos)
+    )

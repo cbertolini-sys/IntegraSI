@@ -29,6 +29,16 @@
   <div class="faixa corpo-trabalho duas-colunas">
   <div class="coluna-trabalho">
 
+  {% comment %}
+    So quando ha campo na tela: num entregavel congelado seria a legenda de um
+    simbolo que a pagina nao mostra.
+  {% endcomment %}
+  {% if pode_editar %}
+    <p class="legenda-obrigatorio">
+      <span class="obrigatorio" aria-hidden="true">*</span> Campo obrigatório.
+    </p>
+  {% endif %}
+
   {% if ultima_revisao and ultima_revisao.decisao == "DEVOLVIDO" %}
     <section class="bloco devolutiva">
       <h3>Devolvido pelo professor</h3>

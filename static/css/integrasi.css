@@ -2582,6 +2582,15 @@ textarea:focus {
   user-select: none;
 }
 
+/* A legenda que explica o asterisco. Fica acima da coluna de trabalho, discreta:
+   quem entende o simbolo passa por ela sem parar, e quem nao entende acha a
+   palavra sem procurar. */
+.legenda-obrigatorio {
+  font-size: 0.8125rem;
+  color: var(--cinza);
+  margin: 0 0 1.25rem;
+}
+
 /* No titulo da secao do Plano de Ensino o rotulo e versalete pequeno, entao o
    asterisco acompanha o tamanho de la em vez de ficar maior que a palavra. */
 .bloco > h3 .obrigatorio {

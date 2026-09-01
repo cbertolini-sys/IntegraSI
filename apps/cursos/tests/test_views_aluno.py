@@ -282,7 +282,7 @@ def test_anexar_arquivo_cria_o_anexo(client, curso_com_equipe, aluno):
     resposta = client.post(
         reverse("anexar", args=[slides.pk]),
         {
-            "titulo": "Slides da aula 1", "rotulo": Rotulo.NENHUM, "tipo_pratica": TipoPratica.NENHUM,
+            "titulo": "Slides da aula 1", "descricao": "Os slides da primeira aula.",
             "upload": upload,
         },
         follow=True,
@@ -314,7 +314,7 @@ def test_anexar_arquivo_grande_preserva_hash_e_conteudo(client, curso_com_equipe
     resposta = client.post(
         reverse("anexar", args=[slides.pk]),
         {
-            "titulo": "Slides grandes", "rotulo": Rotulo.NENHUM, "tipo_pratica": TipoPratica.NENHUM,
+            "titulo": "Slides grandes", "descricao": "Slides com muitas imagens.",
             "upload": upload,
         },
         follow=True,
@@ -635,7 +635,9 @@ def anexa_card(client, cards, **extra):
     )
     dados = {
         "titulo": "Card 1",
+        "descricao": "Um card sobre senhas fortes.",
         "referencia_bibliografica": "BNCC, 2018.",
+        "tipo_pratica": [TipoPratica.DESPLUGADA],
         "upload": upload,
     }
     dados.update(extra)
@@ -704,13 +706,20 @@ def test_marcar_uma_pratica_grava_so_ela(client, curso_com_equipe, aluno):
     assert cards.anexos.get().tipo_pratica == TipoPratica.DESPLUGADA
 
 
-@pytest.mark.django_db
-def test_nenhuma_pratica_marcada_grava_nenhum(client, curso_com_equipe, aluno):
-    """Caixa nenhuma marcada nao pode virar erro: a pratica e opcional num card."""
-    cards = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.CARDS)
-    client.force_login(aluno)
-    anexa_card(client, cards)
-    assert cards.anexos.get().tipo_pratica == TipoPratica.NENHUM
+def test_o_campo_de_pratica_ainda_sabe_traduzir_nenhuma_marcada():
+    """A tela nao alcanca mais este caminho - nos entregaveis o campo e
+    obrigatorio -, mas a traducao continua sendo o contrato do campo: sem marca
+    nenhuma o valor gravado e NENHUM, que e o padrao do modelo. Provado aqui, e
+    nao pela tela, porque a tela recusa antes (`test_marcar_nenhuma_pratica_
+    deixa_de_ser_aceito`, em test_campo_obrigatorio.py)."""
+    from apps.cursos.forms import TipoPraticaField
+
+    campo = TipoPraticaField()
+    assert campo.clean([]) == TipoPratica.NENHUM
+    assert campo.clean([TipoPratica.PLUGADA]) == TipoPratica.PLUGADA
+    assert campo.clean(
+        [TipoPratica.PLUGADA, TipoPratica.DESPLUGADA]
+    ) == TipoPratica.AMBAS
 
 
 # --- Caderno e Avaliacao: so o que a regra de cada um usa ----------------------

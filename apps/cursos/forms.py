@@ -98,9 +98,10 @@ class TipoPraticaField(forms.MultipleChoiceField):
                 (TipoPratica.DESPLUGADA, "Desplugada"),
             ],
             widget=forms.CheckboxSelectMultiple,
-            # Marcar nada e resposta valida: a pratica e opcional num card. Quem
-            # cobra as duas no caderno de exercicios e `validacoes._caderno`, que
-            # olha o conjunto dos anexos, nao um anexo isolado.
+            # `required` fica por conta de quem monta o formulario: no
+            # AnexoForm de um entregavel todos os campos sao obrigatorios, e
+            # marcar nenhuma caixa deixou de ser resposta. NENHUM continua sendo o
+            # padrao do modelo, para os anexos que nascem fora de formulario.
             required=False,
             **kwargs,
         )
@@ -159,11 +160,10 @@ class EnvioDeVideoForm(forms.Form):
     )
     descricao = forms.CharField(
         label="Descrição",
-        required=False,
         widget=forms.Textarea(attrs={"rows": 3, "data-editor": True}),
         help_text=(
             "O que esta aula cobre, em uma ou duas linhas. Aceita negrito, listas "
-            "e links. Opcional."
+            "e links."
         ),
     )
     duracao_minutos = forms.IntegerField(
@@ -223,7 +223,7 @@ class AnexoForm(forms.ModelForm):
                 "Como o material aparece na lista. Ex.: \u201cCartaz sobre senhas "
                 "fortes\u201d."
             ),
-            "descricao": "Uma linha dizendo para que serve o material. Opcional.",
+            "descricao": "Uma linha dizendo para que serve o material.",
             "referencia_bibliografica": (
                 "De onde veio o conteúdo ou a imagem de cada card. É o único "
                 "entregável que a pede."
@@ -246,12 +246,16 @@ class AnexoForm(forms.ModelForm):
             for campo in list(self.fields):
                 if campo not in permitidos:
                     del self.fields[campo]
-        # A referencia bibliografica e obrigatoria SO nos cards, porque so
-        # `validacoes._cards` a cobra - e cobra de cada card, um por um. Deixa-la
-        # opcional no formulario adiava a recusa para o envio a revisao, longe do
-        # campo que a resolve.
-        if tipo == TipoEntregavel.CARDS:
-            self.fields["referencia_bibliografica"].required = True
+        # Nos entregaveis nao ha campo opcional: o que fica na tela e o que a
+        # regra daquele entregavel usa, e CAMPOS_DO_ANEXO ja tirou o resto. O que
+        # sobrava por preencher voltava como pendencia na hora de enviar, longe do
+        # campo que resolve.
+        #
+        # Vale so quando ha `tipo`: `AnexoForm()` sem tipo e o formulario inteiro,
+        # que ninguem desenha, e exigir tudo nele mudaria o padrao por tabela.
+        if tipo is not None:
+            for campo in self.fields.values():
+                campo.required = True
 
     def clean(self):
         dados = super().clean()
