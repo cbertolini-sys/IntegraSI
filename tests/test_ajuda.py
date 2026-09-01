@@ -1,0 +1,101 @@
+"""Os tooltips de ajuda dos campos.
+
+A explicacao mora no `help_text` do formulario, em Python, e nao no template: e la
+que ela fica junto da definicao do campo e onde este arquivo consegue exigir que
+todo campo tenha uma. E o que faz "formulario novo ganha tooltip" ser uma regra
+cobrada, e nao uma lembranca.
+"""
+
+import importlib
+import re
+from pathlib import Path
+
+import pytest
+from django import forms
+from django.apps import apps as registro_de_apps
+from django.conf import settings
+
+RAIZ = Path(settings.BASE_DIR)
+
+# Formularios do Django Admin de contas: o Admin desenha a ajuda do jeito dele, e
+# esta tela nao carrega o nosso JS. Ficam de fora da exigencia, e a lista e curta
+# de proposito - crescer aqui e sinal de que alguem esta fugindo da regra.
+FORA = {"UsuarioChangeForm", "UsuarioCreationForm", "CamposComPontuacaoMixin"}
+
+
+def formularios():
+    """Todo formulario declarado nos apps do projeto."""
+    achados = []
+    for app in registro_de_apps.get_app_configs():
+        if not app.name.startswith("apps."):
+            continue
+        try:
+            modulo = importlib.import_module(f"{app.name}.forms")
+        except ModuleNotFoundError:
+            continue
+        for nome in dir(modulo):
+            objeto = getattr(modulo, nome)
+            if (
+                isinstance(objeto, type)
+                and issubclass(objeto, forms.BaseForm)
+                and objeto.__module__ == modulo.__name__
+                and nome not in FORA
+            ):
+                achados.append((f"{app.label}.{nome}", objeto))
+    return achados
+
+
+def test_todo_campo_visivel_explica_como_preencher():
+    """Campo sem ajuda e campo que a equipe adivinha.
+
+    Campo escondido fica de fora: o `confirmacao` do formulario publico e uma
+    armadilha para robo, e um balao sobre ele seria instrucao para ninguem.
+    """
+    mudos = []
+    for nome, Formulario in formularios():
+        for campo, definicao in Formulario().fields.items():
+            if isinstance(definicao.widget, forms.HiddenInput):
+                continue
+            if not definicao.help_text:
+                mudos.append(f"{nome}.{campo}")
+    assert mudos == [], "campos sem explicação:\n" + "\n".join(mudos)
+
+
+def test_a_varredura_de_formularios_acha_alguma_coisa():
+    """Um import errado devolveria lista vazia e o teste acima ficaria verde para
+    sempre, com o projeto inteiro sem ajuda nenhuma."""
+    nomes = {nome for nome, _ in formularios()}
+    assert len(nomes) >= 5
+    assert any("FichaCursoForm" in n for n in nomes)
+
+
+def test_a_ajuda_cabe_num_balao():
+    """Texto longo demais vira parede de texto sobre o campo. O limite e generoso;
+    quem precisar de mais que isso esta escrevendo documentacao, nao ajuda."""
+    compridos = [
+        f"{nome}.{campo} ({len(d.help_text)} caracteres)"
+        for nome, Formulario in formularios()
+        for campo, d in Formulario().fields.items()
+        if d.help_text and len(str(d.help_text)) > 220
+    ]
+    assert compridos == [], "ajuda longa demais:\n" + "\n".join(compridos)
+
+
+def test_tippy_e_popper_estao_no_repositorio():
+    """O projeto vendoriza tudo e nao carrega CDN: sem rede, ou com o CDN fora do
+    ar, a tela precisa continuar funcionando."""
+    for arquivo in ("static/js/tippy.min.js", "static/js/popper.min.js", "static/css/tippy.css"):
+        caminho = RAIZ / arquivo
+        assert caminho.exists(), arquivo
+        assert caminho.stat().st_size > 1000, arquivo
+
+
+def test_nenhum_template_carrega_biblioteca_de_fora():
+    """A regra vale para o repositorio todo, e nao so para o Tippy."""
+    fora = []
+    for caminho in RAIZ.glob("templates/**/*.html"):
+        texto = caminho.read_text(encoding="utf-8")
+        for numero, linha in enumerate(texto.splitlines(), start=1):
+            if re.search(r'(src|href)="https?://(?!www\.ufsm\.br)', linha):
+                fora.append(f"{caminho.relative_to(RAIZ)}:{numero}")
+    assert fora == [], "biblioteca carregada de fora em:\n" + "\n".join(fora)

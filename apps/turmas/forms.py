@@ -25,12 +25,26 @@ class TurmaForm(forms.ModelForm):
         queryset=Usuario.objects.filter(
             papel__in=[Usuario.PROFESSOR, Usuario.COORDENADOR], is_active=True
         ),
+        help_text="Quem conduz esta turma. Coordenação também pode conduzir.",
         label="professor responsável",
     )
 
     class Meta:
         model = Turma
         fields = ["professor", "data_inicio", "data_fim", "local", "vagas", "observacoes"]
+        help_texts = {
+            "data_inicio": "Primeiro encontro da turma.",
+            "data_fim": "Último encontro. Pode ser igual ao primeiro, numa oficina de um dia.",
+            "local": (
+                "Onde a turma acontece. Ex.: \u201cLaboratório 2 da EMEF Santa "
+                "Rita\u201d. Em curso online, o endereço da sala virtual."
+            ),
+            "vagas": "Quantas pessoas cabem nesta turma.",
+            "observacoes": (
+                "Combinados com a instituição: material a levar, horário, "
+                "estacionamento. Opcional."
+            ),
+        }
         widgets = {
             "data_inicio": forms.DateInput(attrs={"type": "date"}),
             "data_fim": forms.DateInput(attrs={"type": "date"}),

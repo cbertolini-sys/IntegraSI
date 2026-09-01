@@ -14,8 +14,18 @@
   {% endcomment %}
   <link rel="icon" type="image/png" href="{% estatico 'img/integrasi-icone.png' %}">
   <link rel="apple-touch-icon" href="{% estatico 'img/integrasi-icone.png' %}">
+  <link rel="stylesheet" href="{% estatico 'css/tippy.css' %}">
   <link rel="stylesheet" href="{% estatico 'css/integrasi.css' %}">
   <script src="{% estatico 'js/htmx.min.js' %}" defer></script>
+  {% comment %}
+    Tippy e Popper vendorizados, como todo o resto: o projeto nao carrega CDN.
+    Popper primeiro, porque o UMD do Tippy o espera em `window.Popper` (o arquivo
+    chamado "bundle" no unpkg externaliza a dependencia, apesar do nome). `defer`
+    preserva a ordem e roda depois do HTML, entao ajuda.js encontra os campos.
+  {% endcomment %}
+  <script src="{% estatico 'js/popper.min.js' %}" defer></script>
+  <script src="{% estatico 'js/tippy.min.js' %}" defer></script>
+  <script src="{% estatico 'js/ajuda.js' %}" defer></script>
 </head>
 <body>
   <header class="barra">

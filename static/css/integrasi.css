@@ -2470,3 +2470,73 @@ textarea:focus {
   align-items: center;
   gap: 0.75rem;
 }
+
+/* ---------- gatilho de ajuda e balões ---------- */
+
+/* Precisa desfazer a base: `.botao, .botao-linha, .botao-largo, button` pinta
+   TODO botão de azul com 2,75rem de altura, e o gatilho de ajuda é um `<button>`
+   por ser interativo, não por ser um botão de ação. Sem este bloco ele viraria
+   um botão azul grande ao lado de cada rótulo. */
+.ajuda-campo {
+  all: unset;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.0625rem;
+  height: 1.0625rem;
+  margin-left: 0.375rem;
+  border-radius: 50%;
+  border: 1px solid var(--linha);
+  background: var(--nevoa);
+  color: var(--cinza);
+  font-family: var(--display);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: help;
+  vertical-align: middle;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.ajuda-campo:hover,
+.ajuda-campo:focus-visible {
+  background: var(--azul-suave);
+  border-color: #cfe1f0;
+  color: var(--azul);
+}
+
+.ajuda-campo:focus-visible {
+  outline: 2px solid var(--azul);
+  outline-offset: 2px;
+}
+
+/* O balão segue o sistema: fundo escuro da marca, texto claro, mesmo raio dos
+   demais painéis. O tema do Tippy é declarado, não sobrescrito por `!important`. */
+.tippy-box[data-theme~="integrasi"] {
+  background: var(--marinho-fundo);
+  color: #eaf1f8;
+  border-radius: var(--raio-p);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  box-shadow: 0 4px 14px rgba(22, 32, 46, 0.22);
+}
+
+.tippy-box[data-theme~="integrasi"] .tippy-content {
+  padding: 0.625rem 0.75rem;
+}
+
+.tippy-box[data-theme~="integrasi"][data-placement^="right"] > .tippy-arrow::before {
+  border-right-color: var(--marinho-fundo);
+}
+
+.tippy-box[data-theme~="integrasi"][data-placement^="left"] > .tippy-arrow::before {
+  border-left-color: var(--marinho-fundo);
+}
+
+.tippy-box[data-theme~="integrasi"][data-placement^="top"] > .tippy-arrow::before {
+  border-top-color: var(--marinho-fundo);
+}
+
+.tippy-box[data-theme~="integrasi"][data-placement^="bottom"] > .tippy-arrow::before {
+  border-bottom-color: var(--marinho-fundo);
+}

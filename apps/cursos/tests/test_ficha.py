@@ -693,3 +693,53 @@ def test_trocar_para_comunitario_desmarca_a_etapa(client, proposta, professor):
     select = re.search(r'<select name="etapa_ano".*?</select>', html, re.S).group(0)
     marcada = re.search(r"<option[^>]*selected[^>]*>([^<]*)</option>", select)
     assert marcada is not None and marcada.group(1) == "Nenhum"
+
+
+@pytest.mark.django_db
+def test_a_tela_desenha_o_gatilho_de_ajuda_de_cada_campo(client, proposta, professor):
+    """Ponta a ponta: a ajuda escrita em Python chega ao HTML como `data-ajuda`,
+    que e onde o Tippy a encontra.
+
+    Sem este teste, o `help_text` poderia estar certo em todos os formularios e a
+    tela continuar muda: sao duas pontas de uma fiacao, e o teste do help_text
+    prova so uma delas."""
+    import re
+
+    client.force_login(professor)
+    html = client.get(reverse("ficha", args=[proposta.pk])).content.decode()
+    gatilhos = re.findall(r'class="ajuda-campo"\s+data-ajuda="([^"]+)"', html)
+    assert len(gatilhos) >= 9, f"só {len(gatilhos)} gatilhos"
+    assert any("catálogo" in g for g in gatilhos)
+
+
+@pytest.mark.django_db
+def test_o_gatilho_nao_e_um_botao_de_acao(client, proposta, professor):
+    """O gatilho e um <button> por ser interativo, e nao por ser botao de acao:
+    nao pode trazer a classe `botao`, que o pintaria de azul com 2,75rem de altura
+    ao lado de cada rotulo. Foi o primeiro efeito colateral que apareceu."""
+    import re
+
+    client.force_login(professor)
+    html = client.get(reverse("ficha", args=[proposta.pk])).content.decode()
+    for classes in re.findall(r'<button[^>]*class="([^"]*ajuda-campo[^"]*)"', html):
+        assert "botao" not in classes.split(), classes
+
+
+@pytest.mark.django_db
+def test_nenhuma_referencia_de_acessibilidade_fica_pendurada(client, proposta, professor):
+    """`aria-describedby` precisa apontar para um elemento que existe.
+
+    O Django escreve esse atributo em todo campo com help_text. Ao trocar a ajuda
+    visivel por um balao, e facil apagar o alvo e deixar a referencia no vazio:
+    quem usa leitor de tela perderia a explicacao justamente por causa da melhoria
+    visual. Este teste cobre as duas pontas, o campo e o alvo.
+    """
+    import re
+
+    client.force_login(professor)
+    html = client.get(reverse("ficha", args=[proposta.pk])).content.decode()
+    apontados = set(re.findall(r'aria-describedby="([^"]+)"', html))
+    existentes = set(re.findall(r'id="([^"]+)"', html))
+    assert apontados, "nenhum aria-describedby na tela"
+    penduradas = sorted(a for a in apontados if a not in existentes)
+    assert penduradas == [], f"aria-describedby sem alvo: {penduradas}"

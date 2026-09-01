@@ -13,6 +13,12 @@ class SecaoForm(forms.ModelForm):
     class Meta:
         model = Secao
         fields = ["conteudo"]
+        help_texts = {
+            "conteudo": (
+                "Escreva direto no campo. Aceita negrito, listas e links, e o texto "
+                "é salvo sem recarregar a página."
+            ),
+        }
 
 
 class PropostaForm(forms.ModelForm):
@@ -27,20 +33,57 @@ class PropostaForm(forms.ModelForm):
     class Meta:
         model = Curso
         fields = ["titulo"]
+        help_texts = {
+            "titulo": (
+                "Um nome provisório basta: você e a equipe ajustam depois. O resto "
+                "do curso é preenchido em seguida, na tela de editar."
+            ),
+        }
 
 
 class AnexoForm(forms.ModelForm):
-    upload = forms.FileField(label="arquivo", required=False)
+    upload = forms.FileField(
+        label="arquivo",
+        required=False,
+        help_text="O arquivo em si: PDF, imagem, apresentação ou documento.",
+    )
     # Declarado explicitamente (em vez de deixar o ModelForm derivar de Anexo.url)
     # so para fixar assume_scheme="https": sem isso o Django 5.2 emite
     # RemovedInDjango60Warning a cada requisicao, porque o padrao de esquema muda
     # de http para https na proxima versao maior. Continua opcional, como o campo
     # do modelo (Anexo.url tem blank=True).
-    url = forms.URLField(label="link", required=False, assume_scheme="https")
+    url = forms.URLField(
+        label="link",
+        required=False,
+        assume_scheme="https",
+        help_text=(
+            "Endereço do material, se ele já estiver publicado em outro lugar. "
+            "Use o link ou o arquivo, não os dois."
+        ),
+    )
 
     class Meta:
         model = Anexo
         fields = ["titulo", "descricao", "referencia_bibliografica", "rotulo", "tipo_pratica", "url"]
+        help_texts = {
+            "titulo": (
+                "Como o material aparece na lista. Ex.: \u201cCartaz sobre senhas "
+                "fortes\u201d."
+            ),
+            "descricao": "Uma linha dizendo para que serve o material. Opcional.",
+            "referencia_bibliografica": (
+                "De onde veio o conteúdo ou a imagem. Obrigatória nos infográficos "
+                "e cards."
+            ),
+            "rotulo": (
+                "No caderno de exercícios, diz se este arquivo é a versão com ou "
+                "sem gabarito."
+            ),
+            "tipo_pratica": (
+                "Diz se a atividade precisa de computador. É o que responde "
+                "\u201cpreciso de laboratório?\u201d no catálogo."
+            ),
+        }
 
     def clean(self):
         dados = super().clean()
@@ -146,6 +189,40 @@ class FichaCursoForm(forms.ModelForm):
             "competencias", "pre_requisitos",
         ]
         widgets = {"resumo": forms.Textarea(attrs={"rows": 4})}
+        help_texts = {
+            "titulo": (
+                "O nome do curso como a escola vai lê-lo no catálogo. Pode mudar "
+                "enquanto o curso não for publicado."
+            ),
+            "resumo": (
+                "Dois ou três parágrafos dizendo o que o curso ensina e para que "
+                "serve. É o primeiro texto que a escola lê."
+            ),
+            "temas": (
+                "Assuntos gerais em que o curso se encaixa, usados para filtrar o "
+                "catálogo. Segure Ctrl (ou Command) para escolher mais de um."
+            ),
+            "carga_horaria": (
+                "Total de horas do curso, somando todos os encontros. Só o número."
+            ),
+            "formato": "Como o curso acontece: presencial, híbrido ou online.",
+            "tipo_publico": (
+                "Escolar, quando o curso é para turmas de uma escola. Comunitário, "
+                "quando é para um grupo da comunidade."
+            ),
+            "etapa_ano": (
+                "O ano escolar a que o curso se destina. Fica disponível quando o "
+                "tipo de público é escolar."
+            ),
+            "publico_descricao": (
+                "Complemento em texto livre, quando a etapa não diz tudo. Ex.: "
+                "\u201cturmas da escola do campo\u201d. Opcional."
+            ),
+            "pre_requisitos": (
+                "O que a turma precisa saber antes de começar. Deixe vazio se o "
+                "curso parte do zero."
+            ),
+        }
 
     def __init__(self, *args, publico=None, **kwargs):
         """`publico` deixa a view dizer qual tipo a tela tem agora.
@@ -165,6 +242,14 @@ class FichaCursoForm(forms.ModelForm):
         # vindo da FK, e um referencial desativado que ja esteja gravado nao some
         # do select (sumir o descartaria em silencio no proximo salvamento).
         self.fields["referencial"].empty_label = "Nenhum"
+        self.fields["referencial"].help_text = (
+            "Modelo pedagógico que o curso segue, se houver. Curso sem referencial "
+            "é normal: escolha Nenhum."
+        )
+        self.fields["competencias"].help_text = (
+            "As habilidades do referencial que o curso desenvolve. Marque as que o "
+            "curso realmente trabalha."
+        )
         self.fields["referencial"].queryset = Referencial.objects.para_publico_escolar(
             self.publico_e_escolar()
         )
