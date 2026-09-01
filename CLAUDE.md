@@ -214,6 +214,13 @@ desses aparecendo aqui é sinal de que a fronteira foi atravessada sem querer.
   faria a pessoa formatar, salvar e ver a formatação sumir, como se o sistema
   tivesse perdido o trabalho dela. Dois testes ligam os dois arquivos.
 - Nada de `style` inline em template: `tests/test_estilo.py` reprova.
+- **Comentário de template com mais de uma linha usa `{% comment %}`.** A sintaxe
+  de cerquilha (`{# #}`) é de uma linha só: o lexer do Django casa `{#.*?#}` sem
+  DOTALL, então um comentário de duas linhas não é reconhecido e sai impresso na
+  página, com código e tudo. Aconteceu duas vezes: uma no rodapé do `base.html`,
+  outra em cinco comentários espalhados por quatro telas, entre elas as de revisão
+  do professor e da coordenação, achados quando alguém olhou a tela e viu "erros".
+  `test_nenhum_comentario_de_cerquilha_atravessa_a_linha` reprova agora.
 
 ## Restrições entre planos
 
