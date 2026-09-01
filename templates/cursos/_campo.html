@@ -6,7 +6,13 @@
   paragrafos de ajuda dobravam a altura do formulario e ninguem os lia. O texto
   continua vindo do `help_text`, em Python.
 {% endcomment %}
-<div class="campo{% if largo %} campo-largo{% endif %}{% if extra %} {{ extra }}{% endif %}">
+{% comment %}
+  `campo-marcaveis` sai do proprio widget, e nao de uma lista de nomes de campo:
+  o CSS das caixas de marcar estava preso ao id `..._temas`, e o campo seguinte a
+  usar caixas nasceria sem desenho nenhum. As duas condicoes juntas separam
+  CheckboxSelectMultiple de uma caixa unica e de um <select multiple>.
+{% endcomment %}
+<div class="campo{% if largo %} campo-largo{% endif %}{% if extra %} {{ extra }}{% endif %}{% if campo.field.widget.allow_multiple_selected and campo.field.widget.input_type == "checkbox" %} campo-marcaveis{% endif %}">
   {% comment %}
     O rotulo e o gatilho num invólucro proprio: `.campo label` e `display: block`,
     entao o botao caia na linha DE BAIXO, solto sob o texto. O invólucro os poe

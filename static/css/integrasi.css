@@ -2601,22 +2601,24 @@ textarea:focus {
    conhecimento que ninguem tem por obrigacao. As caixas mostram todas as opcoes
    de uma vez e nao escondem nada atras de um atalho.
 
-   O seletor casa o CONTAINER pelo id, e nao por classe: `CheckboxSelectMultiple`
-   poe os atributos em cada <input>, e nao no elemento que os envolve, entao nao ha
-   como marcar o container pelo formulario. O Django o desenha como <div>, e nao
-   <ul> - foi o que a primeira versao deste bloco errou. */
-.campo div[id$="_temas"] {
+   `CheckboxSelectMultiple` poe os atributos em cada <input>, e nao no elemento
+   que os envolve, entao nao ha como marcar o container pelo formulario. Isto aqui
+   ja casou o container pelo id (`..._temas`), o que deixava o campo seguinte a
+   usar caixas sem desenho nenhum; quem marca agora e a classe `campo-marcaveis`,
+   que `_campo.html` poe olhando o widget. O Django desenha o container como
+   <div>, e nao <ul> - foi o que a primeira versao deste bloco errou. */
+.campo-marcaveis > div {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem 1.5rem;
 }
 
 /* O Django envolve cada opcao num <div> proprio; sao eles os itens da flex. */
-.campo div[id$="_temas"] > div {
+.campo-marcaveis > div > div {
   min-width: 0;
 }
 
-.campo div[id$="_temas"] label {
+.campo-marcaveis label {
   display: inline-flex;
   align-items: center;
   gap: 0.4375rem;
@@ -2627,7 +2629,7 @@ textarea:focus {
   cursor: pointer;
 }
 
-.campo div[id$="_temas"] input[type="checkbox"] {
+.campo-marcaveis input[type="checkbox"] {
   width: auto;
   margin: 0;
   accent-color: var(--azul);

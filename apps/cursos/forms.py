@@ -3,6 +3,7 @@ from django.core.exceptions import ValidationError
 from django.forms.models import construct_instance
 
 from apps.cursos.arquivos import valida_upload
+from apps.cursos.choices import TipoPratica
 from apps.cursos.validacoes import DURACAO_MAXIMA, DURACAO_MINIMA
 from apps.cursos.choices import (
     PALAVRAS_CHAVE_EXIGIDAS,
@@ -63,6 +64,9 @@ class PropostaForm(forms.ModelForm):
 # regra daquele entregavel usa.
 CAMPOS_DO_ANEXO = {
     TipoEntregavel.PLANO_ENSINO: [],
+    TipoEntregavel.CARDS: [
+        "titulo", "descricao", "referencia_bibliografica", "tipo_pratica", "upload",
+    ],
     TipoEntregavel.SLIDES: ["titulo", "descricao", "upload"],
     TipoEntregavel.VIDEOS: [],
 }
@@ -72,6 +76,44 @@ def oferece_anexo(tipo):
     """Se este entregavel recebe material pelo formulario comum de anexar."""
     campos = CAMPOS_DO_ANEXO.get(tipo)
     return campos is None or bool(campos)
+
+
+class TipoPraticaField(forms.MultipleChoiceField):
+    """Duas caixas de marcar no lugar do <select> de quatro opcoes.
+
+    O vocabulario gravado NAO muda (CLAUDE.md: valor gravado nunca e alterado):
+    nenhuma marcada continua sendo NENHUM e as duas continuam sendo AMBAS, que e
+    o que `_caderno` e `Curso.praticas` leem. O que muda e a pergunta na tela: o
+    <select> precisava de uma opcao so para dizer "as duas", e quem quisesse isso
+    tinha que descobrir que ela existia. Duas caixas dizem o mesmo sem
+    vocabulario proprio.
+    """
+
+    def __init__(self, **kwargs):
+        super().__init__(
+            choices=[
+                (TipoPratica.PLUGADA, "Plugada"),
+                (TipoPratica.DESPLUGADA, "Desplugada"),
+            ],
+            widget=forms.CheckboxSelectMultiple,
+            # Marcar nada e resposta valida: a pratica e opcional num card. Quem
+            # cobra as duas no caderno de exercicios e `validacoes._caderno`, que
+            # olha o conjunto dos anexos, nao um anexo isolado.
+            required=False,
+            **kwargs,
+        )
+
+    def clean(self, value):
+        marcadas = set(super().clean(value))
+        if marcadas == {TipoPratica.PLUGADA, TipoPratica.DESPLUGADA}:
+            return TipoPratica.AMBAS
+        if marcadas:
+            return marcadas.pop()
+        return TipoPratica.NENHUM
+
+    # Sem o caminho inverso (valor gravado -> caixas marcadas) de proposito: o
+    # AnexoForm nunca e construido com instance, entao um `initial` derivado aqui
+    # seria codigo que nada exercita. Quem trouxer edicao de anexo escreve junto.
 
 
 class EnvioDeVideoForm(forms.Form):
@@ -142,6 +184,13 @@ class AnexoForm(forms.ModelForm):
     # RemovedInDjango60Warning a cada requisicao, porque o padrao de esquema muda
     # de http para https na proxima versao maior. Continua opcional, como o campo
     # do modelo (Anexo.url tem blank=True).
+    tipo_pratica = TipoPraticaField(
+        label="Tipo de prática",
+        help_text=(
+            "Marque se a atividade precisa de computador, se funciona sem ele, ou "
+            "as duas. É o que responde \u201cpreciso de laboratório?\u201d no catálogo."
+        ),
+    )
     url = forms.URLField(
         label="link",
         required=False,
@@ -168,10 +217,6 @@ class AnexoForm(forms.ModelForm):
             "rotulo": (
                 "No caderno de exercícios, diz se este arquivo é a versão com ou "
                 "sem gabarito."
-            ),
-            "tipo_pratica": (
-                "Diz se a atividade precisa de computador. É o que responde "
-                "\u201cpreciso de laboratório?\u201d no catálogo."
             ),
         }
 

@@ -338,7 +338,7 @@ def test_anexar_link_cria_o_anexo_sem_arquivo(client, curso_com_equipe, aluno):
         reverse("anexar", args=[avaliacao.pk]),
         {
             "titulo": "Slides no Drive", "url": "https://exemplo.org/slides",
-            "rotulo": Rotulo.NENHUM, "tipo_pratica": TipoPratica.NENHUM,
+            "rotulo": Rotulo.NENHUM,
         },
         follow=True,
     )
@@ -362,7 +362,7 @@ def test_anexar_arquivo_e_link_juntos_e_recusado_sem_quebrar(client, curso_com_e
         reverse("anexar", args=[slides.pk]),
         {
             "titulo": "Slides duplos", "url": "https://exemplo.org/slides",
-            "rotulo": Rotulo.NENHUM, "tipo_pratica": TipoPratica.NENHUM,
+            "rotulo": Rotulo.NENHUM,
             "upload": upload,
         },
         follow=True,
@@ -671,3 +671,90 @@ def test_o_formulario_de_anexo_nasce_vazio_onde_a_lista_e_vazia():
     ]
     # Quem nao esta no mapa continua com o formulario inteiro.
     assert len(AnexoForm(tipo=TipoEntregavel.CADERNO).fields) > 3
+
+
+# --- Infograficos e Cards: sem rotulo, sem link, pratica em caixas de marcar ---
+
+
+def anexa_card(client, cards, **extra):
+    upload = SimpleUploadedFile(
+        "card.pdf", b"%PDF-1.7\n%conteudo de teste\n", content_type="application/pdf"
+    )
+    dados = {
+        "titulo": "Card 1",
+        "referencia_bibliografica": "BNCC, 2018.",
+        "upload": upload,
+    }
+    dados.update(extra)
+    return client.post(reverse("anexar", args=[cards.pk]), dados, follow=True)
+
+
+@pytest.mark.django_db
+def test_cards_nao_pedem_rotulo_nem_link(client, curso_com_equipe, aluno):
+    """Rotulo diz se o arquivo e a versao com ou sem gabarito: e do caderno de
+    exercicios, e num card nao quer dizer nada. O link era pior que ruido, como
+    nos slides: `_cards` conta so anexo que NAO e link (`_arquivos()` exclui
+    TipoMidia.LINK), entao dava para anexar um link, ve-lo na lista e continuar
+    sem poder enviar para revisao."""
+    cards = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.CARDS)
+    client.force_login(aluno)
+    html = client.get(reverse("entregavel", args=[cards.pk])).content.decode()
+    for campo in ("rotulo", "url"):
+        assert f'name="{campo}"' not in html, campo
+    for campo in ("titulo", "descricao", "referencia_bibliografica", "tipo_pratica", "upload"):
+        assert f'name="{campo}"' in html, campo
+
+
+@pytest.mark.django_db
+def test_o_caderno_continua_pedindo_rotulo(client, curso_com_equipe, aluno):
+    """A outra metade: `_caderno` cobra a versao com e a sem gabarito, e sem o
+    campo a equipe nao teria como dizer qual e qual."""
+    caderno = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.CADERNO)
+    client.force_login(aluno)
+    html = client.get(reverse("entregavel", args=[caderno.pk])).content.decode()
+    assert 'name="rotulo"' in html
+
+
+@pytest.mark.django_db
+def test_tipo_de_pratica_e_duas_caixas_de_marcar(client, curso_com_equipe, aluno):
+    """O <select> de quatro opcoes precisava de uma entrada so para dizer "as
+    duas", e a pessoa tinha que procurar por ela. Duas caixas dizem o mesmo sem
+    vocabulario proprio."""
+    cards = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.CARDS)
+    client.force_login(aluno)
+    html = client.get(reverse("entregavel", args=[cards.pk])).content.decode()
+    assert '<select name="tipo_pratica"' not in html
+    assert html.count('type="checkbox" name="tipo_pratica"') == 2
+    assert 'value="PLUGADA"' in html
+    assert 'value="DESPLUGADA"' in html
+    # Os rotulos sao os curtos, e nao os do enum ("Atividade plugada"): ao lado de
+    # uma caixa de marcar a palavra "Atividade" nao acrescenta nada.
+    assert "Atividade plugada" not in html
+
+
+@pytest.mark.django_db
+def test_marcar_as_duas_praticas_grava_ambas(client, curso_com_equipe, aluno):
+    """O valor gravado nao mudou (CLAUDE.md: valor gravado nunca e alterado): as
+    duas caixas marcadas continuam virando AMBAS, que e o que `_caderno` e
+    `Curso.praticas` leem."""
+    cards = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.CARDS)
+    client.force_login(aluno)
+    anexa_card(client, cards, tipo_pratica=[TipoPratica.PLUGADA, TipoPratica.DESPLUGADA])
+    assert cards.anexos.get().tipo_pratica == TipoPratica.AMBAS
+
+
+@pytest.mark.django_db
+def test_marcar_uma_pratica_grava_so_ela(client, curso_com_equipe, aluno):
+    cards = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.CARDS)
+    client.force_login(aluno)
+    anexa_card(client, cards, tipo_pratica=[TipoPratica.DESPLUGADA])
+    assert cards.anexos.get().tipo_pratica == TipoPratica.DESPLUGADA
+
+
+@pytest.mark.django_db
+def test_nenhuma_pratica_marcada_grava_nenhum(client, curso_com_equipe, aluno):
+    """Caixa nenhuma marcada nao pode virar erro: a pratica e opcional num card."""
+    cards = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.CARDS)
+    client.force_login(aluno)
+    anexa_card(client, cards)
+    assert cards.anexos.get().tipo_pratica == TipoPratica.NENHUM
