@@ -20,10 +20,12 @@
   <div class="faixa corpo-trabalho duas-colunas">
     <div class="coluna-trabalho">
       {% for secao in entregavel.secoes.all %}
-        {# O |safe abaixo e seguro: Secao.save() sanitiza o conteudo com nh3 antes de
-           gravar, incondicionalmente, mesmo em update_fields (Task 4). E o unico lugar
-           do sistema que renderiza HTML vindo do banco sem escape - depende dessa
-           sanitizacao acontecer antes, nao aqui. #}
+        {% comment %}
+          O |safe abaixo e seguro: Secao.save() sanitiza o conteudo com nh3 antes de
+          gravar, incondicionalmente, mesmo em update_fields (Task 4). E o unico lugar
+          do sistema que renderiza HTML vindo do banco sem escape - depende dessa
+          sanitizacao acontecer antes, nao aqui.
+        {% endcomment %}
         <section class="bloco"><h2>{{ secao.titulo }}</h2><div>{{ secao.conteudo|safe }}</div></section>
       {% endfor %}
 

@@ -7,7 +7,7 @@ from django.views.decorators.http import require_POST
 from apps.cursos import permissions, services, validacoes
 from apps.cursos.arquivos import TAMANHO_BLOCO, calcula_hash
 from apps.cursos.choices import StatusCurso, TipoMidia
-from apps.cursos.forms import AnexoForm, SecaoForm
+from apps.cursos.forms import AnexoForm, SecaoForm, oferece_anexo
 from apps.cursos.models import Anexo, Arquivo, Curso, Entregavel, Secao
 from apps.cursos.views.upload import UUID_MODELO
 
@@ -66,7 +66,10 @@ def entregavel(request, pk):
         {
             "entregavel": obj,
             "pendencias": validacoes.pendencias(obj),
-            "form_anexo": AnexoForm(tipo=obj.tipo),
+            # None quando o entregavel nao recebe anexo comum: e o template
+            # perguntando pelo resultado, em vez de repetir a lista de tipos que
+            # CAMPOS_DO_ANEXO ja tem (spec 10, nada de regra escrita no HTML).
+            "form_anexo": AnexoForm(tipo=obj.tipo) if oferece_anexo(obj.tipo) else None,
             "pode_editar": permissions.pode_editar_producao(request.user, obj),
             "ultima_revisao": obj.revisoes.last(),
             # O formulario de upload em blocos (so em VIDEOS) precisa levar ao JS o
@@ -114,6 +117,13 @@ def anexar(request, pk):
     obj = get_object_or_404(Entregavel, pk=pk)
     permissions.garante(
         permissions.pode_editar_producao(request.user, obj), "Este entregável não está aberto para edição."
+    )
+    # Depois da guarda de estado, e nao antes: as duas respondem 403, e invertida
+    # a ordem o teste de entregavel em revisao passaria por este motivo, deixando
+    # a outra solta. Sumir da tela tambem nao fecha a rota - sem isto o POST segue
+    # valendo, e num formulario sem campos ele criaria Anexo em branco.
+    permissions.garante(
+        oferece_anexo(obj.tipo), "Este entregável não recebe material anexado."
     )
     form = AnexoForm(request.POST, request.FILES, tipo=obj.tipo)
     if not form.is_valid():

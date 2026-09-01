@@ -97,11 +97,16 @@ def escrever_o_plano_inteiro(plano):
 
 @pytest.mark.django_db
 def test_anexar_em_entregavel_em_revisao_e_bloqueado(client, curso_com_equipe, aluno, arquivo_qualquer):
-    plano = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.PLANO_ENSINO)
-    escrever_o_plano_inteiro(plano)
-    services.enviar_para_revisao(plano, por=aluno)
+    """No caderno, e nao no plano de ensino: o plano deixou de receber anexo, e a
+    recusa viria dai mesmo com a guarda de estado apagada. Duas guardas que
+    respondem 403 nao se distinguem por um POST so (CLAUDE.md)."""
+    caderno = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.CADERNO)
+    caderno.status = StatusEntregavel.EM_REVISAO
+    caderno.save(update_fields=["status", "atualizado_em"])
     client.force_login(aluno)
-    resposta = client.post(reverse("anexar", args=[plano.pk]), {"titulo": "Outro", "url": "https://exemplo.org"})
+    resposta = client.post(
+        reverse("anexar", args=[caderno.pk]), {"titulo": "Outro", "url": "https://exemplo.org"}
+    )
     assert resposta.status_code == 403
 
 
@@ -583,3 +588,86 @@ def test_anexar_slides_sem_arquivo_avisa_sem_falar_em_link(client, curso_com_equ
     texto = resposta.content.decode()
     assert "Envie o arquivo." in texto
     assert "informe um link" not in texto
+
+
+# --- Video-Aulas: so o envio fatiado --------------------------------------
+
+
+@pytest.mark.django_db
+def test_videos_nao_oferecem_o_formulario_generico_de_anexar(client, curso_com_equipe, aluno):
+    """A tela tinha dois caminhos para o mesmo fim e um deles nao levava a lugar
+    nenhum: o video precisa de `TipoMidia.VIDEO`, que so o envio em blocos cria
+    (`services.concluir_upload`). Anexo comum nao contava para `_videos`, entao a
+    pessoa anexava, via o material na lista e continuava sem poder enviar."""
+    videos = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.VIDEOS)
+    client.force_login(aluno)
+    html = client.get(reverse("entregavel", args=[videos.pk])).content.decode()
+    assert "Anexar material" not in html
+    assert 'action="/entregaveis/%d/anexar/"' % videos.pk not in html
+    # O que fica: o envio de video e a lista do que ja foi enviado.
+    assert "Enviar vídeo-aula" in html
+    assert "data-upload-video" in html
+    assert "Materiais" in html
+
+
+@pytest.mark.django_db
+def test_a_tela_de_videos_nao_imprime_o_comentario_do_template(client, curso_com_equipe, aluno):
+    """O comentario de cerquilha de varias linhas saia renderizado como texto na
+    pagina: `{#` so fecha na mesma linha. Era o "erro" que aparecia na tela."""
+    videos = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.VIDEOS)
+    client.force_login(aluno)
+    html = client.get(reverse("entregavel", args=[videos.pk])).content.decode()
+    assert "Upload fatiado" not in html
+    assert "spec 8" not in html
+
+
+@pytest.mark.django_db
+def test_anexar_em_videos_e_recusado_mesmo_com_o_formulario_fora_da_tela(
+    client, curso_com_equipe, aluno
+):
+    """Sumir da tela nao fecha a rota. Sem esta guarda o POST continua valendo, e
+    com o formulario vazio de campos ele passaria a criar Anexo em branco."""
+    videos = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.VIDEOS)
+    client.force_login(aluno)
+    resposta = client.post(
+        reverse("anexar", args=[videos.pk]),
+        {"titulo": "Aula 1", "url": "https://exemplo.org/aula"},
+    )
+    assert resposta.status_code == 403
+    assert not videos.anexos.exists()
+
+
+@pytest.mark.django_db
+def test_anexar_no_plano_de_ensino_e_recusado(client, curso_com_equipe, aluno):
+    """Mesmo buraco: a tela do plano deixou de oferecer materiais, mas a rota
+    seguia aberta. O entregavel esta em RASCUNHO, entao a recusa nao pode vir da
+    guarda de estado."""
+    plano = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.PLANO_ENSINO)
+    assert plano.status == StatusEntregavel.RASCUNHO
+    client.force_login(aluno)
+    resposta = client.post(
+        reverse("anexar", args=[plano.pk]),
+        {"titulo": "Plano", "url": "https://exemplo.org/plano"},
+    )
+    assert resposta.status_code == 403
+    assert not plano.anexos.exists()
+
+
+@pytest.mark.django_db
+def test_o_formulario_de_anexo_nasce_vazio_onde_a_lista_e_vazia():
+    """Prende a leitura de CAMPOS_DO_ANEXO na propria funcao, e nao so nas telas.
+
+    `if permitidos:` tratava lista vazia como "sem restricao" e devolvia o
+    formulario inteiro - o oposto do que a lista vazia quer dizer. As views nao
+    revelam isso, porque nem chegam a construir o formulario nesses casos; um
+    chamador futuro chegaria.
+    """
+    from apps.cursos.forms import AnexoForm
+
+    assert list(AnexoForm(tipo=TipoEntregavel.VIDEOS).fields) == []
+    assert list(AnexoForm(tipo=TipoEntregavel.PLANO_ENSINO).fields) == []
+    assert list(AnexoForm(tipo=TipoEntregavel.SLIDES).fields) == [
+        "titulo", "descricao", "upload",
+    ]
+    # Quem nao esta no mapa continua com o formulario inteiro.
+    assert len(AnexoForm(tipo=TipoEntregavel.CADERNO).fields) > 3

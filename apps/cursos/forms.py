@@ -52,12 +52,25 @@ class PropostaForm(forms.ModelForm):
 # de TODOS: referencia bibliografica e dos cards, rotulo e tipo de pratica sao do
 # caderno de exercicios. Nos slides eram quatro campos que nao servem a nada.
 #
+# Lista vazia quer dizer outra coisa: este entregavel nao recebe anexo nenhum por
+# aqui. O Plano de Ensino e escrito nas secoes, e a vídeo-aula precisa de
+# `TipoMidia.VIDEO`, que so o envio em blocos cria (`services.concluir_upload`) -
+# anexo comum nos dois casos e material que a validacao nunca conta.
+#
 # Entregavel que nao esta aqui mantem o formulario inteiro, ate alguem decidir o
 # que ele pede. E de proposito: enxugar por adivinhacao esconderia campo que a
 # regra daquele entregavel usa.
 CAMPOS_DO_ANEXO = {
+    TipoEntregavel.PLANO_ENSINO: [],
     TipoEntregavel.SLIDES: ["titulo", "descricao", "upload"],
+    TipoEntregavel.VIDEOS: [],
 }
+
+
+def oferece_anexo(tipo):
+    """Se este entregavel recebe material pelo formulario comum de anexar."""
+    campos = CAMPOS_DO_ANEXO.get(tipo)
+    return campos is None or bool(campos)
 
 
 class AnexoForm(forms.ModelForm):
@@ -112,7 +125,7 @@ class AnexoForm(forms.ModelForm):
         """
         super().__init__(*args, **kwargs)
         permitidos = CAMPOS_DO_ANEXO.get(tipo)
-        if permitidos:
+        if permitidos is not None:
             for campo in list(self.fields):
                 if campo not in permitidos:
                     del self.fields[campo]

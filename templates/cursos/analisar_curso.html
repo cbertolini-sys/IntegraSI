@@ -29,11 +29,13 @@
             <span class="estado {% if entregavel.status == 'APROVADO' %}ok{% elif entregavel.status == 'EM_REVISAO' %}espera{% elif entregavel.status == 'DEVOLVIDO' %}atencao{% endif %}">{{ entregavel.get_status_display }}</span>
           </h2>
           {% for secao in entregavel.secoes.all %}
-            {# O |safe abaixo e seguro: Secao.save() sanitiza o conteudo com nh3 antes de
-               gravar, incondicionalmente, mesmo em update_fields (Task 4). E o terceiro
-               lugar do sistema que renderiza HTML vindo do banco sem escape (os outros
-               dois sao revisar.html e _secao.html) - depende dessa sanitizacao
-               acontecer antes, nao aqui. #}
+            {% comment %}
+              O |safe abaixo e seguro: Secao.save() sanitiza o conteudo com nh3 antes
+              de gravar, incondicionalmente, mesmo em update_fields (Task 4). E o
+              terceiro lugar do sistema que renderiza HTML vindo do banco sem escape
+              (os outros dois sao revisar.html e _secao.html) - depende dessa
+              sanitizacao acontecer antes, nao aqui.
+            {% endcomment %}
             <h3>{{ secao.titulo }}</h3><div>{{ secao.conteudo|safe }}</div>
           {% endfor %}
           {% if entregavel.anexos.all %}
@@ -44,10 +46,12 @@
     </div>
 
     <aside class="lateral">
-      {# Os valores de "decisao" sao os mesmos de apps/cursos/views/coordenador.py:
-         sem acento e nunca alterados por passada de texto (CLAUDE.md); so os rotulos
-         dos botoes sao portugues acentuado. A view roteia por igualdade explicita, e
-         um valor desconhecido nao decide nada - nao existe mais ramo pega-tudo. #}
+      {% comment %}
+        Os valores de "decisao" sao os mesmos de apps/cursos/views/coordenador.py:
+        sem acento e nunca alterados por passada de texto (CLAUDE.md); so os rotulos
+        dos botoes sao portugues acentuado. A view roteia por igualdade explicita, e
+        um valor desconhecido nao decide nada - nao existe mais ramo pega-tudo.
+      {% endcomment %}
       {% if pode_decidir %}
         <h2>Decisão da coordenação</h2>
         <form method="post" action="{% url 'decidir_curso' curso.pk %}">

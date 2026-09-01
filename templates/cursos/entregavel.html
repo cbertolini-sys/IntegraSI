@@ -57,6 +57,7 @@
   </div>
 
   {% if pode_editar %}
+    {% if form_anexo %}
     <div class="bloco">
       <h2>Anexar material</h2>
       <form method="post" action="{% url 'anexar' entregavel.pk %}" enctype="multipart/form-data">
@@ -65,6 +66,7 @@
         <button type="submit">Anexar</button>
       </form>
     </div>
+    {% endif %}
 
     {% comment %}
       O upload de video fica DENTRO de `pode_editar`. Ao envolver este trecho no
@@ -75,10 +77,12 @@
     {% if entregavel.tipo == "VIDEOS" %}
       <div class="bloco">
       <h2>Enviar vídeo-aula</h2>
-      {# Upload fatiado e retomavel: e o unico ponto do sistema com JS proprio,
-         porque HTMX nao fatia arquivo (spec 8). Tudo o que o JS precisa saber sobre
-         o servidor sai daqui (as quatro rotas revertidas pelo Django e o tamanho
-         do bloco vindo do Python), para que nada disso viva duplicado no .js. #}
+      {% comment %}
+        Upload fatiado e retomavel: e o unico ponto do sistema com JS proprio,
+        porque HTMX nao fatia arquivo (spec 8). Tudo o que o JS precisa saber sobre
+        o servidor sai daqui (as quatro rotas revertidas pelo Django e o tamanho
+        do bloco vindo do Python), para que nada disso viva duplicado no .js.
+      {% endcomment %}
       <form data-upload-video
             data-entregavel="{{ entregavel.pk }}"
             data-tamanho-bloco="{{ tamanho_bloco }}"

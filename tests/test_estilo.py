@@ -209,3 +209,56 @@ def test_a_varredura_de_style_alcanca_os_templates():
         if c.startswith("templates/") and c.endswith(".html") and texto_de(c)
     ]
     assert len(html) > 15
+
+
+# --- Comentario de template que vira texto na tela ----------------------------
+
+
+def comentarios_de_cerquilha_abertos():
+    """Linhas com `{#` que nao fecham na propria linha.
+
+    A sintaxe de cerquilha e de UMA linha so: o lexer do Django casa `{#.*?#}`
+    sem DOTALL, entao um comentario de duas linhas nao e reconhecido como
+    comentario e sai impresso na pagina, com codigo e tudo.
+    """
+    achados = []
+    for caminho in arquivos_versionados():
+        if not caminho.startswith("templates/") or not caminho.endswith(".html"):
+            continue
+        conteudo = texto_de(caminho)
+        if conteudo is None:
+            continue
+        for numero, linha in enumerate(conteudo.splitlines(), start=1):
+            if "{#" in linha and "#}" not in linha:
+                achados.append(f"{caminho}:{numero}: {linha.strip()[:80]}")
+    return achados
+
+
+def test_nenhum_comentario_de_cerquilha_atravessa_a_linha():
+    """Cinco comentarios assim estavam imprimindo texto de codigo em quatro telas,
+    entre elas as de revisao do professor e da coordenacao. O aviso ja estava
+    escrito em base.html, de uma vez anterior, e mesmo assim voltou.
+
+    Se este teste reprovar, troque o comentario por `{% comment %}`, que fecha em
+    qualquer numero de linhas. Nao quebre a frase em varios `{# #}` de uma linha.
+    """
+    achados = comentarios_de_cerquilha_abertos()
+    assert not achados, (
+        "comentário de cerquilha de mais de uma linha (sai renderizado como "
+        "texto na página) em:\n" + "\n".join(achados)
+    )
+
+
+def test_a_varredura_de_cerquilha_enxerga_comentario_de_uma_linha():
+    """Sem isto, um seletor errado devolveria lista vazia e o teste acima ficaria
+    verde para sempre. Confere que ha comentarios de cerquilha nos templates e que
+    a varredura nao acusa os que estao certos."""
+    de_uma_linha = 0
+    for caminho in arquivos_versionados():
+        if not caminho.startswith("templates/") or not caminho.endswith(".html"):
+            continue
+        conteudo = texto_de(caminho) or ""
+        de_uma_linha += sum(
+            1 for linha in conteudo.splitlines() if "{#" in linha and "#}" in linha
+        )
+    assert de_uma_linha > 0, "a varredura não achou nenhum comentário de cerquilha"
