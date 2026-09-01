@@ -51,9 +51,11 @@ function formulario(arquivo, dataset) {
     'input[type=file]': { files: arquivo ? [arquivo] : [] },
     'input[name=titulo]': { value: 'Aula 1' },
     'input[name=duracao_minutos]': { value: '7' },
+    'textarea[name=descricao]': { value: 'Abertura do curso.' },
     '[name=csrfmiddlewaretoken]': { value: TOKEN },
-    progress: { value: 0 },
-    '.aviso': { textContent: '' },
+    // `hidden: true` como no template: os dois so aparecem durante o envio.
+    progress: { value: 0, hidden: true },
+    '.aviso': { textContent: '', hidden: true },
   };
   return {
     dataset: Object.assign(
@@ -449,7 +451,30 @@ cenario('servidor_que_nao_avanca_nao_vira_laco_infinito', async () => {
 cenario('conclui_com_titulo_e_duracao_do_formulario', async () => {
   const est = novoEstado();
   await rodar({ responder: servidor(est) });
-  afirmaIgual(est.concluido, { titulo: 'Aula 1', duracao_minutos: '7' }, 'corpo da conclusão');
+  afirmaIgual(
+    est.concluido,
+    { titulo: 'Aula 1', duracao_minutos: '7', descricao: 'Abertura do curso.' },
+    'corpo da conclusão'
+  );
+});
+
+// Regra: a barra e o aviso nascem escondidos e so aparecem quando ha envio. Uma
+// `<progress>` em 0% desenha uma barra cinza sem rotulo logo abaixo da duracao, e
+// na tela ela parece mais um campo do formulario.
+cenario('a_barra_e_o_aviso_so_aparecem_durante_o_envio', async () => {
+  const est = novoEstado();
+  const r = await rodar({ responder: servidor(est) });
+  afirmaIgual(r.form.nos.progress.hidden, false, 'a barra continuou escondida');
+  afirmaIgual(r.form.nos['.aviso'].hidden, false, 'o aviso continuou escondido');
+});
+
+// E sem arquivo escolhido a barra NAO aparece: nao ha envio nenhum para mostrar,
+// so o aviso pedindo o arquivo.
+cenario('sem_arquivo_a_barra_continua_escondida', async () => {
+  const est = novoEstado();
+  const r = await rodar({ responder: servidor(est), arquivo: null });
+  afirmaIgual(r.form.nos.progress.hidden, true, 'a barra apareceu sem haver envio');
+  afirmaIgual(r.form.nos['.aviso'].hidden, false, 'o pedido do arquivo precisa aparecer');
 });
 
 // Regra: o `submit` do formulario de video e interceptado pelo ouvinte do

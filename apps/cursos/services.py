@@ -453,7 +453,7 @@ def atualizar_vetor_temas(curso):
     )
 
 
-def _prevalida_anexo_de_video(upload, titulo, duracao_minutos):
+def _prevalida_anexo_de_video(upload, titulo, duracao_minutos, descricao=""):
     """Roda `Anexo.full_clean()` num espelho desligado, ANTES de a copia comecar.
 
     E a regra geral da qual a checagem de titulo em branco (em `concluir_upload`) e
@@ -474,6 +474,7 @@ def _prevalida_anexo_de_video(upload, titulo, duracao_minutos):
         entregavel=upload.entregavel,
         tipo_midia=TipoMidia.VIDEO,
         titulo=titulo,
+        descricao=descricao,
         duracao_minutos=duracao_minutos,
         enviado_por=upload.usuario,
     )
@@ -500,7 +501,7 @@ def _prevalida_anexo_de_video(upload, titulo, duracao_minutos):
 
 
 @transaction.atomic
-def concluir_upload(upload, titulo, duracao_minutos):
+def concluir_upload(upload, titulo, duracao_minutos, descricao=""):
     """Transforma o arquivo parcial de um upload em blocos em Arquivo + Anexo de video.
 
     Le o parcial sempre em pedacos de `BLOCO_LEITURA` pelo `open` do modulo: um
@@ -531,7 +532,7 @@ def concluir_upload(upload, titulo, duracao_minutos):
         raise ValidationError("Informe o título do vídeo.")
     # A duracao ausente ou zerada nao tem mais linha propria: quem a recusa e o
     # `Anexo.clean()` rodado no espelho, junto com tudo o mais que o Anexo recusa.
-    _prevalida_anexo_de_video(upload, titulo, duracao_minutos)
+    _prevalida_anexo_de_video(upload, titulo, duracao_minutos, descricao)
 
     caminho = upload.caminho()
     tamanho = caminho.stat().st_size
@@ -571,6 +572,7 @@ def concluir_upload(upload, titulo, duracao_minutos):
             entregavel=upload.entregavel,
             tipo_midia=TipoMidia.VIDEO,
             titulo=titulo,
+            descricao=descricao,
             arquivo=arquivo,
             duracao_minutos=duracao_minutos,
             enviado_por=upload.usuario,

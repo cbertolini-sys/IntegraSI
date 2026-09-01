@@ -49,6 +49,11 @@
         {% endif %}
         {% if anexo.duracao_minutos %} ({{ anexo.duracao_minutos }} min){% endif %}
         {% if anexo.referencia_bibliografica %} - {{ anexo.referencia_bibliografica }}{% endif %}
+        {% comment %}
+          Ate aqui `descricao` era campo que so entrava: pedido no formulario de
+          anexar, gravado no banco e nunca mostrado em tela nenhuma.
+        {% endcomment %}
+        {% if anexo.descricao %}<p class="descricao-anexo">{{ anexo.descricao }}</p>{% endif %}
       </li>
     {% empty %}
       <li class="vazio"><p>Nenhum material anexado.</p></li>
@@ -95,11 +100,19 @@
         <label>Vídeo-aula (MP4, até 1 GB) <input type="file" accept="video/mp4"></label>
         <label>Título <input type="text" name="titulo"
                           maxlength="{{ titulo_maximo }}" required></label>
+        <label>Descrição
+          <textarea name="descricao" rows="3"></textarea></label>
         <label>Duração em minutos
           <input type="number" name="duracao_minutos"
                  min="{{ duracao_minima }}" max="{{ duracao_maxima }}" required></label>
-        <progress value="0" max="100"></progress>
-        <p class="aviso"></p>
+        {% comment %}
+          Escondidos ate haver envio. Uma <progress> em 0% desenha uma barra cinza
+          sem rotulo logo abaixo da duracao, e na tela ela parece mais um campo do
+          formulario; o aviso vazio ocupa espaco pelo mesmo motivo. Quem os mostra
+          e o upload.js, no primeiro sinal de que ha o que dizer.
+        {% endcomment %}
+        <progress value="0" max="100" hidden></progress>
+        <p class="aviso" hidden></p>
         <button type="submit">Enviar vídeo</button>
       </form>
       <script src="{% estatico 'js/upload.js' %}" defer></script>

@@ -262,3 +262,47 @@ def test_retomada_apos_queda_no_meio(client, aluno, entregavel_videos):
 
     assert conclui(client, identificador).status_code == 200
     assert Anexo.objects.get().arquivo.tamanho == len(MP4)
+
+
+# Regra 8: o formulario de video pede descricao, como o de anexar
+@pytest.mark.django_db
+def test_o_formulario_de_video_pede_descricao(client, aluno, entregavel_videos):
+    client.force_login(aluno)
+    conteudo = tela(client, entregavel_videos)
+    assert 'name="descricao"' in conteudo
+    assert "Descrição" in conteudo
+
+
+# Regra 9: a barra e o aviso nao aparecem antes de haver envio
+@pytest.mark.django_db
+def test_a_barra_e_o_aviso_nascem_escondidos(client, aluno, entregavel_videos):
+    """Uma `<progress>` em 0% desenha uma barra cinza vazia logo abaixo da duracao,
+    sem rotulo nenhum: na tela parece mais um campo do formulario. O aviso vazio
+    ocupa espaco pelo mesmo motivo. Os dois so tem o que dizer durante o envio."""
+    client.force_login(aluno)
+    conteudo = tela(client, entregavel_videos)
+    assert "<progress value=\"0\" max=\"100\" hidden>" in conteudo
+    assert '<p class="aviso" hidden>' in conteudo
+
+
+# Regra 10: a descricao gravada aparece na lista de materiais
+@pytest.mark.django_db
+def test_a_descricao_do_material_aparece_na_lista(client, aluno, entregavel_videos):
+    """Ate aqui `descricao` era campo que so entrava: pedido no formulario de
+    anexar, gravado no banco e nunca mostrado em tela nenhuma. Pedir a descricao
+    do video sem mostra-la em lugar nenhum seria acrescentar o mesmo poco."""
+    from apps.cursos.models import Anexo
+    from apps.cursos.choices import TipoMidia
+
+    Anexo.objects.create(
+        entregavel=entregavel_videos,
+        tipo_midia=TipoMidia.LINK,
+        titulo="Aula 1",
+        descricao="Abertura do curso, com o mapa das aulas.",
+        url="https://exemplo.org/aula",
+        duracao_minutos=7,
+        enviado_por=aluno,
+    )
+    client.force_login(aluno)
+    conteudo = tela(client, entregavel_videos)
+    assert "Abertura do curso, com o mapa das aulas." in conteudo

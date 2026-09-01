@@ -778,3 +778,60 @@ def test_conclusao_nunca_le_o_arquivo_inteiro_de_uma_vez(upload_completo, monkey
 
     assert leituras, "a conclusão não leu o arquivo pelo `open` do módulo"
     assert all(0 < pedido <= MEGA for pedido in leituras), leituras
+
+
+# Regra 21: a descricao do video chega ao Anexo
+@pytest.mark.django_db
+def test_concluir_grava_a_descricao_do_formulario(client, aluno, entregavel_videos):
+    client.force_login(aluno)
+    identificador = inicia(client, entregavel_videos).json()["identificador"]
+    envia(client, identificador, MP4)
+
+    resposta = client.post(
+        reverse("upload_concluir", args=[identificador]),
+        data=json.dumps(
+            {
+                "titulo": "Aula 1",
+                "duracao_minutos": 7,
+                "descricao": "Abertura do curso, com o mapa das aulas.",
+            }
+        ),
+        content_type="application/json",
+    )
+
+    assert resposta.status_code == 200
+    assert Anexo.objects.get().descricao == "Abertura do curso, com o mapa das aulas."
+
+
+# Regra 21b: e continua opcional
+@pytest.mark.django_db
+def test_a_descricao_e_opcional_na_conclusao(client, aluno, entregavel_videos):
+    """`Anexo.descricao` e `blank=True`, e o corpo antigo (sem a chave) nao pode
+    virar 400: a aba aberta antes de um deploy manda exatamente esse corpo."""
+    client.force_login(aluno)
+    identificador = inicia(client, entregavel_videos).json()["identificador"]
+    envia(client, identificador, MP4)
+
+    resposta = conclui(client, identificador)
+
+    assert resposta.status_code == 200
+    assert Anexo.objects.get().descricao == ""
+
+
+# Regra 21c
+@pytest.mark.django_db
+def test_descricao_que_nao_e_texto_e_recusada(client, aluno, entregavel_videos):
+    """Sem a conferencia de tipo, um numero passa e vira "7" gravado como
+    descricao - `_texto` existe justamente para as outras duas chaves."""
+    client.force_login(aluno)
+    identificador = inicia(client, entregavel_videos).json()["identificador"]
+    envia(client, identificador, MP4)
+
+    resposta = client.post(
+        reverse("upload_concluir", args=[identificador]),
+        data=json.dumps({"titulo": "Aula 1", "duracao_minutos": 7, "descricao": 7}),
+        content_type="application/json",
+    )
+
+    assert resposta.status_code == 400
+    assert not Anexo.objects.exists()

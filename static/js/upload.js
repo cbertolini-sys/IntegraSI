@@ -198,8 +198,14 @@ async function iniciarUpload(form) {
   const arquivo = form.querySelector('input[type=file]').files[0];
   const barra = form.querySelector('progress');
   const aviso = form.querySelector('.aviso');
-  const aoAvisar = (texto) => { aviso.textContent = texto; };
-  const aoProgredir = (fracao) => { barra.value = Math.round(fracao * 100); };
+  // Os dois nascem `hidden` no template e aparecem no primeiro uso: antes disso
+  // nao ha envio nenhum a relatar, e a barra vazia parecia mais um campo do
+  // formulario, logo abaixo da duracao.
+  const aoAvisar = (texto) => { aviso.hidden = false; aviso.textContent = texto; };
+  const aoProgredir = (fracao) => {
+    barra.hidden = false;
+    barra.value = Math.round(fracao * 100);
+  };
 
   if (!arquivo) {
     aoAvisar('Escolha o arquivo de vídeo.');
@@ -231,6 +237,7 @@ async function iniciarUpload(form) {
       JSON.stringify({
         titulo: form.querySelector('input[name=titulo]').value,
         duracao_minutos: form.querySelector('input[name=duracao_minutos]').value,
+        descricao: form.querySelector('textarea[name=descricao]').value,
       }),
       'application/json',
       csrf

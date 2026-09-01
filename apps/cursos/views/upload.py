@@ -58,6 +58,20 @@ def _texto(dados, chave):
     return valor
 
 
+def _texto_opcional(dados, chave):
+    """Campo que pode nao vir: ausente vale "", presente precisa ser texto.
+
+    Ausente nao pode virar 400. A aba que o aluno deixou aberta antes do deploy
+    manda o corpo antigo, e ali dentro pode haver meia hora de upload ja no disco.
+    """
+    if chave not in dados:
+        return ""
+    valor = dados[chave]
+    if not isinstance(valor, str):
+        raise ValidationError(f"O campo {chave} precisa ser texto.")
+    return valor
+
+
 def _inteiro(dados, chave):
     """`int(...)` cru sobre texto do cliente viraria ValueError, ou seja, 500."""
     try:
@@ -147,7 +161,10 @@ def upload_concluir(request, identificador):
         dados = _corpo_json(request)
         titulo = _texto(dados, "titulo")
         duracao = _inteiro(dados, "duracao_minutos")
-        anexo = services.concluir_upload(upload, titulo=titulo, duracao_minutos=duracao)
+        descricao = _texto_opcional(dados, "descricao")
+        anexo = services.concluir_upload(
+            upload, titulo=titulo, duracao_minutos=duracao, descricao=descricao
+        )
     except ValidationError as erro:
         return _recusa(erro)
     return JsonResponse({"anexo": anexo.pk, "titulo": anexo.titulo})

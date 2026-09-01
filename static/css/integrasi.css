@@ -1214,6 +1214,17 @@ textarea:focus {
   transition: box-shadow 0.16s ease, border-color 0.16s ease;
 }
 
+/* A descricao do material quebra para a propria linha: `.registro` e um flex de
+   uma linha so, e sem a base de 100% a frase disputaria espaco com o titulo e a
+   duracao no mesmo eixo. */
+.descricao-anexo {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--cinza);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
 .registro:hover {
   box-shadow: var(--sombra);
   border-color: #cfdae6;
