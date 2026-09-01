@@ -181,17 +181,27 @@ class Curso(models.Model):
 
     @property
     def publico_alvo(self):
-        """Texto legível do público, seja etapa escolar ou grupo comunitário.
+        """Texto legível do público: a etapa escolar, a descrição, ou as duas.
 
-        No público comunitário cai para o rótulo do tipo quando não há descrição:
-        ela deixou de ser obrigatória, e o catálogo não pode ficar sem dizer para
-        quem o curso é, que a spec 4.3 chama de identidade do curso.
+        Junta as duas de propósito. Escolher uma só escondia a outra, e desde que a
+        descrição virou complemento da etapa ("5º ano" mais "turmas da escola do
+        campo") esconder qualquer uma delas é perder informação que a equipe
+        escreveu.
+
+        Cai para o rótulo do tipo **só no público comunitário**, onde a descrição
+        deixou de ser obrigatória e o catálogo não pode ficar sem dizer para quem o
+        curso é. No escolar não cai: lá a etapa é obrigatória, e devolver "Etapa
+        escolar" faria o portão de completude dar por resolvido um curso que não
+        diz de que ano é.
         """
-        if self.tipo_publico == TipoPublico.ESCOLAR:
-            return self.get_etapa_ano_display()
-        if self.tipo_publico == TipoPublico.COMUNITARIO:
-            return self.publico_descricao or self.get_tipo_publico_display()
-        return self.publico_descricao
+        partes = []
+        if self.etapa_ano:
+            partes.append(self.get_etapa_ano_display())
+        if self.publico_descricao:
+            partes.append(self.publico_descricao)
+        if not partes and self.tipo_publico == TipoPublico.COMUNITARIO:
+            partes.append(self.get_tipo_publico_display())
+        return " \u00b7 ".join(partes)
 
     @property
     def identidade(self):
@@ -212,6 +222,16 @@ class Curso(models.Model):
             partes.append(self.get_formato_display())
         partes = [p for p in partes if p]
         return " \u00b7 ".join(partes) if partes else "Ficha ainda não preenchida"
+
+    @property
+    def lista_de_palavras_chave(self):
+        """As palavras-chave repartidas, para a tela mostrar uma por etiqueta.
+
+        O banco guarda um texto so porque e ele que alimenta o `search_vector`
+        (spec 4.4); quem reparte para exibir e esta propriedade, e nao o template,
+        porque `split` com limpeza nao cabe em linguagem de template.
+        """
+        return [p.strip() for p in (self.palavras_chave or "").split(",") if p.strip()]
 
     @property
     def praticas(self):

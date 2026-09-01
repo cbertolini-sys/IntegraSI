@@ -329,3 +329,87 @@ def test_pagina_publica_continua_recusando_curso_em_producao(client, dados_curso
     curso = services.criar_curso(**dados_curso)
     client.force_login(professor)
     assert client.get(reverse("catalogo_curso", args=[curso.pk])).status_code == 404
+
+
+# --- A pagina publica mostra tudo o que a edicao oferece (a pedido) ----------
+
+
+@pytest.fixture
+def curso_cheio(dados_curso, professor):
+    """Um curso com TODOS os campos da edicao preenchidos, inclusive os que
+    convivem: etapa escolar e descricao do publico juntas, que passaram a ser
+    complemento uma da outra."""
+    from apps.cursos import services
+    from apps.cursos.models import Tema
+    from apps.referenciais.models import Categoria, Competencia, Referencial
+
+    curso = services.criar_curso(**dados_curso)
+    curso.publico_descricao = "Turmas da escola do campo"
+    curso.pre_requisitos = "Saber ligar e desligar o computador."
+    referencial = Referencial.objects.create(nome="Referencial de Teste", sigla="TESTE")
+    categoria = Categoria.objects.create(referencial=referencial, nome="Eixo Um", ordem=1)
+    competencia = Competencia.objects.create(
+        referencial=referencial, categoria=categoria, codigo="TS05CO01",
+        descricao="Descricao da competencia de teste.", etapa="EF05", ordem=1,
+    )
+    curso.referencial = referencial
+    curso.save()
+    curso.competencias.add(competencia)
+    services.definir_temas(curso, [Tema.objects.create(nome="Robótica Educacional")], por=professor)
+    return curso
+
+
+@pytest.mark.django_db
+def test_a_pagina_publica_mostra_tudo_o_que_a_edicao_oferece(client, curso_cheio, professor):
+    """A exigencia, por extenso: o que a equipe preenche na edicao do curso e o que
+    o publico ve. Um campo que so existe no formulario e trabalho que ninguem le.
+
+    A varredura percorre os campos do FORMULARIO, e nao uma lista escrita a mao:
+    campo novo na edicao passa a ser cobrado aqui sozinho.
+    """
+    from apps.cursos.forms import FichaCursoForm
+
+    client.force_login(professor)
+    html = client.get(reverse("previa_do_curso", args=[curso_cheio.pk])).content.decode()
+
+    esperado = {
+        "titulo": curso_cheio.titulo,
+        "resumo": curso_cheio.resumo,
+        "carga_horaria": str(curso_cheio.carga_horaria),
+        "formato": curso_cheio.get_formato_display(),
+        "etapa_ano": curso_cheio.get_etapa_ano_display(),
+        "publico_descricao": curso_cheio.publico_descricao,
+        "pre_requisitos": curso_cheio.pre_requisitos,
+        "temas": "Robótica Educacional",
+        "referencial": curso_cheio.referencial.nome,
+        "competencias": "TS05CO01",
+        "palavras_chave": "pensamento computacional",
+        "tipo_publico": curso_cheio.get_tipo_publico_display(),
+    }
+    # Se um campo entrar no formulario e ninguem decidir como ele aparece, o teste
+    # acusa aqui, e nao meses depois numa tela incompleta.
+    assert set(esperado) == set(FichaCursoForm().fields)
+
+    faltando = [campo for campo, valor in esperado.items() if valor not in html]
+    assert faltando == [], f"não aparecem na página pública: {faltando}"
+
+
+@pytest.mark.django_db
+def test_publico_alvo_junta_etapa_e_descricao(curso_cheio):
+    """A descricao virou complemento da etapa, e escolher so uma escondia a outra:
+    era o que fazia a previa parecer incompleta."""
+    assert "5º ano do Ensino Fundamental" in curso_cheio.publico_alvo
+    assert "Turmas da escola do campo" in curso_cheio.publico_alvo
+
+
+@pytest.mark.django_db
+def test_previa_de_curso_vazio_nao_imprime_none(client, dados_curso, professor):
+    """A previa existe para curso incompleto, entao ela precisa aguentar campo
+    vazio: "None horas" foi o mesmo defeito que a pagina do curso ja teve."""
+    from apps.cursos import services
+
+    dados_curso.update(carga_horaria=None, formato="", resumo="", palavras_chave="")
+    curso = services.criar_curso(**dados_curso)
+    client.force_login(professor)
+    html = client.get(reverse("previa_do_curso", args=[curso.pk])).content.decode()
+    assert "None" not in html

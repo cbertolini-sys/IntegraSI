@@ -2261,3 +2261,68 @@ textarea:focus {
 .acoes-empilhadas form {
   margin: 0;
 }
+
+/* ---------- seções da página pública do curso ---------- */
+
+.secao-publica {
+  padding-bottom: 1.75rem;
+  margin-bottom: 1.75rem;
+  border-bottom: 1px solid var(--linha);
+}
+
+.secao-publica:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.secao-publica h3 {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cinza);
+  margin: 1.25rem 0 0.625rem;
+}
+
+.secao-publica h3:first-of-type {
+  margin-top: 0;
+}
+
+/* Lista de fatos em duas colunas: rótulo e valor, alinhados, para a escola
+   percorrer o que interessa sem ler prosa. */
+.fatos-lista {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 0.5rem 1.5rem;
+  margin: 0;
+}
+
+.fatos-lista dt {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--cinza);
+}
+
+.fatos-lista dd {
+  margin: 0;
+  color: var(--texto);
+}
+
+.etiquetas-chave li {
+  background: var(--azul-suave);
+  color: var(--azul-forte);
+  border-color: transparent;
+}
+
+/* Só a prévia mostra o que falta. Na página publicada o curso já passou pelo
+   portão de completude, então estes avisos nunca aparecem para o visitante. */
+.por-preencher {
+  font-size: 0.9375rem;
+  color: var(--cinza);
+  font-style: italic;
+  background: var(--nevoa);
+  border-left: 3px solid var(--ciano);
+  border-radius: 0 var(--raio-p) var(--raio-p) 0;
+  padding: 0.75rem 1rem;
+  margin: 0;
+}

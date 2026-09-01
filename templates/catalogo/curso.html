@@ -5,13 +5,19 @@
   <section class="topo-curso">
     <div class="faixa">
       <p class="migalha">
-        <a href="{% url 'catalogo' %}">Cursos</a> &rsaquo; {{ curso.get_formato_display }}
+        <a href="{% url 'catalogo' %}">Cursos</a>
+        {% if curso.formato %}&rsaquo; {{ curso.get_formato_display }}{% endif %}
       </p>
       <h1>{{ curso.titulo }}</h1>
+      {% comment %}
+        Cada fato so aparece se existir. A previa mostra curso em producao, com
+        campo por preencher, e interpolar direto imprimia "None horas" - o mesmo
+        defeito que a pagina interna do curso ja teve.
+      {% endcomment %}
       <div class="fatos">
-        <span class="fato">{{ curso.publico_alvo }}</span>
-        <span class="fato">{{ curso.carga_horaria }} horas</span>
-        <span class="fato">{{ curso.get_formato_display }}</span>
+        {% if curso.publico_alvo %}<span class="fato">{{ curso.publico_alvo }}</span>{% endif %}
+        {% if curso.carga_horaria %}<span class="fato">{{ curso.carga_horaria }} horas</span>{% endif %}
+        {% if curso.formato %}<span class="fato">{{ curso.get_formato_display }}</span>{% endif %}
         <span class="fato">Versão {{ curso.versao }} &middot; {{ curso.edicao }}</span>
       </div>
     </div>
@@ -30,31 +36,95 @@
 {% endif %}
   <div class="faixa colunas">
     <div class="conteudo">
-      <h2>Sobre o curso</h2>
-      <p class="sobre">{{ curso.resumo }}</p>
+      <section class="secao-publica">
+        <h2>Sobre o curso</h2>
+        {% if curso.resumo %}
+          <p class="sobre">{{ curso.resumo }}</p>
+        {% elif previa %}
+          <p class="por-preencher">O resumo ainda não foi escrito. É o texto que a
+             escola lê primeiro.</p>
+        {% endif %}
+      </section>
 
-      {% if curso.pre_requisitos %}
-        <h2>O que a turma precisa saber antes</h2>
-        <p>{{ curso.pre_requisitos }}</p>
-      {% endif %}
+      <section class="secao-publica">
+        <h2>Para quem é</h2>
+        <dl class="fatos-lista">
+          {% if curso.tipo_publico %}
+            <dt>Tipo de público</dt><dd>{{ curso.get_tipo_publico_display }}</dd>
+          {% endif %}
+          {% if curso.etapa_ano %}
+            <dt>Etapa ou ano</dt><dd>{{ curso.get_etapa_ano_display }}</dd>
+          {% endif %}
+          {% if curso.publico_descricao %}
+            <dt>Descrição</dt><dd>{{ curso.publico_descricao }}</dd>
+          {% endif %}
+          {% if curso.carga_horaria %}
+            <dt>Carga horária</dt><dd>{{ curso.carga_horaria }} horas</dd>
+          {% endif %}
+          {% if curso.formato %}
+            <dt>Formato</dt><dd>{{ curso.get_formato_display }}</dd>
+          {% endif %}
+        </dl>
+        {% if previa and not curso.publico_alvo %}
+          <p class="por-preencher">O público-alvo ainda não foi definido.</p>
+        {% endif %}
+      </section>
 
-      {% if curso.temas.exists %}
-        <h2>Temas</h2>
-        <ul class="etiquetas">
-          {% for tema in curso.temas.all %}<li>{{ tema.nome }}</li>{% endfor %}
-        </ul>
+      {% if curso.pre_requisitos or previa %}
+        <section class="secao-publica">
+          <h2>O que a turma precisa saber antes</h2>
+          {% if curso.pre_requisitos %}
+            <p>{{ curso.pre_requisitos }}</p>
+          {% else %}
+            <p class="por-preencher">Nenhum pré-requisito informado. O curso parte
+               do zero.</p>
+          {% endif %}
+        </section>
       {% endif %}
 
       {% if curso.referencial %}
-        <h2>{{ curso.referencial.nome }}</h2>
-        <ul class="competencias">
-          {% for competencia in curso.competencias.all %}
-            <li>
-              <span class="codigo">{{ competencia.codigo }}</span>
-              <span>{{ competencia.descricao }}</span>
-            </li>
-          {% endfor %}
-        </ul>
+        <section class="secao-publica">
+          <h2>{{ curso.referencial.nome }}</h2>
+          {% if curso.competencias.exists %}
+            <ul class="competencias">
+              {% for competencia in curso.competencias.all %}
+                <li>
+                  <span class="codigo">{{ competencia.codigo }}</span>
+                  <span>{{ competencia.descricao }}</span>
+                </li>
+              {% endfor %}
+            </ul>
+          {% elif previa %}
+            <p class="por-preencher">Nenhuma habilidade escolhida ainda.</p>
+          {% endif %}
+        </section>
+      {% endif %}
+
+      {% if curso.temas.exists or curso.palavras_chave or previa %}
+        <section class="secao-publica">
+          <h2>Onde este curso se encaixa</h2>
+          {% if curso.temas.exists %}
+            <h3>Temas</h3>
+            <ul class="etiquetas">
+              {% for tema in curso.temas.all %}<li>{{ tema.nome }}</li>{% endfor %}
+            </ul>
+          {% endif %}
+          {% comment %}
+            As palavras-chave nao apareciam em lugar nenhum: a equipe preenchia
+            cinco e ninguem as via. Elas alimentam a busca do catalogo, e mostra-las
+            e o que deixa a equipe conferir se escolheu os termos que a escola
+            procuraria.
+          {% endcomment %}
+          {% if curso.palavras_chave %}
+            <h3>Palavras-chave</h3>
+            <ul class="etiquetas etiquetas-chave">
+              {% for palavra in curso.lista_de_palavras_chave %}<li>{{ palavra }}</li>{% endfor %}
+            </ul>
+          {% elif previa %}
+            <p class="por-preencher">As palavras-chave ainda não foram escolhidas.
+               São elas que levam a escola até aqui na busca.</p>
+          {% endif %}
+        </section>
       {% endif %}
     </div>
 
