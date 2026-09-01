@@ -19,6 +19,15 @@
 {% endblock %}
 
 {% block conteudo %}
+{% if previa %}
+  <div class="tarja-previa">
+    <div class="faixa">
+      <strong>Prévia</strong> de como {{ curso.titulo }} vai aparecer no catálogo.
+      Ainda não está publicado, e só a equipe e a coordenação enxergam esta página.
+      <a class="botao botao-linha" href="{% url 'curso' curso.pk %}">Voltar ao curso</a>
+    </div>
+  </div>
+{% endif %}
   <div class="faixa colunas">
     <div class="conteudo">
       <h2>Sobre o curso</h2>
@@ -55,12 +64,26 @@
           <span class="ponto" aria-hidden="true"></span>{{ p.rotulo }}
         </span>
       {% endwith %}
-      <h2>Solicitar este curso</h2>
-      <p>
-        O curso é oferecido sem custo. Conte quantas pessoas participariam e quando
-        seria melhor: a coordenação responde combinando data, local e vagas.
-      </p>
-      <a class="botao botao-largo" href="{% url 'solicitar' curso.pk %}">Solicitar este curso</a>
+      {% if previa %}
+        {% comment %}
+          O cartao inteiro sai da previa, e nao so o botao: o titulo "Solicitar
+          este curso" e o convite abaixo dele prometem algo que o curso ainda nao
+          pode cumprir, e uma solicitacao criada daqui apontaria para um curso que
+          ninguem tem como oferecer.
+        {% endcomment %}
+        <h2>Ainda não publicado</h2>
+        <p>
+          Quando a coordenação publicar, é neste lugar que a escola encontra o
+          convite para solicitar o curso.
+        </p>
+      {% else %}
+        <h2>Solicitar este curso</h2>
+        <p>
+          O curso é oferecido sem custo. Conte quantas pessoas participariam e quando
+          seria melhor: a coordenação responde combinando data, local e vagas.
+        </p>
+        <a class="botao botao-largo" href="{% url 'solicitar' curso.pk %}">Solicitar este curso</a>
+      {% endif %}
     </aside>
   </div>
 {% endblock %}

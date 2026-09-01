@@ -1,12 +1,12 @@
 {% extends "base.html" %}
-{% block titulo %} - Ficha de {{ curso.titulo }}{% endblock %}
+{% block titulo %} - Editar {{ curso.titulo }}{% endblock %}
 
 {% block conteudo %}
 <div class="trabalho">
   <div class="cabecalho-pagina">
     <div class="faixa">
       <div>
-        <h1>Ficha do curso</h1>
+        <h1>Editar curso</h1>
         <p class="sub">O que descreve {{ curso.titulo }} no catálogo público.</p>
       </div>
       <div class="acoes">
@@ -67,7 +67,7 @@
       </fieldset>
 
       <div class="ficha-acoes">
-        <button type="submit" class="botao">Salvar ficha</button>
+        <button type="submit" class="botao">Salvar curso</button>
         <a class="botao botao-linha" href="{% url 'curso' curso.pk %}">Cancelar</a>
       </div>
     </form>
@@ -81,7 +81,7 @@
           {% for falta in pendencias %}<li>{{ falta }}</li>{% endfor %}
         </ul>
       {% else %}
-        <p class="tudo-certo">Nada. A ficha está completa para o que o catálogo
+        <p class="tudo-certo">Nada. O curso está completo para o que o catálogo
            precisa.</p>
       {% endif %}
     </aside>

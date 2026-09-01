@@ -255,3 +255,77 @@ def test_curso_nao_publicado_fica_fora_das_duas_portas(client, dados_curso, alun
     resposta_detalhe = client.get(reverse("catalogo_curso", args=[curso.pk]))
     assert resposta_detalhe.status_code == 404
 
+
+
+# --- Previa da pagina publica, para quem produz (a pedido) -------------------
+
+
+@pytest.mark.django_db
+def test_previa_mostra_curso_em_producao(client, dados_curso, professor):
+    """A pagina publica so aceita PUBLICADO; a equipe precisa ver como o curso vai
+    aparecer ANTES de publicar, que e quando ainda da para corrigir."""
+    from apps.cursos import services
+
+    curso = services.criar_curso(**dados_curso)
+    client.force_login(professor)
+    resposta = client.get(reverse("previa_do_curso", args=[curso.pk]))
+    assert resposta.status_code == 200
+    assert curso.titulo in resposta.content.decode()
+
+
+@pytest.mark.django_db
+def test_previa_se_anuncia_como_previa(client, dados_curso, professor):
+    """Sem aviso, a equipe confunde a previa com a pagina no ar e acha que o curso
+    ja esta publicado."""
+    from apps.cursos import services
+
+    curso = services.criar_curso(**dados_curso)
+    client.force_login(professor)
+    html = client.get(reverse("previa_do_curso", args=[curso.pk])).content.decode()
+    assert "Prévia" in html
+
+
+@pytest.mark.django_db
+def test_previa_nao_oferece_solicitacao(client, dados_curso, professor):
+    """O botao de solicitar nao pode aparecer: o curso nao esta no catalogo, e uma
+    solicitacao criada daqui apontaria para um curso que ninguem pode oferecer."""
+    from apps.cursos import services
+
+    curso = services.criar_curso(**dados_curso)
+    client.force_login(professor)
+    html = client.get(reverse("previa_do_curso", args=[curso.pk])).content.decode()
+    assert "Solicitar este curso" not in html
+
+
+@pytest.mark.django_db
+def test_previa_recusa_quem_nao_enxerga_o_curso(client, dados_curso, outro_aluno):
+    """Material nao aprovado nao circula (spec 10). A previa e a pagina publica de
+    um curso que ainda NAO e publico, entao vale a permissao do curso."""
+    from apps.cursos import services
+
+    curso = services.criar_curso(**dados_curso)
+    client.force_login(outro_aluno)
+    assert client.get(reverse("previa_do_curso", args=[curso.pk])).status_code == 403
+
+
+@pytest.mark.django_db
+def test_previa_recusa_visitante(client, dados_curso):
+    """Sem sessao, nem 403: manda para o login. Curso em producao nao tem porta
+    anonima nenhuma."""
+    from apps.cursos import services
+
+    curso = services.criar_curso(**dados_curso)
+    resposta = client.get(reverse("previa_do_curso", args=[curso.pk]))
+    assert resposta.status_code == 302
+    assert "entrar" in resposta.url or "login" in resposta.url
+
+
+@pytest.mark.django_db
+def test_pagina_publica_continua_recusando_curso_em_producao(client, dados_curso, professor):
+    """Prende o outro lado: a previa nao pode ter afrouxado a pagina publica, que
+    e a porta anonima de verdade."""
+    from apps.cursos import services
+
+    curso = services.criar_curso(**dados_curso)
+    client.force_login(professor)
+    assert client.get(reverse("catalogo_curso", args=[curso.pk])).status_code == 404

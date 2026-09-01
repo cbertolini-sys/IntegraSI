@@ -373,7 +373,7 @@ def atualizar_ficha(curso, dados, por):
     """
     permissions.garante(
         permissions.pode_editar_ficha(por, curso),
-        "Somente a equipe do curso edita a ficha, e apenas enquanto ele está em produção.",
+        "Somente a equipe do curso o edita, e apenas enquanto ele está em produção.",
     )
     dados = dict(dados)
     temas = dados.pop("temas", None)

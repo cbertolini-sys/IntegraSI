@@ -46,12 +46,12 @@ def ficha(request, pk):
     # responde ao GET, onde o servico nem chega a ser chamado.
     permissions.garante(
         permissions.pode_editar_ficha(request.user, curso),
-        "Somente a equipe do curso edita a ficha, e apenas enquanto ele está em produção.",
+        "Somente a equipe do curso o edita, e apenas enquanto ele está em produção.",
     )
     form = FichaCursoForm(request.POST or None, instance=curso)
     if request.method == "POST" and form.is_valid():
         services.atualizar_ficha(curso, form.cleaned_data, por=request.user)
-        messages.success(request, "Ficha do curso atualizada.")
+        messages.success(request, "Curso atualizado.")
         return redirect("curso", pk=curso.pk)
     contexto = {"curso": curso, "form": form, "pendencias": validacoes.dados_do_curso(curso)}
     contexto.update(contexto_das_habilidades(request, curso))
@@ -113,7 +113,7 @@ def ficha_etapa(request, pk):
     curso = get_object_or_404(Curso, pk=pk)
     permissions.garante(
         permissions.pode_editar_ficha(request.user, curso),
-        "Somente a equipe do curso edita a ficha, e apenas enquanto ele está em produção.",
+        "Somente a equipe do curso o edita, e apenas enquanto ele está em produção.",
     )
     form = FichaCursoForm(instance=curso, publico=publico_da_tela(request, curso))
     escolhida = request.GET.get("etapa_ano") or ""
@@ -136,7 +136,7 @@ def ficha_referencial(request, pk):
     curso = get_object_or_404(Curso, pk=pk)
     permissions.garante(
         permissions.pode_editar_ficha(request.user, curso),
-        "Somente a equipe do curso edita a ficha, e apenas enquanto ele está em produção.",
+        "Somente a equipe do curso o edita, e apenas enquanto ele está em produção.",
     )
     return render(request, "cursos/_referencial.html", contexto_do_referencial(request, curso))
 
@@ -175,7 +175,7 @@ def ficha_habilidades(request, pk):
     curso = get_object_or_404(Curso, pk=pk)
     permissions.garante(
         permissions.pode_editar_ficha(request.user, curso),
-        "Somente a equipe do curso edita a ficha, e apenas enquanto ele está em produção.",
+        "Somente a equipe do curso o edita, e apenas enquanto ele está em produção.",
     )
     return render(request, "cursos/_habilidades.html", contexto_das_habilidades(request, curso))
 

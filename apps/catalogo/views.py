@@ -1,6 +1,7 @@
 import datetime
 
 from django.conf import settings
+from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_ipv46_address
 from django.shortcuts import get_object_or_404, render
@@ -104,6 +105,31 @@ def catalogo(request):
 def catalogo_curso(request, pk):
     curso = get_object_or_404(cursos_publicados().prefetch_related("temas", "competencias"), pk=pk)
     return render(request, "catalogo/curso.html", {"curso": curso})
+
+
+@login_required
+@require_http_methods(["GET"])
+def previa_do_curso(request, pk):
+    """A pagina publica de um curso que ainda nao esta no catalogo.
+
+    A equipe precisa ver como o curso vai aparecer ANTES de publicar, que e quando
+    ainda da para corrigir. Usa o MESMO template da pagina publica de proposito:
+    uma previa desenhada a parte mostraria uma tela que nao existe.
+
+    A permissao e a do curso, e nao a do catalogo: isto e material que ainda nao
+    foi aprovado, e material nao aprovado nao circula (spec 10). Por isso tambem
+    nao ha `cursos_publicados()` aqui - a previa existe justamente para o que nao
+    esta publicado.
+    """
+    from apps.cursos import permissions
+
+    curso = get_object_or_404(
+        Curso.objects.prefetch_related("temas", "competencias", "entregaveis__anexos"), pk=pk
+    )
+    permissions.garante(
+        permissions.pode_ver_curso(request.user, curso), "Curso de outra equipe."
+    )
+    return render(request, "catalogo/curso.html", {"curso": curso, "previa": True})
 
 
 def _ip_da_requisicao(request):

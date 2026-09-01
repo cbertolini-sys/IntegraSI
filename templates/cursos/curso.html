@@ -45,20 +45,28 @@
         {% for membro in membros %}<li>{{ membro.pessoa.nome_completo }}</li>{% empty %}<li>Sem equipe ainda</li>{% endfor %}
       </ul>
 
-      {% if pode_editar_ficha %}
-        <a class="botao botao-linha botao-largo" href="{% url 'ficha' curso.pk %}">Editar ficha</a>
-      {% endif %}
+      {% comment %}
+        Os espacos entre os botoes vinham de `style` inline em cada um. Viraram uma
+        pilha com `gap`, para que acrescentar ou tirar um botao daqui nao dependa
+        de alguem lembrar da margem.
+      {% endcomment %}
+      <div class="acoes-empilhadas">
+        {% if pode_editar_ficha %}
+          <a class="botao botao-largo" href="{% url 'ficha' curso.pk %}">Editar curso</a>
+          <a class="botao botao-linha botao-largo" href="{% url 'previa_do_curso' curso.pk %}">Visualizar curso</a>
+        {% endif %}
 
-      {% if pode_abrir_versao %}
-        <a class="botao botao-linha botao-largo" href="{% url 'nova_versao' curso.pk %}">Abrir nova versão</a>
-      {% endif %}
+        {% if pode_abrir_versao %}
+          <a class="botao botao-linha botao-largo" href="{% url 'nova_versao' curso.pk %}">Abrir nova versão</a>
+        {% endif %}
 
-      {% if curso.pronto_para_o_coordenador and user == curso.professor_responsavel %}
-        <form method="post" action="{% url 'submeter_curso' curso.pk %}" style="margin-top:.75rem">
-          {% csrf_token %}
-          <button type="submit" class="botao botao-largo">Submeter à coordenação</button>
-        </form>
-      {% endif %}
+        {% if curso.pronto_para_o_coordenador and user == curso.professor_responsavel %}
+          <form method="post" action="{% url 'submeter_curso' curso.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="botao botao-largo">Submeter à coordenação</button>
+          </form>
+        {% endif %}
+      </div>
     </aside>
   </div>
 </div>
