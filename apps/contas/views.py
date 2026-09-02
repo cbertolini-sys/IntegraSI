@@ -76,10 +76,9 @@ def _resumo(usuario):
                 # entregavel. Dois entregaveis do mesmo curso sao dois na fila, e
                 # o `.distinct()` por curso que havia aqui dizia um.
                 "rotulo": "Entregáveis para revisar",
-                "valor": Entregavel.objects.filter(
-                    status=StatusEntregavel.EM_REVISAO,
-                    curso__professor_responsavel=usuario,
-                ).count(),
+                # O mesmo recorte que a tela lista, e nao uma segunda contagem:
+                # os que esperam decisao MAIS os que voltaram para a equipe.
+                "valor": sum(len(g) for g in Entregavel.objects.na_revisao_de(usuario)),
                 "url": "fila_revisao",
             },
         ]

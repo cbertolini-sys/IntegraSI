@@ -52,6 +52,30 @@ class EntregavelManager(models.Manager):
     def get_queryset(self):
         return super().get_queryset().order_by("curso", ORDEM_DO_ROTEIRO)
 
+    def na_revisao_de(self, usuario):
+        """Os dois grupos da fila do professor: o que espera decisao dele e o que
+        voltou para a equipe por decisao dele.
+
+        Um metodo so porque a fila e o cartao do painel precisam da MESMA conta -
+        numero que nao bate com a tela que ele abre ja foi defeito duas vezes
+        nesta base.
+
+        O segundo grupo sai filtrado em Python: "a ultima revisao nao foi
+        aprovacao" nao cabe num filtro sem subconsulta, e sao poucos entregaveis
+        por professor. O `prefetch` e o que impede uma consulta por linha.
+        """
+        base = (
+            self.filter(curso__professor_responsavel=usuario)
+            .select_related("curso")
+            .prefetch_related("revisoes")
+        )
+        esperando = list(base.filter(status=StatusEntregavel.EM_REVISAO))
+        com_a_equipe = [
+            e for e in base.filter(status=StatusEntregavel.RASCUNHO)
+            if e.voltou_para_a_equipe
+        ]
+        return esperando, com_a_equipe
+
 
 class Entregavel(models.Model):
     """Um dos cinco pacotes obrigatorios do roteiro. E a unidade de revisao:
@@ -108,6 +132,23 @@ class Entregavel(models.Model):
         return self.get_tipo_display().split(" - ", 1)[-1]
 
     @property
+    def voltou_para_a_equipe(self):
+        """Esta com a equipe por DECISAO do professor, e nao por nunca ter saido
+        do rascunho.
+
+        Depois que DEVOLVIDO virou leitura do historico, esta e a unica pergunta
+        que distingue "devolvido/reaberto" de "ainda nem foi enviado" - e e o que
+        a fila do professor precisa para nao perder de vista o que ele mandou
+        corrigir.
+        """
+        from apps.cursos.models.revisao import Revisao
+
+        if self.status != StatusEntregavel.RASCUNHO:
+            return False
+        revisoes = list(self.revisoes.all())
+        return bool(revisoes) and revisoes[-1].decisao != Revisao.APROVADO
+
+    @property
     def situacao(self):
         """O que a LISTA mostra: o estado atual, mais o que o historico explica.
 
@@ -125,10 +166,9 @@ class Entregavel(models.Model):
         }
         if self.status != StatusEntregavel.RASCUNHO:
             return Situacao(self.get_status_display(), tons.get(self.status, ""))
-        revisoes = list(self.revisoes.all())
-        if not revisoes:
+        if not self.voltou_para_a_equipe:
             return Situacao(self.get_status_display(), "")
-        return Situacao(revisoes[-1].get_decisao_display(), "atencao")
+        return Situacao(list(self.revisoes.all())[-1].get_decisao_display(), "atencao")
 
     @property
     def editavel(self):

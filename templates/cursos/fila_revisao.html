@@ -21,23 +21,58 @@
   </div>
 
   <div class="faixa corpo-trabalho">
-    <ul class="registros">
-      {% for entregavel in entregaveis %}
-        <li class="registro">
-          <div>
-            <h3><a href="{% url 'revisar' entregavel.pk %}">{{ entregavel.get_tipo_display }}</a></h3>
-            <p class="detalhe">
-              <span>{{ entregavel.curso.titulo }}</span>
-              <span class="sep">&middot;</span>
-              <span>enviado em {{ entregavel.atualizado_em|date:"d/m/Y" }}</span>
-            </p>
-          </div>
-          <span class="estado espera">Em revisão</span>
-        </li>
-      {% empty %}
-        <li class="vazio"><p>Nada aguardando revisão.</p></li>
-      {% endfor %}
-    </ul>
+    {% comment %}
+      Dois grupos, e nao uma lista so. Um espera decisao do professor; o outro
+      voltou para a equipe por decisao dele e espera trabalho DELA. Misturados, o
+      professor abriria a tela sem saber quais itens pedem alguma coisa agora.
+
+      O segundo grupo existe porque devolver e reabrir passaram a deixar o
+      entregavel em RASCUNHO: sem ele, o professor perde de vista exatamente o
+      que mandou corrigir.
+    {% endcomment %}
+    <section class="bloco">
+      <h3>Esperando por você</h3>
+      <ul class="registros">
+        {% for entregavel in esperando %}
+          <li class="registro entregavel-da-fila">
+            <div>
+              <h3><a href="{% url 'revisar' entregavel.pk %}">{{ entregavel.get_tipo_display }}</a></h3>
+              <p class="detalhe">
+                <span>{{ entregavel.curso.titulo }}</span>
+                <span class="sep">&middot;</span>
+                <span>enviado em {{ entregavel.atualizado_em|date:"d/m/Y" }}</span>
+              </p>
+            </div>
+            {% with s=entregavel.situacao %}<span class="estado {{ s.tom }}">{{ s.rotulo }}</span>{% endwith %}
+          </li>
+        {% empty %}
+          <li class="vazio"><p>Nada aguardando sua decisão.</p></li>
+        {% endfor %}
+      </ul>
+    </section>
+
+    {% if com_a_equipe %}
+      <section class="bloco">
+        <h3>Com a equipe</h3>
+        <p class="apoio-pendencias">Você devolveu ou reabriu, e a equipe está
+           corrigindo. Volta para a sua fila quando for reenviado.</p>
+        <ul class="registros">
+          {% for entregavel in com_a_equipe %}
+            <li class="registro entregavel-da-fila">
+              <div>
+                <h3><a href="{% url 'revisar' entregavel.pk %}">{{ entregavel.get_tipo_display }}</a></h3>
+                <p class="detalhe">
+                  <span>{{ entregavel.curso.titulo }}</span>
+                  <span class="sep">&middot;</span>
+                  <span>desde {{ entregavel.atualizado_em|date:"d/m/Y" }}</span>
+                </p>
+              </div>
+              {% with s=entregavel.situacao %}<span class="estado {{ s.tom }}">{{ s.rotulo }}</span>{% endwith %}
+            </li>
+          {% endfor %}
+        </ul>
+      </section>
+    {% endif %}
   </div>
 </div>
 {% endblock %}

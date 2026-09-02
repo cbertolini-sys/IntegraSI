@@ -310,10 +310,12 @@ def fila_revisao(request):
     #
     # `e_professor` basta: ele vale para o coordenador (CLAUDE.md, Papeis).
     permissions.garante(request.user.e_professor, "Área do professor e da coordenação.")
-    entregaveis = Entregavel.objects.filter(
-        status=StatusEntregavel.EM_REVISAO, curso__professor_responsavel=request.user
-    ).select_related("curso")
-    return render(request, "cursos/fila_revisao.html", {"entregaveis": entregaveis})
+    esperando, com_a_equipe = Entregavel.objects.na_revisao_de(request.user)
+    return render(
+        request,
+        "cursos/fila_revisao.html",
+        {"esperando": esperando, "com_a_equipe": com_a_equipe},
+    )
 
 
 @login_required
