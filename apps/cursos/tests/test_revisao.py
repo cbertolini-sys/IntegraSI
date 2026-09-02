@@ -86,7 +86,7 @@ def test_ciclo_de_devolucao_e_reenvio_guarda_o_historico(slides_prontos, aluno, 
     services.enviar_para_revisao(slides_prontos, por=aluno)
     services.devolver_entregavel(slides_prontos, por=professor, comentario="Corrija a capa.")
     services.enviar_para_revisao(slides_prontos, por=aluno)
-    services.aprovar_entregavel(slides_prontos, por=professor)
+    services.aprovar_entregavel(slides_prontos, por=professor, comentario="Aprovado.")
     assert list(Revisao.objects.filter(entregavel=slides_prontos).values_list("decisao", flat=True)) == [
         Revisao.DEVOLVIDO,
         Revisao.APROVADO,
@@ -96,13 +96,13 @@ def test_ciclo_de_devolucao_e_reenvio_guarda_o_historico(slides_prontos, aluno, 
 @pytest.mark.django_db
 def test_nao_se_aprova_entregavel_que_nao_esta_em_revisao(slides_prontos, professor):
     with pytest.raises(ValidationError):
-        services.aprovar_entregavel(slides_prontos, por=professor)
+        services.aprovar_entregavel(slides_prontos, por=professor, comentario="Aprovado.")
 
 
 @pytest.mark.django_db
 def test_nao_se_reenvia_entregavel_aprovado(slides_prontos, aluno, professor):
     services.enviar_para_revisao(slides_prontos, por=aluno)
-    services.aprovar_entregavel(slides_prontos, por=professor)
+    services.aprovar_entregavel(slides_prontos, por=professor, comentario="Aprovado.")
     with pytest.raises(ValidationError):
         services.enviar_para_revisao(slides_prontos, por=aluno)
 
@@ -123,11 +123,15 @@ def test_nao_se_devolve_entregavel_que_nao_esta_em_revisao(slides_prontos, profe
 
 
 @pytest.mark.django_db
-def test_aprovar_sem_comentario_grava_comentario_vazio(slides_prontos, aluno, professor):
+def test_aprovar_guarda_o_comentario_no_historico(slides_prontos, aluno, professor):
+    """Trocou de regra a pedido: aprovar aceitava comentario vazio e o registro
+    nascia mudo. Agora toda decisao exige um porque, e o texto vai para o
+    historico que a tela de revisao mostra. A recusa do vazio tem teste proprio,
+    em test_reabrir_e_historico.py."""
     services.enviar_para_revisao(slides_prontos, por=aluno)
-    services.aprovar_entregavel(slides_prontos, por=professor)
+    services.aprovar_entregavel(slides_prontos, por=professor, comentario="<p>Ficou bom.</p>")
     revisao = Revisao.objects.get(entregavel=slides_prontos)
-    assert revisao.comentario == ""
+    assert revisao.comentario == "<p>Ficou bom.</p>"
 
 
 @pytest.mark.django_db
@@ -140,7 +144,7 @@ def test_aprovar_e_atomico_e_desfaz_o_status_se_a_revisao_falhar(slides_prontos,
     monkeypatch.setattr(Revisao.objects, "create", explode)
 
     with pytest.raises(RuntimeError):
-        services.aprovar_entregavel(slides_prontos, por=professor)
+        services.aprovar_entregavel(slides_prontos, por=professor, comentario="Aprovado.")
 
     slides_prontos.refresh_from_db()
     assert slides_prontos.status == StatusEntregavel.EM_REVISAO
@@ -152,7 +156,7 @@ def test_curso_so_fica_pronto_com_os_cinco_aprovados(slides_prontos, aluno, prof
     curso = slides_prontos.curso
     assert curso.pronto_para_o_coordenador is False
     services.enviar_para_revisao(slides_prontos, por=aluno)
-    services.aprovar_entregavel(slides_prontos, por=professor)
+    services.aprovar_entregavel(slides_prontos, por=professor, comentario="Aprovado.")
     curso.refresh_from_db()
     assert curso.pronto_para_o_coordenador is False
     curso.entregaveis.update(status=StatusEntregavel.APROVADO)

@@ -208,9 +208,30 @@ def test_fila_de_outro_professor_esta_vazia(client, slides_em_revisao, outro_pro
 @pytest.mark.django_db
 def test_aprovar_pela_tela(client, professor, slides_em_revisao):
     client.force_login(professor)
-    client.post(reverse("decidir", args=[slides_em_revisao.pk]), {"decisao": "APROVAR", "comentario": ""})
+    client.post(
+        # Comentario preenchido: aprovar passou a exigi-lo, como devolver ja
+        # exigia. O caso do vazio virou teste proprio, logo abaixo.
+        reverse("decidir", args=[slides_em_revisao.pk]),
+        {"decisao": "APROVAR", "comentario": "<p>Ficou bom.</p>"},
+    )
     slides_em_revisao.refresh_from_db()
     assert slides_em_revisao.status == StatusEntregavel.APROVADO
+
+
+@pytest.mark.django_db
+def test_aprovar_sem_comentario_e_barrado_na_tela(client, professor, slides_em_revisao):
+    """O gemeo de `test_devolver_sem_comentario_e_barrado_na_tela`: as duas
+    decisoes exigem um porque, e a recusa chega como mensagem, nunca como 500."""
+    client.force_login(professor)
+    resposta = client.post(
+        reverse("decidir", args=[slides_em_revisao.pk]),
+        {"decisao": "APROVAR", "comentario": "  "},
+        follow=True,
+    )
+    assert resposta.status_code == 200
+    slides_em_revisao.refresh_from_db()
+    assert slides_em_revisao.status == StatusEntregavel.EM_REVISAO
+    assert "comentário" in resposta.content.decode()
 
 
 @pytest.mark.django_db

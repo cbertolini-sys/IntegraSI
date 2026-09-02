@@ -11,7 +11,16 @@ class Revisao(models.Model):
 
     APROVADO = "APROVADO"
     DEVOLVIDO = "DEVOLVIDO"
-    DECISOES = [(APROVADO, "Aprovado"), (DEVOLVIDO, "Devolvido")]
+    # Reabrir NAO e devolver: devolver responde a um envio da equipe, reabrir
+    # desfaz uma aprovacao do proprio professor. Quem le o historico precisa
+    # distinguir os dois, entao e valor proprio - acrescentado ao vocabulario,
+    # sem alterar os dois que ja existiam.
+    REABERTO = "REABERTO"
+    DECISOES = [
+        (APROVADO, "Aprovado"),
+        (DEVOLVIDO, "Devolvido"),
+        (REABERTO, "Reaberto"),
+    ]
 
     entregavel = models.ForeignKey(
         "cursos.Entregavel", on_delete=models.CASCADE, related_name="revisoes", verbose_name="entregável"

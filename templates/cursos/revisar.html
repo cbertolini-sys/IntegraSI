@@ -71,23 +71,67 @@
 
       <div class="cartao-lateral">
         <h2>Sua decisão</h2>
-        <form method="post" action="{% url 'decidir' entregavel.pk %}">
-          {% csrf_token %}
-          <div class="campo">
-            <span class="rotulo-campo">
-              <label for="comentario">Comentário</label>
-              <button type="button" class="ajuda-campo"
-                data-ajuda="Ao devolver, diga o que falta e onde. É este texto que a equipe lê para saber o que corrigir. Aceita negrito, listas e links."
-                tabindex="-1" aria-label="O que escrever no comentário">?</button>
-            </span>
-            {# rows=4 poe o editor curto: um comentario nao e uma secao do plano. #}
-            <textarea id="comentario" name="comentario" rows="4" data-editor></textarea>
-          </div>
-          <div class="acoes-empilhadas">
-            <button type="submit" name="decisao" value="APROVAR" class="botao botao-largo">Aprovar</button>
-            <button type="submit" name="decisao" value="DEVOLVER" class="botao botao-linha botao-largo">Devolver</button>
-          </div>
-        </form>
+
+        {% if pode_decidir or pode_reabrir %}
+          <form method="post" action="{% url 'decidir' entregavel.pk %}">
+            {% csrf_token %}
+            <div class="campo">
+              <span class="rotulo-campo">
+                <label for="comentario">Comentário</label>
+                <span class="obrigatorio" aria-hidden="true">*</span>
+                <button type="button" class="ajuda-campo"
+                  data-ajuda="Toda decisão fica no histórico com o seu nome, e é este texto que a equipe lê. Ao devolver, diga o que falta e onde. Aceita negrito, listas e links."
+                  tabindex="-1" aria-label="O que escrever no comentário">?</button>
+              </span>
+              {# rows=4 poe o editor curto: um comentario nao e uma secao do plano. #}
+              <textarea id="comentario" name="comentario" rows="4" data-editor required></textarea>
+            </div>
+            <div class="acoes-empilhadas">
+              {% if pode_decidir %}
+                <button type="submit" name="decisao" value="APROVAR" class="botao botao-largo">Aprovar</button>
+                <button type="submit" name="decisao" value="DEVOLVER" class="botao botao-linha botao-largo">Devolver</button>
+              {% else %}
+                {% comment %}
+                  Reabrir aparece no lugar das outras duas, e nao ao lado: sao
+                  estados diferentes do entregavel, e nunca cabem juntos.
+                {% endcomment %}
+                <button type="submit" name="decisao" value="REABRIR" class="botao botao-linha botao-largo">Reabrir para a equipe</button>
+              {% endif %}
+            </div>
+          </form>
+        {% else %}
+          <p class="apoio-pendencias">
+            {% if entregavel.status == "APROVADO" %}
+              Aprovado, e o curso já foi enviado para a coordenação: não dá mais
+              para reabrir por aqui.
+            {% else %}
+              Este entregável não está aguardando decisão.
+            {% endif %}
+          </p>
+        {% endif %}
+
+        {% if revisoes %}
+          {% comment %}
+            O historico existia desde o Plano 2 e nao aparecia em tela nenhuma:
+            aprovar com comentario gravava o comentario e ninguem mais o via, o
+            que na pratica e o mesmo que nao poder comentar.
+
+            |safe seguro porque `Revisao.save()` sanitiza com nh3.
+          {% endcomment %}
+          <h3 class="titulo-historico">Decisões anteriores</h3>
+          <ol class="historico">
+            {% for revisao in revisoes %}
+              <li class="historico-item">
+                <p class="historico-topo">
+                  <span class="estado {% if revisao.decisao == 'APROVADO' %}ok{% elif revisao.decisao == 'REABERTO' %}espera{% else %}atencao{% endif %}">{{ revisao.get_decisao_display }}</span>
+                  <time datetime="{{ revisao.criado_em|date:'c' }}">{{ revisao.criado_em|date:"d/m/Y" }}</time>
+                </p>
+                <p class="historico-quem">{{ revisao.revisor.nome_completo }}</p>
+                <div class="historico-texto">{{ revisao.comentario|safe }}</div>
+              </li>
+            {% endfor %}
+          </ol>
+        {% endif %}
       </div>
     </aside>
   </div>

@@ -82,7 +82,7 @@ def test_aluno_de_fora_nao_envia_para_revisao(curso_com_equipe, outro_aluno):
 def test_aluno_nao_aprova_o_proprio_entregavel(curso_com_equipe, aluno):
     slides = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.SLIDES)
     with pytest.raises(PermissionDenied) as erro:
-        services.aprovar_entregavel(slides, por=aluno)
+        services.aprovar_entregavel(slides, por=aluno, comentario="Aprovado.")
     assert str(erro.value) == "Somente o professor responsável revisa."
 
 
@@ -168,7 +168,7 @@ def test_professor_nao_responsavel_nao_aprova(curso_com_equipe, aluno, arquivo_q
     )
     slides = _envia_slides_para_revisao(curso_com_equipe, aluno, arquivo_qualquer)
     with pytest.raises(PermissionDenied):
-        services.aprovar_entregavel(slides, por=outro_professor)
+        services.aprovar_entregavel(slides, por=outro_professor, comentario="Aprovado.")
 
 
 @pytest.mark.django_db
@@ -195,7 +195,7 @@ def test_coordenador_revisa(curso_com_equipe, coordenador, aluno, arquivo_qualqu
     from apps.cursos.choices import StatusEntregavel
 
     slides = _envia_slides_para_revisao(curso_com_equipe, aluno, arquivo_qualquer)
-    services.aprovar_entregavel(slides, por=coordenador)
+    services.aprovar_entregavel(slides, por=coordenador, comentario="Aprovado.")
     slides.refresh_from_db()
     assert slides.status == StatusEntregavel.APROVADO
 

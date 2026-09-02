@@ -312,10 +312,27 @@ def fila_revisao(request):
 def revisar(request, pk):
     entregavel = get_object_or_404(Entregavel, pk=pk)
     permissions.garante(permissions.pode_revisar(request.user, entregavel.curso), "Curso de outro professor.")
+    from apps.cursos.choices import STATUS_EDITAVEIS
+
     return render(
         request,
         "cursos/revisar.html",
-        {"entregavel": entregavel, "pendencias": validacoes.pendencias(entregavel)},
+        {
+            "entregavel": entregavel,
+            "pendencias": validacoes.pendencias(entregavel),
+            # Do mais novo para o mais antigo: quem abre a tela quer a ultima
+            # decisao primeiro. O `ordering` do model e cronologico porque ele
+            # serve ao historico, nao a esta leitura.
+            "revisoes": entregavel.revisoes.select_related("revisor").order_by("-criado_em"),
+            # As duas decisoes possiveis, calculadas aqui e nao no template
+            # (spec 10): revisar so vale em EM_REVISAO, e reabrir so enquanto o
+            # curso nao subiu para a coordenacao.
+            "pode_decidir": entregavel.status == StatusEntregavel.EM_REVISAO,
+            "pode_reabrir": (
+                entregavel.status == StatusEntregavel.APROVADO
+                and entregavel.curso.status in STATUS_EDITAVEIS
+            ),
+        },
     )
 
 
@@ -338,13 +355,22 @@ def submeter_curso(request, pk):
 def decidir(request, pk):
     entregavel = get_object_or_404(Entregavel, pk=pk)
     comentario = request.POST.get("comentario", "")
+    decisao = request.POST.get("decisao")
     try:
-        if request.POST.get("decisao") == "APROVAR":
+        # Igualdade explicita nos tres ramos, sem pega-tudo: o `else` que havia
+        # aqui mandava qualquer valor inesperado para a devolucao.
+        if decisao == "APROVAR":
             services.aprovar_entregavel(entregavel, por=request.user, comentario=comentario)
             messages.success(request, "Entregável aprovado.")
-        else:
+        elif decisao == "DEVOLVER":
             services.devolver_entregavel(entregavel, por=request.user, comentario=comentario)
             messages.success(request, "Entregável devolvido à equipe.")
+        elif decisao == "REABRIR":
+            services.reabrir_entregavel(entregavel, por=request.user, comentario=comentario)
+            messages.success(request, "Entregável reaberto para a equipe.")
+        else:
+            messages.error(request, "Decisão não reconhecida.")
+            return redirect("revisar", pk=entregavel.pk)
     except ValidationError as erro:
         for mensagem in erro.messages:
             messages.error(request, mensagem)

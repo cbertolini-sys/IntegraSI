@@ -39,9 +39,13 @@
     </p>
   {% endif %}
 
-  {% if ultima_revisao and ultima_revisao.decisao == "DEVOLVIDO" %}
+  {% comment %}
+    REABERTO entra junto: sem ele a reabertura passava calada, e o entregavel
+    voltava a ser editavel sem ninguem dizer por que.
+  {% endcomment %}
+  {% if ultima_revisao and ultima_revisao.decisao != "APROVADO" %}
     <section class="bloco devolutiva">
-      <h3>Devolvido pelo professor</h3>
+      <h3>{% if ultima_revisao.decisao == "REABERTO" %}Reaberto pelo professor{% else %}Devolvido pelo professor{% endif %}</h3>
       {% comment %}
         |safe seguro porque `Revisao.save()` sanitiza com nh3 contra
         TAGS_PERMITIDAS, incondicionalmente. Sem ele o editor do professor seria

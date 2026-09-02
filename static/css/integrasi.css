@@ -2351,6 +2351,91 @@ textarea:focus {
   margin: 0;
 }
 
+/* ---------- o historico das decisoes ---------- */
+
+/* Fica dentro do cartao da decisao, separado do formulario: e a mesma conversa,
+   e o que ja foi dito explica o que vem agora. */
+.titulo-historico {
+  font-family: var(--display);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cinza);
+  margin: 1.5rem 0 0.875rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--linha);
+}
+
+.historico {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Linha do tempo: o fio liga as decisoes e o ponto marca cada uma. A ordem na
+   tela e do mais novo para o mais antigo, entao o fio desce para o passado. */
+.historico-item {
+  position: relative;
+  padding-left: 1.125rem;
+}
+
+.historico-item::before {
+  content: "";
+  position: absolute;
+  left: 0.1875rem;
+  top: 0.5rem;
+  width: 0.4375rem;
+  height: 0.4375rem;
+  border-radius: 50%;
+  background: var(--linha);
+  box-shadow: 0 0 0 2px var(--branco);
+}
+
+.historico-item:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: 0.375rem;
+  top: 1rem;
+  bottom: -1rem;
+  width: 1px;
+  background: var(--linha);
+}
+
+.historico-topo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.historico-topo time {
+  font-family: var(--dado);
+  font-size: 0.75rem;
+  color: var(--cinza-claro);
+  font-variant-numeric: tabular-nums;
+}
+
+.historico-quem {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--texto);
+  margin: 0.375rem 0 0;
+}
+
+.historico-texto {
+  font-size: 0.875rem;
+  color: var(--cinza);
+  line-height: 1.5;
+  margin-top: 0.25rem;
+}
+
+.historico-texto > :first-child { margin-top: 0; }
+.historico-texto > :last-child { margin-bottom: 0; }
+
 /* A lateral acompanha a rolagem: a lista do que falta so serve enquanto a pessoa
    preenche, e um bloco no topo sai da tela no primeiro rolar. */
 @media (min-width: 58rem) {

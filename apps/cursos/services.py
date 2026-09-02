@@ -171,6 +171,7 @@ def aprovar_entregavel(entregavel, por, comentario=""):
         "Somente o professor responsável revisa.",
     )
     _exige_em_revisao(entregavel)
+    _exige_comentario(comentario, "Escreva um comentário antes de aprovar.")
     entregavel.status = StatusEntregavel.APROVADO
     entregavel.save(update_fields=["status", "atualizado_em"])
     Revisao.objects.create(
@@ -188,14 +189,57 @@ def devolver_entregavel(entregavel, por, comentario):
         "Somente o professor responsável revisa.",
     )
     _exige_em_revisao(entregavel)
-    if not (comentario or "").strip():
-        raise ValidationError("Escreva o que precisa ser corrigido antes de devolver.")
+    _exige_comentario(comentario, "Escreva o que precisa ser corrigido antes de devolver.")
     entregavel.status = StatusEntregavel.DEVOLVIDO
     entregavel.save(update_fields=["status", "atualizado_em"])
     Revisao.objects.create(
         entregavel=entregavel, revisor=por, decisao=Revisao.DEVOLVIDO, comentario=comentario
     )
     return entregavel
+
+
+@transaction.atomic
+def reabrir_entregavel(entregavel, por, comentario):
+    """Desfaz uma aprovacao enquanto o curso ainda esta em producao.
+
+    Aprovar cedo demais era definitivo: `_exige_em_revisao` recusa qualquer
+    decisao fora de EM_REVISAO, e nao havia caminho de volta. O entregavel volta
+    para DEVOLVIDO, que e o estado em que a equipe pode editar de novo.
+
+    So enquanto o curso nao subiu: depois de submetido, mexer num entregavel
+    mudaria por baixo o material que a coordenacao esta analisando.
+    """
+    # Importe local, como o resto do arquivo faz com STATUS_EDITAVEIS.
+    from apps.cursos.choices import STATUS_EDITAVEIS
+
+    permissions.garante(
+        permissions.pode_revisar(por, entregavel.curso),
+        "Somente o professor responsável revisa.",
+    )
+    if entregavel.status != StatusEntregavel.APROVADO:
+        raise ValidationError("Só é possível reabrir um entregável aprovado.")
+    if entregavel.curso.status not in STATUS_EDITAVEIS:
+        raise ValidationError(
+            "O curso já foi enviado para a coordenação; não dá para reabrir um "
+            "entregável agora."
+        )
+    _exige_comentario(comentario, "Escreva por que está reabrindo o entregável.")
+    entregavel.status = StatusEntregavel.DEVOLVIDO
+    entregavel.save(update_fields=["status", "atualizado_em"])
+    Revisao.objects.create(
+        entregavel=entregavel, revisor=por, decisao=Revisao.REABERTO, comentario=comentario
+    )
+    return entregavel
+
+
+def _exige_comentario(comentario, mensagem):
+    """Toda decisao registra um porque.
+
+    O historico so vale se cada linha dele disser alguma coisa: aprovar aceitava
+    comentario vazio, e o registro nascia mudo.
+    """
+    if not (comentario or "").strip():
+        raise ValidationError(mensagem)
 
 
 def _exige_em_revisao(entregavel):
