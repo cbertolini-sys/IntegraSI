@@ -749,6 +749,30 @@ def alocar_professor(curso, professor, por):
     return adicionar_membro(curso, professor, por=por)
 
 
+def alocar_aluno_existente(curso, aluno, por):
+    """Poe na equipe um aluno que ja tem conta (um curso nao e o primeiro dele).
+
+    Sem convite, pelo mesmo motivo de `alocar_professor`: a conta ja foi aberta
+    uma vez, e mandar primeiro acesso de novo seria convite que nao serve para
+    nada. Quem nunca ativou continua com o convite que recebeu.
+
+    Existe porque `alocar_aluno` recusa e-mail ja cadastrado, e recusa de
+    proposito: um endereco digitado errado poria a pessoa errada numa equipe. A
+    mensagem de la mandava pedir a coordenacao, e nao havia por onde. Escolher de
+    uma lista fecha o buraco pelo outro lado - nao ha o que digitar errado.
+
+    A recusa de None e explicita, como em `alocar_professor`: o select pode chegar
+    vazio, e sem ela o None seguiria para adicionar_membro e viraria 500.
+    """
+    permissions.garante(
+        permissions.pode_gerir_equipe(por, curso),
+        "Somente o professor responsável monta a equipe.",
+    )
+    if aluno is None or not aluno.e_aluno:
+        raise ValidationError("Escolha um estudante para a equipe.")
+    return adicionar_membro(curso, aluno, por=por)
+
+
 @transaction.atomic
 def alocar_aluno(curso, nome, email, por, base_url=""):
     """Cria a conta do aluno, vincula a equipe e envia o convite (regras 2 e 3

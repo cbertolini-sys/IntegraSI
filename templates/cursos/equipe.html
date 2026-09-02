@@ -34,7 +34,33 @@
     </div>
 
     <aside class="lateral">
-      <h2>Alocar estudante</h2>
+      {% comment %}
+        Dois caminhos para estudante, e nao um: a partir do segundo curso de cada
+        aluno o normal e escolher da lista. `alocar_aluno` recusa e-mail ja
+        cadastrado de proposito (endereco digitado errado poria a pessoa errada na
+        equipe), e ate agora a mensagem mandava pedir a coordenacao sem haver por
+        onde.
+      {% endcomment %}
+      <h2>Estudante já cadastrado</h2>
+      <p>Quem já tem conta no IntegraSI, por ter produzido outro curso. Entra
+         direto, sem novo convite.</p>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="acao" value="aluno_existente">
+        <div class="campo">
+          <label for="id_aluno">Estudante</label>
+          <select name="aluno" id="id_aluno" required>
+            {% for pessoa in alunos %}
+              <option value="{{ pessoa.pk }}">{{ pessoa.nome_completo }}</option>
+            {% empty %}
+              <option value="" disabled>Nenhum estudante disponível</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="botao botao-largo">Alocar estudante</button>
+      </form>
+
+      <h2>Estudante novo</h2>
       <p>Informe nome e e-mail. A pessoa recebe um convite para criar a senha e
          completar o cadastro. O link vale sete dias.</p>
       <form method="post">

@@ -120,7 +120,9 @@ def test_professor_monta_equipe(client, professor, dados_curso):
     client.force_login(professor)
     resposta = client.post(
         reverse("equipe", args=[curso.pk]),
-        {"nome": "Joana Silva", "email": "joana@acad.ufsm.br"},
+        # `acao` explicito, como o formulario da tela sempre mandou: o desvio da
+        # view deixou de ter ramo pega-tudo quando o terceiro formulario entrou.
+        {"acao": "aluno", "nome": "Joana Silva", "email": "joana@acad.ufsm.br"},
         follow=True,
     )
     assert resposta.status_code == 200
@@ -150,7 +152,7 @@ def test_equipe_mostra_todas_as_mensagens_de_erro_do_servico(
     client.force_login(professor)
     resposta = client.post(
         reverse("equipe", args=[curso.pk]),
-        {"nome": "Joana Silva", "email": "joana@acad.ufsm.br"},
+        {"acao": "aluno", "nome": "Joana Silva", "email": "joana@acad.ufsm.br"},
         follow=True,
     )
     conteudo = resposta.content.decode()
@@ -166,10 +168,17 @@ def test_equipe_com_formulario_vazio_nao_quebra(client, professor, dados_curso):
     com o contrato antigo: `create_user` levanta `ValueError` para e-mail vazio, a
     view so captura `ValidationError`, e o formulario novo reintroduziu o 500 ate
     o servico passar a recusar explicitamente.
+
+    Manda `acao` de proposito: e o formulario do aluno novo que precisa ser
+    exercitado. Um POST sem `acao` nenhuma para no desvio da view e nunca chega ao
+    servico, entao provaria outra coisa - essa outra coisa tem teste proprio, em
+    test_alocar_aluno_existente.py.
     """
     curso = services.criar_curso(**dados_curso)
     client.force_login(professor)
-    resposta = client.post(reverse("equipe", args=[curso.pk]), {}, follow=True)
+    resposta = client.post(
+        reverse("equipe", args=[curso.pk]), {"acao": "aluno"}, follow=True
+    )
     assert resposta.status_code == 200
     assert "Informe o e-mail" in resposta.content.decode()
 

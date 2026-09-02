@@ -186,17 +186,29 @@ def equipe(request, pk):
     curso = get_object_or_404(Curso, pk=pk)
     permissions.garante(permissions.pode_gerir_equipe(request.user, curso), "Curso de outro professor.")
     if request.method == "POST":
-        # Um campo escondido distingue os dois formularios da tela. Sem ele, o
-        # POST do select cairia no ramo do aluno e viraria "informe o nome".
-        if request.POST.get("acao") == "professor":
+        # Um campo escondido distingue os TRES formularios da tela, e a igualdade
+        # e explicita nos tres: o `else` que havia aqui era um pega-tudo, e
+        # qualquer `acao` inesperada caia no ramo do aluno, que cria conta e
+        # dispara e-mail. E o mesmo padrao de `pessoas` e de `decidir_curso`, que
+        # ja tinham aprendido isso.
+        acao = request.POST.get("acao")
+        if acao == "professor":
             _alocar_professor(request, curso)
-        else:
+        elif acao == "aluno_existente":
+            _alocar_aluno_existente(request, curso)
+        elif acao == "aluno":
             _alocar_aluno(request, curso)
+        else:
+            messages.error(request, "Ação não reconhecida.")
         return redirect("equipe", pk=curso.pk)
     return render(
         request,
         "cursos/equipe.html",
-        {"curso": curso, "professores": _professores_disponiveis(curso)},
+        {
+            "curso": curso,
+            "professores": _professores_disponiveis(curso),
+            "alunos": _alunos_disponiveis(curso),
+        },
     )
 
 
@@ -229,6 +241,30 @@ def _professores_disponiveis(curso):
         .exclude(equipes__curso=curso)
         .order_by("nome_completo")
     )
+
+
+def _alunos_disponiveis(curso):
+    """Alunos que ainda nao estao na equipe deste curso.
+
+    Mesmo recorte de `_professores_disponiveis`, com o outro papel: oferecer quem
+    ja esta dentro so daria erro de unicidade.
+    """
+    return (
+        Usuario.objects.filter(papel=Usuario.ALUNO, is_active=True)
+        .exclude(equipes__curso=curso)
+        .order_by("nome_completo")
+    )
+
+
+def _alocar_aluno_existente(request, curso):
+    escolhido = Usuario.objects.filter(pk=request.POST.get("aluno") or 0).first()
+    try:
+        membro = services.alocar_aluno_existente(curso, escolhido, por=request.user)
+    except ValidationError as erro:
+        for mensagem in erro.messages:
+            messages.error(request, mensagem)
+    else:
+        messages.success(request, f"{membro.pessoa.nome_completo} entrou na equipe.")
 
 
 def _alocar_professor(request, curso):
