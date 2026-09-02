@@ -14,6 +14,7 @@ from django.urls import reverse
 
 from apps.catalogo.tests.test_catalogo import publica
 from apps.cursos import services
+from apps.cursos.choices import StatusCurso
 from apps.cursos.models import LogTransicaoCurso
 
 
@@ -50,11 +51,24 @@ def test_a_tela_da_coordenacao_tambem(client, despublicado, coordenador):
 @pytest.mark.django_db
 def test_do_mais_novo_para_o_mais_antigo(client, despublicado, coordenador):
     """A ultima decisao e a que explica o estado de agora."""
+    import re
+
     services.publicar_curso(despublicado, por=coordenador)
     client.force_login(coordenador)
     html = client.get(reverse("curso", args=[despublicado.pk])).content.decode()
     historico = html[html.index("Histórico do curso") :]
-    assert historico.index("Publicado") < historico.index("Despublicado")
+
+    # A SEQUENCIA inteira, e nao a primeira ocorrencia de cada palavra: a ordem
+    # cronologica tambem tem um "Publicado" antes do primeiro "Despublicado", e a
+    # primeira versao deste teste passava nos dois sentidos. Achado na campanha
+    # de delecao.
+    selos = re.findall(r'<span class="estado[^"]*">([^<]+)</span>', historico)
+    esperado = list(
+        despublicado.transicoes.order_by("-criado_em").values_list("para_status", flat=True)
+    )
+    assert [s for s in selos] == [
+        dict(StatusCurso.choices)[s] for s in esperado
+    ], selos
 
 
 @pytest.mark.django_db
@@ -79,19 +93,39 @@ def test_curso_sem_transicao_nao_mostra_cartao_vazio(client, dados_curso, profes
 
 @pytest.mark.django_db
 def test_o_rastro_nao_custa_uma_consulta_por_linha(client, despublicado, coordenador):
-    """Cada linha le o nome de quem decidiu."""
+    """Cada linha le o nome de quem decidiu.
+
+    O MESMO curso, antes e depois de ganhar transicoes: comparar dois cursos
+    diferentes nao e controle - eles estao em estados diferentes e por isso fazem
+    numeros diferentes de consultas por motivos que nada tem a ver com o
+    historico. A primeira versao deste teste comparava dois, e a diferenca de uma
+    consulta vinha do "Abrir nova versão" que so um deles mostra.
+
+    E conta o TOTAL: sem `select_related`, as consultas extras batem na tabela de
+    USUARIOS, nao na de transicoes - filtrar pela tabela de transicoes, como a
+    versao anterior fazia, nao prendia nada.
+    """
     from django.db import connection
     from django.test.utils import CaptureQueriesContext
 
-    for _ in range(3):
-        services.publicar_curso(despublicado, por=coordenador)
-        services.despublicar_curso(despublicado, por=coordenador, motivo="De novo.")
-
     client.force_login(coordenador)
-    with CaptureQueriesContext(connection) as consultas:
+    with CaptureQueriesContext(connection) as poucas:
         client.get(reverse("curso", args=[despublicado.pk]))
-    batidas = [c for c in consultas if LogTransicaoCurso._meta.db_table in c["sql"]]
-    assert len(batidas) <= 1, f"{len(batidas)} consultas na tabela de transições"
+
+    for _ in range(6):
+        LogTransicaoCurso.objects.create(
+            curso=despublicado,
+            de_status=despublicado.status,
+            para_status=despublicado.status,
+            usuario=coordenador,
+        )
+    with CaptureQueriesContext(connection) as muitas:
+        client.get(reverse("curso", args=[despublicado.pk]))
+
+    assert len(muitas) == len(poucas), (
+        f"{len(poucas)} consultas com {despublicado.transicoes.count() - 6} "
+        f"transições e {len(muitas)} com {despublicado.transicoes.count()}"
+    )
 
 
 def test_o_rastro_e_um_arquivo_so():
