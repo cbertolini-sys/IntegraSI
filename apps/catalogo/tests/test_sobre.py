@@ -33,3 +33,64 @@ def test_o_link_esta_na_barra(client):
 @pytest.mark.django_db
 def test_metodo_errado_e_rejeitado(client):
     assert client.delete(reverse("sobre")).status_code == 405
+
+
+@pytest.mark.django_db
+def test_as_secoes_da_pagina_fecham(client):
+    """A seção dos fluxogramas não fechava, e a chamada final ficava aninhada
+    dentro dela.
+
+    O navegador conserta sozinho e a tela parece certa, então o defeito só
+    apareceria no dia em que alguém estilizasse `.bloco-sobre > *` ou lesse a
+    página com leitor de tela. A página é estática (só `{% url %}`), então contar
+    as tags aqui é uma medida honesta.
+    """
+    import re
+
+    conteudo = client.get(reverse("sobre")).content.decode()
+    # Do `<div` que abre a pagina, e nao de dentro dele: comecando na classe, o
+    # recorte pegava o `</div>` da propria faixa sem o `<div>` correspondente e a
+    # conta nascia torta por construcao.
+    corpo = conteudo[conteudo.rindex("<div", 0, conteudo.index("pagina-sobre")) : conteudo.index("</main>")]
+    for tag in ("section", "article", "ol", "ul", "li", "div"):
+        abre = len(re.findall(rf"<{tag}\b", corpo))
+        fecha = len(re.findall(rf"</{tag}>", corpo))
+        assert abre == fecha, f"<{tag}>: {abre} abrem, {fecha} fecham"
+
+
+@pytest.mark.django_db
+def test_a_pagina_nomeia_os_seis_entregaveis(client):
+    """Lida do enum, e não de uma lista escrita à mão: a página já falou em cinco
+    depois que o roteiro passou a ter seis, e um sétimo entregável precisa
+    reprovar aqui em vez de sair calado numa página pública."""
+    from apps.cursos.choices import TipoEntregavel
+
+    conteudo = client.get(reverse("sobre")).content.decode().lower()
+    faltando = [
+        t.label for t in TipoEntregavel
+        # O rótulo é "2 - Slides e Apresentações"; a página fala em prosa, então
+        # a comparação é pela primeira palavra significativa de cada nome.
+        if t.label.split(" - ", 1)[-1].split()[0].lower() not in conteudo
+    ]
+    assert faltando == [], f"a página não menciona: {faltando}"
+
+
+@pytest.mark.django_db
+def test_a_pagina_nao_promete_uma_proposta_que_o_formulario_nao_pede(client):
+    """A página listava "título, resumo, público-alvo, carga horária, formato e
+    temas" como o que a proposta pede. Desde o Plano 6 ela nasce só com o título,
+    e o resto é trabalho da equipe: a página prometia à comunidade um passo que o
+    sistema não tem."""
+    from apps.cursos.forms import PropostaForm
+
+    conteudo = client.get(reverse("sobre")).content.decode()
+    assert list(PropostaForm().fields) == ["titulo"], "a proposta mudou de campos"
+    # O PASSO do fluxograma, e nao a primeira ocorrencia do texto: "Cria a
+    # proposta" aparece antes, no paragrafo de apresentacao do professor, e uma
+    # janela a partir dali nem alcancava a lista de campos.
+    inicio = conteudo.index("<h4>Cria a proposta</h4>")
+    trecho = conteudo[inicio : conteudo.index("</li>", inicio)]
+    # Afirmar sobre a palavra "carga horária" nao serve: a frase CERTA tambem a
+    # usa, para dizer que ela e trabalho da equipe. O que o passo precisa dizer e
+    # que a proposta pede o titulo e mais nada.
+    assert "Só o título" in trecho, trecho
