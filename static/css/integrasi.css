@@ -2603,6 +2603,13 @@ textarea:focus {
    o que fazia ninguem reparar que havia ajuda ali. */
 .ajuda-campo {
   all: unset;
+  /* A margem mora AQUI, e nao num seletor de contexto. Ela vivia so em
+     `.bloco > h3 .ajuda-campo`, entao o gatilho do titulo dos cartoes de
+     progresso (um <h2>) nascia colado na palavra, e qualquer contexto novo
+     nasceria colado tambem. `.obrigatorio`, ao lado, ja fazia certo: margem na
+     base e ajuste por contexto. */
+  margin-left: 0.375rem;
+  vertical-align: middle;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2967,7 +2974,23 @@ textarea:focus {
   border: 1px solid var(--linha);
   border-radius: var(--raio);
   box-shadow: var(--sombra);
-  padding: 1.25rem;
+  /* O mesmo respiro da `.lateral` que estes cartoes substituiram: a pilha ficou
+     mais apertada que a coluna equivalente das outras telas. */
+  padding: 1.5rem;
+}
+
+/* O titulo do cartao segue o padrao do sistema: rotulo em versalete pequeno, e
+   nao manchete. `.lateral h2` (1.125rem) e da lateral do catalogo, onde o cartao
+   e um convite com titulo proprio; aqui a coluna e um painel de cartoes, e a
+   `Equipe` ao lado dos dois cartoes de progresso era o unico titulo grande. */
+.lateral-pilha h2 {
+  font-family: var(--display);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--azul);
+  margin: 0 0 0.75rem;
 }
 
 /* O titulo do cartao com uma acao a direita (Equipe / Editar). */
@@ -3005,13 +3028,10 @@ textarea:focus {
   --cor-progresso: var(--ciano);
 }
 
+/* Herda o tamanho e o versalete de `.lateral-pilha h2`; so a cor muda, para o
+   acento do proprio cartao. */
 .cartao-progresso h2 {
-  font-size: 0.8125rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--cinza);
-  margin: 0 0 0.5rem;
+  color: var(--cor-progresso);
 }
 
 .progresso-numero {
@@ -3063,9 +3083,8 @@ textarea:focus {
   margin-top: 0.5rem;
 }
 
-/* O gatilho de ajuda dentro do título da seção: o <h3> do cartão é versalete
-   pequeno, e o círculo precisa acompanhar sem empurrar a linha. */
-.bloco > h3 .ajuda-campo {
-  margin-left: 0.4375rem;
-  vertical-align: middle;
+/* Dentro do `.rotulo-campo` quem separa e o `gap` do flex: a margem do
+   componente somaria a ele e afastaria o circulo do rotulo. */
+.rotulo-campo .ajuda-campo {
+  margin-left: 0;
 }

@@ -343,3 +343,50 @@ def test_quem_nao_gere_a_equipe_nao_ve_o_botao(client, curso_em_producao, aluno)
     html = client.get(reverse("curso", args=[curso_em_producao.pk])).content.decode()
     assert "Equipe" in html
     assert reverse("equipe", args=[curso_em_producao.pk]) not in html
+
+
+# --- CSS: espaco que mora no componente, e nao no contexto ---------------------
+
+
+def test_o_gatilho_de_ajuda_carrega_o_proprio_espaco():
+    """O `?` colava no título dos cartões de progresso.
+
+    O espaço dele existia numa regra presa a UM contexto,
+    `.bloco > h3 .ajuda-campo`, então o `<h2>` do cartão de progresso não casava e
+    o círculo nascia grudado. Qualquer contexto novo nasceria assim também.
+
+    `.obrigatorio` já fazia certo ao lado: margem na regra base e ajuste por
+    contexto. Este teste lê o CSS porque espaçamento não aparece no HTML, e o
+    defeito é invisível para a suíte.
+    """
+    from pathlib import Path
+
+    from django.conf import settings
+
+    css = (Path(settings.BASE_DIR) / "static" / "css" / "integrasi.css").read_text(
+        encoding="utf-8"
+    )
+    inicio = css.index(".ajuda-campo {")
+    base = css[inicio : css.index("}", inicio)]
+    assert "margin-left" in base, (
+        "o espaço do gatilho voltou a depender do contexto; ponha-o na regra base"
+    )
+
+
+@pytest.mark.django_db
+def test_os_cartoes_do_painel_do_curso_sao_section_com_h3(
+    client, curso_em_producao, professor
+):
+    """O painel do curso ficou de fora da rodada que uniformizou os entregáveis:
+    continuava com `<div class="bloco">` e `<h2>`.
+
+    Não era defeito visual - `.bloco > h2` e `.bloco > h3` são desenhados igual -,
+    mas é a mesma estrutura descrita de dois jeitos em duas telas vizinhas, e a
+    próxima regra escrita para uma delas passa a valer só para metade.
+    """
+    client.force_login(professor)
+    html = client.get(reverse("curso", args=[curso_em_producao.pk])).content.decode()
+    corpo = html[html.index("corpo-trabalho") : html.index("<aside")]
+    assert '<div class="bloco"' not in corpo
+    assert "<h2" not in corpo
+    assert corpo.count('class="bloco"') >= 1

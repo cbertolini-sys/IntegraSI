@@ -18,14 +18,19 @@
   <div class="faixa corpo-trabalho duas-colunas">
     <div>
       {% if curso.versao > 1 %}
-        <div class="bloco">
-          <h2>Versão {{ curso.versao }}</h2>
+        <section class="bloco">
+          <h3>Versão {{ curso.versao }}</h3>
           <p>{{ curso.motivo_versao }}</p>
-        </div>
+        </section>
       {% endif %}
 
-      <div class="bloco">
-        <h2>Entregáveis</h2>
+      {% comment %}
+        `<section>` com `<h3>`, como as telas de entregavel: o CSS desenha os dois
+        titulos igual, entao nao era defeito visual, mas era a mesma estrutura
+        descrita de dois jeitos em telas vizinhas.
+      {% endcomment %}
+      <section class="bloco">
+        <h3>Entregáveis</h3>
         <ul class="registros">
           {% for entregavel in entregaveis %}
             <li class="registro entregavel-card etapa-{{ entregavel.numero }}">
@@ -37,7 +42,7 @@
             </li>
           {% endfor %}
         </ul>
-      </div>
+      </section>
     </div>
 
     {% comment %}
