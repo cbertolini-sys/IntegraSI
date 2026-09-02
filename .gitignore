@@ -7,3 +7,9 @@ staticfiles/
 .pytest_cache/
 .DS_Store
 enviar_notificacoes.lock
+
+# Rascunho local: `docs/temp/` guarda coisas geradas a partir do banco de
+# desenvolvimento (por exemplo, a lista de logins para testar a mao). Sao dados
+# de uma maquina so, e alguns deles pessoais - nao entram no repositorio, que e
+# publico.
+docs/temp/
