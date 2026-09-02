@@ -1,8 +1,17 @@
+from typing import NamedTuple
+
 import nh3
 from django.conf import settings
 from django.db import models
 
 from apps.cursos.choices import StatusEntregavel, TipoEntregavel
+
+class Situacao(NamedTuple):
+    """O que o selo da lista mostra: o texto e o tom (ok, espera, atencao)."""
+
+    rotulo: str
+    tom: str
+
 
 TAGS_PERMITIDAS = {
     "p", "br", "strong", "em", "u", "ul", "ol", "li",
@@ -99,8 +108,31 @@ class Entregavel(models.Model):
         return self.get_tipo_display().split(" - ", 1)[-1]
 
     @property
+    def situacao(self):
+        """O que a LISTA mostra: o estado atual, mais o que o historico explica.
+
+        Enquanto o entregavel esta com a equipe (RASCUNHO), a ultima decisao diz
+        se ele nunca saiu dali ou se voltou - devolvido depois de um envio,
+        reaberto depois de uma aprovacao. Nos outros estados o proprio status
+        responde, e o historico nao tem o que acrescentar.
+
+        Le por `.all()` de proposito, para aproveitar o `prefetch_related` das
+        telas: `.last()` desceria ao banco de novo, uma consulta por cartao.
+        """
+        tons = {
+            StatusEntregavel.APROVADO: "ok",
+            StatusEntregavel.EM_REVISAO: "espera",
+        }
+        if self.status != StatusEntregavel.RASCUNHO:
+            return Situacao(self.get_status_display(), tons.get(self.status, ""))
+        revisoes = list(self.revisoes.all())
+        if not revisoes:
+            return Situacao(self.get_status_display(), "")
+        return Situacao(revisoes[-1].get_decisao_display(), "atencao")
+
+    @property
     def editavel(self):
-        return self.status in (StatusEntregavel.RASCUNHO, StatusEntregavel.DEVOLVIDO)
+        return self.status == StatusEntregavel.RASCUNHO
 
     def save(self, *args, **kwargs):
         if "update_fields" not in kwargs:

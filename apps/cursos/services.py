@@ -190,7 +190,7 @@ def devolver_entregavel(entregavel, por, comentario):
     )
     _exige_em_revisao(entregavel)
     _exige_comentario(comentario, "Escreva o que precisa ser corrigido antes de devolver.")
-    entregavel.status = StatusEntregavel.DEVOLVIDO
+    entregavel.status = StatusEntregavel.RASCUNHO
     entregavel.save(update_fields=["status", "atualizado_em"])
     Revisao.objects.create(
         entregavel=entregavel, revisor=por, decisao=Revisao.DEVOLVIDO, comentario=comentario
@@ -224,7 +224,7 @@ def reabrir_entregavel(entregavel, por, comentario):
             "entregável agora."
         )
     _exige_comentario(comentario, "Escreva por que está reabrindo o entregável.")
-    entregavel.status = StatusEntregavel.DEVOLVIDO
+    entregavel.status = StatusEntregavel.RASCUNHO
     entregavel.save(update_fields=["status", "atualizado_em"])
     Revisao.objects.create(
         entregavel=entregavel, revisor=por, decisao=Revisao.REABERTO, comentario=comentario
@@ -420,7 +420,7 @@ def devolver_curso(curso, por, comentario):
         raise ValidationError("Escreva o que precisa ser corrigido antes de devolver.")
     _transicionar(curso, StatusCurso.DEVOLVIDO, por, observacao=comentario)
     for entregavel in curso.entregaveis.all():
-        entregavel.status = StatusEntregavel.DEVOLVIDO
+        entregavel.status = StatusEntregavel.RASCUNHO
         entregavel.save(update_fields=["status", "atualizado_em"])
     enfileirar(
         evento="CURSO_DEVOLVIDO",

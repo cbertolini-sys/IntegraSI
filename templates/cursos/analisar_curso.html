@@ -26,7 +26,7 @@
       {% for entregavel in entregaveis %}
         <section class="bloco entregavel-analise">
           <h2>{{ entregavel.get_tipo_display }}
-            <span class="estado {% if entregavel.status == 'APROVADO' %}ok{% elif entregavel.status == 'EM_REVISAO' %}espera{% elif entregavel.status == 'DEVOLVIDO' %}atencao{% endif %}">{{ entregavel.get_status_display }}</span>
+            {% with s=entregavel.situacao %}<span class="estado {{ s.tom }}">{{ s.rotulo }}</span>{% endwith %}
           </h2>
           {% for secao in entregavel.secoes.all %}
             {% comment %}

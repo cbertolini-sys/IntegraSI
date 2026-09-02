@@ -193,7 +193,10 @@ def test_devolver_curso_reabre_os_cinco_entregaveis(curso_pronto, professor, coo
     services.devolver_curso(curso_pronto, por=coordenador, comentario="Revisar o material didatico.")
 
     status_entregaveis = set(curso_pronto.entregaveis.values_list("status", flat=True))
-    assert status_entregaveis == {StatusEntregavel.DEVOLVIDO}
+    # RASCUNHO: o que o teste prende e que os seis voltam EDITAVEIS para a
+    # equipe, e nao o rotulo que a coluna guardava.
+    assert status_entregaveis == {StatusEntregavel.RASCUNHO}
+    assert all(e.editavel for e in curso_pronto.entregaveis.all())
     assert all(e.editavel for e in curso_pronto.entregaveis.all())
     assert Revisao.objects.count() == total_revisoes_antes
 

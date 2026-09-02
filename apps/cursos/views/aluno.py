@@ -45,7 +45,9 @@ def curso(request, pk):
     # regra de cada um le anexos ou secoes: sem estes dois prefetch e uma consulta
     # por entregavel, na tela que a equipe mais abre.
     obj = get_object_or_404(
-        Curso.objects.prefetch_related("entregaveis__anexos", "entregaveis__secoes"), pk=pk
+        Curso.objects.prefetch_related(
+            "entregaveis__anexos", "entregaveis__secoes", "entregaveis__revisoes"
+        ), pk=pk
     )
     permissions.garante(permissions.pode_ver_curso(request.user, obj), "Curso de outra equipe.")
     entregaveis = obj.entregaveis.all()

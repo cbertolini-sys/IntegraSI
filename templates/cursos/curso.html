@@ -38,7 +38,7 @@
                 <span class="selo-etapa">Etapa {{ entregavel.numero }}</span>
                 <h3><a href="{% url 'entregavel' entregavel.pk %}">{{ entregavel.nome }}</a></h3>
               </div>
-              <span class="estado {% if entregavel.status == 'APROVADO' %}ok{% elif entregavel.status == 'EM_REVISAO' %}espera{% elif entregavel.status == 'DEVOLVIDO' %}atencao{% endif %}">{{ entregavel.get_status_display }}</span>
+              {% with s=entregavel.situacao %}<span class="estado {{ s.tom }}">{{ s.rotulo }}</span>{% endwith %}
             </li>
           {% endfor %}
         </ul>

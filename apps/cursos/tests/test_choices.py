@@ -23,7 +23,10 @@ def test_a_numeracao_vive_no_rotulo_e_nao_no_valor():
 
 
 def test_estados_do_entregavel():
-    assert set(StatusEntregavel.values) == {"RASCUNHO", "EM_REVISAO", "APROVADO", "DEVOLVIDO"}
+    # Tres, e nao quatro: DEVOLVIDO saiu por ser o mesmo estado funcional de
+    # RASCUNHO. O sinal de "voltou com correcoes" vem do historico, por
+    # `Entregavel.situacao` (test_situacao_do_entregavel.py).
+    assert set(StatusEntregavel.values) == {"RASCUNHO", "EM_REVISAO", "APROVADO"}
 
 
 def test_estados_do_curso_incluem_substituido():

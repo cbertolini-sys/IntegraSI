@@ -58,8 +58,9 @@ def test_reabrir_devolve_o_entregavel_para_a_equipe(slides_aprovados, professor)
         slides_aprovados, por=professor, comentario="<p>Faltou a aula 3.</p>"
     )
     slides_aprovados.refresh_from_db()
-    assert slides_aprovados.status == StatusEntregavel.DEVOLVIDO
+    assert slides_aprovados.status == StatusEntregavel.RASCUNHO
     assert slides_aprovados.editavel
+    assert slides_aprovados.situacao.rotulo == "Reaberto"
 
 
 @pytest.mark.django_db
@@ -161,7 +162,8 @@ def test_reabrir_pela_tela(client, slides_aprovados, professor):
     )
     assert resposta.status_code == 200
     slides_aprovados.refresh_from_db()
-    assert slides_aprovados.status == StatusEntregavel.DEVOLVIDO
+    assert slides_aprovados.status == StatusEntregavel.RASCUNHO
+    assert slides_aprovados.editavel
 
 
 @pytest.mark.django_db

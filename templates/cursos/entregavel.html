@@ -20,7 +20,13 @@
         <h1>{{ entregavel.nome }}</h1>
       </div>
       <div class="acoes">
-        <span class="estado {% if entregavel.status == 'APROVADO' %}ok{% elif entregavel.status == 'EM_REVISAO' %}espera{% elif entregavel.status == 'DEVOLVIDO' %}atencao{% endif %}">{{ entregavel.get_status_display }}</span>
+        {% comment %}
+          O selo le `situacao`, e nao o status cru: enquanto o entregavel esta com
+          a equipe, quem diz se ele voltou (e por que decisao) e a ultima revisao.
+          A cadeia de `{% if %}` que havia aqui, repetida em quatro telas, era a
+          mesma regra escrita quatro vezes.
+        {% endcomment %}
+        {% with s=entregavel.situacao %}<span class="estado {{ s.tom }}">{{ s.rotulo }}</span>{% endwith %}
         {% if rotulo_da_revisao %}
           {% comment %}
             `voltar=entregavel` para a tela de decisao saber devolver a pessoa

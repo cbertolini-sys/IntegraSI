@@ -12,10 +12,21 @@ class StatusCurso(models.TextChoices):
 
 
 class StatusEntregavel(models.TextChoices):
+    """Tres estados, e nao quatro.
+
+    DEVOLVIDO saiu: era o mesmo estado funcional de RASCUNHO (os dois `editavel`,
+    nenhuma regra do sistema os distinguindo), e o que ele acrescentava era o
+    "voltou com correcoes" - que a `Revisao` ja registra, com autor, data e
+    motivo. Dois lugares guardando o mesmo fato saem de sincronia; a lista de
+    entregaveis le esse sinal de `Entregavel.situacao`, derivado do historico.
+
+    `Revisao.DEVOLVIDO` continua existindo: la a palavra descreve uma DECISAO, e
+    nao um estado.
+    """
+
     RASCUNHO = "RASCUNHO", "Rascunho"
     EM_REVISAO = "EM_REVISAO", "Em revisão"
     APROVADO = "APROVADO", "Aprovado"
-    DEVOLVIDO = "DEVOLVIDO", "Devolvido"
 
 
 class TipoEntregavel(models.TextChoices):

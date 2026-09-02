@@ -77,7 +77,10 @@ def test_devolver_reabre_para_edicao(slides_prontos, aluno, professor):
     services.enviar_para_revisao(slides_prontos, por=aluno)
     services.devolver_entregavel(slides_prontos, por=professor, comentario="Faltou a ultima aula.")
     slides_prontos.refresh_from_db()
-    assert slides_prontos.status == StatusEntregavel.DEVOLVIDO
+    assert slides_prontos.status == StatusEntregavel.RASCUNHO
+    assert slides_prontos.editavel
+    # E a lista continua dizendo que ele VOLTOU, lendo o historico.
+    assert slides_prontos.situacao.rotulo == "Devolvido"
     assert slides_prontos.editavel is True
 
 
