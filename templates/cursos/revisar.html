@@ -17,7 +17,7 @@
           A cadeia de `{% if %}` que havia aqui, repetida em quatro telas, era a
           mesma regra escrita quatro vezes.
         {% endcomment %}
-        {% with s=entregavel.situacao %}<span class="estado {{ s.tom }}">{{ s.rotulo }}</span>{% endwith %}
+        {% include "cursos/_selo.html" with situacao=entregavel.situacao %}
         <a class="botao botao-linha" href="{{ volta_url }}">&larr; {{ volta_rotulo }}</a>
       </div>
     </div>
@@ -45,19 +45,7 @@
         <h2>Materiais</h2>
         <ul class="registros">
           {% for anexo in entregavel.anexos.all %}
-            <li class="registro">
-              <div>
-                <h3>
-                  {% if anexo.arquivo %}
-                    <a href="{% url 'baixar' anexo.arquivo.identificador %}">{{ anexo.titulo }}</a>
-                  {% else %}
-                    <a href="{{ anexo.url }}" rel="noopener noreferrer" target="_blank">{{ anexo.titulo }}</a>
-                  {% endif %}
-                </h3>
-                {% if anexo.referencia_bibliografica %}<p class="detalhe">{{ anexo.referencia_bibliografica }}</p>{% endif %}
-              </div>
-              {% if anexo.duracao_minutos %}<span class="estado">{{ anexo.duracao_minutos }} min</span>{% endif %}
-            </li>
+            {% include "cursos/_anexo_na_lista.html" %}
           {% empty %}
             <li class="vazio"><p>Nenhum material anexado ainda.</p></li>
           {% endfor %}
@@ -106,14 +94,7 @@
             </div>
           </form>
         {% else %}
-          <p class="apoio-pendencias">
-            {% if entregavel.status == "APROVADO" %}
-              Aprovado, e o curso já foi enviado para a coordenação: não dá mais
-              para reabrir por aqui.
-            {% else %}
-              Este entregável não está aguardando decisão.
-            {% endif %}
-          </p>
+          <p class="apoio-pendencias">{{ motivo_sem_decisao }}</p>
         {% endif %}
 
         {% if revisoes %}

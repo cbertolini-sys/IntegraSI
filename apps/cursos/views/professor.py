@@ -352,6 +352,15 @@ def revisar(request, pk):
                 entregavel.status == StatusEntregavel.APROVADO
                 and entregavel.curso.status in STATUS_EDITAVEIS
             ),
+            # Por que nao ha o que decidir, quando nao ha: sai daqui, e nao de um
+            # `{% if entregavel.status == ... %}` no template. Era a ultima
+            # comparacao de status em template do projeto.
+            "motivo_sem_decisao": (
+                "Aprovado, e o curso já foi enviado para a coordenação: não dá "
+                "mais para reabrir por aqui."
+                if entregavel.status == StatusEntregavel.APROVADO
+                else "Este entregável não está aguardando decisão."
+            ),
         },
     )
 

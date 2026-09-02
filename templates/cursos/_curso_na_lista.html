@@ -1,0 +1,29 @@
+{% comment %}
+  Um curso da lista da coordenacao, um arquivo so para as duas telas.
+
+  As duas diferem em dois pontos, e sao eles que o chamador informa: o terceiro
+  fato da linha (publico-alvo na fila, versao no inventario) e o selo, que na fila
+  e uma frase propria ("Aguardando você") em vez do status cru.
+
+  O resto era identico, sete linhas seguidas: a proxima mudanca numa deixaria a
+  outra para tras.
+{% endcomment %}
+<li class="registro">
+  <div>
+    <h3><a href="{% url 'analisar_curso' curso.pk %}">{{ curso.titulo }}</a></h3>
+    <p class="detalhe">
+      <span>{{ curso.professor_responsavel.nome_completo }}</span>
+      <span class="sep">&middot;</span>
+      <span>{{ curso.edicao }}</span>
+      {% if detalhe %}
+        <span class="sep">&middot;</span>
+        <span>{{ detalhe }}</span>
+      {% endif %}
+    </p>
+  </div>
+  {% if selo %}
+    <span class="estado {{ tom }}">{{ selo }}</span>
+  {% else %}
+    {% include "cursos/_selo.html" with situacao=curso.situacao %}
+  {% endif %}
+</li>

@@ -26,7 +26,7 @@
           A cadeia de `{% if %}` que havia aqui, repetida em quatro telas, era a
           mesma regra escrita quatro vezes.
         {% endcomment %}
-        {% with s=entregavel.situacao %}<span class="estado {{ s.tom }}">{{ s.rotulo }}</span>{% endwith %}
+        {% include "cursos/_selo.html" with situacao=entregavel.situacao %}
         {% if rotulo_da_revisao %}
           {% comment %}
             `voltar=entregavel` para a tela de decisao saber devolver a pessoa
@@ -82,25 +82,7 @@
   <h3>Materiais</h3>
   <ul class="registros">
     {% for anexo in entregavel.anexos.all %}
-      <li class="registro">
-        {% if anexo.arquivo %}
-          <a href="{% url 'baixar' anexo.arquivo.identificador %}">{{ anexo.titulo }}</a>
-        {% else %}
-          <a href="{{ anexo.url }}" rel="noopener noreferrer" target="_blank">{{ anexo.titulo }}</a>
-        {% endif %}
-        {% if anexo.duracao_minutos %} ({{ anexo.duracao_minutos }} min){% endif %}
-        {% if anexo.referencia_bibliografica %} - {{ anexo.referencia_bibliografica }}{% endif %}
-        {% comment %}
-          Ate aqui `descricao` era campo que so entrava: pedido no formulario de
-          anexar, gravado no banco e nunca mostrado em tela nenhuma.
-
-          O |safe e seguro porque `Anexo.save()` sanitiza com nh3 contra
-          TAGS_PERMITIDAS, incondicionalmente, do mesmo jeito que `Secao.save()`.
-          Sem o |safe o editor seria uma armadilha: a pessoa formata, salva, e a
-          tela mostra <strong> como texto. As duas metades andam juntas.
-        {% endcomment %}
-        {% if anexo.descricao %}<div class="descricao-anexo">{{ anexo.descricao|safe }}</div>{% endif %}
-      </li>
+      {% include "cursos/_anexo_na_lista.html" %}
     {% empty %}
       <li class="vazio"><p>Nenhum material anexado.</p></li>
     {% endfor %}

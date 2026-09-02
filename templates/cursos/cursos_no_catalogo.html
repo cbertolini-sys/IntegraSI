@@ -18,19 +18,7 @@
   <div class="faixa corpo-trabalho">
     <ul class="registros">
       {% for curso in cursos %}
-        <li class="registro">
-          <div>
-            <h3><a href="{% url 'analisar_curso' curso.pk %}">{{ curso.titulo }}</a></h3>
-            <p class="detalhe">
-              <span>{{ curso.professor_responsavel.nome_completo }}</span>
-              <span class="sep">&middot;</span>
-              <span>{{ curso.edicao }}</span>
-              <span class="sep">&middot;</span>
-              <span>Versão {{ curso.versao }}</span>
-            </p>
-          </div>
-          <span class="estado {% if curso.status == 'PUBLICADO' %}ok{% endif %}">{{ curso.get_status_display }}</span>
-        </li>
+        {% include "cursos/_curso_na_lista.html" with detalhe=curso.rotulo_da_versao %}
       {% empty %}
         <li class="vazio"><p>Nenhum curso publicado ou despublicado.</p></li>
       {% endfor %}

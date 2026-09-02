@@ -1,0 +1,25 @@
+{% comment %}
+  Um material da lista, um arquivo so para as duas telas que o mostram.
+
+  As duas marcacoes eram diferentes, e a da revisao nao trazia a DESCRICAO: o
+  professor decidia sobre o material sem ler o que a equipe escreveu sobre ele.
+  Ficou a marcacao mais rica das duas, com a descricao junto.
+
+  O |safe da descricao e seguro porque `Anexo.save()` sanitiza com nh3 contra
+  TAGS_PERMITIDAS, incondicionalmente. Sem ele o editor seria armadilha: a pessoa
+  formata, salva, e a tela mostra <strong> como texto.
+{% endcomment %}
+<li class="registro">
+  <div>
+    <h3>
+      {% if anexo.arquivo %}
+        <a href="{% url 'baixar' anexo.arquivo.identificador %}">{{ anexo.titulo }}</a>
+      {% else %}
+        <a href="{{ anexo.url }}" rel="noopener noreferrer" target="_blank">{{ anexo.titulo }}</a>
+      {% endif %}
+    </h3>
+    {% if anexo.referencia_bibliografica %}<p class="detalhe">{{ anexo.referencia_bibliografica }}</p>{% endif %}
+    {% if anexo.descricao %}<div class="descricao-anexo">{{ anexo.descricao|safe }}</div>{% endif %}
+  </div>
+  {% if anexo.duracao_minutos %}<span class="estado">{{ anexo.duracao_minutos }} min</span>{% endif %}
+</li>

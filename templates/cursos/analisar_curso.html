@@ -10,7 +10,7 @@
         <p class="sub">{{ curso.identidade }}</p>
       </div>
       <div class="acoes">
-        <span class="estado {% if curso.status == 'PUBLICADO' %}ok{% elif curso.status == 'AGUARDANDO_COORDENADOR' %}espera{% endif %}">{{ curso.get_status_display }}</span>
+        {% include "cursos/_selo.html" with situacao=curso.situacao %}
         <a class="botao botao-linha" href="{% url 'fila_coordenacao' %}">&larr; Voltar à fila</a>
       </div>
     </div>
@@ -26,7 +26,7 @@
       {% for entregavel in entregaveis %}
         <section class="bloco entregavel-analise">
           <h2>{{ entregavel.get_tipo_display }}
-            {% with s=entregavel.situacao %}<span class="estado {{ s.tom }}">{{ s.rotulo }}</span>{% endwith %}
+            {% include "cursos/_selo.html" with situacao=entregavel.situacao %}
           </h2>
           {% for secao in entregavel.secoes.all %}
             {% comment %}

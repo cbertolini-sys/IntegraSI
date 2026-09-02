@@ -270,6 +270,35 @@ class Curso(models.Model):
         return [p.strip() for p in (self.palavras_chave or "").split(",") if p.strip()]
 
     @property
+    def rotulo_da_versao(self):
+        """"Versão N", para a lista do inventario do catalogo.
+
+        Aqui, e nao no template, porque juntar palavra e numero em linguagem de
+        template exige o filtro `add`, que faz conversao implicita e falha calado.
+        """
+        return f"Versão {self.versao}"
+
+    @property
+    def situacao(self):
+        """O rotulo e o tom do selo, como `Entregavel.situacao`.
+
+        A cadeia de `{% if curso.status == ... %}` estava em quatro templates, e
+        eles ja tinham divergido: um deles pintava so PUBLICADO e mostrava um
+        curso despublicado sem cor nenhuma. A regra passa a morar aqui, onde ha
+        um lugar so para mudar.
+        """
+        from apps.cursos.models.producao import Situacao
+
+        tons = {
+            StatusCurso.PUBLICADO: "ok",
+            StatusCurso.AGUARDANDO_COORDENADOR: "espera",
+            StatusCurso.DEVOLVIDO: "atencao",
+            # Saiu do catalogo e precisa de alguem: o mesmo tom do devolvido.
+            StatusCurso.DESPUBLICADO: "atencao",
+        }
+        return Situacao(self.get_status_display(), tons.get(self.status, ""))
+
+    @property
     def praticas(self):
         """Este curso precisa de computador?
 

@@ -19,19 +19,11 @@
   <div class="faixa corpo-trabalho">
     <ul class="registros">
       {% for curso in cursos %}
-        <li class="registro">
-          <div>
-            <h3><a href="{% url 'analisar_curso' curso.pk %}">{{ curso.titulo }}</a></h3>
-            <p class="detalhe">
-              <span>{{ curso.professor_responsavel.nome_completo }}</span>
-              <span class="sep">&middot;</span>
-              <span>{{ curso.edicao }}</span>
-              <span class="sep">&middot;</span>
-              <span>{{ curso.publico_alvo }}</span>
-            </p>
-          </div>
-          <span class="estado espera">Aguardando você</span>
-        </li>
+        {% comment %}
+          Selo proprio: aqui todos estao AGUARDANDO_COORDENADOR, e "Aguardando
+          você" diz melhor de quem e a vez do que o rotulo do status.
+        {% endcomment %}
+        {% include "cursos/_curso_na_lista.html" with detalhe=curso.publico_alvo selo="Aguardando você" tom="espera" %}
       {% empty %}
         <li class="vazio">
           <p>Nenhum curso aguardando aprovação.</p>

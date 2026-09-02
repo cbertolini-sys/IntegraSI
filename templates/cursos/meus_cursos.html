@@ -34,7 +34,7 @@
             <h3><a href="{% url 'curso' curso.pk %}">{{ curso.titulo }}</a></h3>
             <p class="detalhe"><span>{{ curso.identidade }}</span></p>
           </div>
-          <span class="estado {% if curso.status == 'PUBLICADO' %}ok{% elif curso.status == 'AGUARDANDO_COORDENADOR' %}espera{% elif curso.status == 'DEVOLVIDO' %}atencao{% endif %}">{{ curso.get_status_display }}</span>
+          {% include "cursos/_selo.html" with situacao=curso.situacao %}
         </li>
       {% empty %}
         <li class="vazio"><p>Você ainda não participa de nenhum curso.</p></li>

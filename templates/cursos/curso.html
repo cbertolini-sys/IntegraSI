@@ -10,7 +10,7 @@
         <p class="sub">{{ curso.identidade }}</p>
       </div>
       <div class="acoes">
-        <span class="estado {% if curso.status == 'PUBLICADO' %}ok{% elif curso.status == 'AGUARDANDO_COORDENADOR' %}espera{% elif curso.status == 'DEVOLVIDO' %}atencao{% endif %}">{{ curso.get_status_display }}</span>
+        {% include "cursos/_selo.html" with situacao=curso.situacao %}
       </div>
     </div>
   </div>
@@ -38,7 +38,7 @@
                 <span class="selo-etapa">Etapa {{ entregavel.numero }}</span>
                 <h3><a href="{% url 'entregavel' entregavel.pk %}">{{ entregavel.nome }}</a></h3>
               </div>
-              {% with s=entregavel.situacao %}<span class="estado {{ s.tom }}">{{ s.rotulo }}</span>{% endwith %}
+              {% include "cursos/_selo.html" with situacao=entregavel.situacao %}
             </li>
           {% endfor %}
         </ul>

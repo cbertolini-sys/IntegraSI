@@ -1,0 +1,8 @@
+{% comment %}
+  O selo de situacao, um so para curso e entregavel.
+
+  Os dois modelos respondem `situacao` com `rotulo` e `tom`, entao a marcacao e a
+  mesma e a REGRA fica no Python. Antes eram seis cadeias de `{% if %}` em cinco
+  templates, e elas ja tinham divergido entre si.
+{% endcomment %}
+<span class="estado {{ situacao.tom }}">{{ situacao.rotulo }}</span>
