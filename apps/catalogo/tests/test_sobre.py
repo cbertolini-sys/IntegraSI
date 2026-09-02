@@ -99,3 +99,39 @@ def test_a_pagina_nao_promete_uma_proposta_que_o_formulario_nao_pede(client):
     # usa, para dizer que ela e trabalho da equipe. O que o passo precisa dizer e
     # que a proposta pede o titulo e mais nada.
     assert "Só o título" in trecho, trecho
+
+
+@pytest.mark.django_db
+def test_as_voltas_do_fluxograma_apontam_para_passos_que_existem(client):
+    """"volta ao passo N" é um número escrito à mão sobre uma lista numerada pelo
+    `<ol>`: acrescentar um passo no meio desloca todos os seguintes e as voltas
+    passam a apontar para a etapa errada, calada.
+
+    Aconteceu agora: o fluxo do professor ganhou "Produz junto com a equipe" e as
+    três voltas apontavam para a fila de revisão, que virou o passo 7.
+    """
+    import re
+
+    conteudo = client.get(reverse("sobre")).content.decode()
+    for fluxo in re.findall(r'<ol class="fluxograma \w+">(.*?)</ol>', conteudo, re.S):
+        passos = re.findall(r"<h4>(.*?)</h4>", fluxo, re.S)
+        for numero in re.findall(r"volta ao passo (\d+)", fluxo):
+            assert 1 <= int(numero) <= len(passos), (
+                f"volta ao passo {numero}, mas o fluxo tem {len(passos)} passos"
+            )
+
+
+@pytest.mark.django_db
+def test_o_fluxo_do_professor_cita_as_tres_decisoes(client):
+    """Aprovar, devolver e reabrir sao os tres valores de `Revisao.DECISOES`, e os
+    tres tem botao na tela. A pagina descrevia so os dois primeiros."""
+    from apps.cursos.models import Revisao
+
+    conteudo = client.get(reverse("sobre")).content.decode()
+    inicio = conteudo.index('<ol class="fluxograma professor">')
+    fluxo = conteudo[inicio : conteudo.index("</ol>", inicio)].lower()
+    for _, rotulo in Revisao.DECISOES:
+        # Quatro letras: o enum diz "Reaberto" e a prosa diz "reabre", entao o
+        # radical comum e "reab". Com seis letras o teste cobrava "reabe", que a
+        # prosa correta nao tem - e reprovava a pagina certa.
+        assert rotulo.lower()[:4] in fluxo, rotulo

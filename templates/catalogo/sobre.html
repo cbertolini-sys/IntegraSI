@@ -242,8 +242,10 @@
           </p>
           <p>
             A revisão é entregável por entregável: ler as seções, conferir os anexos
-            e as pendências do roteiro, e então aprovar ou devolver com um comentário
-            que diz o que falta.
+            e as pendências do roteiro, e então aprovar ou devolver. O comentário é
+            obrigatório nos dois casos, porque toda decisão fica no histórico do
+            entregável, com autor e data. Uma aprovação pode ser desfeita enquanto o
+            curso não foi enviado à coordenação.
           </p>
         </div>
 
@@ -269,8 +271,9 @@
           <li class="etapa">
             <span class="etapa-marca" aria-hidden="true"></span>
             <div class="etapa-corpo"><h4>Aloca a equipe</h4>
-              <p>Estudantes, informando apenas nome e e-mail, e outros professores
-                 que forem produzir junto.</p></div>
+              <p>Estudante novo entra por nome e e-mail e recebe o convite;
+                 estudante que já produziu outro curso é escolhido de uma lista.
+                 Outros professores, também de uma lista.</p></div>
           </li>
           <li class="etapa sistema">
             <span class="etapa-marca" aria-hidden="true"></span>
@@ -280,24 +283,51 @@
           </li>
           <li class="etapa">
             <span class="etapa-marca" aria-hidden="true"></span>
-            <div class="etapa-corpo"><h4>Fila de revisão</h4>
-              <p>O que a equipe enviou, esperando decisão.</p></div>
+            <div class="etapa-corpo"><h4>Produz junto com a equipe</h4>
+              <p>Preenche a ficha do curso em <em>Editar curso</em>, escreve seções e
+                 anexa material como qualquer membro, e confere em
+                 <em>Visualizar curso</em> como a página vai aparecer no catálogo.</p></div>
+          </li>
+          <li class="etapa">
+            <span class="etapa-marca" aria-hidden="true"></span>
+            <div class="etapa-corpo"><h4>Abre a fila de revisão</h4>
+              <p>A tela <em>Esperando por você</em>, pelo cartão
+                 <em>Entregáveis para revisar</em> do painel. Também dá para entrar
+                 pelo próprio entregável, no botão <em>Revisar</em>.</p></div>
           </li>
           <li class="etapa">
             <span class="etapa-marca" aria-hidden="true"></span>
             <div class="etapa-corpo"><h4>Analisa o entregável</h4>
-              <p>Lê as seções, confere os anexos e a lista de pendências do roteiro.</p></div>
+              <p>Lê as seções, confere os anexos e a lista de pendências do roteiro.
+                 As decisões anteriores ficam à vista, com autor e data.</p></div>
           </li>
           <li class="etapa decisao">
             <span class="etapa-marca" aria-hidden="true"></span>
             <div class="etapa-corpo">
               <h4>Atende ao que o roteiro pede?</h4>
+              <p>Comentário obrigatório nos dois casos: toda decisão fica no
+                 histórico, com o nome de quem decidiu.</p>
               <div class="ramos">
-                <div class="ramo nao"><span class="ramo-rotulo">Não</span>
-                  <p>Devolve com um comentário dizendo o que falta.</p>
-                  <span class="volta">volta ao passo 6</span></div>
-                <div class="ramo sim"><span class="ramo-rotulo">Sim</span>
-                  <p>Aprova o entregável.</p></div>
+                <div class="ramo nao"><span class="ramo-rotulo">Devolve</span>
+                  <p>Diz o que falta e onde. A equipe volta a editar.</p>
+                  <span class="volta">volta ao passo 7</span></div>
+                <div class="ramo sim"><span class="ramo-rotulo">Aprova</span>
+                  <p>O entregável fica pronto.</p></div>
+              </div>
+            </div>
+          </li>
+          <li class="etapa decisao">
+            <span class="etapa-marca" aria-hidden="true"></span>
+            <div class="etapa-corpo">
+              <h4>Aprovou cedo demais?</h4>
+              <div class="ramos">
+                <div class="ramo nao"><span class="ramo-rotulo">Reabre</span>
+                  <p>Enquanto o curso não foi enviado à coordenação, o botão
+                     <em>Reabrir</em> devolve o entregável à equipe, também com
+                     comentário obrigatório.</p>
+                  <span class="volta">volta ao passo 7</span></div>
+                <div class="ramo sim"><span class="ramo-rotulo">Não</span>
+                  <p>Segue para o próximo entregável.</p></div>
               </div>
             </div>
           </li>
@@ -308,16 +338,23 @@
               <div class="ramos">
                 <div class="ramo nao"><span class="ramo-rotulo">Não</span>
                   <p>Segue revisando o que falta.</p>
-                  <span class="volta">volta ao passo 6</span></div>
+                  <span class="volta">volta ao passo 7</span></div>
                 <div class="ramo sim"><span class="ramo-rotulo">Sim</span>
                   <p>Submete o curso à coordenação.</p></div>
               </div>
             </div>
           </li>
-          <li class="etapa limite">
+          <li class="etapa sistema">
             <span class="etapa-marca" aria-hidden="true"></span>
             <div class="etapa-corpo"><h4>Aguarda a publicação</h4>
               <p>A decisão de levar ao catálogo é da coordenação.</p></div>
+          </li>
+          <li class="etapa limite">
+            <span class="etapa-marca" aria-hidden="true"></span>
+            <div class="etapa-corpo"><h4>Conduz as turmas</h4>
+              <p>Publicado o curso, a coordenação aceita as solicitações e designa
+                 o professor. As realizações aparecem em <em>Turmas</em>. Se o curso
+                 precisar de outra versão, ele a abre sem tirar a atual do ar.</p></div>
           </li>
         </ol>
       </article>
