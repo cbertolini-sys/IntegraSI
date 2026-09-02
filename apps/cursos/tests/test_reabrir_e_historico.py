@@ -186,3 +186,60 @@ def test_a_tela_diz_que_o_comentario_e_obrigatorio(client, slides_aprovados, pro
     campo = html[html.index('class="campo"') : html.index("acoes-empilhadas")]
     assert 'class="obrigatorio"' in campo
     assert "required" in campo
+
+
+# --- o caminho ate a tela de decisao ------------------------------------------
+#
+# A tela de decisao so era alcancavel pela fila de revisao, e a fila lista, por
+# definicao, o que esta EM_REVISAO. Um entregavel aprovado nao tinha porta: o
+# professor abria o curso, clicava no cartao, caia na tela de PRODUCAO e nao
+# encontrava nem a revisao nem a reabertura. So digitando a URL.
+
+
+@pytest.mark.django_db
+def test_o_entregavel_em_revisao_leva_o_professor_a_decidir(
+    client, dados_curso, professor, aluno
+):
+    curso = services.criar_curso(**dados_curso)
+    services.adicionar_membro(curso, aluno, por=professor)
+    cards = curso.entregaveis.get(tipo=TipoEntregavel.CARDS)
+    cards.status = StatusEntregavel.EM_REVISAO
+    cards.save(update_fields=["status", "atualizado_em"])
+
+    client.force_login(professor)
+    html = client.get(reverse("entregavel", args=[cards.pk])).content.decode()
+    assert reverse("revisar", args=[cards.pk]) in html
+    assert "Revisar" in html
+
+
+@pytest.mark.django_db
+def test_o_entregavel_aprovado_leva_o_professor_a_reabrir(client, slides_aprovados, professor):
+    client.force_login(professor)
+    html = client.get(reverse("entregavel", args=[slides_aprovados.pk])).content.decode()
+    assert reverse("revisar", args=[slides_aprovados.pk]) in html
+    assert "Reabrir" in html
+
+
+@pytest.mark.django_db
+def test_o_aprovado_de_curso_ja_submetido_so_mostra_as_decisoes(
+    client, slides_aprovados, professor
+):
+    """Sem reabertura possivel o caminho continua valendo: o historico e o que
+    explica por que o entregavel esta como esta."""
+    curso = slides_aprovados.curso
+    curso.status = StatusCurso.AGUARDANDO_COORDENADOR
+    curso.save(update_fields=["status"])
+    client.force_login(professor)
+    html = client.get(reverse("entregavel", args=[slides_aprovados.pk])).content.decode()
+    assert reverse("revisar", args=[slides_aprovados.pk]) in html
+    assert "Ver decisões" in html
+    assert "Reabrir" not in html
+
+
+@pytest.mark.django_db
+def test_o_aluno_nao_ve_o_caminho_da_decisao(client, slides_aprovados, aluno):
+    """Quem produz nao revisa (spec 10). A decisao fica no Python, e nao num
+    `{% if %}` de papel no template."""
+    client.force_login(aluno)
+    html = client.get(reverse("entregavel", args=[slides_aprovados.pk])).content.decode()
+    assert reverse("revisar", args=[slides_aprovados.pk]) not in html

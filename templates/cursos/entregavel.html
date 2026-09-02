@@ -21,6 +21,9 @@
       </div>
       <div class="acoes">
         <span class="estado {% if entregavel.status == 'APROVADO' %}ok{% elif entregavel.status == 'EM_REVISAO' %}espera{% elif entregavel.status == 'DEVOLVIDO' %}atencao{% endif %}">{{ entregavel.get_status_display }}</span>
+        {% if rotulo_da_revisao %}
+          <a class="botao" href="{% url 'revisar' entregavel.pk %}">{{ rotulo_da_revisao }}</a>
+        {% endif %}
         <a class="botao botao-linha" href="{% url 'curso' entregavel.curso.pk %}">&larr; Voltar ao curso</a>
       </div>
     </div>

@@ -82,6 +82,28 @@ def curso(request, pk):
     )
 
 
+def _rotulo_da_revisao(usuario, entregavel):
+    """O que o professor pode fazer com este entregavel, ou None se nao for dele.
+
+    Tres estados, um rotulo cada: decidir o que foi enviado, desfazer uma
+    aprovacao enquanto o curso nao subiu, ou apenas ler o historico. O ultimo
+    ainda vale a porta: e o historico que explica por que o entregavel esta como
+    esta.
+    """
+    from apps.cursos.choices import STATUS_EDITAVEIS, StatusEntregavel
+
+    if not permissions.pode_revisar(usuario, entregavel.curso):
+        return None
+    if entregavel.status == StatusEntregavel.EM_REVISAO:
+        return "Revisar"
+    if (
+        entregavel.status == StatusEntregavel.APROVADO
+        and entregavel.curso.status in STATUS_EDITAVEIS
+    ):
+        return "Reabrir"
+    return "Ver decisões"
+
+
 @login_required
 def entregavel(request, pk):
     obj = get_object_or_404(Entregavel, pk=pk)
@@ -97,6 +119,12 @@ def entregavel(request, pk):
             # CAMPOS_DO_ANEXO ja tem (spec 10, nada de regra escrita no HTML).
             "form_anexo": AnexoForm(tipo=obj.tipo) if oferece_anexo(obj.tipo) else None,
             "pode_editar": permissions.pode_editar_producao(request.user, obj),
+            # O caminho ate a tela de decisao. Ela so era alcancavel pela fila de
+            # revisao, e a fila lista, por definicao, o que esta EM_REVISAO: um
+            # entregavel aprovado nao tinha porta nenhuma, e o professor caia
+            # aqui, na tela de PRODUCAO, sem revisao nem reabertura. O rotulo diz
+            # o que cabe agora, e sai do Python porque e decisao, nao desenho.
+            "rotulo_da_revisao": _rotulo_da_revisao(request.user, obj),
             "ultima_revisao": obj.revisoes.last(),
             # O formulario de upload em blocos (so em VIDEOS) precisa levar ao JS o
             # tamanho do bloco e a marca que ele troca pelo identificador nas URLs
