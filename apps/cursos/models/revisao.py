@@ -37,6 +37,15 @@ class Revisao(models.Model):
         verbose_name_plural = "revisões"
         ordering = ["criado_em"]
 
+    @property
+    def situacao(self):
+        """O selo da linha do historico, no mesmo formato de `Curso.situacao` e
+        `Entregavel.situacao`, para que `_selo.html` desenhe os tres."""
+        from apps.cursos.models.producao import Situacao
+
+        tons = {self.APROVADO: "ok", self.REABERTO: "espera"}
+        return Situacao(self.get_decisao_display(), tons.get(self.decisao, "atencao"))
+
     def save(self, *args, **kwargs):
         # Sanitiza sempre, como `Secao.save()` e `Anexo.save()`: o comentario e
         # escrito num editor de texto rico e renderizado com |safe na devolutiva

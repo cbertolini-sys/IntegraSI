@@ -58,9 +58,16 @@
            corrigindo. Volta para a sua fila quando for reenviado.</p>
         <ul class="registros">
           {% for entregavel in com_a_equipe %}
+            {% comment %}
+              Leva a tela de PRODUCAO, e nao a de decisao: quem esta com a equipe
+              nao aguarda decisao, e a tela de decidir responde exatamente isso
+              ("não está aguardando decisão") - a fila listava o item e a tela
+              dizia que nao havia nada ali. O botao do cabecalho de la continua
+              trazendo quem quiser o historico.
+            {% endcomment %}
             <li class="registro entregavel-da-fila">
               <div>
-                <h3><a href="{% url 'revisar' entregavel.pk %}">{{ entregavel.get_tipo_display }}</a></h3>
+                <h3><a href="{% url 'entregavel' entregavel.pk %}">{{ entregavel.get_tipo_display }}</a></h3>
                 <p class="detalhe">
                   <span>{{ entregavel.curso.titulo }}</span>
                   <span class="sep">&middot;</span>

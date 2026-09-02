@@ -1,0 +1,19 @@
+{% comment %}
+  Quem e este entregavel: a migalha `curso › Etapa N` e o titulo.
+
+  A migalha entrou na tela de producao numa rodada e a de decisao ficou para
+  tras, com o selo da etapa solto acima do titulo e o nome do curso num paragrafo
+  cru. Era a mesma correcao, esquecida numa das duas.
+
+  So a identidade: as ACOES mudam por tela (produzir x decidir), entao cada uma
+  monta as suas ao lado. Passa-las por contexto exigiria HTML em variavel, e HTML
+  em variavel pede `mark_safe`, que e o caminho que este projeto nao usa.
+{% endcomment %}
+<div>
+  <p class="migalha">
+    <a href="{% url 'curso' entregavel.curso.pk %}">{{ entregavel.curso.titulo }}</a>
+    <span class="separador" aria-hidden="true">&rsaquo;</span>
+    <span class="selo-etapa etapa-{{ entregavel.numero }}">Etapa {{ entregavel.numero }}</span>
+  </p>
+  <h1>{{ entregavel.nome }}</h1>
+</div>

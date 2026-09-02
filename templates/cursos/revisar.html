@@ -5,19 +5,15 @@
 <div class="trabalho">
   <div class="cabecalho-pagina">
     <div class="faixa">
-      <div>
-        <span class="selo-etapa etapa-{{ entregavel.numero }}">Etapa {{ entregavel.numero }}</span>
-        <h1>{{ entregavel.nome }}</h1>
-        <p class="sub">{{ entregavel.curso.titulo }}</p>
-      </div>
+      {% include "cursos/_identidade_do_entregavel.html" %}
       <div class="acoes">
-        {% comment %}
-          O selo le `situacao`, e nao o status cru: enquanto o entregavel esta com
-          a equipe, quem diz se ele voltou (e por que decisao) e a ultima revisao.
-          A cadeia de `{% if %}` que havia aqui, repetida em quatro telas, era a
-          mesma regra escrita quatro vezes.
-        {% endcomment %}
         {% include "cursos/_selo.html" with situacao=entregavel.situacao %}
+        {% comment %}
+          O caminho cruzado: a tela de producao ja levava para ca, e a volta nao
+          existia. Quem decide as vezes precisa abrir o material como a equipe o
+          ve, com os formularios e a lista completa.
+        {% endcomment %}
+        <a class="botao botao-linha" href="{% url 'entregavel' entregavel.pk %}">Ver o material</a>
         <a class="botao botao-linha" href="{{ volta_url }}">&larr; {{ volta_rotulo }}</a>
       </div>
     </div>
@@ -97,28 +93,7 @@
           <p class="apoio-pendencias">{{ motivo_sem_decisao }}</p>
         {% endif %}
 
-        {% if revisoes %}
-          {% comment %}
-            O historico existia desde o Plano 2 e nao aparecia em tela nenhuma:
-            aprovar com comentario gravava o comentario e ninguem mais o via, o
-            que na pratica e o mesmo que nao poder comentar.
-
-            |safe seguro porque `Revisao.save()` sanitiza com nh3.
-          {% endcomment %}
-          <h3 class="titulo-historico">Decisões anteriores</h3>
-          <ol class="historico">
-            {% for revisao in revisoes %}
-              <li class="historico-item">
-                <p class="historico-topo">
-                  <span class="estado {% if revisao.decisao == 'APROVADO' %}ok{% elif revisao.decisao == 'REABERTO' %}espera{% else %}atencao{% endif %}">{{ revisao.get_decisao_display }}</span>
-                  <time datetime="{{ revisao.criado_em|date:'c' }}">{{ revisao.criado_em|date:"d/m/Y" }}</time>
-                </p>
-                <p class="historico-quem">{{ revisao.revisor.nome_completo }}</p>
-                <div class="historico-texto">{{ revisao.comentario|safe }}</div>
-              </li>
-            {% endfor %}
-          </ol>
-        {% endif %}
+        {% include "cursos/_historico.html" %}
       </div>
     </aside>
   </div>

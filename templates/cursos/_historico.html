@@ -1,0 +1,24 @@
+{% comment %}
+  As decisoes anteriores, um arquivo so para as duas telas do entregavel.
+
+  O historico existia desde o Plano 2 e nao aparecia em tela nenhuma; quando
+  passou a aparecer, ficou so na de decisao. A equipe via apenas o ultimo recado,
+  na tarja, sem a sequencia das idas e vindas.
+
+  |safe seguro porque `Revisao.save()` sanitiza com nh3 contra TAGS_PERMITIDAS.
+{% endcomment %}
+{% if revisoes %}
+  <h3 class="titulo-historico">Decisões anteriores</h3>
+  <ol class="historico">
+    {% for revisao in revisoes %}
+      <li class="historico-item">
+        <p class="historico-topo">
+          {% include "cursos/_selo.html" with situacao=revisao.situacao %}
+          <time datetime="{{ revisao.criado_em|date:'c' }}">{{ revisao.criado_em|date:"d/m/Y" }}</time>
+        </p>
+        <p class="historico-quem">{{ revisao.revisor.nome_completo }}</p>
+        <div class="historico-texto">{{ revisao.comentario|safe }}</div>
+      </li>
+    {% endfor %}
+  </ol>
+{% endif %}

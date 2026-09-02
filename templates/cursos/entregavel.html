@@ -5,27 +5,8 @@
 <div class="trabalho">
   <div class="cabecalho-pagina">
     <div class="faixa">
-      <div>
-        {% comment %}
-          O curso, a etapa e o entregavel na mesma linha de caminho, com a migalha
-          que o catalogo ja usa. Antes o nome do curso era um <a> cru num
-          paragrafo sob o titulo: azul e sublinhado, sem dizer que era de onde a
-          pessoa veio, e brigando com o "Voltar ao curso" ao lado.
-        {% endcomment %}
-        <p class="migalha">
-          <a href="{% url 'curso' entregavel.curso.pk %}">{{ entregavel.curso.titulo }}</a>
-          <span class="separador" aria-hidden="true">&rsaquo;</span>
-          <span class="selo-etapa etapa-{{ entregavel.numero }}">Etapa {{ entregavel.numero }}</span>
-        </p>
-        <h1>{{ entregavel.nome }}</h1>
-      </div>
+      {% include "cursos/_identidade_do_entregavel.html" %}
       <div class="acoes">
-        {% comment %}
-          O selo le `situacao`, e nao o status cru: enquanto o entregavel esta com
-          a equipe, quem diz se ele voltou (e por que decisao) e a ultima revisao.
-          A cadeia de `{% if %}` que havia aqui, repetida em quatro telas, era a
-          mesma regra escrita quatro vezes.
-        {% endcomment %}
         {% include "cursos/_selo.html" with situacao=entregavel.situacao %}
         {% if rotulo_da_revisao %}
           {% comment %}
@@ -168,7 +149,14 @@
   {% endif %}
   </div>
 
-  <aside class="lateral coluna-pendencias">
+  {% comment %}
+    Pilha de dois cartoes: o que falta (com o botao de envio colado nele, porque e
+    a lista que decide se o envio passa) e o historico das decisoes. A equipe via
+    so o ultimo recado, na tarja acima; a sequencia das idas e vindas ficava so na
+    tela do professor.
+  {% endcomment %}
+  <aside class="lateral lateral-pilha coluna-pendencias">
+    <div class="cartao-lateral">
     {% include "cursos/_pendencias.html" with apoio="É esta a lista que o envio para revisão vai conferir." tudo_certo="Nada. Pode enviar para revisão." %}
 
     {% if pode_editar %}
@@ -181,6 +169,13 @@
         {% csrf_token %}
         <button type="submit" class="botao botao-largo">Enviar para revisão</button>
       </form>
+    {% endif %}
+    </div>
+
+    {% if revisoes %}
+      <div class="cartao-lateral">
+        {% include "cursos/_historico.html" %}
+      </div>
     {% endif %}
   </aside>
 </div>

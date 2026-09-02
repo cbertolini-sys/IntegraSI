@@ -130,6 +130,8 @@ def entregavel(request, pk):
             # o que cabe agora, e sai do Python porque e decisao, nao desenho.
             "rotulo_da_revisao": _rotulo_da_revisao(request.user, obj),
             "ultima_revisao": obj.revisoes.last(),
+            # A sequencia das idas e vindas, na mesma marcacao da tela de decisao.
+            "revisoes": obj.revisoes.select_related("revisor").order_by("-criado_em"),
             # O formulario de upload em blocos (so em VIDEOS) precisa levar ao JS o
             # tamanho do bloco e a marca que ele troca pelo identificador nas URLs
             # revertidas - nenhum dos dois pode estar escrito de novo dentro do JS.
