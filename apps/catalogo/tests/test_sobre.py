@@ -130,7 +130,7 @@ def test_as_voltas_do_fluxograma_apontam_para_passos_que_existem(client):
     assert voltas, "o fluxo do professor perdeu as voltas"
     for numero in voltas:
         alvo = passos[int(numero) - 1]
-        assert "fila de revisão" in alvo.lower(), (
+        assert "entregáveis para revisar" in alvo.lower(), (
             f"volta ao passo {numero} aponta para {alvo!r}, e não para a fila"
         )
 

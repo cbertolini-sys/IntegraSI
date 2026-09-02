@@ -233,6 +233,13 @@ def anexar(request, pk):
 @require_POST
 def enviar_entregavel(request, pk):
     obj = get_object_or_404(Entregavel, pk=pk)
+    # `e_membro_da_equipe`, e nao `pode_editar_producao`: o servico usa aquele de
+    # proposito, porque o segundo ja embute o estado editavel e um reenvio
+    # legitimo viraria 403 em vez da mensagem que a regra de negocio quer.
+    permissions.garante(
+        permissions.e_membro_da_equipe(request.user, obj.curso),
+        "Curso de outra equipe.",
+    )
     try:
         services.enviar_para_revisao(obj, por=request.user)
     except ValidationError as erro:

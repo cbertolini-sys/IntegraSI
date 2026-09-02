@@ -12,7 +12,7 @@
       </div>
       <div class="acoes">
         <span class="estado {% if entregavel.status == 'APROVADO' %}ok{% elif entregavel.status == 'EM_REVISAO' %}espera{% elif entregavel.status == 'DEVOLVIDO' %}atencao{% endif %}">{{ entregavel.get_status_display }}</span>
-        <a class="botao botao-linha" href="{% url 'fila_revisao' %}">&larr; Voltar à fila</a>
+        <a class="botao botao-linha" href="{{ volta_url }}">&larr; {{ volta_rotulo }}</a>
       </div>
     </div>
   </div>

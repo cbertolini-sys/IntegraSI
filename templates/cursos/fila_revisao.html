@@ -1,12 +1,17 @@
 {% extends "base.html" %}
-{% block titulo %} - Revisão{% endblock %}
+{% block titulo %} - Entregáveis para revisar{% endblock %}
 
 {% block conteudo %}
 <div class="trabalho">
   <div class="cabecalho-pagina">
     <div class="faixa">
       <div>
-        <h1>Esperando por você</h1>
+        {% comment %}
+          O mesmo nome do cartao do painel que leva ate aqui. Eram tres nomes para
+          a mesma tela: "Entregáveis para revisar" no cartao, "Esperando por você"
+          aqui e "Fila de revisão" na pagina Sobre.
+        {% endcomment %}
+        <h1>Entregáveis para revisar</h1>
         <p class="sub">Entregáveis enviados pelas equipes, para aprovar ou devolver.</p>
       </div>
       <div class="acoes">

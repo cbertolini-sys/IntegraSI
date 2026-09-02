@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_POST, require_http_methods
 
 from apps.contas.models import Usuario
@@ -302,6 +303,13 @@ def _alocar_aluno(request, curso):
 
 @login_required
 def fila_revisao(request):
+    # Guarda explicita, e nao o recorte por `professor_responsavel` sozinho: sem
+    # ela o aluno recebe uma pagina vazia so porque nenhum curso aponta para ele
+    # como responsavel - protecao por acidente de dado, que nenhum teste consegue
+    # prender porque nao ha guarda para apagar. `minhas_turmas` ja dizia isso.
+    #
+    # `e_professor` basta: ele vale para o coordenador (CLAUDE.md, Papeis).
+    permissions.garante(request.user.e_professor, "Área do professor e da coordenação.")
     entregaveis = Entregavel.objects.filter(
         status=StatusEntregavel.EM_REVISAO, curso__professor_responsavel=request.user
     ).select_related("curso")
@@ -314,11 +322,21 @@ def revisar(request, pk):
     permissions.garante(permissions.pode_revisar(request.user, entregavel.curso), "Curso de outro professor.")
     from apps.cursos.choices import STATUS_EDITAVEIS
 
+    # Lista fechada, e nao o endereco que vier no parametro: refletir num `href`
+    # um valor de fora e como se abre um redirecionamento para qualquer lugar. O
+    # desconhecido cai na fila, que e o caminho de sempre.
+    if request.GET.get("voltar") == "entregavel":
+        volta = (reverse("entregavel", args=[entregavel.pk]), "Voltar ao entregável")
+    else:
+        volta = (reverse("fila_revisao"), "Voltar à fila")
+
     return render(
         request,
         "cursos/revisar.html",
         {
             "entregavel": entregavel,
+            "volta_url": volta[0],
+            "volta_rotulo": volta[1],
             "pendencias": validacoes.pendencias(entregavel),
             # Do mais novo para o mais antigo: quem abre a tela quer a ultima
             # decisao primeiro. O `ordering` do model e cronologico porque ele
@@ -340,6 +358,10 @@ def revisar(request, pk):
 @require_POST
 def submeter_curso(request, pk):
     curso = get_object_or_404(Curso, pk=pk)
+    permissions.garante(
+        permissions.pode_gerir_equipe(request.user, curso),
+        "Somente o professor responsável submete.",
+    )
     try:
         services.submeter_ao_coordenador(curso, por=request.user)
     except ValidationError as erro:
@@ -354,6 +376,14 @@ def submeter_curso(request, pk):
 @require_POST
 def decidir(request, pk):
     entregavel = get_object_or_404(Entregavel, pk=pk)
+    # A view filtra tambem, e nao so o servico (P4 da auditoria). As duas guardas
+    # respondem 403, entao um POST nao distingue qual esta valendo: quem isola
+    # esta aqui e o teste que derruba o servico e confere que a recusa vem assim
+    # mesmo (test_guardas_e_volta.py).
+    permissions.garante(
+        permissions.pode_revisar(request.user, entregavel.curso),
+        "Somente o professor responsável revisa.",
+    )
     comentario = request.POST.get("comentario", "")
     decisao = request.POST.get("decisao")
     try:
