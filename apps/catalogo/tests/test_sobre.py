@@ -120,6 +120,20 @@ def test_as_voltas_do_fluxograma_apontam_para_passos_que_existem(client):
                 f"volta ao passo {numero}, mas o fluxo tem {len(passos)} passos"
             )
 
+    # A faixa sozinha nao basta: acrescentar um passo no meio mantem todos os
+    # numeros DENTRO da faixa e faz cada volta apontar para o passo de cima. As
+    # tres voltas do professor levam a fila de revisao, e e isso que se prende.
+    inicio = conteudo.index('<ol class="fluxograma professor">')
+    fluxo = conteudo[inicio : conteudo.index("</ol>", inicio)]
+    passos = re.findall(r"<h4>(.*?)</h4>", fluxo, re.S)
+    voltas = re.findall(r"volta ao passo (\d+)", fluxo)
+    assert voltas, "o fluxo do professor perdeu as voltas"
+    for numero in voltas:
+        alvo = passos[int(numero) - 1]
+        assert "fila de revisão" in alvo.lower(), (
+            f"volta ao passo {numero} aponta para {alvo!r}, e não para a fila"
+        )
+
 
 @pytest.mark.django_db
 def test_o_fluxo_do_professor_cita_as_tres_decisoes(client):
