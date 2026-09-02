@@ -143,13 +143,19 @@ def test_alocacao_e_atomica_quando_o_convite_falha(curso, professor, monkeypatch
 
 
 @pytest.mark.django_db
-def test_coordenador_tambem_aloca(curso, coordenador):
-    """Regra 1 encontra a regra 2: o coordenador é professor e gere qualquer
-    equipe."""
-    membro = services.alocar_aluno(
-        curso, nome="Joana Silva", email="joana@acad.ufsm.br", por=coordenador
-    )
-    assert membro.pessoa.email == "joana@acad.ufsm.br"
+def test_coordenador_nao_aloca_em_curso_alheio(curso, coordenador):
+    """Era "o coordenador e professor e gere qualquer equipe". Virou por decisao
+    do produto: ele e professor como qualquer outro, e gere a equipe dos cursos
+    que responde. Em curso alheio, autoriza e despublica."""
+    from django.core.exceptions import PermissionDenied
+
+    from apps.contas.models import Usuario
+
+    with pytest.raises(PermissionDenied):
+        services.alocar_aluno(
+            curso, nome="Joana Silva", email="joana@acad.ufsm.br", por=coordenador
+        )
+    assert not Usuario.objects.filter(email="joana@acad.ufsm.br").exists()
 
 
 @pytest.mark.django_db

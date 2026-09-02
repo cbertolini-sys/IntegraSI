@@ -36,7 +36,19 @@ def pode_ver_curso(usuario, curso):
 
 
 def pode_gerir_equipe(usuario, curso):
-    return usuario.e_coordenador or (usuario.e_professor and e_responsavel(usuario, curso))
+    """Quem monta a equipe de producao: o professor responsavel.
+
+    O coordenador NAO entra por ser coordenador. Ele e professor como qualquer
+    outro: nos cursos que ele responde faz tudo isto, nos dos outros nao. Em curso
+    alheio o que ele faz e autorizar (publicar e devolver), despublicar,
+    republicar e gerenciar pessoas - e ver, porque nao da para autorizar o que nao
+    se pode ler.
+
+    A spec dizia "tudo o que um professor faz, mais...", e a frase e ambigua:
+    "tudo o que um professor faz" pode ser NOS CURSOS DELE ou EM TODOS. Este
+    codigo escolhia "em todos"; a decisao do produto e "nos cursos dele".
+    """
+    return usuario.e_professor and e_responsavel(usuario, curso)
 
 
 def pode_revisar(usuario, curso):
@@ -44,8 +56,19 @@ def pode_revisar(usuario, curso):
     responsavel. Coincide hoje com pode_gerir_equipe, mas as duas sao regras
     independentes da spec - quem monta a equipe e quem revisa o trabalho. Escrita
     por extenso, e nao como alias de pode_gerir_equipe, para que o Plano 3 possa
-    mudar uma sem arrastar a outra por acidente (item 7 da revisao de branco)."""
-    return usuario.e_coordenador or (usuario.e_professor and e_responsavel(usuario, curso))
+    mudar uma sem arrastar a outra por acidente (item 7 da revisao de branco).
+
+    O coordenador NAO entra por ser coordenador. Ele e professor como qualquer
+    outro: nos cursos que ele responde faz tudo isto, nos dos outros nao. Em curso
+    alheio o que ele faz e autorizar (publicar e devolver), despublicar,
+    republicar e gerenciar pessoas - e ver, porque nao da para autorizar o que nao
+    se pode ler.
+
+    A spec dizia "tudo o que um professor faz, mais...", e a frase e ambigua:
+    "tudo o que um professor faz" pode ser NOS CURSOS DELE ou EM TODOS. Este
+    codigo escolhia "em todos"; a decisao do produto e "nos cursos dele".
+    """
+    return usuario.e_professor and e_responsavel(usuario, curso)
 
 
 def e_membro_da_equipe(usuario, curso):
@@ -77,7 +100,14 @@ def pode_abrir_versao(usuario, curso):
     coordenador ou o professor responsavel pela versao atual. Coincide hoje com
     pode_gerir_equipe, e esta escrita por extenso pelo mesmo motivo de
     pode_revisar: sao regras diferentes da spec (montar equipe x decidir que o
-    curso precisa de outra versao) e uma pode mudar sem a outra."""
+    curso precisa de outra versao) e uma pode mudar sem a outra.
+
+    Esta E do coordenador, ao contrario das outras tres que a rodada da "regra A"
+    fechou. Abrir nova versao e cuidado do CATALOGO, e nao producao: a spec 4.5
+    diz "o coordenador ou o professor responsavel pela versao atual", o fluxo da
+    coordenacao na pagina Sobre a lista ao lado de despublicar e republicar, e e
+    por ela que um curso desatualizado no ar volta a ser corrigido.
+    """
     return usuario.e_coordenador or (usuario.e_professor and e_responsavel(usuario, curso))
 
 
@@ -120,6 +150,7 @@ def pode_editar_ficha(usuario, curso):
 
     if curso.status not in STATUS_EDITAVEIS:
         return False
-    if usuario.e_coordenador:
-        return True
+    # Sem ramo para o coordenador: ele preenche a ficha dos cursos que responde e
+    # dos que produz, como qualquer professor, e nao a de curso alheio. Ver a nota
+    # em `pode_gerir_equipe`.
     return e_responsavel(usuario, curso) or curso.tem_membro(usuario)

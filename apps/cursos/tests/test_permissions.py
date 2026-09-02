@@ -185,19 +185,33 @@ def test_professor_nao_responsavel_nao_devolve(curso_com_equipe, aluno, arquivo_
 
 
 @pytest.mark.django_db
-def test_coordenador_gerencia_equipe(curso_com_equipe, coordenador, outro_aluno):
-    services.adicionar_membro(curso_com_equipe, outro_aluno, por=coordenador)
-    assert curso_com_equipe.tem_membro(outro_aluno)
+def test_coordenador_nao_gerencia_equipe_alheia(curso_com_equipe, coordenador, outro_aluno):
+    """A regra virou por decisao do produto: o coordenador e professor como
+    qualquer outro, e monta a equipe dos cursos que ELE responde. Em curso alheio
+    ele autoriza, despublica e gerencia pessoas.
+
+    O outro lado (no curso dele, faz tudo) esta em
+    test_coordenador_e_professor_comum.py.
+    """
+    with pytest.raises(PermissionDenied):
+        services.adicionar_membro(curso_com_equipe, outro_aluno, por=coordenador)
+    assert not curso_com_equipe.tem_membro(outro_aluno)
 
 
 @pytest.mark.django_db
-def test_coordenador_revisa(curso_com_equipe, coordenador, aluno, arquivo_qualquer):
+def test_coordenador_nao_revisa_curso_alheio(
+    curso_com_equipe, coordenador, aluno, arquivo_qualquer
+):
+    """Mesma decisao: quem revisa o trabalho e o professor responsavel. O
+    coordenador decide sobre o CURSO (publica, devolve, despublica), e nao sobre
+    os entregaveis de quem produz."""
     from apps.cursos.choices import StatusEntregavel
 
     slides = _envia_slides_para_revisao(curso_com_equipe, aluno, arquivo_qualquer)
-    services.aprovar_entregavel(slides, por=coordenador, comentario="Aprovado.")
+    with pytest.raises(PermissionDenied):
+        services.aprovar_entregavel(slides, por=coordenador, comentario="Aprovado.")
     slides.refresh_from_db()
-    assert slides.status == StatusEntregavel.APROVADO
+    assert slides.status == StatusEntregavel.EM_REVISAO
 
 
 @pytest.mark.django_db

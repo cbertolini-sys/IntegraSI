@@ -705,7 +705,16 @@ def abrir_nova_versao(curso, por, motivo):
     # (spec 4.4), e e esse service que mantem juntos o vinculo e a reindexacao.
     # Foi uma tela escrevendo `temas` direto, sem reindexar, que sumiu com cursos
     # da busca no Plano 2.
-    definir_temas(nova, curso.temas.all(), por=por)
+    # `temas.set()` mais a reindexacao, e nao `definir_temas`: aquele e a operacao
+    # da FICHA e por isso confere `pode_editar_ficha` de quem chama. Clonar um
+    # curso nao e editar a ficha dele, e desde que o coordenador deixou de editar
+    # ficha alheia (regra A) a copia levava PermissionDenied vindo de dentro, na
+    # acao que a linha acima ja autorizou por `pode_abrir_versao`.
+    #
+    # A reindexacao continua explicita pelo motivo de sempre: coluna gerada nao
+    # alcanca M2M (spec 4.4).
+    nova.temas.set(curso.temas.all())
+    atualizar_vetor_temas(nova)
     # A equipe de alunos nao vem (spec 4.5), mas o responsavel vem: ele e membro
     # de todo curso que responde (spec 4.1), e a v2 nasceria sem ninguem.
     MembroEquipe.objects.create(curso=nova, pessoa=nova.professor_responsavel)
