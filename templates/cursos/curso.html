@@ -97,6 +97,12 @@
         pilha com `gap`, para que acrescentar ou tirar um botao daqui nao dependa
         de alguem lembrar da margem.
       {% endcomment %}
+      {% if transicoes %}
+        <div class="cartao-lateral">
+          {% include "cursos/_historico_do_curso.html" %}
+        </div>
+      {% endif %}
+
       <div class="cartao-lateral">
         <div class="acoes-empilhadas">
           {% if pode_editar_ficha %}

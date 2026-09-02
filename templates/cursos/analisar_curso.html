@@ -47,6 +47,12 @@
 
     <aside class="lateral">
       {% comment %}
+        O rastro antes da decisao: quem decide precisa ver o que ja foi decidido,
+        como a tela do professor mostra as revisoes anteriores.
+      {% endcomment %}
+      {% include "cursos/_historico_do_curso.html" %}
+
+      {% comment %}
         Os valores de "decisao" sao os mesmos de apps/cursos/views/coordenador.py:
         sem acento e nunca alterados por passada de texto (CLAUDE.md); so os rotulos
         dos botoes sao portugues acentuado. A view roteia por igualdade explicita, e

@@ -1,10 +1,9 @@
-from django.conf import settings
 import nh3
+from django.conf import settings
 from django.db import models
 
-from apps.cursos.models.producao import TAGS_PERMITIDAS
-
 from apps.cursos.choices import StatusCurso
+from apps.cursos.models.producao import TAGS_PERMITIDAS
 
 
 class LogTransicaoCurso(models.Model):
@@ -29,6 +28,20 @@ class LogTransicaoCurso(models.Model):
 
     def __str__(self):
         return f"{self.curso}: {self.de_status} -> {self.para_status}"
+
+    @property
+    def situacao(self):
+        """O selo da linha do historico, no formato que `_selo.html` desenha.
+
+        Mostra o status de DESTINO: e ele que explica o que a decisao fez com o
+        curso. Os tons saem do mesmo lugar que os do proprio curso, para que a
+        mesma situacao nao apareca de duas cores em duas telas.
+        """
+        from apps.cursos.models.curso import Curso
+        from apps.cursos.models.producao import Situacao
+
+        espelho = Curso(status=self.para_status)
+        return Situacao(self.get_para_status_display(), espelho.situacao.tom)
 
     def save(self, *args, **kwargs):
         # Sanitiza sempre, como `Secao`, `Anexo` e `Revisao`: a observacao passou

@@ -1,0 +1,32 @@
+{% comment %}
+  O rastro administrativo do curso, um arquivo so para a tela do curso e a da
+  coordenacao.
+
+  `LogTransicaoCurso` existe desde o Plano 3 e a spec 11 diz para que serve:
+  responder "por que este curso saiu do ar?" seis meses depois. Ate agora nao
+  aparecia em tela nenhuma - os textos que a coordenacao escrevia eram gravados e
+  nunca lidos por ninguem.
+
+  A equipe ve junto de proposito: e ela que vai corrigir o que a coordenacao
+  apontou.
+
+  |safe seguro porque `LogTransicaoCurso.save()` sanitiza com nh3 contra
+  TAGS_PERMITIDAS, incondicionalmente.
+{% endcomment %}
+{% if transicoes %}
+  <h3 class="titulo-historico">Histórico do curso</h3>
+  <ol class="historico">
+    {% for transicao in transicoes %}
+      <li class="historico-item">
+        <p class="historico-topo">
+          {% include "cursos/_selo.html" with situacao=transicao.situacao %}
+          <time datetime="{{ transicao.criado_em|date:'c' }}">{{ transicao.criado_em|date:"d/m/Y" }}</time>
+        </p>
+        <p class="historico-quem">{{ transicao.usuario.nome_completo }}</p>
+        {% if transicao.observacao %}
+          <div class="historico-texto">{{ transicao.observacao|safe }}</div>
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ol>
+{% endif %}

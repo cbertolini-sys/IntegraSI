@@ -82,6 +82,10 @@ def curso(request, pk):
             # template linkava para ela - quem quisesse acrescentar um aluno
             # tinha que digitar a URL.
             "pode_gerir_equipe": permissions.pode_gerir_equipe(request.user, obj),
+            # O rastro administrativo (spec 11), do mais novo para o mais antigo:
+            # a ultima decisao e a que explica o estado de agora. O `ordering` do
+            # model e cronologico porque ele serve ao historico, nao a leitura.
+            "transicoes": obj.transicoes.select_related("usuario").order_by("-criado_em"),
         },
     )
 
