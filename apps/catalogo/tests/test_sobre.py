@@ -149,3 +149,31 @@ def test_o_fluxo_do_professor_cita_as_tres_decisoes(client):
         # radical comum e "reab". Com seis letras o teste cobrava "reabe", que a
         # prosa correta nao tem - e reprovava a pagina certa.
         assert rotulo.lower()[:4] in fluxo, rotulo
+
+
+@pytest.mark.django_db
+def test_o_fluxo_do_professor_nao_promete_turmas(client):
+    """Turmas viraram modulo de outra etapa, a desenvolver.
+
+    A pagina descrevia "Conduz as turmas" como passo do professor, e o painel
+    dele nao tem mais caminho para aquela tela. Uma pagina publica que promete um
+    passo inexistente e pior que uma que cala: quem le nao tem como saber que a
+    promessa e de outro momento.
+    """
+    conteudo = client.get(reverse("sobre")).content.decode()
+    inicio = conteudo.index('<ol class="fluxograma professor">')
+    fluxo = conteudo[inicio : conteudo.index("</ol>", inicio)].lower()
+    assert "turma" not in fluxo
+
+
+@pytest.mark.django_db
+def test_o_fluxo_do_professor_mantem_a_nova_versao(client):
+    """O outro lado: `pode_abrir_versao` e capacidade real dele, com botao no
+    painel do curso, e estava dita no MESMO passo que saiu."""
+    from apps.cursos import permissions
+
+    assert hasattr(permissions, "pode_abrir_versao")
+    conteudo = client.get(reverse("sobre")).content.decode()
+    inicio = conteudo.index('<ol class="fluxograma professor">')
+    fluxo = conteudo[inicio : conteudo.index("</ol>", inicio)].lower()
+    assert "nova versão" in fluxo
