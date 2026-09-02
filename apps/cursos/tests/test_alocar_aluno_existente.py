@@ -138,3 +138,31 @@ def test_acao_desconhecida_nao_cria_conta(client, curso, professor):
     )
     assert Usuario.objects.count() == contas_antes
     assert "não reconhecida" in resposta.content.decode().lower()
+
+
+@pytest.mark.django_db
+def test_cada_formulario_manda_a_propria_acao(client, curso, professor, aluno):
+    """Prende o par formulario/acao, e nao cada um de um lado.
+
+    Os testes acima mandam `acao` a mao, entao trocar o campo escondido no
+    template nao quebrava nenhum: escolher um estudante do select cairia no ramo
+    do aluno NOVO e a tela responderia "Informe o nome", com a suite verde. Achado
+    na campanha de deleção.
+    """
+    import re
+
+    client.force_login(professor)
+    html = client.get(reverse("equipe", args=[curso.pk])).content.decode()
+    formularios = re.findall(r"<form method=\"post\">.*?</form>", html, re.S)
+    acao_de_cada = {
+        re.search(r'name="acao" value="([a-z_]+)"', f).group(1): f
+        for f in formularios
+        if re.search(r'name="acao"', f)
+    }
+    assert set(acao_de_cada) == {"aluno_existente", "aluno", "professor"}
+    # O select de estudante mora no formulario de estudante ja cadastrado.
+    assert 'name="aluno"' in acao_de_cada["aluno_existente"]
+    # O de nome e e-mail, no do estudante novo.
+    assert 'name="email"' in acao_de_cada["aluno"]
+    # E o de professor, no seu.
+    assert 'name="professor"' in acao_de_cada["professor"]
