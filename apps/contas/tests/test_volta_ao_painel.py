@@ -13,8 +13,7 @@ import pytest
 from django.urls import reverse
 
 
-# Os destinos que `painel.html` oferece, tirando o catalogo - que e a area
-# publica, tem navegacao propria e nao e folha do painel.
+# Os destinos que `painel.html` oferece.
 DESTINOS = [
     "meus_cursos",
     "fila_revisao",
@@ -53,7 +52,9 @@ def test_a_lista_de_destinos_acompanha_o_painel():
         encoding="utf-8"
     )
     oferecidos = set(re.findall(r"{% url '([a-z_]+)' %}", painel))
-    esperados = set(DESTINOS) | {"catalogo"}
+    # Sem `catalogo`: o botao "Ver o catálogo" saiu do painel, porque a marca do
+    # topo leva la em toda pagina. Se ele voltar, este teste avisa.
+    esperados = set(DESTINOS)
     assert oferecidos == esperados, (
         f"o painel mudou de destinos: só nele {oferecidos - esperados}, "
         f"só na lista {esperados - oferecidos}"

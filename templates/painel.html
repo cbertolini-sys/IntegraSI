@@ -14,15 +14,16 @@
           <a class="botao" href="{% url 'nova_proposta' %}">Nova proposta</a>
         {% endif %}
         {% comment %}
-          Turmas so aqui para quem e SO professor: a secao "Onde trabalhar", que
-          era a unica porta dele para esta tela, saiu do painel dele. O
-          coordenador continua com a secao, e ganhar o botao tambem seria o mesmo
-          link duas vezes na mesma pagina.
+          So "Nova proposta" aqui.
+
+          "Ver o catálogo" saiu porque era caminho repetido: a marca do topo leva
+          ao catalogo em toda pagina que estende `base.html`, e o rodape tambem.
+
+          "Turmas" saiu a pedido. Consequencia registrada em
+          `test_o_professor_nao_tem_mais_porta_para_turmas`: a tela continua de pe
+          e ele continua autorizado, mas nenhum caminho do painel leva ate la.
+          Para o coordenador o link continua na secao "Onde trabalhar".
         {% endcomment %}
-        {% if user.e_somente_professor %}
-          <a class="botao botao-linha" href="{% url 'minhas_turmas' %}">Turmas</a>
-        {% endif %}
-        <a class="botao botao-linha" href="{% url 'catalogo' %}">Ver o catálogo</a>
       </div>
     </div>
   </div>

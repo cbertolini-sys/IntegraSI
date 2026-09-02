@@ -408,7 +408,12 @@ def test_painel_oferece_os_links_conforme_o_papel(client, aluno, professor, coor
 
     client.force_login(professor)
     conteudo = client.get(reverse("painel")).content.decode()
-    assert turmas in conteudo
+    # O professor deixou de ver o link de Turmas no painel, a pedido: os cartoes
+    # dele sao de producao, e a conducao de turma e a etapa seguinte. A regra
+    # mudou por decisao, e nao por descuido - ver
+    # `test_o_professor_nao_tem_mais_porta_para_turmas`, que registra o que isso
+    # custou.
+    assert turmas not in conteudo
     assert solicitacoes not in conteudo
 
     client.force_login(aluno)
