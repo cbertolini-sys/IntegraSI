@@ -83,9 +83,18 @@ def test_a_decisao_fica_no_proprio_cartao(client, slides_em_revisao, professor):
     # Classe a classe: o aside leva tres (`coluna-pendencias` entre elas), e
     # comparar a string inteira quebraria a cada classe acrescentada.
     assert {"lateral", "lateral-pilha"} <= set(aside), aside
-    inicio = html.index("Sua decisão")
-    cartao = html[html.rindex('<div class="cartao-lateral', 0, inicio) : inicio]
-    assert "cartao-lateral" in cartao
+    # Recorta OS cartoes e pergunta em qual a decisao caiu. A primeira versao
+    # deste teste fatiava a partir do ultimo `.cartao-lateral` antes de "Sua
+    # decisão" e afirmava que a fatia continha `cartao-lateral` - verdade por
+    # construcao, porque a fatia comeca nessa string. Passava com a decisao solta
+    # dentro do cartao do painel de pendencias.
+    cartoes = re.findall(r'<div class="cartao-lateral">(.*?)\n      </div>', html, re.S)
+    assert len(cartoes) == 2, f"esperava dois cartões, vi {len(cartoes)}"
+    com_decisao = [c for c in cartoes if "Sua decisão" in c]
+    assert len(com_decisao) == 1, "a decisão não está num cartão só dela"
+    assert 'name="comentario"' in com_decisao[0]
+    # E o painel do que falta ficou no OUTRO.
+    assert "Sua decisão" not in [c for c in cartoes if c not in com_decisao][0]
 
 
 @pytest.mark.django_db
