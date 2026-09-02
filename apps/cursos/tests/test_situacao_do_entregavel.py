@@ -128,3 +128,30 @@ def test_a_lista_nao_custa_uma_consulta_por_cartao(client, dados_curso, professo
         client.get(reverse("curso", args=[curso.pk]))
     batidas = [c for c in consultas if R._meta.db_table in c["sql"]]
     assert len(batidas) <= 1, f"{len(batidas)} consultas na tabela de revisões"
+
+
+@pytest.mark.django_db
+def test_aprovado_com_devolucao_no_passado_nao_esta_com_a_equipe(
+    slides_em_revisao, professor
+):
+    """Prende `voltou_para_a_equipe` DIRETO, e nao pelos chamadores.
+
+    Os dois que existem (`na_revisao_de` e `situacao`) filtram RASCUNHO antes de
+    perguntar, entao a guarda de estado dentro da propriedade nao tinha como
+    falhar: apagar ela deixava a suite verde. A propriedade e publica e precisa
+    valer sozinha - um entregavel APROVADO que ja foi devolvido no passado tem
+    "Devolvido" na ultima revisao ate ser reenviado e reaprovado.
+    """
+    services.devolver_entregavel(slides_em_revisao, por=professor, comentario="Faltou.")
+    slides_em_revisao.refresh_from_db()
+    assert slides_em_revisao.voltou_para_a_equipe
+
+    # Reenviado e aprovado: o historico ainda guarda a devolucao, mas ele nao
+    # esta mais com a equipe.
+    slides_em_revisao.status = StatusEntregavel.EM_REVISAO
+    slides_em_revisao.save(update_fields=["status", "atualizado_em"])
+    assert not slides_em_revisao.voltou_para_a_equipe
+
+    slides_em_revisao.status = StatusEntregavel.APROVADO
+    slides_em_revisao.save(update_fields=["status", "atualizado_em"])
+    assert not slides_em_revisao.voltou_para_a_equipe
