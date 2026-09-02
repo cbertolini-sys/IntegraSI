@@ -127,4 +127,9 @@ def test_a_fila_de_revisao_nao_e_paginada(client, dados_curso, professor, aluno)
 
     client.force_login(professor)
     html = client.get(reverse("fila_revisao")).content.decode()
+    # A fila mostra TODOS, e nao uma pagina deles. Afirmar so que a navegacao nao
+    # aparece nao prendia nada: paginar a view sem incluir o `_paginacao.html`
+    # esconde metade dos itens e nao desenha navegacao nenhuma, entao o teste
+    # ficava verde com a fila cortada. Achado na campanha de delecao.
+    assert html.count("entregavel-da-fila") == Entregavel.objects.count()
     assert "Página 1 de" not in html
