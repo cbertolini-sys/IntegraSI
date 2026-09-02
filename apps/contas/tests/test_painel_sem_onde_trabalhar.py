@@ -56,10 +56,18 @@ def test_o_catalogo_continua_alcancavel_de_qualquer_pagina(client, professor):
     botao seria tirar o caminho."""
     from django.urls import reverse
 
+    import re
+
     client.force_login(professor)
     html = client.get(reverse("painel")).content.decode()
     cabecalho = html[: html.index("</header>")]
-    assert reverse("catalogo") in cabecalho
+    # A MARCA, e nao a presenca do endereco: `reverse("catalogo")` e `"/"`, e
+    # `"/" in html` e verdade para qualquer pagina - a primeira versao deste teste
+    # nao afirmava nada e passava com a marca apontando para outro lugar. Achado
+    # na campanha de delecao.
+    marca = re.search(r'<a class="marca" href="([^"]*)"', cabecalho)
+    assert marca, "a marca sumiu do cabeçalho"
+    assert marca.group(1) == reverse("catalogo")
 
 
 @pytest.mark.django_db
