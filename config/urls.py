@@ -16,8 +16,9 @@ Including another URLconf
 """
 from django.contrib import admin
 
-from apps.contas.views import LoginComLimite
 from django.urls import include, path
+
+from apps.contas.views import LoginComLimite
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -28,5 +29,6 @@ urlpatterns = [
     path("", include("apps.catalogo.urls")),
     path("", include("apps.cursos.urls")),
     path("", include("apps.contas.urls")),
+    path("", include("apps.painel.urls")),
     path("", include("apps.turmas.urls")),
 ]

@@ -9,15 +9,11 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
-from apps.catalogo.models import Solicitacao
 from apps.contas import services
 from apps.contas.forms_convite import PrimeiroAcessoForm
 from apps.contas.models import ConviteAluno, TentativaDeLogin, Usuario
 from apps.contas.paginacao import paginar
 from apps.contas.rede import ip_da_requisicao
-from apps.cursos.choices import STATUS_EM_DESENVOLVIMENTO, StatusCurso, StatusEntregavel
-from apps.cursos.models import Curso, Entregavel
-from apps.turmas.models import Turma
 
 
 # Dez tentativas em quinze minutos. O numero e mais generoso que o da
@@ -72,89 +68,6 @@ class LoginComLimite(LoginView):
         TentativaDeLogin.objects.filter(
             ip=ip, criado_em__lt=timezone.now() - JANELA_DE_TENTATIVAS
         ).delete()
-
-
-def _resumo(usuario):
-    """Os números que cada papel precisa ver ao entrar.
-
-    Só contagens: o painel é uma porta, não um relatório. Cada número leva a uma
-    tela que já existe e já sabe filtrar - repetir a lista aqui seria manter duas
-    definições do mesmo recorte.
-    """
-    if usuario.e_coordenador:
-        return [
-            {
-                "rotulo": "Aguardando aprovação",
-                "valor": Curso.objects.filter(status=StatusCurso.AGUARDANDO_COORDENADOR).count(),
-                "url": "fila_coordenacao",
-            },
-            {
-                "rotulo": "Solicitações a responder",
-                "valor": Solicitacao.objects.filter(
-                    status__in=[Solicitacao.RECEBIDA, Solicitacao.EM_ANALISE]
-                ).count(),
-                "url": "solicitacoes",
-            },
-            {
-                "rotulo": "Cursos no catálogo",
-                "valor": Curso.objects.filter(status=StatusCurso.PUBLICADO).count(),
-                "url": "cursos_no_catalogo",
-            },
-            {
-                "rotulo": "Turmas agendadas",
-                "valor": Turma.objects.filter(status=Turma.AGENDADA).count(),
-                "url": "minhas_turmas",
-            },
-        ]
-
-    if usuario.e_professor:
-        # Por vinculo de equipe, e nao por `professor_responsavel`: e o mesmo
-        # recorte de `meus_cursos`, que e a tela para onde os dois cartoes levam.
-        # Contado de um jeito e listado de outro, o numero do cartao nunca batia
-        # com o que a pessoa via depois de clicar.
-        meus = Curso.objects.filter(membros__pessoa=usuario)
-        return [
-            {
-                "rotulo": "Cursos publicados",
-                "valor": meus.filter(status=StatusCurso.PUBLICADO).distinct().count(),
-                "url": "meus_cursos",
-                # O recorte viaja com o cartao: `meus_cursos` filtra pelo mesmo
-                # criterio, entao o numero e a lista nao tem como divergir.
-                "estado": "publicados",
-            },
-            {
-                "rotulo": "Cursos em desenvolvimento",
-                "valor": meus.filter(
-                    status__in=STATUS_EM_DESENVOLVIMENTO
-                ).distinct().count(),
-                "url": "meus_cursos",
-                "estado": "desenvolvimento",
-            },
-            {
-                # Conta ENTREGAVEIS, e nao cursos com entregavel em revisao: e o
-                # mesmo recorte da `fila_revisao`, que lista um item por
-                # entregavel. Dois entregaveis do mesmo curso sao dois na fila, e
-                # o `.distinct()` por curso que havia aqui dizia um.
-                "rotulo": "Entregáveis para revisar",
-                # O mesmo recorte que a tela lista, e nao uma segunda contagem:
-                # os que esperam decisao MAIS os que voltaram para a equipe.
-                "valor": sum(len(g) for g in Entregavel.objects.na_revisao_de(usuario)),
-                "url": "fila_revisao",
-            },
-        ]
-
-    return [
-        {
-            "rotulo": "Cursos em que você produz",
-            "valor": Curso.objects.filter(membros__pessoa=usuario).distinct().count(),
-            "url": "meus_cursos",
-        },
-    ]
-
-
-@login_required
-def painel(request):
-    return render(request, "painel.html", {"resumo": _resumo(request.user)})
 
 
 @require_http_methods(["GET", "POST"])

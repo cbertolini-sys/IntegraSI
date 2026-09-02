@@ -112,7 +112,7 @@ def test_curso_de_outro_professor_nao_entra(
 def test_o_numero_do_cartao_bate_com_a_tela(client, curso, professor):
     """O cartao do painel conta o que a tela lista - o defeito que ja apareceu
     duas vezes nesta base foi justamente o numero divergir do destino."""
-    from apps.contas.views import _resumo
+    from apps.painel.views import _resumo
 
     em_revisao(curso, TipoEntregavel.VIDEOS)
     cards = em_revisao(curso, TipoEntregavel.CARDS)

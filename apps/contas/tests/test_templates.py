@@ -6,7 +6,7 @@ from django.test import RequestFactory
 from django.urls import reverse
 
 from apps.contas.models import Usuario
-from apps.contas.views import painel
+from apps.painel.views import painel
 
 
 @pytest.fixture

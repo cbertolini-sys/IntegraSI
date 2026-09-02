@@ -56,7 +56,7 @@ def test_a_fila_se_chama_como_o_cartao_que_leva_ate_ela(client, professor):
     """Tres nomes para a mesma tela: o cartao do painel, o titulo da pagina e o
     passo do fluxograma. Este teste prende os dois primeiros um ao outro, lendo o
     rotulo do proprio `_resumo` em vez de repeti-lo aqui."""
-    from apps.contas.views import _resumo
+    from apps.painel.views import _resumo
 
     rotulo = next(i["rotulo"] for i in _resumo(professor) if i["url"] == "fila_revisao")
     client.force_login(professor)

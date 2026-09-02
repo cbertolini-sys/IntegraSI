@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     "apps.notificacoes",
     "apps.referenciais",
     "apps.turmas",
+    "apps.painel",
 ]
 
 MIDDLEWARE = [
