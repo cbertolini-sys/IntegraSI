@@ -65,14 +65,19 @@ def test_a_pagina_nomeia_os_seis_entregaveis(client):
     reprovar aqui em vez de sair calado numa página pública."""
     from apps.cursos.choices import TipoEntregavel
 
-    conteudo = client.get(reverse("sobre")).content.decode().lower()
+    conteudo = client.get(reverse("sobre")).content.decode()
+    # NO PASSO que enumera os seis, e nao na pagina inteira: varrendo tudo, o
+    # teste passava com "avaliação" apagada da lista, porque a palavra aparece
+    # tambem na lista dos pilares, mais acima. Achado na campanha de deleção.
+    inicio = conteudo.index("Nasce com os seis entregáveis")
+    passo = conteudo[inicio : conteudo.index("</li>", inicio)].lower()
     faltando = [
         t.label for t in TipoEntregavel
         # O rótulo é "2 - Slides e Apresentações"; a página fala em prosa, então
         # a comparação é pela primeira palavra significativa de cada nome.
-        if t.label.split(" - ", 1)[-1].split()[0].lower() not in conteudo
+        if t.label.split(" - ", 1)[-1].split()[0].lower() not in passo
     ]
-    assert faltando == [], f"a página não menciona: {faltando}"
+    assert faltando == [], f"o passo não menciona: {faltando}"
 
 
 @pytest.mark.django_db
