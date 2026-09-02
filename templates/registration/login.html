@@ -6,7 +6,17 @@
     <h1>Entrar</h1>
     <p class="abertura">Acesso para professores, coordenação e equipes de produção.</p>
     <div class="cartao">
-      {% if form.errors %}<p class="erro-acesso">E-mail ou senha incorretos.</p>{% endif %}
+      {% comment %}
+        O bloqueio por tentativas vem antes do erro de credencial, e os dois nunca
+        aparecem juntos: quando o limite estoura, o formulario nem chega a ser
+        validado, entao dizer "e-mail ou senha incorretos" ali seria inventar um
+        motivo que o sistema nao apurou.
+      {% endcomment %}
+      {% if erro %}
+        <p class="erro-acesso">{{ erro }}</p>
+      {% elif form.errors %}
+        <p class="erro-acesso">E-mail ou senha incorretos.</p>
+      {% endif %}
       <form method="post">
         {% csrf_token %}
         <div class="campo">

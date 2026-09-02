@@ -15,10 +15,15 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
+
+from apps.contas.views import LoginComLimite
 from django.urls import include, path
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    # A nossa antes do include: `django.contrib.auth.urls` registra o `login`
+    # padrao, e quem chega primeiro no urlpatterns responde.
+    path("contas/login/", LoginComLimite.as_view(), name="login"),
     path("contas/", include("django.contrib.auth.urls")),
     path("", include("apps.catalogo.urls")),
     path("", include("apps.cursos.urls")),

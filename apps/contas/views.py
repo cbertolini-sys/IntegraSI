@@ -1,17 +1,76 @@
 from django.contrib import messages
+import datetime
+
 from django.contrib.auth import login
+from django.contrib.auth.views import LoginView
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
 from apps.catalogo.models import Solicitacao
 from apps.contas import services
 from apps.contas.forms_convite import PrimeiroAcessoForm
-from apps.contas.models import ConviteAluno, Usuario
+from apps.contas.models import ConviteAluno, TentativaDeLogin, Usuario
+from apps.contas.rede import ip_da_requisicao
 from apps.cursos.choices import STATUS_EM_DESENVOLVIMENTO, StatusCurso, StatusEntregavel
 from apps.cursos.models import Curso, Entregavel
 from apps.turmas.models import Turma
+
+
+# Dez tentativas em quinze minutos. O numero e mais generoso que o da
+# solicitacao publica (cinco por hora) porque errar a propria senha algumas vezes
+# e comum, e trancar quem digitou errado seria pior que o problema. Ainda assim
+# derruba a forca bruta: a lista de e-mails institucionais e adivinhavel, mas
+# quarenta tentativas por hora nao quebram senha nenhuma.
+LIMITE_DE_TENTATIVAS = 10
+JANELA_DE_TENTATIVAS = datetime.timedelta(minutes=15)
+
+
+class LoginComLimite(LoginView):
+    """O `LoginView` do Django, com limite de tentativas por IP.
+
+    Conta por IP e ignora o e-mail tentado: sem isso, quem gira a lista de
+    enderecos do mesmo lugar ganha cota nova a cada endereco.
+
+    O GET nunca e bloqueado - trancar a propria tela deixaria a pessoa sem nem
+    ler a mensagem que explica o bloqueio.
+    """
+
+    def post(self, request, *args, **kwargs):
+        if self._excedeu(request):
+            return self.render_to_response(
+                self.get_context_data(
+                    form=self.get_form(),
+                    # A mesma resposta para conta que existe e conta que nao
+                    # existe: a diferenca seria um oraculo de enderecos validos.
+                    erro="Muitas tentativas deste endereço. Tente novamente mais tarde.",
+                )
+            )
+        return super().post(request, *args, **kwargs)
+
+    def form_invalid(self, form):
+        self._registrar(self.request)
+        return super().form_invalid(form)
+
+    def _excedeu(self, request):
+        desde = timezone.now() - JANELA_DE_TENTATIVAS
+        return (
+            TentativaDeLogin.objects.filter(
+                ip=ip_da_requisicao(request), criado_em__gte=desde
+            ).count()
+            >= LIMITE_DE_TENTATIVAS
+        )
+
+    def _registrar(self, request):
+        ip = ip_da_requisicao(request)
+        TentativaDeLogin.objects.create(ip=ip)
+        # Limpa o que saiu da janela na mesma passada: a tabela so guarda o que a
+        # regra ainda le, e nao precisa de rotina de limpeza.
+        TentativaDeLogin.objects.filter(
+            ip=ip, criado_em__lt=timezone.now() - JANELA_DE_TENTATIVAS
+        ).delete()
 
 
 def _resumo(usuario):

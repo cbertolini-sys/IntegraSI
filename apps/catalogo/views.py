@@ -9,6 +9,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
 from apps.catalogo.forms import SolicitacaoForm
+from apps.contas.rede import ip_da_requisicao
 from apps.catalogo.models import Solicitacao
 from apps.cursos.busca import buscar
 from apps.cursos.choices import Formato, StatusCurso, TipoPublico
@@ -143,40 +144,6 @@ def previa_do_curso(request, pk):
     return render(request, "catalogo/curso.html", {"curso": curso, "previa": True})
 
 
-def _ip_da_requisicao(request):
-    """De quem é esta requisição, para efeito do limite por IP (spec 10).
-
-    Atrás do nginx, `REMOTE_ADDR` é sempre 127.0.0.1 - olhar só para ele
-    transformaria o limite por IP num limite global, e um único visitante
-    fecharia o formulário para todo mundo. O IP real chega em `X-Forwarded-For`.
-
-    Esse cabeçalho é uma lista onde cada proxy **acrescenta ao fim**: o último
-    elemento é o que o nosso nginx escreveu; os anteriores são texto que o
-    cliente mandou. Ler o *primeiro* (como este código fazia) entrega o limite
-    ao atacante: `X-Forwarded-For: 9.9.9.9` diferente a cada requisição dá cota
-    nova toda vez e o limite nunca dispara. Por isso lemos o último.
-
-    O deploy ainda sobrescreve o cabeçalho no proxy (`$remote_addr`, ver
-    `deploy/nginx.conf`), de modo que as duas camadas teriam que estar erradas ao
-    mesmo tempo. E sem proxy nenhum na frente o cabeçalho é do cliente e não vale
-    nada: `CONFIAR_NO_PROXY` é quem diz se há proxy.
-    """
-    if settings.CONFIAR_NO_PROXY:
-        encaminhado = request.META.get("HTTP_X_FORWARDED_FOR", "")
-        if encaminhado:
-            candidato = encaminhado.split(",")[-1].strip()
-            try:
-                # ip_origem é um inet no PostgreSQL: lixo aqui derruba o POST com
-                # DataError. O formulário público é a única porta anônima que
-                # escreve no banco (spec 10) e não pode virar um 500 por causa de
-                # um cabeçalho malformado.
-                validate_ipv46_address(candidato)
-            except ValidationError:
-                return request.META.get("REMOTE_ADDR")
-            return candidato
-    return request.META.get("REMOTE_ADDR")
-
-
 def _emails_dos_coordenadores():
     from apps.contas.models import Usuario
 
@@ -203,7 +170,7 @@ def solicitar(request, pk):
         # próxima vez (spec 10). A pessoa real nunca vê essa diferença.
         return render(request, "catalogo/solicitacao_recebida.html", {"curso": curso})
 
-    ip = _ip_da_requisicao(request)
+    ip = ip_da_requisicao(request)
     uma_hora_atras = timezone.now() - datetime.timedelta(hours=1)
     if Solicitacao.objects.filter(ip_origem=ip, criado_em__gte=uma_hora_atras).count() >= LIMITE_POR_IP_POR_HORA:
         return render(

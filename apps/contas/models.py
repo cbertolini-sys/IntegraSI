@@ -177,3 +177,29 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
 
 # Reexportado para que o resto do sistema importe de um lugar so.
 from apps.contas.models_convite import ConviteAluno  # noqa: E402,F401
+
+
+class TentativaDeLogin(models.Model):
+    """Uma tentativa de login que falhou, para o limite por IP.
+
+    Guarda o IP e a hora, e mais nada. O e-mail digitado nao entra de proposito:
+    a regra conta por IP (girar a lista de enderecos do mesmo lugar nao pode dar
+    cota nova), entao o endereco nao serve a nada - e endereco digitado num
+    formulario publico pode ser de terceiro ou um erro de digitacao, dado pessoal
+    que a regra nao usa. E a mesma linha de raciocinio do CPF fora do
+    `search_fields` do Admin.
+
+    Linha velha e lixo: `registrar` apaga o que saiu da janela na mesma passada,
+    entao a tabela nao cresce sem limite e nao precisa de rotina de limpeza.
+    """
+
+    ip = models.GenericIPAddressField("IP de origem")
+    criado_em = models.DateTimeField("criado em", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "tentativa de login"
+        verbose_name_plural = "tentativas de login"
+        indexes = [models.Index(fields=["ip", "criado_em"])]
+
+    def __str__(self):
+        return f"{self.ip} em {self.criado_em:%d/%m/%Y %H:%M}"
