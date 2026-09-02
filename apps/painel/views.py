@@ -13,83 +13,95 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 
 from apps.catalogo.models import Solicitacao
-from apps.cursos.choices import STATUS_EM_DESENVOLVIMENTO, StatusCurso, StatusEntregavel
+from apps.cursos.choices import STATUS_EM_DESENVOLVIMENTO, StatusCurso
 from apps.cursos.models import Curso, Entregavel
 
 
 def _resumo(usuario):
-    """Os números que cada papel precisa ver ao entrar.
+    """Os números que a pessoa precisa ver ao entrar.
+
+    Um recorte só para professor e coordenador, e não dois: no modelo o
+    coordenador JA e um professor (`Usuario.e_professor` vale para ele), e o
+    painel trocava um conjunto de cartoes pelo outro como se fossem papeis
+    excludentes - o coordenador perdia de vista os proprios cursos e a propria
+    fila de revisao. O que ele tem A MAIS vive em `_coordenacao`.
 
     Só contagens: o painel é uma porta, não um relatório. Cada número leva a uma
     tela que já existe e já sabe filtrar - repetir a lista aqui seria manter duas
     definições do mesmo recorte.
     """
-    if usuario.e_coordenador:
+    if not usuario.e_professor:
         return [
             {
-                "rotulo": "Aguardando aprovação",
-                "valor": Curso.objects.filter(status=StatusCurso.AGUARDANDO_COORDENADOR).count(),
-                "url": "fila_coordenacao",
-            },
-            {
-                "rotulo": "Solicitações a responder",
-                "valor": Solicitacao.objects.filter(
-                    status__in=[Solicitacao.RECEBIDA, Solicitacao.EM_ANALISE]
-                ).count(),
-                "url": "solicitacoes",
-            },
-            {
-                "rotulo": "Cursos no catálogo",
-                "valor": Curso.objects.filter(status=StatusCurso.PUBLICADO).count(),
-                "url": "cursos_no_catalogo",
+                "rotulo": "Cursos em que você produz",
+                "valor": Curso.objects.filter(membros__pessoa=usuario).distinct().count(),
+                "url": "meus_cursos",
             },
         ]
 
-    if usuario.e_professor:
-        # Por vinculo de equipe, e nao por `professor_responsavel`: e o mesmo
-        # recorte de `meus_cursos`, que e a tela para onde os dois cartoes levam.
-        # Contado de um jeito e listado de outro, o numero do cartao nunca batia
-        # com o que a pessoa via depois de clicar.
-        meus = Curso.objects.filter(membros__pessoa=usuario)
-        return [
-            {
-                "rotulo": "Cursos publicados",
-                "valor": meus.filter(status=StatusCurso.PUBLICADO).distinct().count(),
-                "url": "meus_cursos",
-                # O recorte viaja com o cartao: `meus_cursos` filtra pelo mesmo
-                # criterio, entao o numero e a lista nao tem como divergir.
-                "estado": "publicados",
-            },
-            {
-                "rotulo": "Cursos em desenvolvimento",
-                "valor": meus.filter(
-                    status__in=STATUS_EM_DESENVOLVIMENTO
-                ).distinct().count(),
-                "url": "meus_cursos",
-                "estado": "desenvolvimento",
-            },
-            {
-                # Conta ENTREGAVEIS, e nao cursos com entregavel em revisao: e o
-                # mesmo recorte da `fila_revisao`, que lista um item por
-                # entregavel. Dois entregaveis do mesmo curso sao dois na fila, e
-                # o `.distinct()` por curso que havia aqui dizia um.
-                "rotulo": "Entregáveis para revisar",
-                # O mesmo recorte que a tela lista, e nao uma segunda contagem:
-                # os que esperam decisao MAIS os que voltaram para a equipe.
-                "valor": sum(len(g) for g in Entregavel.objects.na_revisao_de(usuario)),
-                "url": "fila_revisao",
-            },
-        ]
-
+    # Por vinculo de equipe, e nao por `professor_responsavel`: e o mesmo recorte
+    # de `meus_cursos`, que e a tela para onde os dois cartoes levam. Contado de um
+    # jeito e listado de outro, o numero do cartao nunca batia com o que a pessoa
+    # via depois de clicar.
+    meus = Curso.objects.filter(membros__pessoa=usuario)
     return [
         {
-            "rotulo": "Cursos em que você produz",
-            "valor": Curso.objects.filter(membros__pessoa=usuario).distinct().count(),
+            "rotulo": "Cursos publicados",
+            "valor": meus.filter(status=StatusCurso.PUBLICADO).distinct().count(),
             "url": "meus_cursos",
+            # O recorte viaja com o cartao: `meus_cursos` filtra pelo mesmo
+            # criterio, entao o numero e a lista nao tem como divergir.
+            "estado": "publicados",
+        },
+        {
+            "rotulo": "Cursos em desenvolvimento",
+            "valor": meus.filter(status__in=STATUS_EM_DESENVOLVIMENTO).distinct().count(),
+            "url": "meus_cursos",
+            "estado": "desenvolvimento",
+        },
+        {
+            # Conta ENTREGAVEIS, e nao cursos com entregavel em revisao: e o
+            # mesmo recorte da `fila_revisao`, que lista um item por entregavel.
+            "rotulo": "Entregáveis para revisar",
+            "valor": sum(len(g) for g in Entregavel.objects.na_revisao_de(usuario)),
+            "url": "fila_revisao",
+        },
+    ]
+
+
+def _coordenacao(usuario):
+    """O que so o coordenador faz, numa secao propria abaixo do painel comum.
+
+    Lista vazia para quem nao coordena: a decisao fica aqui, e nao num `{% if %}`
+    de papel no template (spec 10).
+    """
+    if not usuario.e_coordenador:
+        return []
+    return [
+        {
+            "rotulo": "Aguardando aprovação",
+            "valor": Curso.objects.filter(status=StatusCurso.AGUARDANDO_COORDENADOR).count(),
+            "url": "fila_coordenacao",
+        },
+        {
+            "rotulo": "Solicitações a responder",
+            "valor": Solicitacao.objects.filter(
+                status__in=[Solicitacao.RECEBIDA, Solicitacao.EM_ANALISE]
+            ).count(),
+            "url": "solicitacoes",
+        },
+        {
+            "rotulo": "Cursos no catálogo",
+            "valor": Curso.objects.filter(status=StatusCurso.PUBLICADO).count(),
+            "url": "cursos_no_catalogo",
         },
     ]
 
 
 @login_required
 def painel(request):
-    return render(request, "painel.html", {"resumo": _resumo(request.user)})
+    return render(
+        request,
+        "painel.html",
+        {"resumo": _resumo(request.user), "coordenacao": _coordenacao(request.user)},
+    )

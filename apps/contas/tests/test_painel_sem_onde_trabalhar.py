@@ -23,14 +23,20 @@ def test_o_aluno_tambem_nao(client, aluno):
 
 
 @pytest.mark.django_db
-def test_o_coordenador_continua_vendo(client, coordenador):
-    """Pessoas, Revisao e Meus cursos so tem porta por ali. Tirar a secao dele
-    nao seria enxugar repeticao, seria deixar tres telas sem caminho."""
+def test_o_coordenador_ve_a_secao_de_coordenacao(client, coordenador):
+    """"Onde trabalhar" deu lugar a "Coordenação".
+
+    A secao antiga repetia, em atalho, destinos que os cartoes ja abriam: agora o
+    coordenador ve os cartoes DO PROFESSOR em cima (que cobrem meus cursos e a
+    fila de revisao) e, embaixo, os dele. So Pessoas continua como atalho, porque
+    nao e contagem de trabalho pendente e nao vira cartao.
+    """
     from django.urls import reverse
 
     client.force_login(coordenador)
     html = client.get(reverse("painel")).content.decode()
-    assert "Onde trabalhar" in html
+    assert "Onde trabalhar" not in html
+    assert "Coordenação" in html
     for destino in (reverse("pessoas"), reverse("fila_revisao"), reverse("meus_cursos")):
         assert destino in html, destino
 

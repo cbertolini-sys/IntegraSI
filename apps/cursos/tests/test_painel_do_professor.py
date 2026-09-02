@@ -95,15 +95,16 @@ def test_entregaveis_para_revisar_conta_entregaveis_e_nao_cursos(
 
 
 @pytest.mark.django_db
-def test_o_painel_do_coordenador_nao_mudou(client, coordenador):
-    """A troca e do professor. O coordenador tem outro recorte, e `e_professor`
-    tambem vale para ele - trocar o ramo errado levaria os cartoes dele junto."""
+def test_o_coordenador_ve_os_mesmos_cartoes_do_professor(client, coordenador):
+    """A regra virou a pedido: no modelo o coordenador JA e um professor, e o
+    painel trocava um conjunto de cartoes pelo outro como se os papeis fossem
+    excludentes. Os cartoes dele passaram para a secao "Coordenação", que tem
+    teste proprio em apps/painel/tests/."""
     client.force_login(coordenador)
-    # "Turmas agendadas" saiu a pedido: turmas viraram modulo de outra etapa.
     assert cartoes(client) == [
-        "Aguardando aprovação",
-        "Solicitações a responder",
-        "Cursos no catálogo",
+        "Cursos publicados",
+        "Cursos em desenvolvimento",
+        "Entregáveis para revisar",
     ]
 
 

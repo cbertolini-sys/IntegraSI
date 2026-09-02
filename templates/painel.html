@@ -39,38 +39,32 @@
     </ul>
 
     {% comment %}
-      Só para a coordenação. Para professor e aluno a seção repetia, um por um, os
-      destinos que os cartões acima já abrem. Para o coordenador não: Pessoas,
-      Revisão e Meus cursos não têm porta em lugar nenhum além daqui, e tirá-la
-      dele não seria enxugar repetição, seria deixar três telas sem caminho.
+      A secao das funcoes A MAIS, e nao um painel paralelo: no modelo o
+      coordenador ja e um professor, entao ele ve o painel dele em cima e o que so
+      ele faz aqui embaixo. Antes o painel trocava um conjunto de cartoes pelo
+      outro, como se os papeis fossem excludentes, e o coordenador perdia de vista
+      os proprios cursos e a propria fila de revisao.
     {% endcomment %}
-    {% if user.e_coordenador %}
-      <h2 class="titulo-bloco">Onde trabalhar</h2>
+    {% if coordenacao %}
+      <h2 class="titulo-bloco">Coordenação</h2>
+      <ul class="indicadores">
+        {% for item in coordenacao %}
+          <li class="indicador {% if not item.valor %}zerado{% endif %}">
+            <strong>{{ item.valor }}</strong>
+            <a href="{% url item.url %}">{{ item.rotulo }}</a>
+          </li>
+        {% endfor %}
+      </ul>
+
+      {% comment %}
+        Pessoas nao e contagem de trabalho pendente, entao nao vira cartao - mas
+        precisa de porta, e esta e a unica do sistema.
+      {% endcomment %}
       <ul class="atalhos">
         <li class="atalho">
-          <h3><a href="{% url 'meus_cursos' %}">Meus cursos</a></h3>
-          <p>Os cursos em que você participa, com o andamento de cada entregável.</p>
+          <h3><a href="{% url 'pessoas' %}">Pessoas</a></h3>
+          <p>Professores e coordenação. Promova um professor a coordenador ou tire o acesso.</p>
         </li>
-        {% if user.e_professor or user.e_coordenador %}
-          <li class="atalho">
-            <h3><a href="{% url 'fila_revisao' %}">Revisão</a></h3>
-            <p>Entregáveis enviados pelas equipes, aguardando aprovação ou devolução.</p>
-          </li>
-        {% endif %}
-        {% if user.e_coordenador %}
-          <li class="atalho">
-            <h3><a href="{% url 'fila_coordenacao' %}">Fila da coordenação</a></h3>
-            <p>Cursos com os seis entregáveis aprovados, prontos para publicar.</p>
-          </li>
-          <li class="atalho">
-            <h3><a href="{% url 'solicitacoes' %}">Solicitações</a></h3>
-            <p>Pedidos de escolas e grupos da comunidade, a aceitar ou recusar.</p>
-          </li>
-          <li class="atalho">
-            <h3><a href="{% url 'pessoas' %}">Pessoas</a></h3>
-            <p>Professores e coordenação. Promova um professor a coordenador ou tire o acesso.</p>
-          </li>
-        {% endif %}
       </ul>
     {% endif %}
   </div>
