@@ -1,5 +1,8 @@
 from django.conf import settings
+import nh3
 from django.db import models
+
+from apps.cursos.models.producao import TAGS_PERMITIDAS
 
 from apps.cursos.choices import StatusCurso
 
@@ -26,3 +29,11 @@ class LogTransicaoCurso(models.Model):
 
     def __str__(self):
         return f"{self.curso}: {self.de_status} -> {self.para_status}"
+
+    def save(self, *args, **kwargs):
+        # Sanitiza sempre, como `Secao`, `Anexo` e `Revisao`: a observacao passou
+        # a ser escrita num editor de texto rico, e o dia em que alguem mostrar o
+        # historico na tela nao pode ser o dia em que o script roda. Fora do
+        # guarda do update_fields, como nos outros tres.
+        self.observacao = nh3.clean(self.observacao or "", tags=TAGS_PERMITIDAS)
+        super().save(*args, **kwargs)

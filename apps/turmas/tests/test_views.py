@@ -404,7 +404,11 @@ def test_painel_oferece_os_links_conforme_o_papel(client, aluno, professor, coor
 
     client.force_login(coordenador)
     conteudo = client.get(reverse("painel")).content.decode()
-    assert turmas in conteudo and solicitacoes in conteudo
+    # Turmas saiu do painel dos DOIS papeis, a pedido: e modulo de outra etapa, a
+    # desenvolver. A tela e a permissao continuam de pe; o que sumiu foi o
+    # caminho. Solicitacoes continua, porque continua sendo trabalho de agora.
+    assert turmas not in conteudo
+    assert solicitacoes in conteudo
 
     client.force_login(professor)
     conteudo = client.get(reverse("painel")).content.decode()

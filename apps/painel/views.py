@@ -15,7 +15,6 @@ from django.shortcuts import render
 from apps.catalogo.models import Solicitacao
 from apps.cursos.choices import STATUS_EM_DESENVOLVIMENTO, StatusCurso, StatusEntregavel
 from apps.cursos.models import Curso, Entregavel
-from apps.turmas.models import Turma
 
 
 def _resumo(usuario):
@@ -43,11 +42,6 @@ def _resumo(usuario):
                 "rotulo": "Cursos no catálogo",
                 "valor": Curso.objects.filter(status=StatusCurso.PUBLICADO).count(),
                 "url": "cursos_no_catalogo",
-            },
-            {
-                "rotulo": "Turmas agendadas",
-                "valor": Turma.objects.filter(status=Turma.AGENDADA).count(),
-                "url": "minhas_turmas",
             },
         ]
 

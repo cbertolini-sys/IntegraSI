@@ -18,7 +18,11 @@
   <div class="faixa corpo-trabalho">
     <ul class="registros">
       {% for curso in cursos %}
-        {% include "cursos/_curso_na_lista.html" with detalhe=curso.rotulo_da_versao %}
+        {% comment %}
+          `?voltar=catalogo` para a tela de decisao devolver a pessoa a esta
+          lista, e nao a fila por onde ela nao passou.
+        {% endcomment %}
+        {% include "cursos/_curso_na_lista.html" with detalhe=curso.rotulo_da_versao voltar="?voltar=catalogo" %}
       {% empty %}
         <li class="vazio"><p>Nenhum curso publicado ou despublicado.</p></li>
       {% endfor %}

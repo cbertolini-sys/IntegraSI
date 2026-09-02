@@ -99,11 +99,11 @@ def test_o_painel_do_coordenador_nao_mudou(client, coordenador):
     """A troca e do professor. O coordenador tem outro recorte, e `e_professor`
     tambem vale para ele - trocar o ramo errado levaria os cartoes dele junto."""
     client.force_login(coordenador)
+    # "Turmas agendadas" saiu a pedido: turmas viraram modulo de outra etapa.
     assert cartoes(client) == [
         "Aguardando aprovação",
         "Solicitações a responder",
         "Cursos no catálogo",
-        "Turmas agendadas",
     ]
 
 

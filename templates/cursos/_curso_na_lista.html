@@ -10,7 +10,7 @@
 {% endcomment %}
 <li class="registro">
   <div>
-    <h3><a href="{% url 'analisar_curso' curso.pk %}">{{ curso.titulo }}</a></h3>
+    <h3><a href="{% url 'analisar_curso' curso.pk %}{{ voltar }}">{{ curso.titulo }}</a></h3>
     <p class="detalhe">
       <span>{{ curso.professor_responsavel.nome_completo }}</span>
       <span class="sep">&middot;</span>

@@ -71,12 +71,6 @@
             <p>Professores e coordenação. Promova um professor a coordenador ou tire o acesso.</p>
           </li>
         {% endif %}
-        {% if user.e_professor or user.e_coordenador %}
-          <li class="atalho">
-            <h3><a href="{% url 'minhas_turmas' %}">Turmas</a></h3>
-            <p>Realizações agendadas a partir das solicitações aceitas.</p>
-          </li>
-        {% endif %}
       </ul>
     {% endif %}
   </div>

@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_http_methods, require_POST
 
 from apps.contas.paginacao import paginar
@@ -53,11 +54,19 @@ def cursos_no_catalogo(request):
 def analisar_curso(request, pk):
     permissions.garante(permissions.pode_publicar(request.user), "Área da coordenação.")
     curso = get_object_or_404(Curso, pk=pk)
+    # Lista fechada, e nao o endereco que vier no parametro: refletir num `href`
+    # um valor de fora e como se abre um redirecionamento para qualquer lugar.
+    if request.GET.get("voltar") == "catalogo":
+        volta = (reverse("cursos_no_catalogo"), "Voltar aos cursos")
+    else:
+        volta = (reverse("fila_coordenacao"), "Voltar à fila")
     return render(
         request,
         "cursos/analisar_curso.html",
         {
             "curso": curso,
+            "volta_url": volta[0],
+            "volta_rotulo": volta[1],
             "entregaveis": curso.entregaveis.prefetch_related("secoes", "anexos"),
             # Quais decisoes cabem neste curso agora. Calculado aqui, e nao
             # comparando status por string no template: o valor gravado nao

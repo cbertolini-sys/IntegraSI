@@ -11,7 +11,7 @@
       </div>
       <div class="acoes">
         {% include "cursos/_selo.html" with situacao=curso.situacao %}
-        <a class="botao botao-linha" href="{% url 'fila_coordenacao' %}">&larr; Voltar à fila</a>
+        <a class="botao botao-linha" href="{{ volta_url }}">&larr; {{ volta_rotulo }}</a>
       </div>
     </div>
   </div>
@@ -56,9 +56,12 @@
         <h2>Decisão da coordenação</h2>
         <form method="post" action="{% url 'decidir_curso' curso.pk %}">
           {% csrf_token %}
+          {% comment %}
+            `rows=4` poe o editor curto; um comentario nao e uma secao de plano.
+          {% endcomment %}
           <div class="campo">
             <label for="comentario">Comentário</label>
-            <textarea id="comentario" name="comentario" rows="5"></textarea>
+            <textarea id="comentario" name="comentario" rows="4" data-editor></textarea>
           </div>
           <div class="acoes-empilhadas">
             <button type="submit" name="decisao" value="PUBLICAR" class="botao botao-largo">Publicar</button>
@@ -69,9 +72,17 @@
         <h2>Tirar do catálogo</h2>
         <form method="post" action="{% url 'decidir_curso' curso.pk %}">
           {% csrf_token %}
+          {% comment %}
+            Obrigatorio na tela, e nao so no servico: `despublicar_curso` ja
+            recusava vazio, mas a pessoa so descobria depois de escrever a decisao
+            inteira e apertar o botao.
+          {% endcomment %}
           <div class="campo">
-            <label for="comentario">Motivo da despublicação</label>
-            <textarea id="comentario" name="comentario" rows="5"></textarea>
+            <span class="rotulo-campo">
+              <label for="comentario">Motivo da despublicação</label>
+              <span class="obrigatorio" aria-hidden="true">*</span>
+            </span>
+            <textarea id="comentario" name="comentario" rows="4" data-editor required></textarea>
           </div>
           <button type="submit" name="decisao" value="DESPUBLICAR" class="botao botao-largo">Despublicar</button>
         </form>

@@ -20,7 +20,8 @@ DESTINOS = [
     "fila_coordenacao",
     "solicitacoes",
     "pessoas",
-    "minhas_turmas",
+    # `minhas_turmas` saiu: turmas viraram modulo de outra etapa, a desenvolver,
+    # e o painel deixou de oferecer o caminho para os dois papeis.
     "nova_proposta",
 ]
 
