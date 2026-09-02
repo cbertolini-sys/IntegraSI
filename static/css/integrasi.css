@@ -1262,14 +1262,16 @@ textarea:focus {
   line-height: 1.5;
 }
 
-/* A descrição vem do editor, então chega embrulhada em <p> (e pode trazer lista
-   ou citação). Sem isto o primeiro parágrafo abre uma margem de navegador dentro
-   do cartão do material. */
-.descricao-anexo > :first-child {
+/* Texto que vem do editor chega embrulhado em <p> (e pode trazer lista ou
+   citação). Sem isto o primeiro paragrafo abre uma margem de navegador dentro do
+   cartao. Vale para a descricao do material e para a devolutiva do professor. */
+.descricao-anexo > :first-child,
+.devolutiva-texto > :first-child {
   margin-top: 0;
 }
 
-.descricao-anexo > :last-child {
+.descricao-anexo > :last-child,
+.devolutiva-texto > :last-child {
   margin-bottom: 0;
 }
 
@@ -2284,11 +2286,29 @@ textarea:focus {
    lateral. Tres marcacoes para a mesma informacao faziam as telas parecerem de
    sistemas diferentes. */
 
+/* O mesmo rotulo em versalete dos outros cartoes do sistema (`.bloco > h3`,
+   `.lateral-pilha h2`). Estava em 1,125rem, e dentro da pilha de cartoes da tela
+   de revisao acabava pegando os dois desenhos conforme a ordem das regras: o
+   mesmo painel com dois tamanhos em duas telas. */
 .painel-pendencias h2 {
   font-family: var(--display);
-  font-size: 1.125rem;
+  font-size: 0.8125rem;
   font-weight: 700;
-  margin: 0 0 0.5rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--azul);
+  margin: 0 0 0.75rem;
+}
+
+/* Sem pendencia o painel muda de assunto, e a cor diz isso antes da leitura:
+   o mesmo verde do selo "Aprovado". */
+.painel-pendencias.sem-pendencia h2 {
+  color: #1c6b41;
+}
+
+.painel-pendencias.sem-pendencia .tudo-certo {
+  color: var(--texto);
+  font-weight: 400;
 }
 
 .painel-pendencias .apoio-pendencias {
@@ -2340,9 +2360,9 @@ textarea:focus {
   }
 }
 
-/* Separa o painel do que vem depois dele na lateral (a decisao do professor, o
-   envio para revisao), sem margem inline em cada tela. */
-.coluna-pendencias .painel-pendencias + h2,
+/* Separa o painel do botao de envio, na tela do entregavel, sem margem inline.
+   O `+ h2` que havia aqui era da tela de revisao, onde a decisao virou cartao
+   proprio e o irmao deixou de existir. */
 .coluna-pendencias .painel-pendencias + form {
   margin-top: 1.75rem;
   padding-top: 1.75rem;

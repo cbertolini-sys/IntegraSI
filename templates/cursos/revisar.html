@@ -60,21 +60,35 @@
       {% endif %}
     </div>
 
-    <aside class="lateral coluna-pendencias">
-      {% include "cursos/_pendencias.html" with apoio="A equipe enviou assim mesmo. Vale conferir antes de decidir." tudo_certo="Nada. O entregável cumpre o que o roteiro pede." %}
+    {% comment %}
+      Dois cartoes, como no painel do curso: o que falta e o que voce decide sao
+      dois assuntos, e estavam na mesma moldura separados so por uma linha.
+    {% endcomment %}
+    <aside class="lateral lateral-pilha coluna-pendencias">
+      <div class="cartao-lateral">
+        {% include "cursos/_pendencias.html" with apoio="A equipe enviou assim mesmo. Vale conferir antes de decidir." tudo_certo="Nada. O entregável cumpre o que o roteiro pede." %}
+      </div>
 
-      <h2>Sua decisão</h2>
-      <form method="post" action="{% url 'decidir' entregavel.pk %}">
-        {% csrf_token %}
-        <div class="campo">
-          <label for="comentario">Comentário</label>
-          <textarea id="comentario" name="comentario" rows="5"></textarea>
-        </div>
-        <div class="acoes-empilhadas">
-          <button type="submit" name="decisao" value="APROVAR" class="botao botao-largo">Aprovar</button>
-          <button type="submit" name="decisao" value="DEVOLVER" class="botao botao-linha botao-largo">Devolver</button>
-        </div>
-      </form>
+      <div class="cartao-lateral">
+        <h2>Sua decisão</h2>
+        <form method="post" action="{% url 'decidir' entregavel.pk %}">
+          {% csrf_token %}
+          <div class="campo">
+            <span class="rotulo-campo">
+              <label for="comentario">Comentário</label>
+              <button type="button" class="ajuda-campo"
+                data-ajuda="Ao devolver, diga o que falta e onde. É este texto que a equipe lê para saber o que corrigir. Aceita negrito, listas e links."
+                tabindex="-1" aria-label="O que escrever no comentário">?</button>
+            </span>
+            {# rows=4 poe o editor curto: um comentario nao e uma secao do plano. #}
+            <textarea id="comentario" name="comentario" rows="4" data-editor></textarea>
+          </div>
+          <div class="acoes-empilhadas">
+            <button type="submit" name="decisao" value="APROVAR" class="botao botao-largo">Aprovar</button>
+            <button type="submit" name="decisao" value="DEVOLVER" class="botao botao-linha botao-largo">Devolver</button>
+          </div>
+        </form>
+      </div>
     </aside>
   </div>
 </div>

@@ -9,8 +9,18 @@
   `apoio` e `tudo_certo` sao textos do chamador: o que falta e sempre a mesma
   ideia, mas quem cobra e o que acontece quando nao falta nada mudam por tela.
 {% endcomment %}
-<div class="painel-pendencias">
-  <h2>Ainda falta</h2>
+{% comment %}
+  O titulo acompanha o estado. Fixo em "Ainda falta", ele contradizia a propria
+  frase de baixo quando nao faltava nada: "Ainda falta / Nada. O entregável
+  cumpre o que o roteiro pede." Como o painel serve tres telas, o defeito estava
+  nas tres, e mudar aqui conserta as tres de uma vez.
+{% endcomment %}
+<div class="painel-pendencias{% if not pendencias %} sem-pendencia{% endif %}">
+  {% if pendencias %}
+    <h2>Ainda falta</h2>
+  {% else %}
+    <h2>Tudo certo</h2>
+  {% endif %}
   {% if pendencias %}
     {% if apoio %}<p class="apoio-pendencias">{{ apoio }}</p>{% endif %}
     <ul class="pendencias">

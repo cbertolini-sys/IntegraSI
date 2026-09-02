@@ -42,7 +42,12 @@
   {% if ultima_revisao and ultima_revisao.decisao == "DEVOLVIDO" %}
     <section class="bloco devolutiva">
       <h3>Devolvido pelo professor</h3>
-      <p>{{ ultima_revisao.comentario }}</p>
+      {% comment %}
+        |safe seguro porque `Revisao.save()` sanitiza com nh3 contra
+        TAGS_PERMITIDAS, incondicionalmente. Sem ele o editor do professor seria
+        armadilha: ele formata e a equipe le `<strong>` como texto.
+      {% endcomment %}
+      <div class="devolutiva-texto">{{ ultima_revisao.comentario|safe }}</div>
     </section>
   {% endif %}
 
