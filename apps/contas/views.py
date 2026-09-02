@@ -13,6 +13,7 @@ from apps.catalogo.models import Solicitacao
 from apps.contas import services
 from apps.contas.forms_convite import PrimeiroAcessoForm
 from apps.contas.models import ConviteAluno, TentativaDeLogin, Usuario
+from apps.contas.paginacao import paginar
 from apps.contas.rede import ip_da_requisicao
 from apps.cursos.choices import STATUS_EM_DESENVOLVIMENTO, StatusCurso, StatusEntregavel
 from apps.cursos.models import Curso, Entregavel
@@ -222,4 +223,5 @@ def pessoas(request):
     equipe = Usuario.objects.filter(
         papel__in=[Usuario.PROFESSOR, Usuario.COORDENADOR]
     ).order_by("nome_completo")
-    return render(request, "contas/pessoas.html", {"equipe": equipe})
+    pagina = paginar(request, equipe)
+    return render(request, "contas/pessoas.html", {"equipe": pagina, "pagina": pagina})

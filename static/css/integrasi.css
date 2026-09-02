@@ -2777,6 +2777,26 @@ textarea:focus {
   border-bottom-color: var(--marinho-fundo);
 }
 
+/* ---------- paginação ---------- */
+
+/* Uma so para todas as listas. Fica centrada e afastada do fim da lista: colada
+   nela, o "Próxima" lia como se fosse mais um item. */
+.paginacao {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  margin-top: 2rem;
+}
+
+.paginacao-conta {
+  font-family: var(--dado);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--cinza);
+}
+
 /* ---------- lista de caixas de marcar ---------- */
 
 /* O `<select multiple>` do Django pede Ctrl para escolher mais de um, que e

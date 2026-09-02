@@ -4,6 +4,7 @@ from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
+from apps.contas.paginacao import paginar
 from apps.cursos import permissions, services, validacoes
 from apps.cursos.arquivos import TAMANHO_BLOCO, calcula_hash
 from apps.cursos.choices import STATUS_EM_DESENVOLVIMENTO, StatusCurso, TipoMidia
@@ -32,10 +33,11 @@ def meus_cursos(request):
         cursos = cursos.filter(status=StatusCurso.PUBLICADO)
     elif estado == "desenvolvimento":
         cursos = cursos.filter(status__in=STATUS_EM_DESENVOLVIMENTO)
+    pagina = paginar(request, cursos)
     return render(
         request,
         "cursos/meus_cursos.html",
-        {"cursos": cursos, "estado": estado},
+        {"cursos": pagina, "pagina": pagina, "estado": estado},
     )
 
 

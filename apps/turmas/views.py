@@ -7,6 +7,7 @@ from apps.catalogo.models import Solicitacao
 from apps.cursos import permissions
 from apps.turmas import services
 from apps.turmas.forms import TurmaForm
+from apps.contas.paginacao import paginar
 from apps.turmas.models import Turma
 
 # Valores enviados pelo formulário: gravados/transmitidos sem acento e nunca
@@ -25,9 +26,15 @@ def solicitacoes(request):
     # anônimo receberia AttributeError (500) em vez da tela de login.
     permissions.garante(permissions.pode_publicar(request.user), "Área da coordenação.")
     pendentes = Solicitacao.objects.filter(status__in=PENDENTES).select_related("curso")
-    respondidas = Solicitacao.objects.exclude(status__in=PENDENTES).select_related("curso")[:20]
+    # A fila de pendentes fica INTEIRA: e trabalho a fazer, e esconder metade do
+    # que espera resposta seria pior que a pagina longa. O historico das
+    # respondidas pagina, e com isso perde o `[:20]` que cortava sem dizer.
+    respondidas = Solicitacao.objects.exclude(status__in=PENDENTES).select_related("curso")
+    pagina = paginar(request, respondidas)
     return render(
-        request, "turmas/solicitacoes.html", {"pendentes": pendentes, "respondidas": respondidas}
+        request,
+        "turmas/solicitacoes.html",
+        {"pendentes": pendentes, "respondidas": pagina, "pagina": pagina},
     )
 
 
@@ -90,4 +97,7 @@ def minhas_turmas(request):
     turmas = Turma.objects.select_related("curso")
     if not request.user.e_coordenador:
         turmas = turmas.filter(professor=request.user)
-    return render(request, "turmas/minhas_turmas.html", {"turmas": turmas})
+    pagina = paginar(request, turmas)
+    return render(
+        request, "turmas/minhas_turmas.html", {"turmas": pagina, "pagina": pagina}
+    )

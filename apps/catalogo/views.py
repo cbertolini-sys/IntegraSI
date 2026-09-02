@@ -9,6 +9,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
 from apps.catalogo.forms import SolicitacaoForm
+from apps.contas.paginacao import paginar
 from apps.contas.rede import ip_da_requisicao
 from apps.catalogo.models import Solicitacao
 from apps.cursos.busca import buscar
@@ -76,11 +77,13 @@ def catalogo(request):
 
     cursos = buscar(cursos, request.GET.get("q", "")).distinct()
 
+    pagina = paginar(request, cursos)
     return render(
         request,
         "catalogo/lista.html",
         {
-            "cursos": cursos,
+            "cursos": pagina,
+            "pagina": pagina,
             "etapas": ETAPAS,
             "temas": Tema.objects.filter(ativo=True),
             "referenciais": Referencial.objects.filter(ativo=True),

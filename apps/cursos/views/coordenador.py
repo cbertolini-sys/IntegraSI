@@ -4,6 +4,7 @@ from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_http_methods, require_POST
 
+from apps.contas.paginacao import paginar
 from apps.cursos import permissions, services
 from apps.cursos.choices import StatusCurso
 from apps.cursos.models import Curso
@@ -40,7 +41,12 @@ def cursos_no_catalogo(request):
     cursos = Curso.objects.filter(status__in=NO_CATALOGO).select_related(
         "professor_responsavel", "edicao"
     )
-    return render(request, "cursos/cursos_no_catalogo.html", {"cursos": cursos})
+    pagina = paginar(request, cursos)
+    return render(
+        request,
+        "cursos/cursos_no_catalogo.html",
+        {"cursos": pagina, "pagina": pagina},
+    )
 
 
 @login_required

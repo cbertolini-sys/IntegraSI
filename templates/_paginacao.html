@@ -1,0 +1,18 @@
+{% comment %}
+  A navegacao entre paginas, uma so para todas as listas.
+
+  `{% querystring %}` (Django 5.1+) reescreve a query string ATUAL trocando so o
+  numero da pagina: sem isso, virar a pagina no catalogo perderia o filtro que a
+  pessoa acabou de aplicar e devolveria a lista inteira.
+{% endcomment %}
+{% if pagina.has_other_pages %}
+  <nav class="paginacao" aria-label="Páginas de resultados">
+    {% if pagina.has_previous %}
+      <a class="botao botao-linha" href="{% querystring pagina=pagina.previous_page_number %}">&larr; Anterior</a>
+    {% endif %}
+    <span class="paginacao-conta">Página {{ pagina.number }} de {{ pagina.paginator.num_pages }}</span>
+    {% if pagina.has_next %}
+      <a class="botao botao-linha" href="{% querystring pagina=pagina.next_page_number %}">Próxima &rarr;</a>
+    {% endif %}
+  </nav>
+{% endif %}
