@@ -78,9 +78,17 @@ def test_a_pagina_invalida_cai_na_primeira(client, muitos_cursos):
 def test_a_paginacao_preserva_o_filtro(client, muitos_cursos):
     """O catalogo filtra por tema, formato, etapa e busca. Se o link da proxima
     pagina perder isso, a pessoa filtra, vira a pagina e recebe tudo de novo."""
-    html = client.get(reverse("catalogo") + "?formato=REMOTO").content.decode()
-    if "Página 1 de" in html:
-        assert "formato=REMOTO" in html
+    from apps.cursos.choices import Formato
+    from apps.cursos.models import Curso
+
+    # Todos com o MESMO formato, para o filtro ainda render mais de uma pagina. A
+    # primeira versao deste teste tinha um `if "Página 1 de" in html` em volta da
+    # afirmacao: com uma pagina so ele nao afirmava nada, e passava com a query
+    # string apagada do link. Achado na campanha de delecao.
+    Curso.objects.all().update(formato=Formato.ONLINE)
+    html = client.get(reverse("catalogo") + "?formato=ONLINE").content.decode()
+    assert "Página 1 de 2" in html, "o filtro precisa render duas páginas"
+    assert "formato=ONLINE" in html[html.index("paginacao") :]
 
 
 @pytest.mark.django_db
@@ -98,9 +106,25 @@ def test_a_lista_de_pessoas_e_paginada(client, coordenador, db):
 
 
 @pytest.mark.django_db
-def test_a_fila_de_revisao_nao_e_paginada(client, professor):
+def test_a_fila_de_revisao_nao_e_paginada(client, dados_curso, professor, aluno):
     """O outro lado: fila e para ser vista inteira. Esconder metade do que espera
-    decisao seria pior que a pagina longa."""
+    decisao seria pior que a pagina longa.
+
+    Com itens de sobra, e nao com a fila vazia: vazia, a navegacao nao apareceria
+    de qualquer jeito (`has_other_pages` e falso com uma pagina), e o teste
+    passava mesmo com a fila paginada. Achado na campanha de delecao.
+    """
+    from apps.cursos.choices import StatusEntregavel
+    from apps.cursos.models import Entregavel
+
+    for n in range(3):
+        dados = dict(dados_curso)
+        dados["titulo"] = f"Curso da fila {n}"
+        curso = services.criar_curso(**dados)
+        services.adicionar_membro(curso, aluno, por=professor)
+    Entregavel.objects.all().update(status=StatusEntregavel.EM_REVISAO)
+    assert Entregavel.objects.count() > POR_PAGINA
+
     client.force_login(professor)
     html = client.get(reverse("fila_revisao")).content.decode()
     assert "Página 1 de" not in html
