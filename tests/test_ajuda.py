@@ -202,3 +202,99 @@ def test_nenhum_campo_obrigatorio_se_diz_opcional():
     assert mentirosos == [], (
         "campo obrigatório cuja ajuda diz que é opcional:\n" + "\n".join(mentirosos)
     )
+
+
+# --- Campo escrito a mao em template, fora da varredura de formularios --------
+
+# A varredura de `formularios()` so alcanca `apps.*.forms`: um <input>/<select>/
+# <textarea> escrito direto no template, sem form.py nenhum por tras, nunca passa
+# por ela. Cada entrada aqui tem um motivo de verdade, e nao "ainda nao migrado" -
+# um motivo assim envelheceria mal e ninguem saberia se ainda vale.
+ISENTOS_DO_TEMPLATE = {
+    # A primeira tela que qualquer pessoa ve, antes de qualquer outra ajuda do
+    # sistema fazer sentido. E-mail e senha de login sao os dois campos mais
+    # universalmente entendidos da web; um balao aqui seria ruido no momento em
+    # que a pessoa menos precisa dele.
+    ("registration/login.html", "username"),
+    ("registration/login.html", "password"),
+    # Barra de busca do catalogo publico: cinco campos compactos numa linha so
+    # (a busca livre, com `placeholder` dizendo o que digitar, e quatro filtros,
+    # cada um com "Qualquer <coisa>" como primeira opcao - a propria lista de
+    # opcoes explica o campo). E um padrao de busca facetada, nao um formulario
+    # de dados, e nao tem o espaco vertical de `.campo` para um botao de ajuda
+    # sem quebrar o layout de uma linha so.
+    ("catalogo/lista.html", "q"),
+    ("catalogo/lista.html", "etapa"),
+    ("catalogo/lista.html", "tema"),
+    ("catalogo/lista.html", "formato"),
+    ("catalogo/lista.html", "referencial"),
+}
+
+# Campo escrito a mao cujo POST passa por um form.py que o template nao
+# renderiza direto - o Quill precisa do <textarea> de verdade por baixo, entao
+# `_secao.html` escreve a tag a mao, mas `salvar_secao` valida com
+# `SecaoForm(request.POST, instance=secao)`, que ja tem help_text (visto no
+# teste de cima). Lista explicita, e nao um match automatico por nome de campo:
+# um match automatico ja criou um falso negativo aqui (SolicitacaoForm.nome e
+# SolicitacaoForm.email, de uma tela sem nenhuma relacao, escondiam a falta de
+# ajuda de cursos/equipe.html na primeira versao deste teste).
+COBERTO_POR_FORM_QUE_O_TEMPLATE_NAO_RENDERIZA = {
+    ("cursos/_secao.html", "conteudo"),
+}
+
+_CAMPO_SEM_AJUDA = re.compile(
+    r'<(?:input|select|textarea)\b(?![^>]*type="hidden")[^>]*\bname="([a-z_]+)"'
+)
+
+
+def test_todo_campo_escrito_a_mao_tambem_tem_balao():
+    """A mesma exigencia do teste acima, para quem nao passa pela varredura de
+    formularios.py: um <input>/<select>/<textarea> escrito direto no template.
+
+    So reprova campo que nao tem ajuda NENHUMA: nem um `data-ajuda` companheiro no
+    mesmo <form>, nem estar na lista explicita de campos que um form.py ja cobre.
+    Os dois caminhos contam porque os dois colocam explicacao na tela; e a tela,
+    nao o mecanismo, que este arquivo protege.
+    """
+    sem_ajuda = []
+    for caminho in RAIZ.glob("templates/**/*.html"):
+        relativo = str(caminho.relative_to(RAIZ / "templates"))
+        texto = caminho.read_text(encoding="utf-8")
+        for bloco in re.findall(r"<form\b.*?</form>", texto, re.S):
+            tem_ajuda_no_bloco = "data-ajuda=" in bloco
+            for campo in _CAMPO_SEM_AJUDA.findall(bloco):
+                if (relativo, campo) in ISENTOS_DO_TEMPLATE:
+                    continue
+                if (relativo, campo) in COBERTO_POR_FORM_QUE_O_TEMPLATE_NAO_RENDERIZA:
+                    continue
+                if not tem_ajuda_no_bloco:
+                    sem_ajuda.append(f"{relativo}:{campo}")
+    assert sem_ajuda == [], "campo escrito a mao sem ajuda:\n" + "\n".join(sem_ajuda)
+
+
+def test_a_varredura_de_campo_a_mao_acha_alguma_coisa():
+    """Um seletor errado devolveria zero blocos e o teste acima ficaria verde
+    para sempre, com o repositorio inteiro sem `<form>` nenhum encontrado."""
+    total = sum(
+        len(re.findall(r"<form\b.*?</form>", caminho.read_text(encoding="utf-8"), re.S))
+        for caminho in RAIZ.glob("templates/**/*.html")
+    )
+    assert total >= 10
+
+
+def test_a_lista_de_isentos_continua_justificada():
+    """Os sete campos isentos precisam continuar sendo os que os comentarios
+    acima explicam - uma oitava entrada nova sem revisar este teste seria a lista
+    crescendo em silencio pelo caminho mais facil."""
+    assert ISENTOS_DO_TEMPLATE == {
+        ("registration/login.html", "username"),
+        ("registration/login.html", "password"),
+        ("catalogo/lista.html", "q"),
+        ("catalogo/lista.html", "etapa"),
+        ("catalogo/lista.html", "tema"),
+        ("catalogo/lista.html", "formato"),
+        ("catalogo/lista.html", "referencial"),
+    }
+    assert COBERTO_POR_FORM_QUE_O_TEMPLATE_NAO_RENDERIZA == {
+        ("cursos/_secao.html", "conteudo"),
+    }

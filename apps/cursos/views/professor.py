@@ -8,7 +8,13 @@ from django.views.decorators.http import require_POST, require_http_methods
 from apps.contas.models import Usuario
 from apps.cursos import permissions, services, validacoes
 from apps.cursos.choices import StatusEntregavel
-from apps.cursos.forms import FichaCursoForm, PropostaForm
+from apps.cursos.forms import (
+    AlocarEstudanteForm,
+    AlocarNovoEstudanteForm,
+    AlocarProfessorForm,
+    FichaCursoForm,
+    PropostaForm,
+)
 from apps.cursos.models import Curso, Entregavel, MembroEquipe
 from apps.referenciais.models import Referencial
 
@@ -207,8 +213,9 @@ def equipe(request, pk):
         "cursos/equipe.html",
         {
             "curso": curso,
-            "professores": _professores_disponiveis(curso),
-            "alunos": _alunos_disponiveis(curso),
+            "form_aluno_existente": AlocarEstudanteForm(disponiveis=_alunos_disponiveis(curso)),
+            "form_novo_estudante": AlocarNovoEstudanteForm(),
+            "form_professor": AlocarProfessorForm(disponiveis=_professores_disponiveis(curso)),
         },
     )
 

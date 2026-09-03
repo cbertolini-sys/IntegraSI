@@ -13,7 +13,13 @@
       <form method="post">
         {% csrf_token %}
         <div class="campo">
-          <label for="motivo">Por que esta versão está sendo aberta?</label>
+          <span class="rotulo-campo">
+            <label for="motivo">Por que esta versão está sendo aberta?</label>
+            <span class="obrigatorio" aria-hidden="true">*</span>
+            <button type="button" class="ajuda-campo"
+              data-ajuda="Fica registrado no histórico do curso e aparece para quem já tinha solicitado a versão anterior. Ex.: “atualização da carga horária” ou “correção de erros no plano de ensino”."
+              tabindex="-1" aria-label="O que escrever no motivo">?</button>
+          </span>
           <textarea id="motivo" name="motivo" rows="4" required></textarea>
         </div>
         <div class="acoes-empilhadas">

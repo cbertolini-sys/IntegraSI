@@ -36,8 +36,14 @@
     que havia antes ao menos aparecia vazio. Dizer isso e mais honesto que os dois.
   {% endcomment %}
   {% if campo.field.choices is not None and not campo.field.choices|length %}
-    <p class="sem-opcoes">Nada cadastrado ainda. A coordenação cadastra pelo
-       painel de administração.</p>
+    {% comment %}
+      `vazio` deixa o chamador escrever uma frase especifica para o proprio
+      campo (equipe.html: "Nenhum estudante disponível."); sem ele, esta frase
+      generica - certa para um referencial ou uma competencia, que so a
+      coordenacao cadastra pelo Admin - ficaria errada num campo que qualquer
+      professor esvazia sozinho, so por ja ter alocado todo mundo.
+    {% endcomment %}
+    <p class="sem-opcoes">{{ vazio|default:"Nada cadastrado ainda. A coordenação cadastra pelo painel de administração." }}</p>
   {% else %}
     {{ campo }}
   {% endif %}

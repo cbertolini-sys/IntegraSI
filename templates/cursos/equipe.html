@@ -48,16 +48,7 @@
       <form method="post">
         {% csrf_token %}
         <input type="hidden" name="acao" value="aluno_existente">
-        <div class="campo">
-          <label for="id_aluno">Estudante</label>
-          <select name="aluno" id="id_aluno" required>
-            {% for pessoa in alunos %}
-              <option value="{{ pessoa.pk }}">{{ pessoa.nome_completo }}</option>
-            {% empty %}
-              <option value="" disabled>Nenhum estudante disponível</option>
-            {% endfor %}
-          </select>
-        </div>
+        {% include "cursos/_campo.html" with campo=form_aluno_existente.aluno vazio="Nenhum estudante disponível." %}
         <button type="submit" class="botao botao-largo">Alocar estudante</button>
       </form>
 
@@ -67,14 +58,8 @@
       <form method="post">
         {% csrf_token %}
         <input type="hidden" name="acao" value="aluno">
-        <div class="campo">
-          <label for="id_nome">Nome</label>
-          <input type="text" name="nome" id="id_nome" maxlength="150" required>
-        </div>
-        <div class="campo">
-          <label for="id_email">E-mail</label>
-          <input type="email" name="email" id="id_email" required>
-        </div>
+        {% include "cursos/_campo.html" with campo=form_novo_estudante.nome %}
+        {% include "cursos/_campo.html" with campo=form_novo_estudante.email %}
         <button type="submit" class="botao botao-largo">Alocar e convidar</button>
       </form>
 
@@ -85,16 +70,7 @@
       <form method="post">
         {% csrf_token %}
         <input type="hidden" name="acao" value="professor">
-        <div class="campo">
-          <label for="id_professor">Professor</label>
-          <select name="professor" id="id_professor" required>
-            {% for pessoa in professores %}
-              <option value="{{ pessoa.pk }}">{{ pessoa|como_pessoa }}</option>
-            {% empty %}
-              <option value="" disabled>Nenhum professor disponível</option>
-            {% endfor %}
-          </select>
-        </div>
+        {% include "cursos/_campo.html" with campo=form_professor.professor vazio="Nenhum professor disponível." %}
         <button type="submit" class="botao botao-largo">Alocar professor</button>
       </form>
     </aside>

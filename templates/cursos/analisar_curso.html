@@ -66,7 +66,12 @@
             `rows=4` poe o editor curto; um comentario nao e uma secao de plano.
           {% endcomment %}
           <div class="campo">
-            <label for="comentario">Comentário</label>
+            <span class="rotulo-campo">
+              <label for="comentario">Comentário</label>
+              <button type="button" class="ajuda-campo"
+                data-ajuda="Fica no histórico do curso, visível à equipe. Ao devolver, diga o que falta corrigir. Ao publicar, é opcional. Aceita negrito, listas e links."
+                tabindex="-1" aria-label="O que escrever no comentário">?</button>
+            </span>
             <textarea id="comentario" name="comentario" rows="4" data-editor></textarea>
           </div>
           <div class="acoes-empilhadas">
@@ -87,6 +92,9 @@
             <span class="rotulo-campo">
               <label for="comentario">Motivo da despublicação</label>
               <span class="obrigatorio" aria-hidden="true">*</span>
+              <button type="button" class="ajuda-campo"
+                data-ajuda="Fica no histórico do curso, visível à equipe. Diga por que o curso está saindo do catálogo público - a equipe precisa saber para poder corrigir."
+                tabindex="-1" aria-label="O que escrever no motivo da despublicação">?</button>
             </span>
             <textarea id="comentario" name="comentario" rows="4" data-editor required></textarea>
           </div>

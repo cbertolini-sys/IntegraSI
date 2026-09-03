@@ -276,7 +276,8 @@ def test_select_de_professores_nao_oferece_quem_ja_esta_na_equipe(
 
     curso = services.criar_curso(**dados_curso)
     client.force_login(professor)
-    disponiveis = client.get(reverse("equipe", args=[curso.pk])).context["professores"]
+    resposta = client.get(reverse("equipe", args=[curso.pk]))
+    disponiveis = resposta.context["form_professor"].fields["professor"].queryset
     assert professor not in disponiveis
     assert outro_professor in disponiveis
 

@@ -49,7 +49,12 @@
       <form method="post">
         {% csrf_token %}
         <div class="campo">
-          <label for="resposta">Resposta ao solicitante</label>
+          <span class="rotulo-campo">
+            <label for="resposta">Resposta ao solicitante</label>
+            <button type="button" class="ajuda-campo"
+              data-ajuda="Vai por e-mail para quem pediu o curso. Diga por que não dá para atender agora, e sugira uma alternativa se houver uma."
+              tabindex="-1" aria-label="O que escrever na resposta">?</button>
+          </span>
           <textarea id="resposta" name="resposta" rows="4"></textarea>
         </div>
         <button type="submit" name="decisao" value="RECUSAR" class="botao botao-linha botao-largo">Recusar</button>

@@ -11,9 +11,85 @@ from apps.cursos.choices import (
     TipoEntregavel,
     TipoPublico,
 )
+from apps.contas.models import Usuario
 from apps.cursos.models import Anexo, Curso, Secao
 from apps.referenciais.choices import ETAPAS, etapa_do_referencial
 from apps.referenciais.models import Referencial
+
+
+class _CampoDePessoa(forms.ModelChoiceField):
+    """Mostra `Usuario.identificacao` na option, e nao `str(obj)` (=`nome_completo`).
+
+    So importa para o campo de professor: professor cadastrado so com o e-mail
+    (`contas.services.criar_professor`) pode aparecer aqui sem nome, e a option
+    ficaria vazia - a mesma lacuna de A2/A3 da auditoria, aqui na origem da
+    escolha, e nao so na mensagem de sucesso depois dela.
+    """
+
+    def label_from_instance(self, obj):
+        return obj.identificacao
+
+
+class AlocarEstudanteForm(forms.Form):
+    """Desenha o formulario "Estudante já cadastrado" da tela de equipe.
+
+    So para a tela, e nao para validar - o mesmo papel de `EnvioDeVideoForm` (ver
+    a docstring la): quem valida e `services.alocar_aluno_existente`, e a view
+    continua lendo `request.POST.get("aluno")` direto, sem chamar `is_valid()`.
+    Repetir a checagem aqui (`aluno is None`, "escolha alguem") seria uma segunda
+    guarda que nenhum teste de POST distingue da primeira (CLAUDE.md, Testes).
+    """
+
+    aluno = forms.ModelChoiceField(
+        queryset=Usuario.objects.none(),
+        empty_label=None,
+        label="Estudante",
+        help_text="Alunos que já produziram outro curso e ainda não estão nesta equipe.",
+    )
+
+    def __init__(self, *args, disponiveis=None, **kwargs):
+        # Default None, e nao um argumento exigido: tests/test_ajuda.py instancia
+        # todo formulario descoberto sem argumento nenhum (`Formulario()`), e sem
+        # o padrao essa varredura quebraria e a exigencia de ajuda morreria junto -
+        # o mesmo motivo do `user=None` de TrocaDeSenhaForm, em contas/forms.py.
+        super().__init__(*args, **kwargs)
+        self.fields["aluno"].queryset = (
+            disponiveis if disponiveis is not None else Usuario.objects.none()
+        )
+
+
+class AlocarNovoEstudanteForm(forms.Form):
+    """Desenha o formulario "Estudante novo" da tela de equipe. Mesmo papel de
+    `AlocarEstudanteForm`: so para a tela, quem valida e `services.alocar_aluno`."""
+
+    nome = forms.CharField(
+        label="Nome",
+        max_length=150,
+        help_text="O nome completo do estudante, como vai aparecer no curso.",
+    )
+    email = forms.EmailField(
+        label="E-mail",
+        help_text="O convite para criar a senha chega neste endereço.",
+    )
+
+
+class AlocarProfessorForm(forms.Form):
+    """Desenha o formulario "Alocar professor" da tela de equipe. Mesmo papel de
+    `AlocarEstudanteForm`: so para a tela, quem valida e `services.alocar_professor`."""
+
+    professor = _CampoDePessoa(
+        queryset=Usuario.objects.none(),
+        empty_label=None,
+        label="Professor",
+        help_text="Professores e coordenadores que ainda não estão nesta equipe.",
+    )
+
+    def __init__(self, *args, disponiveis=None, **kwargs):
+        # Mesmo motivo do __init__ de AlocarEstudanteForm, acima.
+        super().__init__(*args, **kwargs)
+        self.fields["professor"].queryset = (
+            disponiveis if disponiveis is not None else Usuario.objects.none()
+        )
 
 
 class SecaoForm(forms.ModelForm):
