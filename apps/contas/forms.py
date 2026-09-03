@@ -6,7 +6,7 @@ from django.contrib.auth.forms import (
 )
 
 from apps.contas.models import Usuario
-from apps.contas.validators import somente_digitos, valida_cpf
+from apps.contas.validators import somente_digitos
 
 
 class CamposComPontuacaoMixin(forms.Form):
@@ -133,11 +133,19 @@ class PerfilForm(forms.ModelForm):
         self.fields["telefone"].required = pessoa.e_aluno
 
     def clean_cpf(self):
-        """Em branco mantém o que está gravado."""
+        """Em branco mantém o que está gravado.
+
+        Sem chamar `valida_cpf` aqui, de propósito. `valida_cpf` já é validador do
+        campo no modelo, e o `_post_clean` do `ModelForm` roda o `full_clean()` da
+        instância e devolve o erro pendurado no campo `cpf` deste formulário --
+        exatamente onde a pessoa precisa vê-lo. Repetir a chamada seria uma segunda
+        guarda para o mesmo resultado, do tipo que nenhum teste consegue distinguir
+        da primeira (CLAUDE.md, Testes). O `PrimeiroAcessoForm` chama porque é
+        `forms.Form` e não tem `_post_clean` nenhum.
+        """
         digitado = somente_digitos(self.cleaned_data.get("cpf"))
         if not digitado:
             return self.instance.cpf
-        valida_cpf(digitado)
         return digitado
 
 
