@@ -151,6 +151,22 @@ def test_promover_professor_sem_nome_produz_mensagem_com_email(client, coordenad
 
 
 @pytest.mark.django_db
+def test_rebaixar_coordenador_sem_nome_produz_mensagem_com_email(client, coordenador):
+    """A mesma lacuna do lado do rebaixamento: `promover_a_coordenador` não toca
+    em `nome_completo`, então um professor promovido sem nome continua sem nome
+    como coordenador, e rebaixá-lo repete o defeito de A3 do outro lado."""
+    sem_nome = Usuario.objects.create_user(
+        email="semnome2@ufsm.br", nome_completo="", papel=Usuario.PROFESSOR, password=None
+    )
+    services.promover_a_coordenador(sem_nome, por=coordenador)
+    client.force_login(coordenador)
+    resposta = client.post(
+        reverse("pessoas"), {"usuario": sem_nome.pk, "acao": "REBAIXAR"}, follow=True
+    )
+    assert "semnome2@ufsm.br voltou a ser professor." in resposta.content.decode()
+
+
+@pytest.mark.django_db
 def test_acao_desconhecida_nao_muda_nada(client, coordenador, professor):
     """Sem ramo pega-tudo: um valor inesperado não pode cair na ação destrutiva.
     O mesmo defeito já apareceu duas vezes neste projeto."""
