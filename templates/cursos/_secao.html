@@ -10,7 +10,15 @@
   {% if pode_editar %}
     {% if salvo %}<p class="mensagem">Salvo.</p>{% endif %}
     {% if erro %}<p class="mensagem">{{ erro }}</p>{% endif %}
-    <form hx-post="{% url 'salvar_secao' secao.pk %}" hx-target="#secao-{{ secao.pk }}" hx-swap="outerHTML">
+    {% comment %}
+      `hx-indicator` aponta para o span abaixo, e nao para o padrao (a propria
+      regiao trocada): a secao inteira e substituida no sucesso (hx-swap
+      outerHTML), entao esmaecer o formulario inteiro so para o instante do envio
+      chamaria mais atencao do que "Salvando..." ao lado do botao - e e aqui que a
+      duvida "salvou ou nao?" mais custa, porque e o texto que a pessoa escreveu.
+    {% endcomment %}
+    <form hx-post="{% url 'salvar_secao' secao.pk %}" hx-target="#secao-{{ secao.pk }}"
+          hx-swap="outerHTML" hx-indicator="#indicador-secao-{{ secao.pk }}">
       {% csrf_token %}
       {% comment %}
         O textarea continua sendo o campo enviado. O editor.js poe o Quill na
@@ -19,7 +27,10 @@
         tela sem saida nesse caso.
       {% endcomment %}
       <textarea name="conteudo" rows="10" data-editor>{{ secao.conteudo }}</textarea>
-      <button type="submit" class="botao">Salvar seção</button>
+      <div class="acoes-secao">
+        <button type="submit" class="botao">Salvar seção</button>
+        <span id="indicador-secao-{{ secao.pk }}" class="htmx-indicator aviso-salvando">Salvando…</span>
+      </div>
     </form>
   {% else %}
     {% comment %}

@@ -3449,3 +3449,40 @@ textarea:focus {
   font-size: 0.875rem;
   letter-spacing: -0.01em;
 }
+
+/* ---------- indicador de carregamento do HTMX ---------- */
+
+/* A convencao que o proprio htmx documenta: o elemento comeca invisivel e
+   aparece quando o ancestral ganha a classe `htmx-request`, que o htmx poe e
+   tira sozinho durante a requisicao. Escrita aqui, e nao deixada para o
+   `includeIndicatorStyles` automatico dele, para usar a mesma transicao suave
+   do resto do sistema. */
+.htmx-indicator {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.htmx-request .htmx-indicator,
+.htmx-request.htmx-indicator {
+  opacity: 1;
+}
+
+/* A regiao que o HTMX troca por inteiro (referencial, etapa, habilidades)
+   esmaece enquanto a troca esta a caminho - "estou trabalhando", sem
+   acrescentar elemento nenhum a tela. So os elementos com `hx-get` mesmo: um
+   `hx-post` com `hx-indicator` proprio (a secao) tem o sinal dele, dedicado. */
+.htmx-request[hx-get] {
+  opacity: 0.55;
+  transition: opacity 0.15s ease;
+}
+
+.acoes-secao {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.aviso-salvando {
+  color: var(--cinza);
+  font-size: 0.875rem;
+}
