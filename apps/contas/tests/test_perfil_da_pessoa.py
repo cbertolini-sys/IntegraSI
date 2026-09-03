@@ -278,3 +278,11 @@ def test_o_cabecalho_leva_ao_perfil(client, professor):
 def test_o_visitante_nao_ve_a_porta(client):
     html = client.get(reverse("catalogo")).content.decode()
     assert reverse("perfil") not in html
+
+
+@pytest.mark.django_db
+def test_a_tela_diz_quem_troca_o_e_mail(client, professor):
+    """O e-mail é a credencial e não se edita aqui. Sem dizer isso, a pessoa
+    procura o campo, não acha, e conclui que a tela está quebrada."""
+    html = _abre(client, professor)
+    assert "Só a coordenação troca." in html

@@ -65,7 +65,16 @@
           </div>
           <div>
             <dt>E-mail de acesso</dt>
-            <dd>{{ user.email }}</dd>
+            {% comment %}
+              O aviso encostado no dado, e nao no rodape do cartao. Ele estava la
+              embaixo, tres linhas abaixo da coisa que descrevia, e em forma de
+              pergunta ("Precisa trocar o e-mail?"): a interface perguntando algo
+              que ja sabe, e explicando o mecanismo em vez de dizer o que fazer.
+            {% endcomment %}
+            <dd>
+              {{ user.email }}
+              <span class="nota-ficha">Só a coordenação troca.</span>
+            </dd>
           </div>
           <div>
             <dt>CPF</dt>
@@ -99,8 +108,6 @@
             </dd>
           </div>
         </dl>
-        <p class="detalhe">Precisa trocar o e-mail de acesso? Fale com a coordenação:
-           ele é a chave da sua conta e não se troca por aqui.</p>
       </aside>
     </div>
   </div>

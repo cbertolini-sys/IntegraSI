@@ -3432,6 +3432,16 @@ textarea:focus {
   overflow-wrap: anywhere;
 }
 
+/* O peso volta ao normal: `.lista-ficha dd` é 600, e a nota em negrito
+   competiria com o próprio dado que ela explica. */
+.nota-ficha {
+  display: block;
+  margin-top: 0.125rem;
+  color: var(--cinza);
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
 /* Fonte de dado nos identificadores: CPF mascarado, matrícula e SIAPE são
    números para conferir dígito a dígito, e a proporcional embaralha isso. */
 .lista-ficha dd.dado {
