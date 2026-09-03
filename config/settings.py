@@ -136,3 +136,72 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
 DATA_UPLOAD_MAX_MEMORY_SIZE = 55 * 1024 * 1024
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# --- Log e aviso de erro ------------------------------------------------------
+
+# `ADMINS` recebe "Nome:email" separados por virgula. Vazio, ninguem e avisado -
+# que era o estado anterior, com o `AdminEmailHandler` padrao do Django
+# apontando para uma lista vazia.
+ADMINS = [
+    (nome.strip(), email.strip())
+    for nome, _, email in (
+        entrada.partition(":")
+        for entrada in os.environ.get("ADMINS", "").split(",")
+        if entrada.strip()
+    )
+    if email.strip()
+]
+SERVER_EMAIL = os.environ.get("SERVER_EMAIL", DEFAULT_FROM_EMAIL)
+
+# Log da aplicacao em arquivo proprio, com rotacao.
+#
+# Sem isto vale o padrao do Django: `django.request` escreve em stderr (que vira
+# journald, sem retencao definida por nos) e num `AdminEmailHandler` que, com
+# ADMINS vazio, nao manda para ninguem. Um 500 em producao nao deixava rastro em
+# arquivo nenhum e nao avisava ninguem.
+#
+# Ligado por variavel, e nao por `not DEBUG`, ao contrario das tres chaves de
+# seguranca: aquelas produzem configuracao SEGURA quando esquecidas, esta abre um
+# arquivo no disco. Um caminho errado (ou um diretorio que nao existe, ou sem
+# permissao para o usuario do servico) faz o processo NAO SUBIR - o handler e
+# construido na carga das settings. Melhor ficar sem log do que nao subir, e o
+# `docs/operacao.md` cobra a variavel na instalacao.
+CAMINHO_DO_LOG = os.environ.get("CAMINHO_DO_LOG", "")
+if CAMINHO_DO_LOG:
+    LOGGING = {
+        "version": 1,
+        "disable_existing_loggers": False,
+        "formatters": {
+            "completo": {
+                "format": "{asctime} {levelname} {name} {message}",
+                "style": "{",
+            },
+        },
+        "handlers": {
+            "arquivo": {
+                "class": "logging.handlers.RotatingFileHandler",
+                "filename": CAMINHO_DO_LOG,
+                "maxBytes": 10 * 1024 * 1024,
+                "backupCount": 10,
+                "formatter": "completo",
+            },
+            "email_admin": {
+                "level": "ERROR",
+                "class": "django.utils.log.AdminEmailHandler",
+                # `include_html` FALSE de proposito. O corpo HTML que o Django
+                # monta traz o traceback com as VARIAVEIS LOCAIS de cada quadro,
+                # e nesta base as locais de uma view de convite ou de perfil
+                # carregam CPF, e-mail e telefone de terceiro (spec 10). Ligar o
+                # padrao mandaria dado pessoal por e-mail a cada erro.
+                "include_html": False,
+            },
+        },
+        "loggers": {
+            "django": {"handlers": ["arquivo"], "level": "INFO"},
+            "django.request": {
+                "handlers": ["arquivo", "email_admin"],
+                "level": "ERROR",
+                "propagate": False,
+            },
+        },
+    }

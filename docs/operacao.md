@@ -100,11 +100,29 @@ No `.env` de produção, além de `SECRET_KEY`, `DATABASE_URL` e `ALLOWED_HOSTS`
 | `USAR_X_ACCEL` | `True` | vídeo de 1 GB saindo de dentro de um worker Python |
 | `CONFIAR_NO_PROXY` | `True` | limite por IP vira limite global (todo mundo atrás do nginx é 127.0.0.1) |
 | `SEGURANCA_HTTPS` | `True` | sem redirecionamento https, sem cookie `Secure`, sem HSTS |
+| `CAMINHO_DO_LOG` | `/var/log/integrasi/app.log` | sem log de aplicação: um 500 só deixa rastro no stderr do gunicorn |
+| `ADMINS` | `Nome:email`, separados por vírgula | ninguém é avisado de erro 500 |
 
-As três nascem ligadas quando `DEBUG=False`; estão no `.env.example` para ficarem
-explícitas, não porque o padrão dependa delas. **`CONFIAR_NO_PROXY=True` só é
-correto com o nginx na frente** - gunicorn exposto direto na rede tem que deixar
-`False`, senão o `X-Forwarded-For` é texto do cliente.
+As três primeiras nascem ligadas quando `DEBUG=False`; estão no `.env.example`
+para ficarem explícitas, não porque o padrão dependa delas.
+**`CONFIAR_NO_PROXY=True` só é correto com o nginx na frente** - gunicorn exposto
+direto na rede tem que deixar `False`, senão o `X-Forwarded-For` é texto do
+cliente.
+
+`CAMINHO_DO_LOG` e `ADMINS` são diferentes: **não** têm padrão ligado, de
+propósito. As três de segurança produzem a configuração segura quando esquecidas;
+esta abre um arquivo no disco, e um caminho impossível faz o processo **não
+subir** (o handler é construído na carga das settings). Por isso o diretório
+precisa existir antes do primeiro start:
+
+```bash
+sudo mkdir -p /var/log/integrasi
+sudo chown integrasi:integrasi /var/log/integrasi
+```
+
+O mesmo diretório recebe a saída do cron (`deploy/crontab`). A rotação do
+`app.log` é do próprio Django (10 arquivos de 10 MB); os `.log` do cron ficam por
+conta do `logrotate` da máquina.
 
 ```bash
 sudo -u integrasi .venv/bin/python manage.py migrate

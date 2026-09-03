@@ -142,3 +142,97 @@ def test_confiar_no_proxy_nasce_desligado_em_desenvolvimento():
     )
     assert resultado.returncode == 0, resultado.stderr
     assert resultado.stdout.strip() == "False"
+
+
+# --- Rotas de autenticação que o projeto não desenhou -------------------------
+
+
+@pytest.mark.django_db
+def test_o_projeto_nao_expoe_rota_de_auth_que_nao_desenhou(client):
+    """`include("django.contrib.auth.urls")` trazia cinco rotas públicas junto
+    com o logout.
+
+    A de recuperação de senha respondia 200 servindo o template do Django Admin
+    (título "Recuperar senha | Site de administração do Django"), sem link em
+    tela nenhuma, e mandava e-mail com `send_mail` direto - por fora da fila de
+    `notificacoes`, que existe para SMTP fora do ar não derrubar operação. A de
+    troca de senha duplicava o que /perfil/ faz com a marca do sistema.
+    """
+    for rota in (
+        "/contas/password_reset/",
+        "/contas/password_reset/done/",
+        "/contas/reset/done/",
+        "/contas/password_change/",
+        "/contas/password_change/done/",
+    ):
+        assert client.get(rota).status_code == 404, rota
+
+
+@pytest.mark.django_db
+def test_o_logout_continua_de_pe(client, django_user_model):
+    """O `include` saiu, mas o logout era o único nome dele que o sistema usa:
+    `base.html` o chama por `{% url 'logout' %}` e `LOGOUT_REDIRECT_URL` aponta
+    para o login."""
+    from django.urls import reverse
+
+    pessoa = django_user_model.objects.create_user(
+        email="sai@ufsm.br", nome_completo="Quem Sai", cpf="529.982.247-25",
+        papel="COORDENADOR", siape="7654321", password="senha-de-teste-123",
+    )
+    client.force_login(pessoa)
+    resposta = client.post(reverse("logout"), follow=True)
+    assert resposta.status_code == 200
+    assert not resposta.context["user"].is_authenticated
+
+
+# --- Log e aviso de erro ------------------------------------------------------
+
+
+def test_sem_a_variavel_o_projeto_sobe_sem_log_de_arquivo():
+    """Ligado por variável, e não por `not DEBUG` como as três chaves de
+    segurança: aquelas produzem a configuração SEGURA quando esquecidas, esta
+    abre um arquivo no disco. Caminho errado, diretório inexistente ou sem
+    permissão fazem o processo não subir, porque o handler é construído na carga
+    das settings. Melhor ficar sem log do que não subir."""
+    resultado = _importar_settings_em_subprocesso(
+        remover={"DEBUG", "CAMINHO_DO_LOG"},
+        expressao="bool(getattr(settings, 'LOGGING', None))",
+    )
+    assert resultado.returncode == 0, resultado.stderr
+    assert resultado.stdout.strip() == "False"
+
+
+def test_com_a_variavel_o_erro_vai_para_arquivo_e_para_os_admins(tmp_path):
+    """Antes, `django.request` ficava com o padrão do Django: stderr e um
+    `AdminEmailHandler` apontando para ADMINS vazio. Um 500 não deixava rastro em
+    arquivo nenhum e não avisava ninguém."""
+    caminho = tmp_path / "integrasi.log"
+    resultado = _importar_settings_em_subprocesso(
+        remover={"DEBUG"},
+        acrescentar={"CAMINHO_DO_LOG": str(caminho), "ADMINS": "Ops:ops@ufsm.br"},
+        expressao=(
+            "(settings.ADMINS, "
+            "[h['class'] for h in settings.LOGGING['handlers'].values()], "
+            "settings.LOGGING['loggers']['django.request']['handlers'])"
+        ),
+    )
+    assert resultado.returncode == 0, resultado.stderr
+    admins, classes, do_request = eval(resultado.stdout)
+    assert admins == [("Ops", "ops@ufsm.br")]
+    assert "logging.handlers.RotatingFileHandler" in classes
+    assert "django.utils.log.AdminEmailHandler" in classes
+    assert set(do_request) == {"arquivo", "email_admin"}
+
+
+def test_o_email_de_erro_nao_leva_o_traceback_em_html(tmp_path):
+    """`include_html` do `AdminEmailHandler` monta o traceback com as VARIÁVEIS
+    LOCAIS de cada quadro, e nesta base as locais de uma view de convite ou de
+    perfil carregam CPF, e-mail e telefone de terceiro (spec 10). Ligado, o
+    sistema mandaria dado pessoal por e-mail a cada erro."""
+    resultado = _importar_settings_em_subprocesso(
+        remover={"DEBUG"},
+        acrescentar={"CAMINHO_DO_LOG": str(tmp_path / "x.log"), "ADMINS": "Ops:ops@ufsm.br"},
+        expressao="settings.LOGGING['handlers']['email_admin'].get('include_html')",
+    )
+    assert resultado.returncode == 0, resultado.stderr
+    assert resultado.stdout.strip() == "False"
