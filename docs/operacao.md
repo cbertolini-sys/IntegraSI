@@ -72,8 +72,24 @@ permissão, use uma destas saídas, nesta ordem de preferência:
 3. **Conceder o papel `pg_create_extension`** ou rodar a migração uma única vez
    com um papel superusuário, voltando depois ao papel comum na `DATABASE_URL`.
 
-O mesmo requisito vale na **restauração** de um backup (`deploy/restaurar-teste.sh`):
-o dump traz os comandos de extensão, e o banco de destino precisa aceitá-los.
+**A restauração tropeça no mesmo requisito, e por isso a instalação faz mais dois
+passos.** O dump traz `CREATE EXTENSION unaccent` e o banco de destino precisa
+aceitá-lo, só que `deploy/restaurar-teste.sh` roda como o papel da aplicação, que
+não é superusuário. Resolva de uma vez, ainda na instalação:
+
+```bash
+# 1. unaccent no template1: todo banco criado a partir daqui ja nasce com ela, e
+#    o CREATE EXTENSION IF NOT EXISTS do dump vira no-op.
+sudo -u postgres psql -d template1 -c 'CREATE EXTENSION IF NOT EXISTS unaccent;'
+
+# 2. o papel precisa poder criar o banco descartavel do drill.
+sudo -u postgres psql -c 'ALTER ROLE integrasi CREATEDB;'
+```
+
+Sem o passo 1 o drill para em `permission denied to create extension "unaccent"`;
+sem o passo 2, em `permission denied to create database`. O `COMMENT ON EXTENSION`
+que o `pg_dump` emite em seguida continua exigindo a posse da extensão: o drill
+descarta essa linha, e o porquê está escrito nele.
 
 Confira ao final que ficou tudo no lugar:
 
@@ -264,7 +280,9 @@ Antes do primeiro backup: crie o repositório restic, grave a senha em
 servidor**: sem ela o repositório é lixo criptografado.
 
 **Backup que nunca foi restaurado não é backup.** Rode `deploy/restaurar-teste.sh`
-depois do primeiro backup e **uma vez por semestre**. Ele restaura o último dump
+depois do primeiro backup e **uma vez por semestre**. Ele depende dos dois passos
+de banco da seção 1.2 (`unaccent` no `template1` e `CREATEDB` no papel); sem eles
+ele para antes de restaurar a primeira linha. Ele restaura o último dump
 num banco descartável, conta cursos e usuários, restaura um pedaço da mídia e
 derruba tudo no final - não toca no banco de produção. Anote a data da última
 restauração de teste; se ninguém sabe qual foi, não há backup conferido.

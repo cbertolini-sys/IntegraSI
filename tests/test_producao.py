@@ -302,7 +302,7 @@ for arg in "$@"; do
     "select count(*) from contas_usuario") echo "${STUB_USUARIOS:-7}"; exit 0;;
   esac
 done
-cat > /dev/null
+cat > "${REGISTRO_PSQL:-/dev/null}"
 if [ "${STUB_DUMP_QUEBRADO:-0}" = 1 ]; then
   echo "ERROR: syntax error at or near" >&2
   for arg in "$@"; do
@@ -359,7 +359,15 @@ def drill(tmp_path):
         velho.write_bytes(b"")
         os.utime(velho, (antigo, antigo))
     with gzip.open(dumps / "integrasi-20260830.sql.gz", "wb") as saida:
-        saida.write(b"-- dump do integrasi\nSELECT 1;\n")
+        saida.write(
+            b"-- dump do integrasi\n"
+            b"CREATE EXTENSION IF NOT EXISTS unaccent WITH SCHEMA public;\n"
+            b"COMMENT ON EXTENSION unaccent IS 'text search dictionary';\n"
+            b"SELECT 1;\n"
+            # Linha de DADO com a mesma frase no meio: o filtro do drill nao pode
+            # levar esta junto. Um titulo de curso pode conter qualquer texto.
+            b"1\tCOMMENT ON EXTENSION como titulo de curso\t\n"
+        )
 
     restauracao = tmp_path / "restauracao"
     registro = tmp_path / "dropdb.log"
@@ -422,6 +430,33 @@ def test_o_drill_limpa_mesmo_quando_reprova(drill):
     # A falha e depois do dropdb pre-restauracao, entao aqui tambem sao duas: se o
     # trap nao rodasse, seria uma so, e o banco de teste sobreviveria ao semestre.
     assert len(drill.registro.read_text().splitlines()) == 2
+
+
+def test_o_drill_nao_manda_o_comentario_da_extensao_para_o_psql(drill):
+    """`COMMENT ON EXTENSION` so o dono da extensao executa, e o dono é o
+    `postgres` que a instalou no `template1`. Rodando como o papel da aplicação, o
+    drill morria em "must be owner of extension unaccent" antes de restaurar uma
+    linha. O `CREATE EXTENSION` ao lado dele continua passando: é ele que faz o
+    resto do dump encontrar a configuração de texto."""
+    registro = drill.tmp / "psql-recebeu.sql"
+    resultado = drill(REGISTRO_PSQL=str(registro))
+
+    assert resultado.returncode == 0, resultado.stderr
+    recebido = registro.read_text()
+    assert "COMMENT ON EXTENSION unaccent IS" not in recebido
+    assert "CREATE EXTENSION IF NOT EXISTS unaccent" in recebido
+
+
+def test_o_filtro_do_drill_nao_corta_linha_de_dado(drill):
+    """O filtro é ancorado em `^` de propósito. Sem a âncora ele recusaria
+    qualquer linha que contivesse a frase, e uma linha de COPY com um título de
+    curso dentro sairia calada do banco restaurado: o drill diria "concluida com
+    sucesso" tendo perdido dado, que é o desfecho exato que ele existe para
+    impedir."""
+    registro = drill.tmp / "psql-recebeu.sql"
+    drill(REGISTRO_PSQL=str(registro))
+
+    assert "COMMENT ON EXTENSION como titulo de curso" in registro.read_text()
 
 
 def test_restic_que_nao_traz_arquivo_nenhum_reprova(drill):
