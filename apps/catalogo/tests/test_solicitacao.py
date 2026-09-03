@@ -244,3 +244,29 @@ def test_cabecalho_que_nao_e_ip_nao_derruba_o_formulario(client, curso_publicado
     )
     assert resposta.status_code == 200
     assert Solicitacao.objects.get().ip_origem == "198.51.100.9"
+
+
+# --- Situacao (M3 da auditoria) ------------------------------------------------
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "status,rotulo,tom",
+    [
+        (Solicitacao.RECEBIDA, "A responder", "espera"),
+        (Solicitacao.EM_ANALISE, "A responder", "espera"),
+        (Solicitacao.ACEITA, "Aceita", "ok"),
+        (Solicitacao.RECUSADA, "Recusada", "atencao"),
+    ],
+)
+def test_situacao_de_cada_status(curso_publicado, status, rotulo, tom):
+    """A decisão de rótulo e tom estava em dois `{% if %}` diferentes, em duas
+    telas (a de pendentes, com rótulo fixo "A responder"; a de respondidas, com
+    `get_status_display` e só duas cores). `Situacao` unifica os dois: os quatro
+    status precisam continuar respondendo o que já respondiam, cada um."""
+    solicitacao = Solicitacao.objects.create(
+        curso=curso_publicado, nome="Escola Teste", email="teste@escola.exemplo.br",
+        num_participantes=10, instituicao="Escola Teste", status=status,
+    )
+    assert solicitacao.situacao.rotulo == rotulo
+    assert solicitacao.situacao.tom == tom

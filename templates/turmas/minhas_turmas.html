@@ -31,7 +31,7 @@
               <span>{{ turma.participantes.count }} participantes inscritos</span>
             </p>
           </div>
-          <span class="estado {% if turma.status == 'AGENDADA' %}info{% elif turma.status == 'CONCLUIDA' %}ok{% elif turma.status == 'CANCELADA' %}atencao{% endif %}">{{ turma.get_status_display }}</span>
+          {% include "cursos/_selo.html" with situacao=turma.situacao %}
         </li>
       {% empty %}
         <li class="vazio"><p>Nenhuma turma agendada.</p></li>

@@ -31,7 +31,7 @@
               <span>{{ solicitacao.criado_em|date:"d/m/Y" }}</span>
             </p>
           </div>
-          <span class="estado espera">A responder</span>
+          {% include "cursos/_selo.html" with situacao=solicitacao.situacao %}
         </li>
       {% empty %}
         <li class="vazio"><p>Nenhuma solicitação pendente.</p></li>
@@ -46,7 +46,7 @@
             <h3>{{ solicitacao.curso.titulo }}</h3>
             <p class="detalhe"><span>{{ solicitacao.nome }}</span></p>
           </div>
-          <span class="estado {% if solicitacao.status == 'ACEITA' %}ok{% else %}atencao{% endif %}">{{ solicitacao.get_status_display }}</span>
+          {% include "cursos/_selo.html" with situacao=solicitacao.situacao %}
         </li>
       {% empty %}
         <li class="vazio"><p>Nenhuma solicitação respondida ainda.</p></li>

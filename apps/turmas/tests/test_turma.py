@@ -546,3 +546,28 @@ def test_o_formulario_de_turma_nao_oferece_aluno(aluno):
     from apps.turmas.forms import TurmaForm
 
     assert aluno not in set(TurmaForm().fields["professor"].queryset)
+
+
+# --- Situacao (M3 da auditoria) ------------------------------------------------
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "status,rotulo,tom",
+    [
+        (Turma.AGENDADA, "Agendada", "info"),
+        (Turma.EM_ANDAMENTO, "Em andamento", "info"),
+        (Turma.CONCLUIDA, "Concluída", "ok"),
+        (Turma.CANCELADA, "Cancelada", "atencao"),
+    ],
+)
+def test_situacao_de_cada_status(curso_publicado, professor, status, rotulo, tom):
+    """`minhas_turmas.html` decidia a cor com um `{% if %}...{% elif %}` que não
+    cobria os quatro status: EM_ANDAMENTO caía no `{% endif %}` sem nenhum ramo, e
+    o selo saía sem cor nenhuma (`class="estado "`) - achado só migrando para
+    `Situacao`, que obriga a mapear todo status ou levantar KeyError."""
+    turma = Turma.objects.create(
+        curso=curso_publicado, professor=professor, status=status, **dados_turma()
+    )
+    assert turma.situacao.rotulo == rotulo
+    assert turma.situacao.tom == tom

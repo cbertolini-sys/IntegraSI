@@ -1,5 +1,7 @@
 from django.db import models
 
+from apps.cursos.models.producao import Situacao
+
 
 class Solicitacao(models.Model):
     """Pedido de realização de um curso, vindo da comunidade externa.
@@ -41,3 +43,19 @@ class Solicitacao(models.Model):
 
     def __str__(self):
         return f"{self.nome} pediu {self.curso.titulo}"
+
+    @property
+    def situacao(self):
+        """Rótulo e tom, como em `cursos` (M3 da auditoria).
+
+        RECEBIDA e EM_ANALISE respondem o mesmo par - "A responder", em espera -
+        porque é o que a lista de pendentes já mostrava: a pessoa que responde não
+        precisa distinguir as duas, as duas pedem a mesma ação dela. ACEITA e
+        RECUSADA continuam com o rótulo do próprio status, como a lista de
+        respondidas já fazia.
+        """
+        if self.status in (self.RECEBIDA, self.EM_ANALISE):
+            return Situacao(rotulo="A responder", tom="espera")
+        if self.status == self.ACEITA:
+            return Situacao(rotulo=self.get_status_display(), tom="ok")
+        return Situacao(rotulo=self.get_status_display(), tom="atencao")

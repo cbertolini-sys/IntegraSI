@@ -2,6 +2,8 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 
+from apps.cursos.models.producao import Situacao
+
 
 class Turma(models.Model):
     """O agendamento de uma realização do curso.
@@ -23,6 +25,17 @@ class Turma(models.Model):
         (CONCLUIDA, "Concluída"),
         (CANCELADA, "Cancelada"),
     ]
+    # O tom de cada status (M3 da auditoria). `[self.status]`, e nao `.get(...,
+    # "")`: um quinto status sem entrada aqui precisa estourar KeyError, e nao
+    # sair com o selo sem cor - o defeito que a cadeia de `{% if %}` do template
+    # tinha e ninguem via, porque EM_ANDAMENTO nunca aparecia nos cenarios de
+    # teste manual.
+    TONS = {
+        AGENDADA: "info",
+        EM_ANDAMENTO: "info",
+        CONCLUIDA: "ok",
+        CANCELADA: "atencao",
+    }
 
     # Aponta para a versão específica do curso, nunca para a linhagem: é o que
     # permitirá dizer, lá na frente, qual material foi aplicado nesta turma (spec 1.1).
@@ -58,6 +71,14 @@ class Turma(models.Model):
 
     def __str__(self):
         return f"{self.curso.titulo} em {self.local}"
+
+    @property
+    def situacao(self):
+        """Rótulo e tom, como em `cursos.models.producao.Entregavel` e `Curso`:
+        a decisão fica em Python, onde dá para testar, e não numa cadeia de
+        `{% if %}` no template - a mesma unificação de `_selo.html` (A4/A5/A6),
+        agora estendida a `turmas`."""
+        return Situacao(rotulo=self.get_status_display(), tom=self.TONS[self.status])
 
     def clean(self):
         super().clean()
