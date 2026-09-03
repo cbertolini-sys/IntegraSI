@@ -1,4 +1,4 @@
-{% load static estaticos %}
+{% load static estaticos pessoas %}
 <!doctype html>
 <html lang="pt-br">
 <head>
@@ -29,6 +29,7 @@
   <script src="{% estatico 'js/ajuda.js' %}" defer></script>
   <script src="{% estatico 'js/quill.min.js' %}" defer></script>
   <script src="{% estatico 'js/editor.js' %}" defer></script>
+  <script src="{% estatico 'js/menu.js' %}" defer></script>
 </head>
 <body>
   <header class="barra">
@@ -56,16 +57,47 @@
         <a href="{% url 'sobre' %}">Sobre</a>
         {% if user.is_authenticated %}
           <a href="{% url 'painel' %}">Painel</a>
-          <span class="quem">{{ user.nome_completo }} &middot; {{ user.get_papel_display }}</span>
-          <form method="post" action="{% url 'logout' %}">
-            {% csrf_token %}
-            {% comment %}
-              O mesmo `botao` do "Entrar" que ocupa este lugar quando ninguem
-              entrou. Eram dois pesos diferentes no mesmo canto da barra, e a
-              pessoa via a cor de fundo mudar so por estar autenticada.
-            {% endcomment %}
-            <button type="submit" class="botao">Sair</button>
-          </form>
+          {% comment %}
+            `<details>` e nao um menu de JavaScript: abre, fecha e navega por
+            teclado sem uma linha de script, e continua funcionando se o JS falhar.
+            O menu.js so acrescenta o que o elemento nao faz sozinho, que e fechar
+            ao clicar fora e ao apertar Esc.
+
+            O nome da pessoa era texto solto aqui, ao lado de um botao "Sair"
+            isolado. Virou porta: e onde ela alcanca os proprios dados.
+          {% endcomment %}
+          <details class="menu-pessoa">
+            <summary>
+              <span class="avatar" aria-hidden="true">{{ user.nome_completo|iniciais }}</span>
+              <span class="quem">
+                <strong>{{ user.nome_completo|default:user.email }}</strong>
+                {{ user.get_papel_display }}
+              </span>
+              <span class="seta" aria-hidden="true"></span>
+            </summary>
+            <div class="gaveta-pessoa">
+              <a href="{% url 'perfil' %}">
+                <strong>Meu perfil</strong>
+                <span>Ver e corrigir seus dados</span>
+              </a>
+              <a href="{% url 'painel' %}">
+                <strong>Painel</strong>
+                <span>Seu trabalho no sistema</span>
+              </a>
+              <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                {% comment %}
+                  `all: unset` no CSS: a base do projeto pinta todo elemento de
+                  botao de azul, e sem isso o "Sair" viraria um botao de acao
+                  grande no meio de dois links de texto.
+                {% endcomment %}
+                <button type="submit" class="item-gaveta">
+                  <strong>Sair</strong>
+                  <span>Encerrar a sessão</span>
+                </button>
+              </form>
+            </div>
+          </details>
         {% else %}
           <a class="botao" href="{% url 'login' %}">Entrar</a>
         {% endif %}

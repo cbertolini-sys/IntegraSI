@@ -1,7 +1,7 @@
 from django.contrib import messages
 import datetime
 
-from django.contrib.auth import login
+from django.contrib.auth import login, update_session_auth_hash
 from django.contrib.auth.views import LoginView
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
@@ -10,7 +10,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
 from apps.contas import services
-from apps.contas.forms import CadastroDeProfessorForm
+from apps.contas.forms import CadastroDeProfessorForm, PerfilForm, TrocaDeSenhaForm
 from apps.contas.forms_convite import PrimeiroAcessoForm
 from apps.contas.models import ConviteAluno, TentativaDeLogin, Usuario
 from apps.contas.paginacao import paginar
@@ -106,6 +106,44 @@ def primeiro_acesso(request, token):
 
     return render(
         request, "contas/primeiro_acesso.html", {"form": form, "convite": convite}
+    )
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def perfil(request):
+    """Meu perfil: a pessoa ve e corrige os proprios dados.
+
+    Duas acoes numa tela so, distinguidas por `acao`, porque sao dois cartoes do
+    mesmo assunto: a ficha e a senha. Cada POST reconstroi o outro formulario
+    limpo, senao os erros de um apareceriam no cartao do outro.
+
+    A instancia editada e SEMPRE `request.user`. Nao ha pk na URL nem no POST: a
+    tela nao tem como apontar para outra pessoa, e por isso nao precisa de
+    checagem de permissao alem do login.
+    """
+    dados = PerfilForm(instance=request.user)
+    senha = TrocaDeSenhaForm(request.user)
+
+    if request.method == "POST":
+        if request.POST.get("acao") == "SENHA":
+            senha = TrocaDeSenhaForm(request.user, request.POST)
+            if senha.is_valid():
+                senha.save()
+                # Sem isto o Django invalida a sessao junto com o hash antigo e a
+                # pessoa e deslogada no instante em que acerta a troca.
+                update_session_auth_hash(request, senha.user)
+                messages.success(request, "Senha trocada.")
+                return redirect("perfil")
+        else:
+            dados = PerfilForm(request.POST, instance=request.user)
+            if dados.is_valid():
+                dados.save()
+                messages.success(request, "Dados atualizados.")
+                return redirect("perfil")
+
+    return render(
+        request, "contas/perfil.html", {"form": dados, "form_senha": senha}
     )
 
 

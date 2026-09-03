@@ -1,7 +1,6 @@
 import pytest
 from django.urls import reverse
 
-from apps.contas.admin import mascara_cpf
 from apps.contas.models import Usuario
 
 
@@ -14,11 +13,11 @@ def _assert_sem_erros_do_admin(resposta):
 
 
 def test_mascara_esconde_os_oito_primeiros_digitos():
-    assert mascara_cpf("52998224725") == "***.***.247-25"
+    assert Usuario(cpf="52998224725").cpf_mascarado == "***.***.247-25"
 
 
 def test_mascara_aceita_vazio():
-    assert mascara_cpf("") == ""
+    assert Usuario(cpf="").cpf_mascarado == ""
 
 
 @pytest.mark.django_db

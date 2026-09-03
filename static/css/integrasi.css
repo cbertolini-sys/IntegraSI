@@ -3213,3 +3213,229 @@ textarea:focus {
 .rotulo-campo .ajuda-campo {
   margin-left: 0;
 }
+
+/* ---------- menu da pessoa (cabeçalho) ---------- */
+
+/* Avatar de iniciais. Não há foto no sistema, e um ícone genérico repetido em
+   toda tela não diz nada; as iniciais ao menos identificam a conta aberta. */
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  flex: none;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--azul) 0%, var(--ciano) 100%);
+  color: var(--branco);
+  font-family: var(--display);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  user-select: none;
+}
+
+.avatar-grande {
+  width: 3.25rem;
+  height: 3.25rem;
+  font-size: 1.125rem;
+  box-shadow: var(--sombra);
+}
+
+.menu-pessoa {
+  position: relative;
+}
+
+/* O triângulo nativo do <summary> sai: a seta desenhada abaixo gira com o estado
+   aberto, e os dois juntos seriam dois indicadores da mesma coisa. */
+.menu-pessoa > summary {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.3125rem 0.625rem 0.3125rem 0.3125rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  cursor: pointer;
+  list-style: none;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.menu-pessoa > summary::-webkit-details-marker {
+  display: none;
+}
+
+.menu-pessoa > summary:hover,
+.menu-pessoa[open] > summary {
+  background: var(--azul-suave);
+  border-color: var(--linha);
+}
+
+.menu-pessoa > summary:focus-visible {
+  outline: 2px solid var(--azul);
+  outline-offset: 2px;
+}
+
+.menu-pessoa .quem {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+  text-align: left;
+  color: var(--cinza);
+  font-size: 0.75rem;
+}
+
+.menu-pessoa .quem strong {
+  color: var(--texto);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.menu-pessoa .seta {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-right: 2px solid var(--cinza-claro);
+  border-bottom: 2px solid var(--cinza-claro);
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform 0.15s ease;
+}
+
+.menu-pessoa[open] .seta {
+  transform: translateY(1px) rotate(-135deg);
+}
+
+.gaveta-pessoa {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  z-index: 60;
+  min-width: 15rem;
+  padding: 0.375rem;
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+  background: var(--branco);
+  box-shadow: var(--sombra-alta);
+}
+
+.gaveta-pessoa form {
+  margin: 0;
+}
+
+/* `all: unset` porque a base do projeto pinta TODO `<button>` de azul com 2,75rem
+   de altura: sem isto o "Sair" viraria um botão de ação no meio de dois links de
+   texto (CLAUDE.md, Interface). */
+.gaveta-pessoa .item-gaveta {
+  all: unset;
+}
+
+.gaveta-pessoa a,
+.gaveta-pessoa .item-gaveta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.0625rem;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.5rem 0.625rem;
+  border-radius: var(--raio-p);
+  color: var(--texto);
+  font-family: var(--corpo);
+  font-size: 0.875rem;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.gaveta-pessoa a strong,
+.gaveta-pessoa .item-gaveta strong {
+  font-weight: 600;
+}
+
+.gaveta-pessoa a span,
+.gaveta-pessoa .item-gaveta span {
+  color: var(--cinza);
+  font-size: 0.75rem;
+}
+
+.gaveta-pessoa a:hover,
+.gaveta-pessoa a:focus-visible,
+.gaveta-pessoa .item-gaveta:hover,
+.gaveta-pessoa .item-gaveta:focus-visible {
+  background: var(--nevoa);
+  outline: none;
+}
+
+.gaveta-pessoa form {
+  border-top: 1px solid var(--linha);
+  margin-top: 0.375rem;
+  padding-top: 0.375rem;
+}
+
+/* ---------- tela do perfil ---------- */
+
+.identidade-pessoa {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.colunas-perfil {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.colunas-perfil > div {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+@media (max-width: 62rem) {
+  .colunas-perfil {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ficha-pessoa h2 {
+  margin-bottom: 1rem;
+}
+
+.lista-ficha {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  margin: 0 0 1rem;
+}
+
+.lista-ficha > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.875rem;
+  border-bottom: 1px solid var(--linha);
+}
+
+.lista-ficha > div:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.lista-ficha dt {
+  color: var(--cinza);
+  font-size: 0.8125rem;
+}
+
+.lista-ficha dd {
+  margin: 0;
+  text-align: right;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* Fonte de dado nos identificadores: CPF mascarado, matrícula e SIAPE são
+   números para conferir dígito a dígito, e a proporcional embaralha isso. */
+.lista-ficha dd.dado {
+  font-family: var(--dado);
+  font-size: 0.875rem;
+  letter-spacing: -0.01em;
+}

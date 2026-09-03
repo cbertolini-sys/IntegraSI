@@ -5,13 +5,6 @@ from apps.contas.forms import UsuarioChangeForm, UsuarioCreationForm
 from apps.contas.models import ConviteAluno, Usuario
 
 
-def mascara_cpf(cpf):
-    """Mostra só os três últimos dígitos e o verificador (spec 10)."""
-    if not cpf:
-        return ""
-    return f"***.***.{cpf[6:9]}-{cpf[9:11]}"
-
-
 @admin.register(Usuario)
 class UsuarioAdmin(UserAdmin):
     form = UsuarioChangeForm
@@ -53,7 +46,7 @@ class UsuarioAdmin(UserAdmin):
 
     @admin.display(description="CPF")
     def cpf_mascarado(self, obj):
-        return mascara_cpf(obj.cpf)
+        return obj.cpf_mascarado
 
 
 @admin.register(ConviteAluno)

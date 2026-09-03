@@ -114,6 +114,18 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
         return self.papel == self.ALUNO
 
     @property
+    def cpf_mascarado(self):
+        """Só os três últimos dígitos e o verificador (spec 10).
+
+        Mora aqui, e não no admin, porque agora há dois lugares que a usam: a
+        lista do Admin e a tela do próprio perfil. Duas cópias da máscara é uma
+        cópia a mais de uma regra de dado pessoal, e a segunda envelhece calada.
+        """
+        if not self.cpf:
+            return ""
+        return f"***.***.{self.cpf[6:9]}-{self.cpf[9:11]}"
+
+    @property
     def perfil_completo(self):
         """Tem tudo o que o sistema precisa da pessoa.
 

@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% load pessoas %}
+{% block titulo %} - Meu perfil{% endblock %}
+
+{% block conteudo %}
+<div class="trabalho">
+  <div class="cabecalho-pagina">
+    <div class="faixa">
+      <div class="identidade-pessoa">
+        {% comment %}
+          As iniciais, e nao uma foto: o sistema nao guarda imagem de pessoa, e um
+          avatar generico repetido em toda a tela nao diz nada. As iniciais saem do
+          proprio nome, no filtro `iniciais`.
+        {% endcomment %}
+        <span class="avatar avatar-grande" aria-hidden="true">{{ user.nome_completo|iniciais }}</span>
+        <div>
+          <h1>{{ user.nome_completo }}</h1>
+          <p class="sub">{{ user.email }}</p>
+        </div>
+      </div>
+      <div class="acoes">
+        <a class="botao botao-linha" href="{% url 'painel' %}">&larr; Voltar ao painel</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="faixa corpo-trabalho">
+    <div class="colunas-perfil">
+      <div>
+        <div class="cartao cartao-acao">
+          <h2>Seus dados</h2>
+          <p class="detalhe">Corrija o que estiver errado. O que você grava aqui é
+             o que aparece nos cursos que você produz.</p>
+          <form method="post" class="form-cadastro">
+            {% csrf_token %}
+            {% for campo in form %}
+              {% include "cursos/_campo.html" with campo=campo largo=1 %}
+            {% endfor %}
+            <button type="submit" name="acao" value="DADOS" class="botao">Salvar dados</button>
+          </form>
+        </div>
+
+        <div class="cartao cartao-acao">
+          <h2>Trocar a senha</h2>
+          <p class="detalhe">Você continua conectado depois de trocar.</p>
+          {% if form_senha.non_field_errors %}
+            <p class="erro">{{ form_senha.non_field_errors|join:" " }}</p>
+          {% endif %}
+          <form method="post" class="form-cadastro">
+            {% csrf_token %}
+            {% for campo in form_senha %}
+              {% include "cursos/_campo.html" with campo=campo largo=1 %}
+            {% endfor %}
+            <button type="submit" name="acao" value="SENHA" class="botao">Trocar a senha</button>
+          </form>
+        </div>
+      </div>
+
+      <aside class="cartao ficha-pessoa">
+        <h2>Sua conta</h2>
+        <dl class="lista-ficha">
+          <div>
+            <dt>Papel</dt>
+            <dd><span class="estado ok">{{ user.get_papel_display }}</span></dd>
+          </div>
+          <div>
+            <dt>E-mail de acesso</dt>
+            <dd>{{ user.email }}</dd>
+          </div>
+          <div>
+            <dt>CPF</dt>
+            {% comment %}
+              Mascarado, e so aqui. A regra do projeto e que o CPF nao aparece
+              fora do Django Admin; mostrar os cinco ultimos digitos a propria
+              pessoa e o que deixa ela conferir se esta certo sem imprimir o
+              documento numa pagina, num cache ou num log de acesso.
+            {% endcomment %}
+            <dd class="dado">{{ user.cpf_mascarado|default:"não informado" }}</dd>
+          </div>
+          {% if user.e_aluno %}
+            <div>
+              <dt>Matrícula</dt>
+              <dd class="dado">{{ user.matricula|default:"não informada" }}</dd>
+            </div>
+          {% else %}
+            <div>
+              <dt>SIAPE</dt>
+              <dd class="dado">{{ user.siape|default:"não informado" }}</dd>
+            </div>
+          {% endif %}
+          <div>
+            <dt>Cadastro</dt>
+            <dd>
+              {% if user.perfil_completo %}
+                <span class="estado ok">Completo</span>
+              {% else %}
+                <span class="estado atencao">Falta preencher</span>
+              {% endif %}
+            </dd>
+          </div>
+        </dl>
+        <p class="detalhe">Precisa trocar o e-mail de acesso? Fale com a coordenação:
+           ele é a chave da sua conta e não se troca por aqui.</p>
+      </aside>
+    </div>
+  </div>
+</div>
+{% endblock %}
