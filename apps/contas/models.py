@@ -114,6 +114,19 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
         return self.papel == self.ALUNO
 
     @property
+    def identificacao(self):
+        """O nome, ou o e-mail quando ainda não há nome.
+
+        A coordenação cadastra professor só com o e-mail (regra desta tela em
+        contas/services.criar_professor); `nome_completo` fica vazio até o
+        primeiro acesso. Uma mensagem ou um <option> de <select> que interpola
+        `nome_completo` direto, sem isto, imprime uma string vazia - frase sem
+        sujeito, opção selecionável e invisível. Aluno nunca cai no ramo do
+        e-mail: `alocar_aluno` sempre grava o nome que o professor digitou.
+        """
+        return self.nome_completo or self.email
+
+    @property
     def cpf_mascarado(self):
         """Só os três últimos dígitos e o verificador (spec 10).
 

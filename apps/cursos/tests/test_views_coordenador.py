@@ -29,6 +29,16 @@ def test_professor_submete_pela_tela(client, dados_curso, aluno, professor):
 
 
 @pytest.mark.django_db
+def test_o_botao_de_submeter_usa_o_mesmo_verbo_da_confirmacao(client, curso_submetido, professor):
+    """O botao dizia "Submeter a coordenacao" e a confirmacao "Curso enviado...":
+    dois verbos para a mesma acao. O resto do sistema usa "Enviar" (Enviar para
+    revisao, Enviar convite, Enviar solicitacao) - o botao era o forasteiro."""
+    client.force_login(professor)
+    html = client.get(reverse("curso", args=[curso_submetido.pk])).content.decode()
+    assert "Submeter à coordenação" not in html
+
+
+@pytest.mark.django_db
 def test_submeter_curso_via_get_e_rejeitado(client, dados_curso, aluno, professor):
     # A mesma vulnerabilidade que test_enviar_entregavel_via_get_e_rejeitado crava
     # em apps/cursos/tests/test_views_aluno.py: sem @require_POST, um GET (fora do

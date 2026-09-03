@@ -559,6 +559,16 @@ def test_videos_nao_oferecem_o_formulario_generico_de_anexar(client, curso_com_e
 
 
 @pytest.mark.django_db
+def test_o_botao_de_enviar_video_usa_o_mesmo_texto_do_titulo(client, curso_com_equipe, aluno):
+    """O titulo da secao diz "Enviar vídeo-aula" e o botao logo abaixo dizia
+    "Enviar vídeo": mesma acao, dois nomes a dez linhas de distancia."""
+    videos = curso_com_equipe.entregaveis.get(tipo=TipoEntregavel.VIDEOS)
+    client.force_login(aluno)
+    html = client.get(reverse("entregavel", args=[videos.pk])).content.decode()
+    assert ">Enviar vídeo-aula</button>" in html
+
+
+@pytest.mark.django_db
 def test_a_tela_de_videos_nao_imprime_o_comentario_do_template(client, curso_com_equipe, aluno):
     """O comentario de cerquilha de varias linhas saia renderizado como texto na
     pagina: `{#` so fecha na mesma linha. Era o "erro" que aparecia na tela."""

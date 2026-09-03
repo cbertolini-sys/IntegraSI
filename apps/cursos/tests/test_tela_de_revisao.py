@@ -98,6 +98,16 @@ def test_a_decisao_fica_no_proprio_cartao(client, slides_em_revisao, professor):
 
 
 @pytest.mark.django_db
+def test_o_botao_de_devolver_diz_para_onde(client, slides_em_revisao, professor):
+    """"Devolver" nao dizia a quem, ao lado de "Reabrir para a equipe", que diz.
+    Na tela da coordenacao o mesmo botao ja diz "Devolver ao professor" - aqui o
+    par fica simetrico com "Devolver à equipe"."""
+    client.force_login(professor)
+    html = revisar(client, slides_em_revisao)
+    assert ">Devolver à equipe</button>" in html
+
+
+@pytest.mark.django_db
 def test_o_comentario_tem_editor(client, slides_em_revisao, professor):
     """O mesmo editor das seções e das descrições: é texto que a equipe vai ler
     para saber o que corrigir, e uma lista de itens ajuda mais que um parágrafo."""

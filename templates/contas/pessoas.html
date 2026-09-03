@@ -20,8 +20,8 @@
     <div class="cartao cartao-acao">
       <h2>Cadastrar professor</h2>
       <p class="detalhe">Basta o e-mail. A pessoa recebe o convite e informa nome,
-         CPF e SIAPE ao entrar. Aluno não se cadastra por aqui: ele nasce quando o
-         professor o aloca na equipe de um curso.</p>
+         CPF e SIAPE ao entrar. Estudante não se cadastra por aqui: ele nasce quando
+         o professor o aloca na equipe de um curso.</p>
       <form method="post" class="form-cadastro">
         {% csrf_token %}
         {% include "cursos/_campo.html" with campo=cadastro.email largo=1 %}

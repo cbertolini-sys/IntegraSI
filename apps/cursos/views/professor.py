@@ -225,7 +225,7 @@ def remover_da_equipe(request, pk, membro_pk):
         for mensagem in erro.messages:
             messages.error(request, mensagem)
     else:
-        messages.success(request, f"{membro.pessoa.nome_completo} saiu da equipe.")
+        messages.success(request, f"{membro.pessoa.identificacao} saiu da equipe.")
     return redirect("equipe", pk=curso.pk)
 
 
@@ -269,6 +269,10 @@ def _alocar_aluno_existente(request, curso):
 
 
 def _alocar_professor(request, curso):
+    """`membro.pessoa.identificacao`, e não `.nome_completo`: a coordenação
+    cadastra professor só com o e-mail, e o professor que aloca um colega pode
+    escolher alguém que ainda não fez o primeiro acesso (regra em
+    `_professores_disponiveis`, que não filtra por perfil completo)."""
     escolhido = Usuario.objects.filter(pk=request.POST.get("professor") or 0).first()
     try:
         membro = services.alocar_professor(curso, escolhido, por=request.user)
@@ -276,7 +280,7 @@ def _alocar_professor(request, curso):
         for mensagem in erro.messages:
             messages.error(request, mensagem)
     else:
-        messages.success(request, f"{membro.pessoa.nome_completo} entrou na equipe.")
+        messages.success(request, f"{membro.pessoa.identificacao} entrou na equipe.")
 
 
 def _alocar_aluno(request, curso):

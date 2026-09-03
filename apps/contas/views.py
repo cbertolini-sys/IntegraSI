@@ -198,10 +198,10 @@ def pessoas(request):
             # das solicitacoes).
             if acao == "PROMOVER":
                 services.promover_a_coordenador(alvo, por=request.user)
-                messages.success(request, f"{alvo.nome_completo} agora é coordenador.")
+                messages.success(request, f"{alvo.identificacao} agora é coordenador.")
             elif acao == "REBAIXAR":
                 services.rebaixar_a_professor(alvo, por=request.user)
-                messages.success(request, f"{alvo.nome_completo} voltou a ser professor.")
+                messages.success(request, f"{alvo.identificacao} voltou a ser professor.")
             else:
                 messages.error(request, "Ação não reconhecida.")
         except ValidationError as erro:

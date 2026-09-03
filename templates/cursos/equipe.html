@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load pessoas %}
 {% block titulo %} - Equipe de {{ curso.titulo }}{% endblock %}
 
 {% block conteudo %}
@@ -19,7 +20,7 @@
       <ul class="etiquetas">
         {% for membro in curso.membros.all %}
           <li>
-            {{ membro.pessoa.nome_completo }}
+            {{ membro.pessoa|como_pessoa }}
             {% if membro.pessoa_id == curso.professor_responsavel_id %}
               <span class="etiqueta">responsável</span>
             {% else %}
@@ -88,7 +89,7 @@
           <label for="id_professor">Professor</label>
           <select name="professor" id="id_professor" required>
             {% for pessoa in professores %}
-              <option value="{{ pessoa.pk }}">{{ pessoa.nome_completo }}</option>
+              <option value="{{ pessoa.pk }}">{{ pessoa|como_pessoa }}</option>
             {% empty %}
               <option value="" disabled>Nenhum professor disponível</option>
             {% endfor %}

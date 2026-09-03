@@ -151,3 +151,13 @@ def test_a_tela_nao_cadastra_aluno(client, coordenador):
     )
     assert resposta.status_code == 200
     assert not Usuario.objects.filter(email="aluno.solto@acad.ufsm.br").exists()
+
+
+@pytest.mark.django_db
+def test_a_explicacao_usa_o_mesmo_termo_do_resto_da_interface(client, coordenador):
+    """O resto do sistema diz "estudante" (a tela de equipe, o convite, o
+    catálogo). Só esta frase dizia "Aluno" - termo conflitante numa tela nova."""
+    client.force_login(coordenador)
+    html = client.get(reverse("pessoas")).content.decode()
+    assert "Estudante não se cadastra por aqui" in html
+    assert "Aluno não se cadastra por aqui" not in html

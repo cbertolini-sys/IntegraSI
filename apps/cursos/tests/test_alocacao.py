@@ -245,6 +245,28 @@ def test_tela_de_equipe_aloca_professor_pelo_select(client, curso, professor, ou
 
 
 @pytest.mark.django_db
+def test_alocar_professor_sem_nome_produz_mensagem_com_email(client, curso, professor):
+    """`f"{membro.pessoa.nome_completo} entrou na equipe."` com nome vazio produz
+    " entrou na equipe.", sem sujeito e com espaco sobrando - a pessoa nao sabe se
+    a acao valeu. So o professor pode chegar aqui sem nome (aluno sempre nasce com
+    o nome que o professor digitou em `alocar_aluno`); coordenador tambem, pela
+    mesma origem."""
+    from django.urls import reverse
+
+    sem_nome = Usuario.objects.create_user(
+        email="semnome@ufsm.br", nome_completo="", papel=Usuario.PROFESSOR, password=None
+    )
+    client.force_login(professor)
+    resposta = client.post(
+        reverse("equipe", args=[curso.pk]),
+        {"acao": "professor", "professor": sem_nome.pk},
+        follow=True,
+    )
+    html = resposta.content.decode()
+    assert "semnome@ufsm.br entrou na equipe." in html
+
+
+@pytest.mark.django_db
 def test_select_de_professores_nao_oferece_quem_ja_esta_na_equipe(
     client, dados_curso, professor, outro_professor
 ):
@@ -257,6 +279,27 @@ def test_select_de_professores_nao_oferece_quem_ja_esta_na_equipe(
     disponiveis = client.get(reverse("equipe", args=[curso.pk])).context["professores"]
     assert professor not in disponiveis
     assert outro_professor in disponiveis
+
+
+@pytest.mark.django_db
+def test_select_de_professores_mostra_email_para_quem_ainda_nao_tem_nome(
+    client, curso, professor
+):
+    """A coordenacao cadastra professor so com o e-mail (CLAUDE.md, Papeis e
+    primeiro acesso); ate o primeiro acesso `nome_completo` fica vazio.
+
+    `_professores_disponiveis` nao filtra por perfil completo, entao essa conta
+    aparece no select de "Alocar professor" - e sem fallback, a option nasce com
+    o rotulo vazio: aparece na lista e ninguem consegue ler qual e.
+    """
+    from django.urls import reverse
+
+    sem_nome = Usuario.objects.create_user(
+        email="semnome@ufsm.br", nome_completo="", papel=Usuario.PROFESSOR, password=None
+    )
+    client.force_login(professor)
+    html = client.get(reverse("equipe", args=[curso.pk])).content.decode()
+    assert f'<option value="{sem_nome.pk}">semnome@ufsm.br</option>' in html
 
 
 # --- Remover da equipe (Plano 6) ---------------------------------------------

@@ -51,6 +51,23 @@ def test_professor_nasce_com_perfil_completo(professor):
 
 
 @pytest.mark.django_db
+def test_identificacao_e_o_nome_quando_ha_nome(professor):
+    assert professor.identificacao == "Bruno Barros"
+
+
+@pytest.mark.django_db
+def test_identificacao_cai_no_email_sem_nome():
+    """A coordenação cadastra professor só com o e-mail; `nome_completo` fica
+    vazio até o primeiro acesso. Uma mensagem ou um <option> que interpola
+    `nome_completo` direto, sem isto, imprime uma string vazia - sem sujeito na
+    frase, ou uma opção de select selecionável e invisível."""
+    sem_nome = Usuario.objects.create_user(
+        email="semnome@ufsm.br", nome_completo="", papel=Usuario.PROFESSOR, password=None
+    )
+    assert sem_nome.identificacao == "semnome@ufsm.br"
+
+
+@pytest.mark.django_db
 def test_dois_alunos_sem_cpf_convivem():
     """`cpf` continua único. Nulo não colide com nulo no Postgres, e é o que
     permite alocar dois alunos antes de qualquer um deles completar o perfil."""

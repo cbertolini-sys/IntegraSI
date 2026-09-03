@@ -20,3 +20,16 @@ def iniciais(nome):
     if len(partes) == 1:
         return partes[0][0].upper()
     return (partes[0][0] + partes[-1][0]).upper()
+
+
+@register.filter
+def como_pessoa(pessoa):
+    """O nome, ou o e-mail quando ainda nao ha nome.
+
+    So repassa a `Usuario.identificacao`: a regra mora no modelo (usada tambem
+    pelas mensagens de sucesso em contas/views.py e cursos/views/professor.py), e
+    este filtro so a deixa alcancavel de dentro do template.
+    """
+    if pessoa is None:
+        return ""
+    return pessoa.identificacao

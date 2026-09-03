@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load pessoas %}
 {% block titulo %} - {{ curso.titulo }}{% endblock %}
 
 {% block topo %}
@@ -130,7 +131,7 @@
             <dt>Equipe</dt>
             <dd>
               <ul class="etiquetas">
-                {% for membro in curso.equipe %}<li>{{ membro.pessoa.nome_completo }}</li>{% endfor %}
+                {% for membro in curso.equipe %}<li>{{ membro.pessoa|como_pessoa }}</li>{% endfor %}
               </ul>
             </dd>
           {% endif %}

@@ -2,7 +2,7 @@ import pytest
 from django.core.exceptions import PermissionDenied, ValidationError
 
 from apps.cursos import services
-from apps.cursos.choices import StatusCurso, StatusEntregavel
+from apps.cursos.choices import StatusCurso, StatusEntregavel, TipoEntregavel
 from apps.cursos.models import LogTransicaoCurso, Revisao
 from apps.notificacoes.models import Notificacao
 
@@ -27,6 +27,25 @@ def test_submeter_exige_os_cinco_aprovados(dados_curso, aluno, professor):
     assert curso.status == StatusCurso.EM_PRODUCAO
     with pytest.raises(ValidationError):
         services.submeter_ao_coordenador(curso, por=professor)
+
+
+@pytest.mark.django_db
+def test_a_mensagem_do_portao_usa_o_numero_real_de_entregaveis(dados_curso, aluno, professor):
+    """A mensagem precisa nascer do modelo, e nao de um numero escrito a mao: a
+    migracao 0016 acrescentou o sexto entregavel e o texto ficou dizendo "cinco"
+    por uma sessao inteira, contradizendo a pagina Sobre na mesma tela.
+
+    Comparar com `len(TipoEntregavel.choices)` prende a mensagem ao numero real
+    de entregaveis do roteiro, entao um setimo entregavel nao pode reabrir o
+    mesmo defeito silenciosamente.
+    """
+    curso = services.criar_curso(**dados_curso)
+    services.adicionar_membro(curso, aluno, por=professor)
+    curso.refresh_from_db()
+    with pytest.raises(ValidationError) as excecao:
+        services.submeter_ao_coordenador(curso, por=professor)
+    total = len(TipoEntregavel.choices)
+    assert str(total) in str(excecao.value)
 
 
 @pytest.mark.django_db

@@ -278,7 +278,7 @@ def _emails_dos_coordenadores():
 @transaction.atomic
 def submeter_ao_coordenador(curso, por):
     """Professor manda o curso para a coordenacao (spec 5). So sai de EM_PRODUCAO
-    ou DEVOLVIDO, com os cinco entregaveis aprovados e os dados do curso em dia -
+    ou DEVOLVIDO, com todos os entregaveis aprovados e os dados do curso em dia -
     o curso pode ser editado depois do Plano de Ensino aprovado, entao a mesma
     checagem de validacoes.dados_do_curso roda de novo aqui."""
     permissions.garante(
@@ -287,7 +287,12 @@ def submeter_ao_coordenador(curso, por):
     if curso.status not in (StatusCurso.EM_PRODUCAO, StatusCurso.DEVOLVIDO):
         raise ValidationError("Este curso não está em produção.")
     if not curso.pronto_para_o_coordenador:
-        raise ValidationError("Todos os cinco entregáveis precisam estar aprovados.")
+        # Do modelo, e nao escrito a mao: a migracao 0016 acrescentou o sexto
+        # entregavel e a frase ficou dizendo "cinco" por uma sessao inteira,
+        # contradizendo a pagina Sobre na mesma tela. Um setimo entregavel nao
+        # pode reabrir o mesmo defeito.
+        total = len(TipoEntregavel.choices)
+        raise ValidationError(f"Todos os {total} entregáveis precisam estar aprovados.")
     faltas = validacoes.dados_do_curso(curso)
     if faltas:
         raise ValidationError(faltas)

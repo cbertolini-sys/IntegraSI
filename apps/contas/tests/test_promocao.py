@@ -135,6 +135,22 @@ def test_rebaixar_pela_tela(client, coordenador, outro_coordenador):
 
 
 @pytest.mark.django_db
+def test_promover_professor_sem_nome_produz_mensagem_com_email(client, coordenador):
+    """`f"{alvo.nome_completo} agora é coordenador."` com nome vazio produz
+    " agora é coordenador.", sem sujeito. A tela de Pessoas já lista esta conta
+    pelo e-mail (`pessoa.nome_completo|default:pessoa.email`); a mensagem de
+    sucesso do POST tinha ficado para trás."""
+    sem_nome = Usuario.objects.create_user(
+        email="semnome@ufsm.br", nome_completo="", papel=Usuario.PROFESSOR, password=None
+    )
+    client.force_login(coordenador)
+    resposta = client.post(
+        reverse("pessoas"), {"usuario": sem_nome.pk, "acao": "PROMOVER"}, follow=True
+    )
+    assert "semnome@ufsm.br agora é coordenador." in resposta.content.decode()
+
+
+@pytest.mark.django_db
 def test_acao_desconhecida_nao_muda_nada(client, coordenador, professor):
     """Sem ramo pega-tudo: um valor inesperado não pode cair na ação destrutiva.
     O mesmo defeito já apareceu duas vezes neste projeto."""
