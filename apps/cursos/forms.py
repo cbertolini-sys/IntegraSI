@@ -20,10 +20,10 @@ from apps.referenciais.models import Referencial
 class _CampoDePessoa(forms.ModelChoiceField):
     """Mostra `Usuario.identificacao` na option, e nao `str(obj)` (=`nome_completo`).
 
-    So importa para o campo de professor: professor cadastrado so com o e-mail
-    (`contas.services.criar_professor`) pode aparecer aqui sem nome, e a option
-    ficaria vazia - a mesma lacuna de A2/A3 da auditoria, aqui na origem da
-    escolha, e nao so na mensagem de sucesso depois dela.
+    Vale para os dois campos de pessoa da tela: aluno e professor nascem so com o
+    e-mail (`services.alocar_aluno` e `contas.services.criar_professor`), entao
+    qualquer um dos dois pode aparecer aqui antes do primeiro acesso, sem nome. Com
+    o `str(obj)` padrao a option ficaria vazia - selecionavel e invisivel.
     """
 
     def label_from_instance(self, obj):
@@ -40,7 +40,10 @@ class AlocarAlunoForm(forms.Form):
     guarda que nenhum teste de POST distingue da primeira (CLAUDE.md, Testes).
     """
 
-    aluno = forms.ModelChoiceField(
+    # `_CampoDePessoa` como o de professor: desde que o aluno tambem nasce so com
+    # o e-mail, ele pode aparecer aqui sem nome, e o `str(obj)` padrao desenharia
+    # uma option vazia - selecionavel e invisivel.
+    aluno = _CampoDePessoa(
         queryset=Usuario.objects.none(),
         empty_label=None,
         label="Aluno",
@@ -60,16 +63,18 @@ class AlocarAlunoForm(forms.Form):
 
 class AlocarNovoAlunoForm(forms.Form):
     """Desenha o formulario "Aluno novo" da tela de equipe. Mesmo papel de
-    `AlocarAlunoForm`: so para a tela, quem valida e `services.alocar_aluno`."""
+    `AlocarAlunoForm`: so para a tela, quem valida e `services.alocar_aluno`.
 
-    nome = forms.CharField(
-        label="Nome",
-        max_length=150,
-        help_text="O nome completo do aluno, como vai aparecer no curso.",
-    )
+    So o e-mail, como no cadastro de professor: o nome vem no primeiro acesso,
+    escrito pela propria pessoa. O professor digitava o nome do aluno aqui, e
+    digitar o nome de outra pessoa e onde nasce erro de grafia que ninguem
+    corrige depois - esse nome aparece no credito publico do curso.
+    """
+
     email = forms.EmailField(
         label="E-mail",
-        help_text="O convite para criar a senha chega neste endereço.",
+        help_text="O convite para criar a senha chega neste endereço. O aluno "
+        "informa nome, CPF, matrícula e telefone ao entrar pela primeira vez.",
     )
 
 

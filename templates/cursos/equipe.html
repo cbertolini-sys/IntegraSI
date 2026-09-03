@@ -83,12 +83,11 @@
       </form>
 
       <h2>Aluno novo</h2>
-      <p>Informe nome e e-mail. A pessoa recebe um convite para criar a senha e
-         completar o cadastro. O link vale sete dias.</p>
+      <p>Basta o e-mail. A pessoa recebe um convite para criar a senha e informar
+         nome, CPF, matrícula e telefone. O link vale sete dias.</p>
       <form method="post">
         {% csrf_token %}
         <input type="hidden" name="acao" value="aluno">
-        {% include "cursos/_campo.html" with campo=form_novo_aluno.nome %}
         {% include "cursos/_campo.html" with campo=form_novo_aluno.email %}
         <button type="submit" class="botao botao-largo">Alocar e convidar</button>
       </form>

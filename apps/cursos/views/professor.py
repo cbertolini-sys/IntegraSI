@@ -272,7 +272,10 @@ def _alocar_aluno_existente(request, curso):
         for mensagem in erro.messages:
             messages.error(request, mensagem)
     else:
-        messages.success(request, f"{membro.pessoa.nome_completo} entrou na equipe.")
+        # `identificacao`, e nao `nome_completo`: desde que o aluno tambem nasce so
+        # com o e-mail, um aluno da lista pode nao ter feito o primeiro acesso
+        # ainda, e a frase sairia sem sujeito.
+        messages.success(request, f"{membro.pessoa.identificacao} entrou na equipe.")
 
 
 def _alocar_professor(request, curso):
@@ -294,7 +297,6 @@ def _alocar_aluno(request, curso):
     try:
         membro = services.alocar_aluno(
             curso,
-            nome=request.POST.get("nome", ""),
             email=request.POST.get("email", ""),
             por=request.user,
             # O convite precisa de um endereco absoluto: o e-mail e lido fora
@@ -307,7 +309,7 @@ def _alocar_aluno(request, curso):
     else:
         messages.success(
             request,
-            f"{membro.pessoa.nome_completo} entrou na equipe. "
+            f"{membro.pessoa.identificacao} entrou na equipe. "
             "Enviamos o convite de primeiro acesso por e-mail.",
         )
 

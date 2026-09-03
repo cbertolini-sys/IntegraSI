@@ -121,8 +121,8 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
         contas/services.criar_professor); `nome_completo` fica vazio até o
         primeiro acesso. Uma mensagem ou um <option> de <select> que interpola
         `nome_completo` direto, sem isto, imprime uma string vazia - frase sem
-        sujeito, opção selecionável e invisível. Aluno nunca cai no ramo do
-        e-mail: `alocar_aluno` sempre grava o nome que o professor digitou.
+        sujeito, opção selecionável e invisível. Vale para os dois papéis: aluno
+        e professor nascem só com o e-mail, e o nome chega no primeiro acesso.
         """
         return self.nome_completo or self.email
 

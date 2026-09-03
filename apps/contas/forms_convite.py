@@ -11,11 +11,10 @@ class PrimeiroAcessoForm(forms.Form):
     receber a instância antes de validar, o que abriria a porta para editar outra
     pessoa mudando um campo escondido.
 
-    Os campos dependem do papel, porque as duas contas nascem incompletas de
-    maneiras diferentes: o aluno nasce com nome (o professor o digitou ao alocar)
-    e completa matrícula; o professor nasce só com o e-mail e completa nome e
-    SIAPE. É esta tela que exige os campos, e não o modelo -- se o modelo os
-    exigisse, nenhuma das duas contas poderia ser criada.
+    As duas contas nascem só com o e-mail, e é aqui que a própria pessoa escreve
+    o resto. Os campos diferem pelo papel: o aluno informa matrícula e telefone,
+    o professor informa SIAPE. É esta tela que os exige, e não o modelo -- se o
+    modelo os exigisse, nenhuma das duas contas poderia ser criada.
     """
 
     senha = forms.CharField(label="Crie sua senha", widget=forms.PasswordInput, strip=False)
@@ -31,7 +30,9 @@ class PrimeiroAcessoForm(forms.Form):
     # Cada papel só vê o que lhe cabe. Deixar matrícula na tela do professor não
     # seria só ruído: `Usuario.clean()` recusa professor com matrícula, e o erro
     # apareceria depois de a pessoa preencher tudo.
-    CAMPOS_DO_ALUNO = ("senha", "confirmacao", "cpf", "matricula", "telefone")
+    CAMPOS_DO_ALUNO = (
+        "senha", "confirmacao", "nome_completo", "cpf", "matricula", "telefone",
+    )
     CAMPOS_DO_PROFESSOR = ("senha", "confirmacao", "nome_completo", "cpf", "siape", "telefone")
 
     def __init__(self, *args, e_aluno=True, **kwargs):

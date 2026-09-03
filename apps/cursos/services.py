@@ -832,13 +832,19 @@ def alocar_aluno_existente(curso, aluno, por):
 
 
 @transaction.atomic
-def alocar_aluno(curso, nome, email, por, base_url=""):
-    """Cria a conta do aluno, vincula a equipe e envia o convite (regras 2 e 3
-    do Plano 5).
+def alocar_aluno(curso, email, por, base_url=""):
+    """Cria a conta do aluno com o e-mail e mais nada, vincula a equipe e envia o
+    convite (regras 2 e 3 do Plano 5).
 
-    Os tres acontecem juntos: uma conta criada sem convite fica inalcancavel --
-    ninguem consegue ativa-la, e o e-mail fica queimado, porque a segunda
-    tentativa bate na recusa de e-mail ja cadastrado.
+    So o e-mail, como em `contas.services.criar_professor`: nome, CPF, matricula e
+    telefone vem no primeiro acesso, escritos pela propria pessoa. O professor
+    digitava o nome do aluno aqui, e digitar o nome de outra pessoa e onde nasce
+    erro de grafia que ninguem corrige depois - o nome aparece no credito publico
+    do curso.
+
+    Os tres passos acontecem juntos: uma conta criada sem convite fica
+    inalcancavel -- ninguem consegue ativa-la, e o e-mail fica queimado, porque a
+    segunda tentativa bate na recusa de e-mail ja cadastrado.
 
     A recusa e por e-mail existente, e nao vinculo da conta que ja existe: um
     endereco digitado errado poria a pessoa errada numa equipe, e o professor nao
@@ -855,18 +861,12 @@ def alocar_aluno(curso, nome, email, por, base_url=""):
         "Somente o professor responsável monta a equipe.",
     )
     email = (email or "").strip().lower()
-    nome = (nome or "").strip()
     # Recusa explicita antes do create_user: ele levanta ValueError para e-mail
     # vazio, e a view so captura ValidationError -- um POST sem e-mail virava 500.
     # Era o que `test_equipe_sem_aluno_selecionado_nao_quebra` prendia no contrato
     # antigo, e a regra 2 do Plano 5 quase a perdeu junto com o contrato.
-    erros = {}
-    if not nome:
-        erros["nome"] = "Informe o nome do aluno."
     if not email:
-        erros["email"] = "Informe o e-mail do aluno."
-    if erros:
-        raise ValidationError(erros)
+        raise ValidationError({"email": "Informe o e-mail do aluno."})
 
     if Usuario.objects.filter(email__iexact=email).exists():
         raise ValidationError(
@@ -884,7 +884,7 @@ def alocar_aluno(curso, nome, email, por, base_url=""):
     # valendo. Nao acrescente a segunda de volta -- prefira confiar nesta linha,
     # que o teste consegue derrubar sozinha.
     aluno = Usuario.objects.create_user(
-        email=email, nome_completo=nome, papel=Usuario.ALUNO, password=None
+        email=email, nome_completo="", papel=Usuario.ALUNO, password=None
     )
 
     membro = adicionar_membro(curso, aluno, por=por)

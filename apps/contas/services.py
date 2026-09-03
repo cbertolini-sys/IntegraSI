@@ -6,13 +6,15 @@ from django.utils import timezone
 from apps.contas.models import ConviteAluno, Usuario
 from apps.notificacoes.services import enfileirar
 
-CORPO_CONVITE = """Olá, {nome}.
+# Sem saudacao pelo nome: a conta do aluno tambem nasce so com o e-mail, entao
+# nao ha nome para saudar ate ele mesmo escrever o dele no primeiro acesso.
+CORPO_CONVITE = """Olá.
 
 {quem} incluiu você na equipe de produção de um curso de extensão no IntegraSI,
 o sistema do curso de Sistemas de Informação da UFSM em Frederico Westphalen.
 
 Para entrar pela primeira vez, abra o endereço abaixo. Você vai criar sua senha e
-completar o cadastro com CPF, matrícula e telefone.
+completar o cadastro com nome, CPF, matrícula e telefone.
 
 {url}
 
@@ -20,9 +22,9 @@ O link vale por 7 dias e só pode ser usado uma vez. Se ele vencer, peça a
 {quem} para enviar outro.
 """
 
-# O convite do professor e outro texto porque a conta dele nasce so com o e-mail:
-# nao ha nome para saudar, nao ha equipe que o inclua, e os campos que ele
-# preenche sao CPF e SIAPE, nao matricula.
+# O convite do professor e outro texto porque quem o cadastra e a coordenacao, e
+# nao um professor montando equipe: nao ha curso que o inclua, e os campos que ele
+# preenche sao CPF e SIAPE, nao matricula e telefone.
 CORPO_CONVITE_PROFESSOR = """Olá.
 
 {quem} cadastrou você como professor no IntegraSI, o sistema de produção de cursos
@@ -57,9 +59,7 @@ def convidar(usuario, por, base_url=""):
     )
     url = f"{base_url}/convite/{convite.token}/"
     if usuario.e_aluno:
-        corpo = CORPO_CONVITE.format(
-            nome=usuario.nome_completo, quem=por.nome_completo, url=url
-        )
+        corpo = CORPO_CONVITE.format(quem=por.nome_completo, url=url)
     else:
         corpo = CORPO_CONVITE_PROFESSOR.format(quem=por.nome_completo, url=url)
     enfileirar(

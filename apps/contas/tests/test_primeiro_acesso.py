@@ -9,8 +9,10 @@ from apps.contas.models import Usuario
 
 @pytest.fixture
 def convite(db, professor):
+    # Sem nome, como a conta nasce: `alocar_aluno` grava so o e-mail, e o nome e
+    # um dos campos que esta tela existe para receber.
     aluno = Usuario.objects.create_user(
-        email="novo@acad.ufsm.br", nome_completo="Novo Aluno",
+        email="novo@acad.ufsm.br", nome_completo="",
         cpf=None, papel=Usuario.ALUNO, password=None,
     )
     return services.convidar(aluno, por=professor)
@@ -20,6 +22,7 @@ def dados_validos():
     return {
         "senha": "uma-senha-de-verdade-123",
         "confirmacao": "uma-senha-de-verdade-123",
+        "nome_completo": "Joana Silva",
         "cpf": "071.620.218-24",
         "matricula": "201910101",
         "telefone": "(55) 99999-1234",
@@ -41,6 +44,8 @@ def test_completar_o_perfil_e_entrar(client, convite):
     assert resposta.status_code == 200
     convite.usuario.refresh_from_db()
     assert convite.usuario.perfil_completo is True
+    # O nome vem daqui, e nao da alocacao: e a propria pessoa que o escreve.
+    assert convite.usuario.nome_completo == "Joana Silva"
     assert resposta.context["user"].is_authenticated
 
 
