@@ -316,6 +316,7 @@ sozinhas.
 | Quando | O quê |
 |---|---|
 | A cada deploy | `migrate`, `collectstatic`, `systemctl restart integrasi`, `nginx -t && systemctl reload nginx` |
+| Contínuo | Monitoração externa em `GET /saude/`: 200 com banco, 503 sem. É o caso que o `Restart=always` do systemd não enxerga - processo vivo e inútil |
 | A cada mudança no nginx | repetir a conferência §2.1 |
 | Semanalmente | olhar `/var/log/integrasi/cron.log` e a fila esgotada no Admin |
 | Semestralmente | `deploy/restaurar-teste.sh` e revisão do certificado TLS |

@@ -25,7 +25,15 @@ def fila_coordenacao(request):
     cursos = Curso.objects.filter(status=StatusCurso.AGUARDANDO_COORDENADOR).select_related(
         "professor_responsavel", "edicao"
     )
-    return render(request, "cursos/fila_coordenacao.html", {"cursos": cursos})
+    # Pagina como as outras seis listagens do sistema. A fila e caixa de entrada
+    # que esvazia, entao na pratica cabe numa pagina so - mas "na pratica cabe"
+    # nao e garantia, e era a unica listagem sem o corte.
+    pagina = paginar(request, cursos)
+    return render(
+        request,
+        "cursos/fila_coordenacao.html",
+        {"cursos": pagina, "pagina": pagina},
+    )
 
 
 @login_required

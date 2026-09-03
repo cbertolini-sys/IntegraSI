@@ -3,9 +3,12 @@ from django.contrib.auth.views import LogoutView
 from django.urls import include, path
 
 from apps.contas.views import LoginComLimite
+from config.saude import saude
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    # Monitoracao externa: 200 com banco, 503 sem. Ver config/saude.py.
+    path("saude/", saude, name="saude"),
     # O login e o nosso, com limite de tentativas por IP (LoginComLimite). O
     # `login` padrao do Django nao entra mais no urlpatterns - ver a nota do
     # logout, abaixo.

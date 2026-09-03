@@ -236,3 +236,50 @@ def test_o_email_de_erro_nao_leva_o_traceback_em_html(tmp_path):
     )
     assert resultado.returncode == 0, resultado.stderr
     assert resultado.stdout.strip() == "False"
+
+
+# --- Verificação de saúde -----------------------------------------------------
+
+
+@pytest.mark.django_db
+def test_a_verificacao_de_saude_responde_sem_login(client):
+    """Pública de propósito: monitoração não faz login, e a rota não diz nada que
+    já não se saiba de fora. Restringir, se for o caso, é trabalho do nginx."""
+    from django.urls import reverse
+
+    resposta = client.get(reverse("saude"))
+    assert resposta.status_code == 200
+    assert resposta.content == b"ok"
+
+
+@pytest.mark.django_db
+def test_a_verificacao_de_saude_toca_o_banco(client):
+    """Um 200 de graça é pior que rota nenhuma: a monitoração passaria a dizer
+    que está tudo bem com o banco fora do ar, que é justamente o caso que o
+    `Restart=always` do systemd não enxerga (processo vivo e inútil)."""
+    from unittest import mock
+
+    from django.urls import reverse
+
+    with mock.patch(
+        "django.db.connection.ensure_connection", side_effect=Exception("sem banco")
+    ):
+        resposta = client.get(reverse("saude"))
+    assert resposta.status_code == 503
+
+
+@pytest.mark.django_db
+def test_a_saude_nao_conta_o_que_deu_errado(client):
+    """A mensagem do banco é informação de dentro do servidor. Quem monitora
+    precisa do código de status; o traceback vai para o log."""
+    from unittest import mock
+
+    from django.urls import reverse
+
+    with mock.patch(
+        "django.db.connection.ensure_connection",
+        side_effect=Exception("FATAL: password authentication failed for user"),
+    ):
+        corpo = client.get(reverse("saude")).content.decode()
+    assert "password" not in corpo
+    assert "FATAL" not in corpo

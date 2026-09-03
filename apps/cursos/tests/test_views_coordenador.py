@@ -399,3 +399,14 @@ def test_visitante_anonimo_vai_para_o_login(client, curso_despublicado):
     resposta = client.get(reverse("cursos_no_catalogo"))
     assert resposta.status_code == 302
     assert resposta.url.startswith(reverse("login"))
+
+
+@pytest.mark.django_db
+def test_a_fila_da_coordenacao_pagina(client, curso_submetido, coordenador):
+    """Era a unica das sete listagens do sistema sem `paginar()`. A fila e caixa
+    de entrada que esvazia, entao na pratica cabe numa pagina so - mas "na pratica
+    cabe" nao e garantia."""
+    client.force_login(coordenador)
+    resposta = client.get(reverse("fila_coordenacao"))
+    assert "pagina" in resposta.context
+    assert resposta.context["pagina"].paginator.num_pages >= 1

@@ -74,6 +74,39 @@ def test_notificacao_no_limite_de_tentativas_e_abandonada(settings):
 
 
 @pytest.mark.django_db
+def test_a_abandonada_avisa_por_stderr(settings):
+    """Quem queimou as tentativas sai da fila e nao volta a aparecer.
+
+    STDERR, e nao stdout: o crontab manda o stdout para o log (que ninguem le
+    todo dia) e deixa o stderr chegar por e-mail no MAILTO. E o unico alerta que
+    este sistema tem, e um convite de primeiro acesso perdido ali deixa alguem
+    sem acesso ate reclamar.
+    """
+    settings.EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
+    services.enfileirar(evento="X", destinatarios=["a@ufsm.br"], assunto="A", corpo="B")
+    Notificacao.objects.update(tentativas=services.LIMITE_TENTATIVAS)
+
+    saida, erros = io.StringIO(), io.StringIO()
+    call_command("enviar_notificacoes", stdout=saida, stderr=erros)
+
+    assert "desistiram" in erros.getvalue()
+    assert "desistiram" not in saida.getvalue(), "o aviso saiu no canal que ninguém lê"
+
+
+@pytest.mark.django_db
+def test_sem_abandonada_o_comando_nao_avisa_nada(settings):
+    """Aviso que sai toda vez vira ruido, e o MAILTO do cron passa a ser
+    ignorado - que e o mesmo que nao ter alerta."""
+    settings.EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
+    services.enfileirar(evento="X", destinatarios=["a@ufsm.br"], assunto="A", corpo="B")
+
+    erros = io.StringIO()
+    call_command("enviar_notificacoes", stderr=erros)
+
+    assert erros.getvalue().strip() == ""
+
+
+@pytest.mark.django_db
 def test_comando_nao_envia_quando_outra_execucao_esta_em_andamento(settings):
     settings.EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
     services.enfileirar(evento="X", destinatarios=["a@ufsm.br"], assunto="A", corpo="B")

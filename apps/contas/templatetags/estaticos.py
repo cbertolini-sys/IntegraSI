@@ -6,10 +6,18 @@ estilo alterada continua servindo a versão velha até alguém forçar a recarga
 Custou uma sessão inteira de confusão -- a página parecia quebrada e o CSS estava
 correto no servidor.
 
-Em produção, `collectstatic` com `ManifestStaticFilesStorage` já põe o hash no
-nome do arquivo; aqui o parâmetro é inofensivo e o mecanismo continua o mesmo em
-ambos os ambientes, o que é o ponto: não ter um comportamento em dev e outro no
-ar.
+Vale em produção também, e é lá que ele é o único mecanismo: o projeto **não**
+usa `ManifestStaticFilesStorage`. Habilitá-lo derruba o `collectstatic`, e o
+motivo é concreto - quatro arquivos vendorizados (`quill.snow.css`,
+`quill.min.js`, `tippy.min.js`, `popper.min.js`) terminam com um
+`sourceMappingURL` apontando para um `.map` que não vendorizamos, e o
+`ManifestStaticFilesStorage` reescreve essas referências e falha em quem não
+acha. Sairia caro pelo motivo errado: ou modificar biblioteca de terceiro, ou
+carregar quatro mapas de código que produção nenhuma lê.
+
+Então o `?v=` daqui é o que quebra o cache nos dois ambientes, que era o ponto:
+não ter um comportamento em desenvolvimento e outro no ar. O nginx serve
+`/static/` com `expires 30d` (deploy/nginx.conf) contando com ele.
 
 Mora em `contas` porque é o app base -- nada depende dele, então uma tag global
 aqui não cria dependência nova (CLAUDE.md, Arquitetura).

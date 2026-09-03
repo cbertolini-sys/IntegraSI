@@ -75,3 +75,29 @@ class Command(BaseCommand):
             notificacao.save(update_fields=["enviado_em", "tentativas", "ultimo_erro"])
             enviadas += 1
         self.stdout.write(self.style.SUCCESS(f"{enviadas} notificações enviadas."))
+        self._avisar_das_abandonadas()
+
+    def _avisar_das_abandonadas(self):
+        """Quem queimou as tentativas sai da fila e nao volta a aparecer.
+
+        O Admin tem o filtro que as separa, mas ninguem abre o Admin por conta
+        propria: um convite de primeiro acesso que nunca chegou deixa a pessoa
+        sem acesso, e o sistema so descobre quando ela reclama.
+
+        Escreve em STDERR, e nao em stdout: o crontab manda o stdout para o log
+        (que ninguem le todo dia) e deixa o stderr chegar por e-mail no MAILTO
+        (deploy/crontab). E o mesmo canal que ja avisa do vazamento de arquivo
+        orfao - o unico alerta que este sistema tem.
+        """
+        abandonadas = Notificacao.objects.filter(
+            enviado_em__isnull=True, tentativas__gte=LIMITE_TENTATIVAS
+        ).count()
+        if not abandonadas:
+            return
+        self.stderr.write(
+            f"{abandonadas} notificação(ões) desistiram depois de "
+            f"{LIMITE_TENTATIVAS} tentativas e não serão reenviadas. "
+            "Se houver convite de primeiro acesso entre elas, alguém está sem "
+            "acesso ao sistema. Veja o filtro \"desistiu\" no Admin de "
+            "Notificações e reenvie pelo professor ou pela coordenação."
+        )
