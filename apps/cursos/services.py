@@ -453,7 +453,6 @@ def despublicar_curso(curso, por, motivo):
 
 
 @transaction.atomic
-@transaction.atomic
 def atualizar_ficha(curso, dados, por):
     """Grava a ficha preenchida pela equipe (spec 4.3 e 10).
 
