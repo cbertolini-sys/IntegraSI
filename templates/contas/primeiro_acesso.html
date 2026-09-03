@@ -5,8 +5,16 @@
 <div class="trabalho">
   <div class="faixa pagina-estreita">
     <h1>Bem-vindo ao IntegraSI</h1>
-    <p class="abertura">Olá, {{ convite.usuario.nome_completo }}. Crie sua senha e
-       complete o cadastro para começar a produzir.</p>
+    {% comment %}
+      A conta do professor nasce so com o e-mail, sem nome: saudar pelo nome aqui
+      imprimia "Olá, ." Quem tem nome continua sendo saudado por ele.
+    {% endcomment %}
+    {% if convite.usuario.nome_completo %}
+      <p class="abertura">Olá, {{ convite.usuario.nome_completo }}. Crie sua senha e
+         complete o cadastro para começar a produzir.</p>
+    {% else %}
+      <p class="abertura">Crie sua senha e complete o cadastro para começar.</p>
+    {% endif %}
     <div class="cartao">
       {% if form.non_field_errors %}
         <p class="erro-acesso">{{ form.non_field_errors|join:" " }}</p>

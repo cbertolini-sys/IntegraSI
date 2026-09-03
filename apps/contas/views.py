@@ -10,6 +10,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
 from apps.contas import services
+from apps.contas.forms import CadastroDeProfessorForm
 from apps.contas.forms_convite import PrimeiroAcessoForm
 from apps.contas.models import ConviteAluno, TentativaDeLogin, Usuario
 from apps.contas.paginacao import paginar
@@ -81,15 +82,20 @@ def primeiro_acesso(request, token):
     if convite is None or not convite.valido:
         return render(request, "contas/convite_invalido.html")
 
-    form = PrimeiroAcessoForm(request.POST or None)
+    form = PrimeiroAcessoForm(request.POST or None, e_aluno=convite.usuario.e_aluno)
     if request.method == "POST" and form.is_valid():
+        dados = form.cleaned_data
         try:
+            # `.get()` e nao `[...]`: o campo que nao e daquele papel foi apagado
+            # do formulario, e o `None` diz ao servico para nao tocar nele.
             usuario = services.consumir_convite(
                 token,
-                senha=form.cleaned_data["senha"],
-                cpf=form.cleaned_data["cpf"],
-                matricula=form.cleaned_data["matricula"],
-                telefone=form.cleaned_data["telefone"],
+                senha=dados["senha"],
+                cpf=dados["cpf"],
+                matricula=dados.get("matricula"),
+                telefone=dados.get("telefone", ""),
+                nome=dados.get("nome_completo"),
+                siape=dados.get("siape"),
             )
         except ValidationError as erro:
             for mensagem in erro.messages:
@@ -113,8 +119,40 @@ def pessoas(request):
         raise PermissionDenied("Área da coordenação.")
 
     if request.method == "POST":
-        alvo = get_object_or_404(Usuario, pk=request.POST.get("usuario"))
         acao = request.POST.get("acao")
+        if acao == "CRIAR_PROFESSOR":
+            # Antes do `get_object_or_404`: este ramo nao tem pessoa alvo, e cair
+            # naquela linha daria 404 no lugar da tela de erro.
+            cadastro = CadastroDeProfessorForm(request.POST)
+            if not cadastro.is_valid():
+                for mensagem in cadastro.errors.get("email", ["E-mail inválido."]):
+                    messages.error(request, mensagem)
+                return redirect("pessoas")
+            try:
+                criado = services.criar_professor(
+                    cadastro.cleaned_data["email"],
+                    por=request.user,
+                    base_url=request.build_absolute_uri("/").rstrip("/"),
+                )
+            except ValidationError as erro:
+                for mensagem in erro.messages:
+                    messages.error(request, mensagem)
+            else:
+                messages.success(
+                    request,
+                    f"Convite enviado para {criado.email}. "
+                    "Ele completa o cadastro no primeiro acesso.",
+                )
+            return redirect("pessoas")
+
+        if not request.POST.get("usuario"):
+            # Acao desconhecida e sem pessoa alvo. Sem esta linha cairia no
+            # `get_object_or_404` com `pk=None` e a tela devolveria 404, como se a
+            # pagina nao existisse.
+            messages.error(request, "Ação não reconhecida.")
+            return redirect("pessoas")
+
+        alvo = get_object_or_404(Usuario, pk=request.POST.get("usuario"))
         try:
             # Igualdade explicita nos dois ramos, sem pega-tudo: um valor
             # inesperado nao pode cair na acao destrutiva. O mesmo defeito ja
@@ -137,4 +175,8 @@ def pessoas(request):
         papel__in=[Usuario.PROFESSOR, Usuario.COORDENADOR]
     ).order_by("nome_completo")
     pagina = paginar(request, equipe)
-    return render(request, "contas/pessoas.html", {"equipe": pagina, "pagina": pagina})
+    return render(
+        request,
+        "contas/pessoas.html",
+        {"equipe": pagina, "pagina": pagina, "cadastro": CadastroDeProfessorForm()},
+    )

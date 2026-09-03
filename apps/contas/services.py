@@ -3,7 +3,7 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 
-from apps.contas.models import ConviteAluno
+from apps.contas.models import ConviteAluno, Usuario
 from apps.notificacoes.services import enfileirar
 
 CORPO_CONVITE = """Olá, {nome}.
@@ -13,6 +13,23 @@ o sistema do curso de Sistemas de Informação da UFSM em Frederico Westphalen.
 
 Para entrar pela primeira vez, abra o endereço abaixo. Você vai criar sua senha e
 completar o cadastro com CPF, matrícula e telefone.
+
+{url}
+
+O link vale por 7 dias e só pode ser usado uma vez. Se ele vencer, peça a
+{quem} para enviar outro.
+"""
+
+# O convite do professor e outro texto porque a conta dele nasce so com o e-mail:
+# nao ha nome para saudar, nao ha equipe que o inclua, e os campos que ele
+# preenche sao CPF e SIAPE, nao matricula.
+CORPO_CONVITE_PROFESSOR = """Olá.
+
+{quem} cadastrou você como professor no IntegraSI, o sistema de produção de cursos
+de extensão do curso de Sistemas de Informação da UFSM em Frederico Westphalen.
+
+Para entrar pela primeira vez, abra o endereço abaixo. Você vai criar sua senha e
+completar o cadastro com nome, CPF e SIAPE.
 
 {url}
 
@@ -38,21 +55,51 @@ def convidar(usuario, por, base_url=""):
     convite = ConviteAluno.objects.create(
         usuario=usuario, criado_por=por, expira_em=timezone.now() + ConviteAluno.PRAZO
     )
+    url = f"{base_url}/convite/{convite.token}/"
+    if usuario.e_aluno:
+        corpo = CORPO_CONVITE.format(
+            nome=usuario.nome_completo, quem=por.nome_completo, url=url
+        )
+    else:
+        corpo = CORPO_CONVITE_PROFESSOR.format(quem=por.nome_completo, url=url)
     enfileirar(
         evento="CONVITE_ALUNO",
         destinatarios=[usuario.email],
         assunto="Seu acesso ao IntegraSI",
-        corpo=CORPO_CONVITE.format(
-            nome=usuario.nome_completo,
-            quem=por.nome_completo,
-            url=f"{base_url}/convite/{convite.token}/",
-        ),
+        corpo=corpo,
     )
     return convite
 
 
 @transaction.atomic
-def consumir_convite(token, senha, cpf, matricula, telefone):
+def criar_professor(email, por, base_url=""):
+    """Cria a conta de um professor com o e-mail, e mais nada.
+
+    So a coordenacao: professor nao cadastra professor (decisao do produto). O
+    resto - nome, CPF e SIAPE - vem no primeiro acesso, como ja acontecia com o
+    aluno: quem exige os campos e aquela tela, e nao o modelo.
+
+    Conta e convite nascem juntos, pelo mesmo motivo de `alocar_aluno`: uma conta
+    sem convite fica inalcancavel, e o e-mail fica queimado porque a segunda
+    tentativa bate na recusa de e-mail ja cadastrado.
+    """
+    _garante_coordenacao(por, "Somente a coordenação cadastra professor.")
+    email = (email or "").strip().lower()
+    if not email:
+        raise ValidationError("Informe o e-mail do professor.")
+    if Usuario.objects.filter(email__iexact=email).exists():
+        raise ValidationError("Já existe conta com este e-mail.")
+
+    # `password=None` deixa a senha inutilizavel: so o convite abre a conta.
+    professor = Usuario.objects.create_user(
+        email=email, nome_completo="", papel=Usuario.PROFESSOR, password=None
+    )
+    convidar(professor, por=por, base_url=base_url)
+    return professor
+
+
+@transaction.atomic
+def consumir_convite(token, senha, cpf, matricula, telefone, nome=None, siape=None):
     """Completa o perfil e define a senha, gastando o convite.
 
     Tudo numa transação: uma senha recusada, ou um CPF que colida com o de outra
@@ -66,8 +113,16 @@ def consumir_convite(token, senha, cpf, matricula, telefone):
     usuario = convite.usuario
     validate_password(senha, usuario)
 
+    if nome is not None:
+        usuario.nome_completo = nome
     usuario.cpf = cpf
-    usuario.matricula = matricula
+    # Matricula e do aluno, SIAPE e do professor: cada tela manda o seu, e o
+    # outro chega None. Gravar os dois cegamente violaria o `clean()`, que recusa
+    # matricula em professor e SIAPE em aluno.
+    if matricula is not None:
+        usuario.matricula = matricula
+    if siape is not None:
+        usuario.siape = siape
     usuario.telefone = telefone
     usuario.set_password(senha)
     usuario.save()

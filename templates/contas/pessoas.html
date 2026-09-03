@@ -17,12 +17,33 @@
   </div>
 
   <div class="faixa corpo-trabalho">
+    <div class="cartao cartao-acao">
+      <h2>Cadastrar professor</h2>
+      <p class="detalhe">Basta o e-mail. A pessoa recebe o convite e informa nome,
+         CPF e SIAPE ao entrar. Aluno não se cadastra por aqui: ele nasce quando o
+         professor o aloca na equipe de um curso.</p>
+      <form method="post" class="form-cadastro">
+        {% csrf_token %}
+        {% include "cursos/_campo.html" with campo=cadastro.email largo=1 %}
+        <button type="submit" name="acao" value="CRIAR_PROFESSOR" class="botao">Enviar convite</button>
+      </form>
+    </div>
+
     <ul class="registros">
       {% for pessoa in equipe %}
         <li class="registro">
           <div>
-            <h3>{{ pessoa.nome_completo }}</h3>
-            <p class="detalhe"><span>{{ pessoa.email }}</span></p>
+            {% comment %}
+              Conta cadastrada so com o e-mail ainda nao tem nome, e o <h3> vazio
+              deixava a linha sem cabeca nenhuma. O e-mail sobe para o titulo e a
+              linha de baixo diz por que falta o resto.
+            {% endcomment %}
+            <h3>{{ pessoa.nome_completo|default:pessoa.email }}</h3>
+            {% if pessoa.nome_completo %}
+              <p class="detalhe"><span>{{ pessoa.email }}</span></p>
+            {% else %}
+              <p class="detalhe"><span>Convite enviado. Aguardando o primeiro acesso.</span></p>
+            {% endif %}
           </div>
           <form method="post" class="form-em-linha">
             {% csrf_token %}

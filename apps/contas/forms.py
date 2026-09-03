@@ -49,3 +49,18 @@ class UsuarioChangeForm(CamposComPontuacaoMixin, UserChangeForm):
             "is_active",
             "is_staff",
         )
+
+
+class CadastroDeProfessorForm(forms.Form):
+    """O e-mail, e mais nada.
+
+    A coordenação não digita nome, CPF nem SIAPE: quem tem esses dados é a própria
+    pessoa, e ela os informa no primeiro acesso. Pedi-los aqui seria a coordenação
+    transcrevendo documento alheio, e um erro de digitação viraria conta errada.
+    """
+
+    email = forms.EmailField(
+        label="E-mail do professor",
+        help_text="A pessoa recebe um convite neste endereço e completa o "
+        "cadastro com nome, CPF e SIAPE ao entrar pela primeira vez.",
+    )

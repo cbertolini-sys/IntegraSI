@@ -43,7 +43,11 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
         (ALUNO, "Aluno"),
     ]
 
-    nome_completo = models.CharField("nome completo", max_length=150)
+    # `blank=True` porque a coordenacao cadastra professor SO com o e-mail e o
+    # proprio informa o nome no primeiro acesso - o mesmo arranjo que o aluno ja
+    # tinha com CPF e matricula. Quem exige o nome e a tela do convite, e nao o
+    # modelo, senao o cadastro por e-mail seria impossivel.
+    nome_completo = models.CharField("nome completo", max_length=150, blank=True)
     email = models.EmailField("e-mail", unique=True)
     cpf = models.CharField(
         "CPF", max_length=11, unique=True, null=True, blank=True, validators=[valida_cpf]
@@ -117,11 +121,13 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
         flag paralela é uma segunda fonte de verdade que sai de sincronia na
         primeira edição pelo Admin. Aqui não há o que sincronizar.
 
-        Professor e coordenador não passam pelo primeiro acesso -- são criados
-        pela coordenação com documento na mão --, então para eles o telefone não
-        entra na conta. O telefone é pedido ao aluno na tela de convite, junto
-        com CPF e matrícula, e é lá que a exigência dos três mora.
+        Professor e coordenador tambem passam pelo primeiro acesso desde que a
+        coordenacao passou a cadastra-los so com o e-mail. Para eles o telefone
+        nao entra na conta: e opcional na tela. O nome entra para os dois, porque
+        agora ele pode nascer vazio.
         """
+        if not self.nome_completo:
+            return False
         if not self.e_aluno:
             return bool(self.cpf and self.siape)
         return bool(self.cpf and self.matricula and self.telefone)
@@ -151,10 +157,13 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
             if self.siape:
                 erros["siape"] = "Aluno não tem SIAPE."
         else:
-            if not self.cpf:
-                erros["cpf"] = "CPF é obrigatório para professor e coordenador."
-            if not self.siape:
-                erros["siape"] = "SIAPE é obrigatório para professor e coordenador."
+            # Nem CPF nem SIAPE sao exigidos no cadastro, pelo mesmo motivo do
+            # aluno: a coordenacao cria a conta so com o e-mail e a pessoa informa
+            # os documentos no primeiro acesso. Quem exige os tres campos e aquela
+            # tela; o que o modelo garante e a COERENCIA - com CPF tem de haver
+            # SIAPE, e professor nunca tem matricula.
+            if self.cpf and not self.siape:
+                erros["siape"] = "Informe o SIAPE junto com o CPF."
             if self.matricula:
                 erros["matricula"] = "Professor e coordenador não têm matrícula."
         if erros:

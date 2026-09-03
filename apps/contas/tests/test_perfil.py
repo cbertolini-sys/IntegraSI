@@ -73,22 +73,42 @@ def test_cpf_repetido_continua_recusado(aluno):
 
 
 @pytest.mark.django_db
-def test_professor_sem_cpf_continua_recusado():
-    """A regra que sobrevive: aluno pode nascer sem documento, professor não."""
-    with pytest.raises(ValidationError):
-        Usuario.objects.create_user(
-            email="semcpf@ufsm.br", nome_completo="Sem CPF",
-            cpf=None, papel=Usuario.PROFESSOR, siape="5555555", password=None,
-        )
+def test_professor_nasce_sem_documento_e_sem_nome():
+    """A coordenação cadastra professor só com o e-mail, e ele completa o resto no
+    primeiro acesso. Antes o modelo exigia CPF e SIAPE já no cadastro, o que
+    tornava esse fluxo impossível.
+
+    Quem exige os três campos é a tela do convite, e não o modelo. O que o modelo
+    guarda é o perfil ficar marcado como incompleto enquanto faltar."""
+    professor = Usuario.objects.create_user(
+        email="soemail@ufsm.br", nome_completo="", cpf=None,
+        papel=Usuario.PROFESSOR, password=None,
+    )
+    assert professor.perfil_completo is False
 
 
 @pytest.mark.django_db
-def test_professor_sem_siape_continua_recusado():
+def test_professor_com_cpf_precisa_de_siape():
+    """Coerência, e não obrigatoriedade: metade da identificação funcional gravada
+    é pior que nenhuma, porque a tela de cadastro pendente não a distingue de uma
+    ficha pronta."""
     with pytest.raises(ValidationError):
         Usuario.objects.create_user(
             email="semsiape@ufsm.br", nome_completo="Sem Siape",
             cpf="071.620.218-24", papel=Usuario.PROFESSOR, password=None,
         )
+
+
+@pytest.mark.django_db
+def test_professor_com_nome_e_cpf_ainda_e_incompleto_sem_nome():
+    """`perfil_completo` passou a cobrar o nome dos dois papéis, porque agora ele
+    pode nascer vazio. Sem isso o professor cadastrado por e-mail entraria no
+    sistema sem nome e o middleware o deixaria passar."""
+    professor = Usuario.objects.create_user(
+        email="anonimo@ufsm.br", nome_completo="", cpf="071.620.218-24",
+        papel=Usuario.PROFESSOR, siape="5555555", password=None,
+    )
+    assert professor.perfil_completo is False
 
 
 @pytest.mark.django_db
