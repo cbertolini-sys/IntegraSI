@@ -8,7 +8,7 @@
     <div class="faixa">
       <div>
         <h1>Equipe de {{ curso.titulo }}</h1>
-        <p class="sub">Os estudantes que produzem o material deste curso.</p>
+        <p class="sub">Os alunos que produzem o material deste curso.</p>
       </div>
       <div class="acoes"><a class="botao botao-linha" href="{% url 'curso' curso.pk %}">Ver o curso</a></div>
     </div>
@@ -38,7 +38,7 @@
               {% if not membro.pessoa.nome_completo %}
                 {% comment %}
                   So professor chega aqui sem nome (a coordenacao o cadastra so
-                  com o e-mail); estudante nasce com o nome que o professor
+                  com o e-mail); aluno nasce com o nome que o professor
                   digitou. A linha explica por que a de cima mostra um endereco.
                 {% endcomment %}
                 <p class="detalhe"><span>Convite enviado. Aguardando o primeiro acesso.</span></p>
@@ -66,30 +66,30 @@
 
     <aside class="lateral">
       {% comment %}
-        Dois caminhos para estudante, e nao um: a partir do segundo curso de cada
+        Dois caminhos para aluno, e nao um: a partir do segundo curso de cada
         aluno o normal e escolher da lista. `alocar_aluno` recusa e-mail ja
         cadastrado de proposito (endereco digitado errado poria a pessoa errada na
         equipe), e ate agora a mensagem mandava pedir a coordenacao sem haver por
         onde.
       {% endcomment %}
-      <h2>Estudante já cadastrado</h2>
+      <h2>Aluno já cadastrado</h2>
       <p>Quem já tem conta no IntegraSI, por ter produzido outro curso. Entra
          direto, sem novo convite.</p>
       <form method="post">
         {% csrf_token %}
         <input type="hidden" name="acao" value="aluno_existente">
-        {% include "cursos/_campo.html" with campo=form_aluno_existente.aluno vazio="Nenhum estudante disponível." %}
-        <button type="submit" class="botao botao-largo">Alocar estudante</button>
+        {% include "cursos/_campo.html" with campo=form_aluno_existente.aluno vazio="Nenhum aluno disponível." %}
+        <button type="submit" class="botao botao-largo">Alocar aluno</button>
       </form>
 
-      <h2>Estudante novo</h2>
+      <h2>Aluno novo</h2>
       <p>Informe nome e e-mail. A pessoa recebe um convite para criar a senha e
          completar o cadastro. O link vale sete dias.</p>
       <form method="post">
         {% csrf_token %}
         <input type="hidden" name="acao" value="aluno">
-        {% include "cursos/_campo.html" with campo=form_novo_estudante.nome %}
-        {% include "cursos/_campo.html" with campo=form_novo_estudante.email %}
+        {% include "cursos/_campo.html" with campo=form_novo_aluno.nome %}
+        {% include "cursos/_campo.html" with campo=form_novo_aluno.email %}
         <button type="submit" class="botao botao-largo">Alocar e convidar</button>
       </form>
 

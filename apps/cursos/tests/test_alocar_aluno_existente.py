@@ -59,7 +59,7 @@ def test_recusa_quem_nao_e_aluno(curso, professor, outro_professor):
     """O pk vem do formulario: um professor escolhido por aqui entraria pela porta
     errada, sem passar por `alocar_professor`. Mesma guarda que aquele tem, no
     sentido inverso."""
-    with pytest.raises(ValidationError, match="estudante"):
+    with pytest.raises(ValidationError, match="aluno"):
         services.alocar_aluno_existente(curso, outro_professor, por=professor)
     assert not curso.tem_membro(outro_professor)
 
@@ -68,7 +68,7 @@ def test_recusa_quem_nao_e_aluno(curso, professor, outro_professor):
 def test_recusa_selecao_vazia(curso, professor):
     """O select pode chegar vazio; sem esta guarda o None seguiria para
     `adicionar_membro` e viraria 500 em vez de mensagem."""
-    with pytest.raises(ValidationError, match="estudante"):
+    with pytest.raises(ValidationError, match="aluno"):
         services.alocar_aluno_existente(curso, None, por=professor)
 
 

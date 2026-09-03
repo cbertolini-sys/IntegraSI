@@ -359,7 +359,7 @@ def test_a_lista_da_equipe_usa_o_componente_de_linha(client, dados_curso, profes
     curso = services.criar_curso(**dados_curso)
     client.force_login(professor)
     html = client.get(reverse("equipe", args=[curso.pk])).content.decode()
-    lista = html[html.index("Na equipe") : html.index("Estudante já cadastrado")]
+    lista = html[html.index("Na equipe") : html.index("Aluno já cadastrado")]
     assert 'class="registros"' in lista
     assert 'class="registro"' in lista
     assert 'class="etiquetas"' not in lista

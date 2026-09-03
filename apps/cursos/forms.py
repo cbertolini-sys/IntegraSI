@@ -30,8 +30,8 @@ class _CampoDePessoa(forms.ModelChoiceField):
         return obj.identificacao
 
 
-class AlocarEstudanteForm(forms.Form):
-    """Desenha o formulario "Estudante já cadastrado" da tela de equipe.
+class AlocarAlunoForm(forms.Form):
+    """Desenha o formulario "Aluno já cadastrado" da tela de equipe.
 
     So para a tela, e nao para validar - o mesmo papel de `EnvioDeVideoForm` (ver
     a docstring la): quem valida e `services.alocar_aluno_existente`, e a view
@@ -43,7 +43,7 @@ class AlocarEstudanteForm(forms.Form):
     aluno = forms.ModelChoiceField(
         queryset=Usuario.objects.none(),
         empty_label=None,
-        label="Estudante",
+        label="Aluno",
         help_text="Alunos que já produziram outro curso e ainda não estão nesta equipe.",
     )
 
@@ -58,14 +58,14 @@ class AlocarEstudanteForm(forms.Form):
         )
 
 
-class AlocarNovoEstudanteForm(forms.Form):
-    """Desenha o formulario "Estudante novo" da tela de equipe. Mesmo papel de
-    `AlocarEstudanteForm`: so para a tela, quem valida e `services.alocar_aluno`."""
+class AlocarNovoAlunoForm(forms.Form):
+    """Desenha o formulario "Aluno novo" da tela de equipe. Mesmo papel de
+    `AlocarAlunoForm`: so para a tela, quem valida e `services.alocar_aluno`."""
 
     nome = forms.CharField(
         label="Nome",
         max_length=150,
-        help_text="O nome completo do estudante, como vai aparecer no curso.",
+        help_text="O nome completo do aluno, como vai aparecer no curso.",
     )
     email = forms.EmailField(
         label="E-mail",
@@ -75,7 +75,7 @@ class AlocarNovoEstudanteForm(forms.Form):
 
 class AlocarProfessorForm(forms.Form):
     """Desenha o formulario "Alocar professor" da tela de equipe. Mesmo papel de
-    `AlocarEstudanteForm`: so para a tela, quem valida e `services.alocar_professor`."""
+    `AlocarAlunoForm`: so para a tela, quem valida e `services.alocar_professor`."""
 
     professor = _CampoDePessoa(
         queryset=Usuario.objects.none(),
@@ -85,7 +85,7 @@ class AlocarProfessorForm(forms.Form):
     )
 
     def __init__(self, *args, disponiveis=None, **kwargs):
-        # Mesmo motivo do __init__ de AlocarEstudanteForm, acima.
+        # Mesmo motivo do __init__ de AlocarAlunoForm, acima.
         super().__init__(*args, **kwargs)
         self.fields["professor"].queryset = (
             disponiveis if disponiveis is not None else Usuario.objects.none()

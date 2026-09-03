@@ -827,7 +827,7 @@ def alocar_aluno_existente(curso, aluno, por):
         "Somente o professor responsável monta a equipe.",
     )
     if aluno is None or not aluno.e_aluno:
-        raise ValidationError("Escolha um estudante para a equipe.")
+        raise ValidationError("Escolha um aluno para a equipe.")
     return adicionar_membro(curso, aluno, por=por)
 
 
@@ -862,9 +862,9 @@ def alocar_aluno(curso, nome, email, por, base_url=""):
     # antigo, e a regra 2 do Plano 5 quase a perdeu junto com o contrato.
     erros = {}
     if not nome:
-        erros["nome"] = "Informe o nome do estudante."
+        erros["nome"] = "Informe o nome do aluno."
     if not email:
-        erros["email"] = "Informe o e-mail do estudante."
+        erros["email"] = "Informe o e-mail do aluno."
     if erros:
         raise ValidationError(erros)
 

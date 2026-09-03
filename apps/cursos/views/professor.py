@@ -9,8 +9,8 @@ from apps.contas.models import Usuario
 from apps.cursos import permissions, services, validacoes
 from apps.cursos.choices import STATUS_EDITAVEIS, StatusEntregavel
 from apps.cursos.forms import (
-    AlocarEstudanteForm,
-    AlocarNovoEstudanteForm,
+    AlocarAlunoForm,
+    AlocarNovoAlunoForm,
     AlocarProfessorForm,
     FichaCursoForm,
     PropostaForm,
@@ -213,8 +213,8 @@ def equipe(request, pk):
         "cursos/equipe.html",
         {
             "curso": curso,
-            "form_aluno_existente": AlocarEstudanteForm(disponiveis=_alunos_disponiveis(curso)),
-            "form_novo_estudante": AlocarNovoEstudanteForm(),
+            "form_aluno_existente": AlocarAlunoForm(disponiveis=_alunos_disponiveis(curso)),
+            "form_novo_aluno": AlocarNovoAlunoForm(),
             "form_professor": AlocarProfessorForm(disponiveis=_professores_disponiveis(curso)),
         },
     )

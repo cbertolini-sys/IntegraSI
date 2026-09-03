@@ -363,3 +363,32 @@ def test_nenhum_button_fica_sem_classe():
                 linha = conteudo[: abertura.start()].count("\n") + 1
                 achados.append(f"{caminho}:{linha}: {abertura.group(0)[:70]}")
     assert not achados, "botão sem classe em:\n" + "\n".join(achados)
+
+
+# --- O termo de quem produz o material ---------------------------------------
+
+# As classes CSS do fluxograma da pagina Sobre (`fluxo estudante`, `fluxograma
+# estudante`). Sao gancho de estilo, nao texto: o rotulo que a pessoa le naquele
+# fluxo ja diz "Aluno de Sistemas de Informação". Trocar o gancho mexeria em duas
+# regras de CSS e num teste para nao mudar nada na tela - a mesma razao pela qual
+# valor gravado nao muda por passada de texto (CLAUDE.md).
+GANCHOS_DE_ESTILO = ("fluxo estudante", "fluxograma estudante")
+
+
+def test_a_interface_diz_aluno_e_nao_estudante():
+    """Um termo so para quem produz o material.
+
+    O rotulo de `Usuario.PAPEIS` imprime "Aluno" no painel, na gaveta do
+    cabecalho e no perfil, e por um tempo as telas de equipe e catalogo diziam
+    "estudante" - dois nomes para a mesma pessoa, em telas vizinhas. A escolha e
+    "aluno", e este teste a mantem.
+    """
+    fora = []
+    for caminho in RAIZ.glob("templates/**/*.html"):
+        for numero, linha in enumerate(caminho.read_text(encoding="utf-8").splitlines(), 1):
+            if "estudante" not in linha.lower():
+                continue
+            if any(gancho in linha for gancho in GANCHOS_DE_ESTILO):
+                continue
+            fora.append(f"{caminho.relative_to(RAIZ)}:{numero}: {linha.strip()[:70]}")
+    assert fora == [], "a interface voltou a dizer \"estudante\":\n" + "\n".join(fora)
