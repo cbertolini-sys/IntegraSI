@@ -283,6 +283,27 @@ def test_select_de_professores_nao_oferece_quem_ja_esta_na_equipe(
 
 
 @pytest.mark.django_db
+def test_sem_professor_disponivel_mostra_mensagem_especifica(client, dados_curso, professor):
+    """`_campo.html` teria mostrado a frase generica de "sem opcoes" - certa para
+    um referencial ou uma competencia, que so a coordenacao cadastra pelo Admin -,
+    mas errada aqui: qualquer professor esvazia este campo sozinho, so por ja ter
+    alocado todo mundo disponivel. O `vazio=` do include precisa estar chegando.
+
+    `services.criar_curso`, e nao a fixture `curso`: e ele que grava o
+    MembroEquipe do responsavel, o que tira `professor` (o unico professor da
+    base neste teste) do queryset - a fixture `curso` crua nao faz isso, e o
+    professor sobraria disponivel para si mesmo.
+    """
+    from django.urls import reverse
+
+    curso = services.criar_curso(**dados_curso)
+    client.force_login(professor)
+    html = client.get(reverse("equipe", args=[curso.pk])).content.decode()
+    assert "Nenhum professor disponível." in html
+    assert "A coordenação cadastra pelo painel de administração" not in html
+
+
+@pytest.mark.django_db
 def test_select_de_professores_mostra_email_para_quem_ainda_nao_tem_nome(
     client, curso, professor
 ):
