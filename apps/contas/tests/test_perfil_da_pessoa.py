@@ -14,6 +14,7 @@ cache de navegador ou num log de acesso.
 import pytest
 from django.urls import reverse
 
+from apps.contas.forms import PerfilForm
 from apps.contas.models import Usuario
 
 
@@ -88,7 +89,15 @@ def test_cpf_novo_e_valido_substitui(client, professor):
 
 
 @pytest.mark.django_db
-def test_cpf_invalido_e_recusado(client, professor):
+def test_cpf_invalido_e_recusado_no_proprio_campo(client, professor):
+    """No campo, e não como erro geral.
+
+    `Usuario.clean()` também recusa o CPF inválido, então "a gravação não
+    aconteceu" não distingue as duas guardas: apagar a do formulário deixaria o
+    modelo recusando igual e este teste verde. O que só a guarda do formulário
+    produz é o erro pendurado no campo `cpf`, onde a pessoa o vê ao lado do que
+    digitou, em vez de uma frase solta no topo da tela.
+    """
     client.force_login(professor)
     resposta = client.post(
         reverse("perfil"),
@@ -96,6 +105,7 @@ def test_cpf_invalido_e_recusado(client, professor):
          "telefone": "(55) 98888-0000", "cpf": "111.111.111-11"},
     )
     assert resposta.status_code == 200
+    assert "cpf" in resposta.context["form"].errors
     professor.refresh_from_db()
     assert professor.cpf == "12345678909"
 
@@ -152,6 +162,31 @@ def test_a_pessoa_nao_muda_o_proprio_papel(client, aluno):
     assert aluno.is_staff is False
 
 
+def test_a_cerca_do_formulario_nao_alcanca_papel_nem_privilegio():
+    """`Meta.fields` isolado do corte por papel.
+
+    O `__init__` também poda campos, e as duas guardas escondem uma à outra num
+    teste de POST: apagar qualquer uma delas deixa a outra barrando o `papel`, e
+    o teste segue verde. `base_fields` é montado a partir da `Meta`, na classe,
+    antes de `__init__` rodar - é onde esta guarda responde sozinha.
+    """
+    proibidos = {"papel", "is_superuser", "is_staff", "email", "password",
+                 "user_permissions", "groups", "is_active"}
+    assert proibidos.isdisjoint(PerfilForm.base_fields)
+
+
+@pytest.mark.django_db
+def test_o_corte_por_papel_nao_deixa_campo_sobrando(aluno, professor):
+    """A outra metade da cerca, também sozinha: depois do `__init__`, restam
+    exatamente os campos daquele papel."""
+    assert set(PerfilForm(instance=aluno).fields) == {
+        "nome_completo", "cpf", "matricula", "telefone"
+    }
+    assert set(PerfilForm(instance=professor).fields) == {
+        "nome_completo", "cpf", "siape", "telefone"
+    }
+
+
 @pytest.mark.django_db
 def test_a_pessoa_nao_muda_o_proprio_email(client, aluno):
     """O e-mail é a credencial de acesso. Trocá-lo sozinho é trocar de conta."""
@@ -167,16 +202,24 @@ def test_a_pessoa_nao_muda_o_proprio_email(client, aluno):
 
 @pytest.mark.django_db
 def test_ninguem_edita_outra_pessoa(client, aluno, professor):
-    """A instância editada vem de `request.user`, e não do POST."""
+    """A instância editada vem de `request.user`, e não do POST.
+
+    A carga é a que o formulário DO PROFESSOR aceitaria inteira, com o SIAPE dele
+    junto: uma carga inválida faria o teste passar por o formulário ter sido
+    recusado, e não por a instância estar presa ao usuário da sessão. É a
+    diferença entre provar a regra e provar um acidente.
+    """
     client.force_login(aluno)
     client.post(
         reverse("perfil"),
-        {"acao": "DADOS", "nome_completo": "Invadido", "matricula": "201910101",
-         "telefone": "(55) 97777-1111", "cpf": "", "id": professor.pk,
-         "usuario": professor.pk},
+        {"acao": "DADOS", "nome_completo": "Invadido", "siape": "1234567",
+         "matricula": "201910101", "telefone": "(55) 97777-1111", "cpf": "",
+         "id": professor.pk, "pk": professor.pk, "usuario": professor.pk},
     )
     professor.refresh_from_db()
     assert professor.nome_completo == "Bruno Barros"
+    aluno.refresh_from_db()
+    assert aluno.nome_completo == "Invadido"
 
 
 # --- a senha ------------------------------------------------------------------
