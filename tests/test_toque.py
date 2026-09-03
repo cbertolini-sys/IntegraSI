@@ -101,3 +101,95 @@ def test_o_palco_libera_a_rolagem_vertical():
     que fazer com ele, e a troca sai atrasada - ou a pagina para de rolar em
     cima do carrossel, que e pior."""
     assert "touch-action: pan-y" in regra(".vitrine-palco")
+
+
+# --- Segunda onda: overflow, marca e respiro ---------------------------------
+
+
+def test_onde_email_e_impresso_ha_onde_quebrar():
+    """E-mail nao tem espaco: sem ponto de quebra, um endereco longo empurra o
+    container e leva a pagina a rolar de lado no celular.
+
+    O risco cresceu quando `como_pessoa` passou a imprimir o endereco no lugar do
+    nome de quem ainda nao completou o cadastro: onde antes so havia nomes (que
+    quebram em espacos), agora pode haver enderecos.
+    """
+    for seletor in (
+        ".etiquetas li",
+        ".registro h3",
+        ".registro .detalhe span",
+        ".dados-lista dd",
+        ".cabecalho-pagina .sub",
+    ):
+        assert seletor in CSS, f"{seletor} saiu da regra de quebra"
+    bloco = re.search(
+        r"\.etiquetas li,(.*?)\{(.*?)\}", CSS, re.S
+    )
+    assert bloco and "overflow-wrap: anywhere" in bloco.group(2)
+    # `min-width: 0` junto: sem ele o item de flex/grid nao encolhe abaixo do
+    # conteudo, e quebrar o texto nao impede o container de ser empurrado.
+    assert "min-width: 0" in bloco.group(2)
+
+
+def test_o_nome_na_barra_trunca_em_vez_de_empurrar():
+    """A barra e uma linha so: ali a saida e reticencia, nao quebra. O valor
+    inteiro fica no `title` e na tela do perfil."""
+    corpo = regra(".menu-pessoa .quem strong")
+    assert "text-overflow: ellipsis" in corpo
+    assert "overflow: hidden" in corpo
+    base = (RAIZ / "templates" / "base.html").read_text(encoding="utf-8")
+    assert "<strong title=" in base, "o nome truncado perdeu o title"
+
+
+def test_a_marca_encolhe_proporcionalmente():
+    """`height` fixo com o `max-width: 100%` global ACHATA a marca: a largura cede
+    e a altura nao. `max-height` com `height: auto` deixa as duas cederem juntas.
+    """
+    corpo = regra(".marca img")
+    assert "max-height" in corpo
+    assert "height: auto" in corpo
+    assert re.search(r"(?<!max-)height:\s*2\.625rem", corpo) is None, (
+        "a altura voltou a ser fixa, e a marca volta a achatar"
+    )
+
+
+def test_a_marca_cede_no_celular():
+    """A 2,625rem a marca mede 202px, e num aparelho de 320px o `.faixa` deixa
+    272px: ela mais o escudo tomavam a barra inteira e o menu ia para a segunda
+    linha, num cabecalho `sticky`."""
+    assert "@media (max-width: 30rem)" in CSS
+    inicio = CSS.index("@media (max-width: 30rem)", CSS.index(".instituicao span"))
+    bloco = CSS[inicio : CSS.index("\n}\n", CSS.index(".barra .faixa", inicio))]
+    assert ".marca img" in bloco and "max-height: 1.875rem" in bloco
+
+
+def test_a_busca_tem_a_guarda_dos_outros_grids():
+    """Era o unico grid fluido da folha sem `min(100%, ...)`: sem ela a coluna
+    nao encolhe abaixo do valor fixo e forca rolagem lateral."""
+    corpo = regra(".busca form")
+    assert "minmax(min(100%, 12.5rem), 1fr)" in corpo
+
+
+def test_todo_grid_fluido_tem_a_guarda():
+    """A regra da casa, agora cobrada: `repeat(auto-fit|auto-fill, minmax(X, 1fr))`
+    sem `min(100%, X)` e o padrao que forca rolagem lateral em tela estreita.
+
+    Prende a REGRA, e nao o caso da busca: o proximo grid escrito sem a guarda
+    reprova aqui, que e o que faltava quando este defeito nasceu.
+    """
+    sem_guarda = [
+        achado.group(0)
+        for achado in re.finditer(
+            r"repeat\(auto-(?:fit|fill),\s*minmax\((?!min\()[^)]*\)", CSS
+        )
+    ]
+    assert sem_guarda == [], "grid fluido sem min(100%, ...):\n" + "\n".join(sem_guarda)
+
+
+def test_o_respiro_lateral_cede_no_celular():
+    """96px de padding acumulado num viewport de 375px sao 26% da tela gastos
+    antes de qualquer conteudo."""
+    inicio = CSS.index("@media (max-width: 30rem)")
+    bloco = CSS[inicio : CSS.index("/* ---------- barra do topo", inicio)]
+    assert "padding-inline: 1rem" in bloco
+    assert ".bloco," in bloco and "padding: 1.125rem" in bloco

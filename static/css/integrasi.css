@@ -94,6 +94,24 @@ a {
   width: 100%;
 }
 
+/* No celular o respiro lateral cede.
+   
+   O padding nao mudava com a largura: num aparelho de 375px, 24px de cada lado
+   do `.faixa` mais 24px de cada lado do `.bloco` somavam 96px, ou 26% da tela
+   gastos antes de qualquer conteudo. Com este degrau sobram 40px a mais de
+   largura util, 14% de ganho, sem tocar em nenhum layout de desktop. */
+@media (max-width: 30rem) {
+  .faixa {
+    padding-inline: 1rem;
+  }
+
+  .bloco,
+  .ficha-secao,
+  .cartao {
+    padding: 1.125rem;
+  }
+}
+
 /* ---------- barra do topo ---------- */
 
 .barra {
@@ -120,9 +138,15 @@ a {
   min-width: 0;
 }
 
+/* `max-height` em vez de `height`, com `height: auto`: a marca tem proporcao
+   4,81:1 e renderiza a 202px de largura. Com a altura FIXA, o `img { max-width:
+   100% }` global reduzia a largura sem reduzir a altura junto - a marca achatava
+   em vez de encolher. Assim ela encolhe proporcionalmente quando o espaco
+   aperta. */
 .marca img {
   display: block;
-  height: 2.625rem;
+  height: auto;
+  max-height: 2.625rem;
   width: auto;
 }
 
@@ -174,6 +198,25 @@ a {
   }
   .instituicao {
     padding-left: 0.75rem;
+  }
+}
+
+/* No celular a marca cede também.
+   
+   A 2,625rem de altura ela mede 202px de largura, e num aparelho de 320px o
+   `.faixa` deixa 272px: a marca mais o escudo mais o separador consumiam a barra
+   inteira e o menu ia todo para uma segunda linha, num cabecalho que e `sticky`.
+   A 1,875rem ela mede 144px, e os tres itens do menu voltam a caber ao lado. */
+@media (max-width: 30rem) {
+  .marca img {
+    max-height: 1.875rem;
+  }
+  .marcas-barra {
+    gap: 0.625rem;
+  }
+  .barra .faixa {
+    min-height: 3.5rem;
+    gap: 0.75rem;
   }
 }
 
@@ -485,7 +528,10 @@ textarea:focus {
   gap: 0.75rem;
   /* 12.5rem e nao 11: com 11 o primeiro select cortava "Qualquer etapa escolar"
      no proprio rotulo. O botao sai da grade e fica com a largura do texto. */
-  grid-template-columns: repeat(auto-fit, minmax(12.5rem, 1fr));
+  /* `min(100%, ...)` como nos outros seis grids fluidos do arquivo: sem ele a
+     coluna nao pode ficar menor que 12,5rem, e num container mais estreito que
+     isso ela forca rolagem lateral. Era o unico grid da folha sem a guarda. */
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12.5rem), 1fr));
   align-items: end;
 }
 
@@ -1310,6 +1356,27 @@ textarea:focus {
 
 .registro .detalhe .sep {
   color: #c9d2dc;
+}
+
+/* Onde nome de pessoa e e-mail dividem o mesmo espaco.
+   
+   `como_pessoa` imprime o endereco quando ainda nao ha nome (professor
+   cadastrado so com o e-mail, antes do primeiro acesso), e endereco nao tem
+   espaco para o navegador quebrar: um `coordenacao.sistemasdeinformacao@ufsm.br`
+   mede cerca de 300px e empurra o container, levando a pagina a rolar de lado no
+   celular.
+   
+   `anywhere`, e nao `break-word`: `break-word` nao encolhe a largura MINIMA do
+   item de flex/grid, entao a pilha continuaria empurrando o container mesmo
+   quebrando o texto. `min-width: 0` pelo mesmo motivo, do lado do item. */
+.etiquetas li,
+.registro h3,
+.registro .detalhe span,
+.dados-lista dd,
+.dados-lista span,
+.cabecalho-pagina .sub {
+  overflow-wrap: anywhere;
+  min-width: 0;
 }
 
 /* ---------- selos de estado ---------- */
@@ -3330,6 +3397,20 @@ textarea:focus {
   text-align: left;
   color: var(--cinza);
   font-size: 0.75rem;
+  /* Aqui a saida e truncar, e nao quebrar como no resto: a barra e uma linha so,
+     e um e-mail longo (o nome de quem ainda nao fez o primeiro acesso) empurraria
+     o gatilho inteiro. O nome completo continua no `title` e na tela do perfil. */
+  min-width: 0;
+  max-width: 11rem;
+}
+
+/* A reticencia vai no `strong`, e nao no `.quem`: `.quem` e um flex em coluna, e
+   `text-overflow` nao alcanca os itens anonimos que ele cria. O papel, na linha
+   de baixo, e curto por natureza ("Professor", "Coordenador") e nao precisa. */
+.menu-pessoa .quem strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .menu-pessoa .quem strong {

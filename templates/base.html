@@ -70,7 +70,11 @@
             <summary>
               <span class="avatar" aria-hidden="true">{{ user.nome_completo|iniciais }}</span>
               <span class="quem">
-                <strong>{{ user.nome_completo|default:user.email }}</strong>
+                {% comment %}
+                  `title` porque o nome trunca com reticencia numa barra estreita:
+                  e-mail longo (de quem ainda nao fez o primeiro acesso) nao caberia.
+                {% endcomment %}
+                <strong title="{{ user.nome_completo|default:user.email }}">{{ user.nome_completo|default:user.email }}</strong>
                 {{ user.get_papel_display }}
               </span>
               <span class="seta" aria-hidden="true"></span>
