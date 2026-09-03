@@ -2641,10 +2641,6 @@ textarea:focus {
   margin-top: 2rem;
 }
 
-.afastada-abaixo {
-  margin-bottom: 1.25rem;
-}
-
 .form-em-linha {
   display: flex;
   align-items: center;
