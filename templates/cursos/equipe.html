@@ -15,22 +15,52 @@
   </div>
 
   <div class="faixa corpo-trabalho duas-colunas">
-    <div class="bloco">
-      <h2>Na equipe</h2>
-      <ul class="etiquetas">
+    <div>
+      {% comment %}
+        `registros`, e nao `etiquetas`.
+
+        Esta lista usava a pilha de etiquetas - o componente das tags de tema e
+        palavra-chave, feito para texto curto de 13px com 5px de respiro. Dentro
+        de cada etiqueta cabia um botao "Remover" de 44px de altura, e o `<li>`
+        nem era flex: o botao ficava desalinhado do nome, e a linha do
+        responsavel (so texto) nao se parecia com as outras.
+
+        `registros` e o componente que ja faz este trabalho na tela de Pessoas:
+        uma linha por pessoa, identificacao a esquerda, acao a direita. Nenhum
+        CSS novo - e as duas telas que listam gente passam a se parecer.
+      {% endcomment %}
+      <h2 class="titulo-bloco">Na equipe</h2>
+      <ul class="registros">
         {% for membro in curso.membros.all %}
-          <li>
-            {{ membro.pessoa|como_pessoa }}
+          <li class="registro">
+            <div>
+              <h3>{{ membro.pessoa|como_pessoa }}</h3>
+              {% if not membro.pessoa.nome_completo %}
+                {% comment %}
+                  So professor chega aqui sem nome (a coordenacao o cadastra so
+                  com o e-mail); estudante nasce com o nome que o professor
+                  digitou. A linha explica por que a de cima mostra um endereco.
+                {% endcomment %}
+                <p class="detalhe"><span>Convite enviado. Aguardando o primeiro acesso.</span></p>
+              {% endif %}
+            </div>
             {% if membro.pessoa_id == curso.professor_responsavel_id %}
-              <span class="etiqueta">responsável</span>
+              {% comment %}
+                Sem botao: o responsavel nao sai da equipe (`remover_membro`
+                recusa), entao oferecer o botao seria oferecer um caminho que a
+                regra fecha. O selo diz por que ele nao tem acao.
+              {% endcomment %}
+              <span class="estado info">Responsável</span>
             {% else %}
-              <form method="post" action="{% url 'remover_da_equipe' curso.pk membro.pk %}" class="remover">
+              <form method="post" action="{% url 'remover_da_equipe' curso.pk membro.pk %}">
                 {% csrf_token %}
                 <button type="submit" class="botao botao-linha">Remover</button>
               </form>
             {% endif %}
           </li>
-        {% empty %}<li>Equipe vazia.</li>{% endfor %}
+        {% empty %}
+          <li class="vazio"><p>Equipe vazia.</p></li>
+        {% endfor %}
       </ul>
     </div>
 

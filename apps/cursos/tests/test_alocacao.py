@@ -342,6 +342,58 @@ def test_a_lista_na_equipe_mostra_email_para_quem_ainda_nao_tem_nome(
     assert "semnomelista@ufsm.br" in html
 
 
+@pytest.mark.django_db
+def test_a_lista_da_equipe_usa_o_componente_de_linha(client, dados_curso, professor):
+    """A lista usava `etiquetas`, o componente das tags de tema e palavra-chave:
+    texto curto de 13px com 5px de respiro. Dentro de cada etiqueta cabia um botao
+    "Remover" de 44px, e o `<li>` nem era flex - o botao saia desalinhado do nome.
+
+    `registros` e o componente que a tela de Pessoas ja usa para o mesmo trabalho:
+    uma linha por pessoa, identificacao a esquerda, acao a direita.
+    """
+    from django.urls import reverse
+
+    # `criar_curso`, e nao a fixture `curso`: e ele que grava o MembroEquipe do
+    # responsavel. Com a fixture crua a equipe nasce vazia e a lista mostra o
+    # estado vazio, sem linha nenhuma para conferir.
+    curso = services.criar_curso(**dados_curso)
+    client.force_login(professor)
+    html = client.get(reverse("equipe", args=[curso.pk])).content.decode()
+    lista = html[html.index("Na equipe") : html.index("Estudante já cadastrado")]
+    assert 'class="registros"' in lista
+    assert 'class="registro"' in lista
+    assert 'class="etiquetas"' not in lista
+
+
+@pytest.mark.django_db
+def test_o_responsavel_aparece_sem_botao_de_remover(client, dados_curso, professor, aluno):
+    """`remover_membro` recusa tirar o responsavel da equipe (o curso ficaria sem
+    quem revisa). Oferecer o botao para ele seria oferecer um caminho que a regra
+    fecha - a pessoa clicaria para ouvir "nao da".
+
+    Os dois lados no mesmo teste, porque e o contraste que descreve a regra: o
+    responsavel traz o selo e nenhum botao; o aluno traz o botao.
+    """
+    from django.urls import reverse
+
+    curso = services.criar_curso(**dados_curso)
+    services.adicionar_membro(curso, aluno, por=professor)
+    client.force_login(professor)
+    html = client.get(reverse("equipe", args=[curso.pk])).content.decode()
+
+    # `[1:]`: o primeiro pedaco e tudo o que vem ANTES da primeira linha, e a
+    # barra do topo imprime o nome de quem esta logado - o professor casaria ali,
+    # fora da lista. E a mesma armadilha que o helper `autoria()` de
+    # test_autoria_e_progresso.py ja documenta.
+    linhas = html.split('<li class="registro">')[1:]
+    do_responsavel = next(l for l in linhas if professor.nome_completo in l)
+    do_aluno = next(l for l in linhas if aluno.nome_completo in l)
+
+    assert "Responsável" in do_responsavel
+    assert "Remover" not in do_responsavel
+    assert "Remover" in do_aluno
+
+
 # --- Remover da equipe (Plano 6) ---------------------------------------------
 
 

@@ -87,7 +87,7 @@ def test_so_quem_gere_a_equipe_aloca(curso, aluno, outro_aluno):
 def test_a_tela_oferece_os_alunos_cadastrados(client, curso, professor, aluno):
     client.force_login(professor)
     resposta = client.get(reverse("equipe", args=[curso.pk]))
-    assert aluno in resposta.context["alunos"]
+    assert aluno in resposta.context["form_aluno_existente"].fields["aluno"].queryset
     assert 'name="aluno"' in resposta.content.decode()
 
 
@@ -97,7 +97,8 @@ def test_quem_ja_esta_na_equipe_sai_da_lista(client, curso, professor, aluno):
     professores ja tinha aprendido isso."""
     services.adicionar_membro(curso, aluno, por=professor)
     client.force_login(professor)
-    assert aluno not in client.get(reverse("equipe", args=[curso.pk])).context["alunos"]
+    resposta = client.get(reverse("equipe", args=[curso.pk]))
+    assert aluno not in resposta.context["form_aluno_existente"].fields["aluno"].queryset
 
 
 @pytest.mark.django_db
@@ -105,7 +106,8 @@ def test_a_lista_nao_traz_professores(client, curso, professor, outro_professor,
     """Sao duas listas na tela, cada uma com o seu papel. Misturadas, a escolha
     entra pela porta errada."""
     client.force_login(professor)
-    alunos = client.get(reverse("equipe", args=[curso.pk])).context["alunos"]
+    resposta = client.get(reverse("equipe", args=[curso.pk]))
+    alunos = resposta.context["form_aluno_existente"].fields["aluno"].queryset
     assert aluno in alunos
     assert outro_professor not in alunos
 
@@ -141,13 +143,20 @@ def test_acao_desconhecida_nao_cria_conta(client, curso, professor):
 
 
 @pytest.mark.django_db
-def test_cada_formulario_manda_a_propria_acao(client, curso, professor, aluno):
+def test_cada_formulario_manda_a_propria_acao(
+    client, curso, professor, outro_professor, aluno
+):
     """Prende o par formulario/acao, e nao cada um de um lado.
 
     Os testes acima mandam `acao` a mao, entao trocar o campo escondido no
     template nao quebrava nenhum: escolher um estudante do select cairia no ramo
     do aluno NOVO e a tela responderia "Informe o nome", com a suite verde. Achado
     na campanha de deleção.
+
+    `outro_professor` entra na lista de fixtures porque o select de professor so
+    e desenhado quando ha alguem para escolher: sem ninguem disponivel,
+    `_campo.html` mostra "Nenhum professor disponível." no lugar do campo, e o
+    teste procuraria um `name="professor"` que a tela nao tem motivo para ter.
     """
     import re
 
