@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-{% load pessoas %}
 {% block titulo %} - {{ curso.titulo }}{% endblock %}
 
 {% block topo %}
@@ -131,7 +130,14 @@
             <dt>Equipe</dt>
             <dd>
               <ul class="etiquetas">
-                {% for membro in curso.equipe %}<li>{{ membro.pessoa|como_pessoa }}</li>{% endfor %}
+                {% comment %}
+                  So quem ja tem nome: esta pagina e publica e sem login (spec 12,
+                  comentario acima). `como_pessoa` cai no e-mail quando falta nome,
+                  e o e-mail e dado pessoal - o mesmo motivo pelo qual as telas de
+                  producao (equipe.html, curso.html) PODEM usar `como_pessoa` e
+                  esta nao pode, porque so as de producao exigem login.
+                {% endcomment %}
+                {% for membro in curso.equipe %}{% if membro.pessoa.nome_completo %}<li>{{ membro.pessoa.nome_completo }}</li>{% endif %}{% endfor %}
               </ul>
             </dd>
           {% endif %}

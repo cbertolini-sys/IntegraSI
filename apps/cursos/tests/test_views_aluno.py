@@ -922,3 +922,23 @@ def test_a_volta_do_curso_vale_para_o_professor_tambem(client, curso_com_equipe)
     client.force_login(curso_com_equipe.professor_responsavel)
     html = client.get(reverse("curso", args=[curso_com_equipe.pk])).content.decode()
     assert f'href="{reverse("meus_cursos")}"' in html
+
+
+@pytest.mark.django_db
+def test_a_lista_de_equipe_mostra_email_para_quem_ainda_nao_tem_nome(
+    client, curso_com_equipe
+):
+    """A mesma lacuna de A2/A3, do lado da leitura: um professor colaborador sem
+    nome (cadastrado só com o e-mail pela coordenação) fica na lista de equipe
+    desta tela como um item vazio, sem `|como_pessoa`."""
+    from apps.contas.models import Usuario
+
+    sem_nome = Usuario.objects.create_user(
+        email="semnome@ufsm.br", nome_completo="", papel=Usuario.PROFESSOR, password=None
+    )
+    services.alocar_professor(
+        curso_com_equipe, sem_nome, por=curso_com_equipe.professor_responsavel
+    )
+    client.force_login(curso_com_equipe.professor_responsavel)
+    html = client.get(reverse("curso", args=[curso_com_equipe.pk])).content.decode()
+    assert "<li>semnome@ufsm.br</li>" in html

@@ -53,7 +53,7 @@ def curso(request, pk):
     )
     permissions.garante(permissions.pode_ver_curso(request.user, obj), "Curso de outra equipe.")
     entregaveis = obj.entregaveis.all()
-    # select_related("pessoa"): o template le membro.pessoa.nome_completo para cada
+    # select_related("pessoa"): o template le membro.pessoa|como_pessoa para cada
     # membro da equipe - sem isto, uma consulta a mais por membro (fila_revisao.html
     # ja faz isto certo).
     membros = obj.membros.select_related("pessoa")

@@ -302,6 +302,24 @@ def test_select_de_professores_mostra_email_para_quem_ainda_nao_tem_nome(
     assert f'<option value="{sem_nome.pk}">semnome@ufsm.br</option>' in html
 
 
+@pytest.mark.django_db
+def test_a_lista_na_equipe_mostra_email_para_quem_ainda_nao_tem_nome(
+    client, curso, professor
+):
+    """Mesma lacuna, na lista "Na equipe" acima dos selects. Tela login-gated
+    (pode_gerir_equipe): mostrar o e-mail aqui não é o mesmo risco de mostrá-lo
+    na página pública do catálogo, que é outra tela."""
+    from django.urls import reverse
+
+    sem_nome = Usuario.objects.create_user(
+        email="semnomelista@ufsm.br", nome_completo="", papel=Usuario.PROFESSOR, password=None
+    )
+    services.alocar_professor(curso, sem_nome, por=professor)
+    client.force_login(professor)
+    html = client.get(reverse("equipe", args=[curso.pk])).content.decode()
+    assert "semnomelista@ufsm.br" in html
+
+
 # --- Remover da equipe (Plano 6) ---------------------------------------------
 
 
@@ -310,6 +328,24 @@ def test_membro_e_removido_da_equipe(curso, professor, aluno):
     membro = services.adicionar_membro(curso, aluno, por=professor)
     services.remover_membro(curso, membro, por=professor)
     assert curso.tem_membro(aluno) is False
+
+
+@pytest.mark.django_db
+def test_remover_professor_sem_nome_produz_mensagem_com_email(client, curso, professor):
+    """A mesma lacuna do lado da remocao: `_professores_disponiveis` nao filtra
+    por perfil completo, entao um professor sem nome pode ser alocado e depois
+    removido, e a mensagem de saida repetia o defeito de A3."""
+    from django.urls import reverse
+
+    sem_nome = Usuario.objects.create_user(
+        email="semnome@ufsm.br", nome_completo="", papel=Usuario.PROFESSOR, password=None
+    )
+    membro = services.alocar_professor(curso, sem_nome, por=professor)
+    client.force_login(professor)
+    resposta = client.post(
+        reverse("remover_da_equipe", args=[curso.pk, membro.pk]), follow=True
+    )
+    assert "semnome@ufsm.br saiu da equipe." in resposta.content.decode()
 
 
 @pytest.mark.django_db

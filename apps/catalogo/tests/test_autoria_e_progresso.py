@@ -90,6 +90,29 @@ def test_a_pagina_publica_tambem_credita_quem_produziu(
     assert aluno.nome_completo in bloco
 
 
+@pytest.mark.django_db
+def test_a_pagina_publica_nunca_credita_pelo_email(client, dados_curso, professor, coordenador):
+    """`catalogo_curso` não tem `@login_required`: é a página que qualquer
+    visitante alcança sem entrar (spec 12). `como_pessoa` cai no e-mail quando
+    falta nome - certo nas telas de produção, que exigem login, e errado aqui.
+    Um professor colaborador sem nome (cadastrado só com o e-mail, ainda não fez
+    o primeiro acesso) não pode aparecer identificado pelo e-mail nesta tela."""
+    from apps.contas.models import Usuario
+
+    curso = services.criar_curso(**dados_curso)
+    sem_nome = Usuario.objects.create_user(
+        email="semnome@ufsm.br", nome_completo="", papel=Usuario.PROFESSOR, password=None
+    )
+    services.adicionar_membro(curso, sem_nome, por=professor)
+    curso.entregaveis.update(status=StatusEntregavel.APROVADO)
+    curso.refresh_from_db()
+    services.submeter_ao_coordenador(curso, por=professor)
+    services.publicar_curso(curso, por=coordenador)
+    html = client.get(reverse("catalogo_curso", args=[curso.pk])).content.decode()
+    assert "semnome@ufsm.br" not in html
+    assert "@" not in autoria(html)
+
+
 # --- Progresso ----------------------------------------------------------------
 
 
