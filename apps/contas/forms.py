@@ -162,6 +162,11 @@ class TrocaDeSenhaForm(PasswordChangeForm):
     # o padrao, a varredura quebraria e a exigencia de ajuda morreria junto.
     def __init__(self, user=None, *args, **kwargs):
         super().__init__(user, *args, **kwargs)
+        # O `PasswordChangeForm` do Django marca `autofocus` na senha atual, e este
+        # formulário mora no SEGUNDO cartão da tela: abrir "Meu perfil" jogava o
+        # foco e a rolagem por cima de "Seus dados", direto na caixa de senha.
+        # Quem chega ali vem ver os próprios dados, não trocar a senha.
+        self.fields["old_password"].widget.attrs.pop("autofocus", None)
         self.fields["old_password"].help_text = (
             "A senha com que você entrou. Serve para confirmar que é você."
         )

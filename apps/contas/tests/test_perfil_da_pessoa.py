@@ -286,3 +286,25 @@ def test_a_tela_diz_quem_troca_o_e_mail(client, professor):
     procura o campo, não acha, e conclui que a tela está quebrada."""
     html = _abre(client, professor)
     assert "Só a coordenação troca." in html
+
+
+@pytest.mark.django_db
+def test_nenhum_campo_do_perfil_rouba_o_foco(client, professor):
+    """`PasswordChangeForm` marca `autofocus` no campo da senha atual, e ele mora
+    no SEGUNDO cartão da tela: abrir "Meu perfil" jogava o foco (e a rolagem) por
+    cima de "Seus dados", direto na caixa de senha. Quem chega aqui vem ver os
+    próprios dados, não trocar a senha."""
+    html = _abre(client, professor)
+    assert "autofocus" not in html
+
+
+@pytest.mark.django_db
+def test_a_gaveta_do_cabecalho_tem_so_perfil_e_sair(client, professor):
+    """"Painel" saiu da gaveta: o link já está solto na barra, ao lado do nome, e
+    o mesmo destino duas vezes no mesmo canto da tela é ruído."""
+    client.force_login(professor)
+    html = client.get(reverse("painel")).content.decode()
+    gaveta = html.split('class="gaveta-pessoa"')[1].split("</details>")[0]
+    assert "Meu perfil" in gaveta
+    assert "Sair" in gaveta
+    assert "Painel" not in gaveta

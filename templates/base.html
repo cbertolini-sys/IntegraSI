@@ -75,14 +75,15 @@
               </span>
               <span class="seta" aria-hidden="true"></span>
             </summary>
+            {% comment %}
+              So "Meu perfil" e "Sair". O "Painel" saiu daqui: o link ja esta
+              solto na barra, a esquerda do nome, e o mesmo destino duas vezes no
+              mesmo canto da tela e ruido.
+            {% endcomment %}
             <div class="gaveta-pessoa">
               <a href="{% url 'perfil' %}">
                 <strong>Meu perfil</strong>
                 <span>Ver e corrigir seus dados</span>
-              </a>
-              <a href="{% url 'painel' %}">
-                <strong>Painel</strong>
-                <span>Seu trabalho no sistema</span>
               </a>
               <form method="post" action="{% url 'logout' %}">
                 {% csrf_token %}
