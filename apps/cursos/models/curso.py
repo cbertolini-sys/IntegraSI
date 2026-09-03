@@ -158,6 +158,10 @@ class Curso(models.Model):
         indexes = [
             GinIndex(fields=["search_vector"], name="curso_busca_idx"),
             GinIndex(fields=["vetor_temas"], name="curso_busca_temas_idx"),
+            # O catalogo publico e os tres cartoes do painel filtram por status
+            # (nove lugares, entre eles a unica tela que gente de fora visita) - e
+            # a coluna mais consultada do sistema, e nao tinha indice proprio.
+            models.Index(fields=["status"], name="curso_status_idx"),
         ]
         constraints = [
             # No maximo UMA versao publicada por linhagem (spec 4.5: "o catalogo
