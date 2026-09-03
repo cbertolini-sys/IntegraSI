@@ -16,6 +16,9 @@
     var pontos = Array.prototype.slice.call(raiz.querySelectorAll('.ponto'));
     var anterior = raiz.querySelector('[data-anterior]');
     var proxima = raiz.querySelector('[data-proxima]');
+    // O arrasto escuta o palco, e não a raiz: fora dele estão o rótulo e a linha
+    // de pontos, onde arrastar não quer dizer trocar de slide.
+    var palco = raiz.querySelector('.vitrine-palco') || raiz;
     var atual = 0;
     var relogio = null;
 
@@ -84,6 +87,48 @@
     raiz.addEventListener('focusin', parar);
     raiz.addEventListener('focusout', function (evento) {
       if (!raiz.contains(evento.relatedTarget)) tocar();
+    });
+
+    // No toque, `mouseenter` nunca dispara: o carrossel seguia avançando de seis
+    // em seis segundos enquanto a pessoa lia o cartão, e voltar exigia acertar um
+    // ponto. `pointerdown` cobre dedo e mouse, e tocar numa vitrine é sempre
+    // intenção de parar nela.
+    raiz.addEventListener('pointerdown', parar);
+
+    // Arrastar para o lado troca o slide.
+    //
+    // É o gesto que a pessoa tenta primeiro, e no celular era o que fazia falta:
+    // as setas ficam escondidas abaixo de 992px (elas se penduram na lateral do
+    // palco e, numa tela estreita, cobririam o texto do próprio cartão), então
+    // sem arrasto só restavam os pontos.
+    //
+    // Com eventos de ponteiro, sem biblioteca. O deslocamento mínimo evita que um
+    // toque para ler vire troca de slide, e conferir o eixo evita que rolar a
+    // página com o dedo em cima do cartão troque também.
+    var DESLOCAMENTO_MINIMO = 40;
+    var partiu = null;
+
+    palco.addEventListener('pointerdown', function (evento) {
+      partiu = { x: evento.clientX, y: evento.clientY };
+    });
+
+    palco.addEventListener('pointerup', function (evento) {
+      if (partiu === null) return;
+      var dx = evento.clientX - partiu.x;
+      var dy = evento.clientY - partiu.y;
+      partiu = null;
+      if (Math.abs(dx) < DESLOCAMENTO_MINIMO || Math.abs(dx) <= Math.abs(dy)) return;
+      andar(dx < 0 ? 1 : -1);
+      tocar();
+    });
+
+    // Ponteiro cancelado (a rolagem assumiu o gesto) ou que saiu do palco não
+    // deixa o começo pendurado para o próximo toque.
+    palco.addEventListener('pointercancel', function () {
+      partiu = null;
+    });
+    palco.addEventListener('pointerleave', function () {
+      partiu = null;
     });
 
     raiz.addEventListener('keydown', function (evento) {

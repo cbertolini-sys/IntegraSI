@@ -1470,6 +1470,10 @@ textarea:focus {
 
 .vitrine-palco {
   position: relative;
+  /* O arrasto horizontal é do carrossel; o vertical continua rolando a página.
+     Sem isto o navegador segura o gesto para decidir o que fazer com ele, e a
+     troca de slide sai atrasada. */
+  touch-action: pan-y;
 }
 
 .vitrine-slides {
@@ -1588,7 +1592,14 @@ textarea:focus {
 .ver-mais {
   margin-top: auto;
   align-self: flex-start;
-  min-height: 0;
+  /* Volta ao piso de 2,75rem da base de botoes. Este botao escapava dele e
+     ficava com cerca de 35px de altura - e o caminho principal do catalogo
+     publico, tocado no celular mais do que qualquer outro botao do sistema. O
+     desenho nao muda: o padding e a cor continuam os mesmos, so a altura
+     minima volta. */
+  min-height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
   padding: 0.5rem 1rem;
   font-size: 0.875rem;
   font-weight: 600;
@@ -1667,6 +1678,8 @@ textarea:focus {
   border: 0;
   box-shadow: none;
   transition: background 0.2s ease, width 0.2s ease;
+  /* Ancora do alvo de toque, no bloco de `pointer: coarse` abaixo. */
+  position: relative;
 }
 
 .ponto:hover {
@@ -1679,6 +1692,46 @@ textarea:focus {
 .ponto.ativo {
   width: 1.375rem;
   background: var(--branco);
+}
+
+/* Onde o ponteiro é o dedo, o ponto cresce e ganha uma área de toque maior que
+   o próprio desenho.
+
+   `pointer: coarse` e não uma largura: o que decide o tamanho do alvo é a
+   precisão do ponteiro, não o tamanho da tela. Um tablet grande com dedo precisa
+   do alvo; um notebook estreito com trackpad não. E não acrescenta mais um
+   breakpoint de largura à lista, que já tem seis.
+
+   Os 44px recomendados NÃO cabem nos dois eixos aqui, e o número explica por
+   quê: são até dez pontos (CURSOS_NA_VITRINE), e dez alvos de 44px pedem 440px
+   de linha, mais que a tela inteira de um celular. Com 10px de ponto e 1rem de
+   vão, a linha mede 244px e cada alvo fica com 26 por 44 pixels: passa dos
+   24 por 24 que a WCAG 2.5.8 pede, sem alvos sobrepostos - dois pontos
+   disputando o mesmo toque seria pior que um alvo pequeno e previsível. */
+@media (pointer: coarse) {
+  .pontos {
+    gap: 1rem;
+  }
+
+  .ponto {
+    width: 0.625rem;
+    height: 0.625rem;
+  }
+
+  .ponto.ativo {
+    width: 1.5rem;
+  }
+
+  .ponto::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    /* A largura sai do próprio vão: alvos vizinhos encostam sem se sobrepor. */
+    width: calc(100% + 1rem);
+    height: 2.75rem;
+  }
 }
 
 @media (max-width: 62rem) {
