@@ -12,6 +12,20 @@ dependencies = [
     "gunicorn>=23.0",
 ]
 
+# O IntegraSI e uma aplicacao, e nao uma biblioteca: `pip install -e .` existe so
+# para trazer as dependencias declaradas acima, e nada aqui e importado como
+# pacote instalado (o `manage.py` e o gunicorn acham `apps` e `config` pelo
+# diretorio de trabalho).
+#
+# Sem esta linha o setuptools tenta descobrir pacotes sozinho no layout plano,
+# encontra `apps`, `deploy`, `config`, `static` e `templates` no topo, e se recusa
+# a continuar: "Multiple top-level packages discovered in a flat-layout". Numa
+# maquina de desenvolvimento que ja tinha o ambiente pronto isso nunca aparece;
+# numa instalacao limpa - a do servidor, seguindo docs/operacao.md 1.3 - o
+# comando falha e nada e instalado.
+[tool.setuptools]
+py-modules = []
+
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",

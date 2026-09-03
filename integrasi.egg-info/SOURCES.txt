@@ -1,0 +1,15 @@
+README.md
+pyproject.toml
+integrasi.egg-info/PKG-INFO
+integrasi.egg-info/SOURCES.txt
+integrasi.egg-info/dependency_links.txt
+integrasi.egg-info/requires.txt
+integrasi.egg-info/top_level.txt
+tests/test_ajuda.py
+tests/test_arquitetura.py
+tests/test_configuracao.py
+tests/test_documentacao.py
+tests/test_estilo.py
+tests/test_indicador_htmx.py
+tests/test_producao.py
+tests/test_toque.py
