@@ -151,3 +151,29 @@ def test_acao_desconhecida_nao_muda_nada(client, coordenador, professor):
 def test_metodo_errado_na_tela_de_pessoas(client, coordenador):
     client.force_login(coordenador)
     assert client.delete(reverse("pessoas")).status_code == 405
+
+
+@pytest.mark.django_db
+def test_os_botoes_dizem_tornar(client, coordenador, professor):
+    """"Promover" e "rebaixar" carregavam hierarquia que o sistema nao tem: os
+    dois papeis produzem curso, e um deles tambem cuida do catalogo. "Tornar" diz
+    o que acontece sem sugerir subida ou queda.
+
+    Os VALORES enviados (`PROMOVER`, `REBAIXAR`) nao mudam: valor gravado ou
+    trafegado nao se altera por passada de texto (CLAUDE.md), e trocar os dois
+    exigiria mexer no desvio da view sem ganho nenhum.
+    """
+    # Um SEGUNDO coordenador para o botao de rebaixar aparecer: ninguem rebaixa a
+    # si mesmo, entao com um so a tela nunca mostra aquele botao.
+    outro = Usuario.objects.create_user(
+        email="coord2@ufsm.br", nome_completo="Outro Coordenador",
+        cpf="100.000.077-06", siape="9990001", papel=Usuario.COORDENADOR,
+    )
+    client.force_login(coordenador)
+    html = client.get(reverse("pessoas")).content.decode()
+    assert outro.nome_completo in html
+    assert "Tornar Coordenador" in html
+    assert "Tornar Professor" in html
+    assert "Promover" not in html
+    assert "Rebaixar" not in html
+    assert 'value="PROMOVER"' in html
