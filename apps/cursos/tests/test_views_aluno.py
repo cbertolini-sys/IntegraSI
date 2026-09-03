@@ -890,3 +890,25 @@ def test_a_migalha_nao_depende_do_fundo_escuro_do_catalogo():
     base = css[css.index(".migalha {") : css.index("}", css.index(".migalha {"))]
     assert "255, 255, 255" not in base, "a regra base voltou a ser branca"
     assert ".topo-curso .migalha" in css, "o herói do catálogo perdeu a cor clara"
+
+
+@pytest.mark.django_db
+def test_a_tela_do_curso_tem_volta(client, curso_com_equipe, aluno):
+    """A única tela de trabalho do sistema que não tinha volta nenhuma.
+
+    Todas as outras trazem o link no mesmo canto do cabeçalho, e o entregável
+    volta para o curso. Do curso não se voltava: quem entrava por ali dependia do
+    botão do navegador, e o aluno é quem mais sente, porque a tela do curso é
+    onde ele passa o tempo.
+    """
+    client.force_login(aluno)
+    html = client.get(reverse("curso", args=[curso_com_equipe.pk])).content.decode()
+    assert f'href="{reverse("meus_cursos")}"' in html
+
+
+@pytest.mark.django_db
+def test_a_volta_do_curso_vale_para_o_professor_tambem(client, curso_com_equipe):
+    """Não é regra de papel: era falta de link, e faltava para todo mundo."""
+    client.force_login(curso_com_equipe.professor_responsavel)
+    html = client.get(reverse("curso", args=[curso_com_equipe.pk])).content.decode()
+    assert f'href="{reverse("meus_cursos")}"' in html

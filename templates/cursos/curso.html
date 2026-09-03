@@ -11,6 +11,13 @@
       </div>
       <div class="acoes">
         {% include "cursos/_selo.html" with situacao=curso.situacao %}
+        {% comment %}
+          Esta era a unica tela de trabalho sem volta nenhuma. Destino fixo, como
+          em todas as outras: o entregavel volta para o curso, o curso volta para
+          a lista. Nada de olhar de onde a pessoa veio - a mesma tela levando a
+          lugares diferentes conforme o caminho e pior que um destino so.
+        {% endcomment %}
+        <a class="botao botao-linha" href="{% url 'meus_cursos' %}">&larr; Voltar aos cursos</a>
       </div>
     </div>
   </div>
