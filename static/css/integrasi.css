@@ -49,6 +49,23 @@
   --corpo: "Inter", system-ui, -apple-system, sans-serif;
   --dado: "JetBrains", ui-monospace, monospace;
 
+  /* Breakpoints do projeto, em rem. Custom property nao funciona dentro de
+     `@media` (a query e avaliada antes da cascata), entao isto e documentacao,
+     nao token: o valor continua escrito em cada query, e esta lista diz qual
+     escolher.
+
+       30rem (480px)  celular grande: primeira quebra para duas colunas
+       48rem (768px)  tablet retrato: grades de tres ou mais colunas
+       62rem (992px)  tablet paisagem e acima: coluna lateral, controles do heroi
+
+     Layout novo escolhe um destes tres. Os 44rem, 56rem e 58rem ainda em uso sao
+     anteriores a esta lista - o 56 e o 58 estao a 32px um do outro, fazendo
+     coisas diferentes em telas que ninguem tem - e convergem quando o componente
+     de cada um for tocado.
+
+     Alvo de toque nao entra aqui: quem decide o tamanho dele e `pointer: coarse`,
+     a precisao do ponteiro, e nao a largura da tela. */
+
   --raio: 12px;
   --raio-p: 8px;
   --sombra: 0 1px 2px rgba(22, 32, 46, 0.06), 0 4px 12px rgba(22, 32, 46, 0.06);
@@ -2290,10 +2307,16 @@ textarea:focus {
   width: 100%;
 }
 
+/* Duas colunas no celular grande, cinco so quando ha largura para elas.
+   
+   Com cinco ja em 480px cada campo ficava com cerca de 55px uteis: cabe uma
+   palavra curta e o resto rola dentro do campo. A intencao da regra (mostrar de
+   relance que se esperam cinco) sobrevive na contagem das caixas, e nao em elas
+   estarem numa linha so. */
 @media (min-width: 30rem) {
   .caixas-palavras {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.5rem;
     align-items: start;
   }
@@ -2313,6 +2336,13 @@ textarea:focus {
   .caixas-palavras > .ajuda,
   .caixas-palavras > .erro {
     grid-column: 1 / -1;
+  }
+}
+
+/* As cinco numa linha so a partir do tablet, onde cada uma tem largura de sobra. */
+@media (min-width: 48rem) {
+  .caixas-palavras {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 }
 
@@ -2848,6 +2878,32 @@ textarea:focus {
   cursor: help;
   box-shadow: 0 1px 2px rgba(180, 65, 10, 0.3);
   transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+  /* Ancora do alvo de toque, no bloco de `pointer: coarse` abaixo. */
+  position: relative;
+}
+
+/* No dedo, o "?" de 17px vira um alvo de 36 por 44.
+   
+   O desenho NAO cresce: um gatilho maior ao lado de cada rotulo e exatamente o
+   que o `all: unset` desta regra existe para evitar (ja aconteceu duas vezes,
+   com o "?" virando botao azul grande). Cresce so a area que recebe o toque.
+   
+   36 de largura, e nao 44: o gatilho e o terceiro item de um flex
+   (`.rotulo-campo`, com `gap: 0.375rem`) e tem `margin-left: 0.375rem`, entao
+   sobram 12px ate o rotulo a esquerda. Um alvo de 44 se estenderia 13,5px para
+   cada lado e comeria a ultima letra do rotulo - e clicar no rotulo tem funcao
+   propria, que e focar o campo. Com 36 a extensao e de 9,5px e nada se sobrepoe.
+   A altura fica nos 44 cheios: acima e abaixo nao ha vizinho para atropelar. */
+@media (pointer: coarse) {
+  .ajuda-campo::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 2.25rem;
+    height: 2.75rem;
+  }
 }
 
 .ajuda-campo:hover,

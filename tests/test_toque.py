@@ -193,3 +193,71 @@ def test_o_respiro_lateral_cede_no_celular():
     bloco = CSS[inicio : CSS.index("/* ---------- barra do topo", inicio)]
     assert "padding-inline: 1rem" in bloco
     assert ".bloco," in bloco and "padding: 1.125rem" in bloco
+
+
+# --- Terceira onda: gatilho de ajuda, palavras-chave e breakpoints -----------
+
+
+def test_o_gatilho_de_ajuda_ganha_alvo_no_toque():
+    """17 por 17 pixels e o menor alvo dos formularios, e ele aparece ao lado de
+    todo campo. O desenho continua com 17px: um gatilho maior ao lado de cada
+    rotulo e o que o `all: unset` da regra existe para evitar."""
+    inicio = CSS.index(".ajuda-campo::after")
+    bloco = CSS[CSS.rindex("@media (pointer: coarse)", 0, inicio) : CSS.index("\n}", CSS.index("height:", inicio))]
+    assert "height: 2.75rem" in bloco
+    # O desenho nao mudou junto.
+    assert "width: 1.0625rem" in regra(".ajuda-campo")
+
+
+def test_o_alvo_do_gatilho_nao_alcanca_o_rotulo():
+    """Clicar no rotulo tem funcao propria: foca o campo. Um alvo de 44 de largura
+    se estenderia 13,5px para cada lado e comeria a ultima letra do rotulo, que
+    fica a 12px dali (`gap` de 0,375rem mais `margin-left` de 0,375rem).
+
+    A conta e feita aqui para que mudar qualquer um dos tres numeros sem rever os
+    outros reprove: e a mesma ideia do teste que amarra o vao dos pontos a largura
+    do alvo deles.
+    """
+    largura_gatilho = 1.0625
+    vao = float(re.search(r"\.rotulo-campo\s*\{[^}]*gap:\s*([\d.]+)rem", CSS, re.S).group(1))
+    margem = float(re.search(r"\.ajuda-campo\s*\{.*?margin-left:\s*([\d.]+)rem", CSS, re.S).group(1))
+    alvo = float(
+        re.search(r"\.ajuda-campo::after\s*\{[^}]*width:\s*([\d.]+)rem", CSS, re.S).group(1)
+    )
+    folga = vao + margem
+    avanco = (alvo - largura_gatilho) / 2
+    assert avanco < folga, (
+        f"o alvo avança {avanco}rem para a esquerda e o rótulo está a {folga}rem: "
+        "clicar no fim do rótulo abriria o balão em vez de focar o campo"
+    )
+
+
+def test_as_caixas_de_palavra_chave_nao_espremem_no_celular():
+    """Cinco colunas ja em 480px davam ~55px uteis a cada campo. Duas ali, cinco
+    a partir do tablet."""
+    inicio = CSS.index("Duas colunas no celular grande")
+    bloco = CSS[inicio : CSS.index("\n}\n", CSS.index(".caixas-palavras", inicio))]
+    assert "repeat(2, minmax(0, 1fr))" in bloco
+    # E as cinco continuam existindo, mais acima na escala.
+    assert "@media (min-width: 48rem)" in CSS
+    largas = CSS[CSS.index("As cinco numa linha so a partir do tablet") :]
+    assert "repeat(5, minmax(0, 1fr))" in largas[:400]
+
+
+def test_os_breakpoints_estao_declarados():
+    """Seis valores sem sistema era o achado; a lista nao os unifica de uma vez,
+    mas diz qual escolher no proximo layout."""
+    assert "Breakpoints do projeto" in CSS
+    for ponto in ("30rem (480px)", "48rem (768px)", "62rem (992px)"):
+        assert ponto in CSS, ponto
+
+
+def test_nenhum_breakpoint_novo_entrou_fora_da_lista():
+    """A lista so vale se for cobrada. Os tres declarados mais os tres herdados
+    (44, 56 e 58rem, que a propria lista registra como pendentes) sao os unicos
+    valores de largura que a folha pode usar.
+    """
+    larguras = set(re.findall(r"@media \((?:min|max)-width:\s*([\d.]+)rem\)", CSS))
+    assert larguras <= {"30", "44", "48", "56", "58", "62"}, (
+        f"breakpoint fora da lista: {sorted(larguras - {'30', '44', '48', '56', '58', '62'})}"
+    )
