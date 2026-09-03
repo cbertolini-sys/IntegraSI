@@ -29,8 +29,14 @@
       <div>
         <div class="cartao cartao-acao">
           <h2>Seus dados</h2>
-          <p class="detalhe">Corrija o que estiver errado. O que você grava aqui é
-             o que aparece nos cursos que você produz.</p>
+          {% comment %}
+            So "Corrija o que estiver errado". A frase que vinha depois dizia que
+            o que se grava aqui aparece nos cursos, o que e falso para tres dos
+            quatro campos - e ficava logo acima do campo de CPF, dando a entender
+            o contrario da regra de dado pessoal do projeto. Onde o nome aparece
+            de fato esta na ajuda do proprio campo do nome.
+          {% endcomment %}
+          <p class="detalhe">Corrija o que estiver errado.</p>
           <form method="post" class="form-cadastro">
             {% csrf_token %}
             {% for campo in form %}
