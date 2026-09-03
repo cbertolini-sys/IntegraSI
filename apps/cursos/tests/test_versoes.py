@@ -3,7 +3,7 @@
 As regras que este arquivo prende, na ordem em que aparecem:
 
  1. A v1 e a raiz da linhagem: `versao == 1`, `raiz is None`, `linhagem_id == pk`.
- 2. `abrir_nova_versao` clona dados do curso, os cinco entregaveis, as secoes e o
+ 2. `abrir_nova_versao` clona dados do curso, os seis entregaveis, as secoes e o
     conteudo delas.
  3. A nova versao nasce RASCUNHO, e todos os entregaveis clonados voltam a
     RASCUNHO (spec 4.5).
@@ -364,7 +364,7 @@ def test_aluno_nao_abre_versao(curso_publicado, aluno):
     la dentro da clonagem, tambem levanta PermissionDenied para um aluno
     ("Curso de outro professor."). Um `pytest.raises(PermissionDenied)` pelado
     passaria verde com a guarda de entrada apagada - o curso seria criado, os
-    cinco entregaveis tambem, e so no fim a transacao voltaria atras com o erro
+    seis entregaveis tambem, e so no fim a transacao voltaria atras com o erro
     errado na tela."""
     with pytest.raises(PermissionDenied, match="abre nova versão"):
         services.abrir_nova_versao(curso_publicado, por=aluno, motivo="Quero mexer.")

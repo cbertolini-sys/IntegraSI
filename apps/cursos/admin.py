@@ -38,7 +38,7 @@ class CursoAdmin(admin.ModelAdmin):
     # editavel comum, deixando o coordenador pular publicar_curso/devolver_curso
     # (e o LogTransicaoCurso e a notificacao que eles gravam) so preenchendo o
     # select. E sem has_add_permission=False, "Adicionar curso" pelo Admin criava
-    # um Curso sem passar por services.criar_curso - portanto sem os cinco
+    # um Curso sem passar por services.criar_curso - portanto sem os seis
     # Entregavel que o resto do sistema pressupoe que todo curso tem.
     # Mesmo motivo do status, estendido pelo Plano 4: raiz/versao/motivo_versao sao
     # a linhagem (spec 4.5), e quem os escreve e services.abrir_nova_versao. Soltos

@@ -411,7 +411,7 @@ def test_nao_se_remove_membro_de_curso_ja_submetido(curso, professor, aluno):
     esta sendo julgado (spec 4.1).
 
     O status e posto na mao, e nao por submeter_ao_coordenador: aquele servico
-    exige os cinco entregaveis aprovados e a ficha completa, e montar tudo isso
+    exige os seis entregaveis aprovados e a ficha completa, e montar tudo isso
     aqui faria o teste falhar por meia duzia de motivos alheios a regra.
     """
     membro = services.adicionar_membro(curso, aluno, por=professor)

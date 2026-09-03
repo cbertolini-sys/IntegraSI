@@ -376,7 +376,7 @@ class Curso(models.Model):
 
     @property
     def pronto_para_o_coordenador(self):
-        """Os cinco entregaveis aprovados liberam o curso para o coordenador (spec 5)."""
+        """Os seis entregaveis aprovados liberam o curso para o coordenador (spec 5)."""
         from apps.cursos.choices import StatusEntregavel, TipoEntregavel
 
         aprovados = self.entregaveis.filter(status=StatusEntregavel.APROVADO).count()

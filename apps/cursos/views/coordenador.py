@@ -114,7 +114,7 @@ def decidir_curso(request, pk):
             # Roteamento explicito, e nao "tudo que nao e publicar e devolver": com
             # o else como pega-tudo, um POST com decisao ausente ou desconhecida
             # (botao novo no template, formulario submetido por Enter, requisicao
-            # forjada) devolvia o curso ao professor e reabria os cinco
+            # forjada) devolvia o curso ao professor e reabria os seis
             # entregaveis em silencio. Mesmo defeito ja corrigido em
             # turmas.views.responder_solicitacao.
             messages.error(request, "Decisão não reconhecida.")

@@ -50,7 +50,7 @@ def test_a_mensagem_do_portao_usa_o_numero_real_de_entregaveis(dados_curso, alun
 
 @pytest.mark.django_db
 def test_submeter_exige_curso_em_producao_ou_devolvido(dados_curso, professor):
-    """Isola a guarda de status: os cinco entregaveis aprovados de proposito,
+    """Isola a guarda de status: os seis entregaveis aprovados de proposito,
     para que so a guarda de status (curso ainda RASCUNHO) possa recusar."""
     curso = services.criar_curso(**dados_curso)
     assert curso.status == StatusCurso.RASCUNHO
@@ -146,7 +146,7 @@ def test_devolver_ao_professor_exige_comentario(curso_pronto, professor, coorden
 def test_devolver_curso_ja_devolvido_e_recusado(curso_pronto, professor, coordenador):
     """So se devolve curso que esta aguardando aprovacao (spec 5, 11). Sem esta
     guarda o coordenador poderia devolver de novo um curso ja DEVOLVIDO,
-    reabrindo os cinco entregaveis (R54) e reenfileirando o aviso ao professor
+    reabrindo os seis entregaveis (R54) e reenfileirando o aviso ao professor
     uma segunda vez, silenciosamente. comentario preenchido de proposito, para
     que so a guarda de status possa recusar."""
     services.submeter_ao_coordenador(curso_pronto, por=professor)
@@ -204,7 +204,7 @@ def test_devolver_curso_reabre_os_cinco_entregaveis(curso_pronto, professor, coo
     """R54: o coordenador devolve o curso, nao cada entregavel - mas os cinco
     entregaveis continuam APROVADO (portanto congelados) se ninguem os reabrir, e a
     equipe fica sem poder agir sobre o feedback recebido. devolver_curso precisa
-    devolver tambem os cinco entregaveis, na mesma transacao, sem criar Revisao (a
+    devolver tambem os seis entregaveis, na mesma transacao, sem criar Revisao (a
     decisao pedagogica sobre cada entrega continua sendo so do professor)."""
     services.submeter_ao_coordenador(curso_pronto, por=professor)
     total_revisoes_antes = Revisao.objects.count()

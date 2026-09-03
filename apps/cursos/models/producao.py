@@ -78,7 +78,7 @@ class EntregavelManager(models.Manager):
 
 
 class Entregavel(models.Model):
-    """Um dos cinco pacotes obrigatorios do roteiro. E a unidade de revisao:
+    """Um dos seis pacotes obrigatorios do roteiro. E a unidade de revisao:
     o professor aprova ou devolve o entregavel, nunca item por item (spec 4.6)."""
 
     curso = models.ForeignKey(

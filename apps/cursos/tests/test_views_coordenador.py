@@ -273,7 +273,7 @@ def test_a_tela_de_analise_oferece_republicar_ao_curso_despublicado(
 def test_decisao_desconhecida_nao_devolve_o_curso(client, coordenador, curso_submetido):
     """O ramo else de decidir_curso era pega-tudo: qualquer POST cujo "decisao"
     nao fosse exatamente "PUBLICAR" caia em devolver_curso, devolvia o curso ao
-    professor e reabria os cinco entregaveis (R54) em silencio - o mesmo defeito
+    professor e reabria os seis entregaveis (R54) em silencio - o mesmo defeito
     que a Task 8 corrigiu em turmas.views.responder_solicitacao.
 
     O comentario vai preenchido de proposito: com ele vazio, a guarda de
