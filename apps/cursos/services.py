@@ -9,7 +9,13 @@ from django.utils import timezone
 from apps.cursos import permissions, validacoes
 from apps.cursos.arquivos import MEGA, valida_upload
 from apps.cursos.busca import CONFIG_TEXTO
-from apps.cursos.choices import StatusCurso, StatusEntregavel, TipoEntregavel, TipoMidia
+from apps.cursos.choices import (
+    STATUS_EDITAVEIS,
+    StatusCurso,
+    StatusEntregavel,
+    TipoEntregavel,
+    TipoMidia,
+)
 from apps.cursos.models import (
     Anexo,
     Arquivo,
@@ -80,7 +86,7 @@ AJUDA_DAS_SECOES = {
 
 @transaction.atomic
 def criar_curso(**dados):
-    """Cria o curso, seus cinco entregaveis e as secoes iniciais do Plano de Ensino.
+    """Cria o curso, seus seis entregaveis e as secoes iniciais do Plano de Ensino.
 
     Feito aqui, e nao por sinal post_save: sinal e invisivel no fluxo, dificil de
     testar e nao dispara de forma confiavel em fixtures e criacoes em lote (spec 4.6).
@@ -209,9 +215,6 @@ def reabrir_entregavel(entregavel, por, comentario):
     So enquanto o curso nao subiu: depois de submetido, mexer num entregavel
     mudaria por baixo o material que a coordenacao esta analisando.
     """
-    # Importe local, como o resto do arquivo faz com STATUS_EDITAVEIS.
-    from apps.cursos.choices import STATUS_EDITAVEIS
-
     permissions.garante(
         permissions.pode_revisar(por, entregavel.curso),
         "Somente o professor responsável revisa.",
@@ -322,7 +325,7 @@ def submeter_ao_coordenador(curso, por):
 #      faria a decisao do coordenador so poder ser desfeita pelo professor - um
 #      beco sem saida novo no lugar do antigo, pior ainda se o professor
 #      responsavel tiver deixado a instituicao.
-#   3. Despublicar nao reabre os cinco entregaveis (ao contrario de
+#   3. Despublicar nao reabre os seis entregaveis (ao contrario de
 #      devolver_curso, R54): o material continua APROVADO e intocado, entao a
 #      fila seria cerimonia sobre um curso que ninguem editou.
 ORIGENS_DA_PUBLICACAO = (StatusCurso.AGUARDANDO_COORDENADOR, StatusCurso.DESPUBLICADO)
@@ -409,8 +412,8 @@ def devolver_curso(curso, por, comentario):
     """Coordenador devolve o curso submetido, com comentario obrigatorio (spec 5,
     11).
 
-    R54: devolver o curso tambem reabre os cinco entregaveis para DEVOLVIDO, na
-    mesma transacao. Sem isso o curso volta para DEVOLVIDO com os cinco
+    R54: devolver o curso tambem reabre os seis entregaveis para DEVOLVIDO, na
+    mesma transacao. Sem isso o curso volta para DEVOLVIDO com os seis
     entregaveis ainda APROVADO (portanto congelados, ver Entregavel.editavel), e a
     equipe fica sem como agir sobre o retorno do coordenador - um beco sem saida
     que a revisao do Plano 2 encontrou. Nao cria Revisao para os entregaveis: quem
@@ -769,8 +772,6 @@ def remover_membro(curso, membro, por):
     MembroEquipe nao e pai de nada: apagar o vinculo nao toca nessas linhas, e o
     material continua com o nome de quem o produziu.
     """
-    from apps.cursos.choices import STATUS_EDITAVEIS
-
     permissions.garante(
         permissions.pode_gerir_equipe(por, curso),
         "Somente o professor responsável monta a equipe.",

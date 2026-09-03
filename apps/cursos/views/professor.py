@@ -7,7 +7,7 @@ from django.views.decorators.http import require_POST, require_http_methods
 
 from apps.contas.models import Usuario
 from apps.cursos import permissions, services, validacoes
-from apps.cursos.choices import StatusEntregavel
+from apps.cursos.choices import STATUS_EDITAVEIS, StatusEntregavel
 from apps.cursos.forms import (
     AlocarEstudanteForm,
     AlocarNovoEstudanteForm,
@@ -333,8 +333,6 @@ def fila_revisao(request):
 def revisar(request, pk):
     entregavel = get_object_or_404(Entregavel, pk=pk)
     permissions.garante(permissions.pode_revisar(request.user, entregavel.curso), "Curso de outro professor.")
-    from apps.cursos.choices import STATUS_EDITAVEIS
-
     # Lista fechada, e nao o endereco que vier no parametro: refletir num `href`
     # um valor de fora e como se abre um redirecionamento para qualquer lugar. O
     # desconhecido cai na fila, que e o caminho de sempre.

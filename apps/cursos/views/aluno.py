@@ -7,7 +7,13 @@ from django.views.decorators.http import require_POST
 from apps.contas.paginacao import paginar
 from apps.cursos import permissions, services, validacoes
 from apps.cursos.arquivos import TAMANHO_BLOCO, calcula_hash
-from apps.cursos.choices import STATUS_EM_DESENVOLVIMENTO, StatusCurso, TipoMidia
+from apps.cursos.choices import (
+    STATUS_EDITAVEIS,
+    STATUS_EM_DESENVOLVIMENTO,
+    StatusCurso,
+    StatusEntregavel,
+    TipoMidia,
+)
 from apps.cursos.forms import AnexoForm, EnvioDeVideoForm, SecaoForm, oferece_anexo
 from apps.cursos.models import Anexo, Arquivo, Curso, Entregavel, Secao
 from apps.cursos.views.upload import UUID_MODELO
@@ -98,8 +104,6 @@ def _rotulo_da_revisao(usuario, entregavel):
     ainda vale a porta: e o historico que explica por que o entregavel esta como
     esta.
     """
-    from apps.cursos.choices import STATUS_EDITAVEIS, StatusEntregavel
-
     if not permissions.pode_revisar(usuario, entregavel.curso):
         return None
     if entregavel.status == StatusEntregavel.EM_REVISAO:

@@ -1,5 +1,7 @@
 from django.core.exceptions import PermissionDenied
 
+from apps.cursos.choices import STATUS_EDITAVEIS
+
 
 def garante(condicao, mensagem):
     """Levanta PermissionDenied quando a condicao e falsa. Usado pelos servicos para
@@ -139,18 +141,17 @@ def pode_baixar_arquivo(usuario, arquivo):
 
 
 def pode_editar_ficha(usuario, curso):
-    """Quem preenche a ficha do curso (spec 10): qualquer membro da equipe, o
-    professor responsavel e o coordenador, enquanto o curso esta em producao.
+    """Quem preenche a ficha do curso (spec 10): o professor responsavel e
+    qualquer membro da equipe, enquanto o curso esta em producao.
 
     Escrita por extenso, e nao como alias de pode_ver_curso, porque as duas regras
     sao diferentes: ver um curso e ler; a ficha e o que vai ao catalogo publico, e
     ela congela quando o curso sai de producao.
-    """
-    from apps.cursos.choices import STATUS_EDITAVEIS
 
+    Sem ramo para o coordenador: pela regra A ele preenche a ficha dos cursos que
+    responde e dos que produz, como qualquer professor, e nao a de curso alheio.
+    Ver a nota em `pode_gerir_equipe`.
+    """
     if curso.status not in STATUS_EDITAVEIS:
         return False
-    # Sem ramo para o coordenador: ele preenche a ficha dos cursos que responde e
-    # dos que produz, como qualquer professor, e nao a de curso alheio. Ver a nota
-    # em `pode_gerir_equipe`.
     return e_responsavel(usuario, curso) or curso.tem_membro(usuario)

@@ -149,8 +149,6 @@ def _garante_coordenacao(por, mensagem):
 @transaction.atomic
 def promover_a_coordenador(usuario, por):
     """Dá nível de acesso Admin a um professor (regra 1 do Plano 5)."""
-    from apps.contas.models import Usuario
-
     _garante_coordenacao(por, "Somente a coordenação promove.")
     if not usuario.e_somente_professor:
         raise ValidationError("Só professor vira coordenador.")
@@ -170,8 +168,6 @@ def rebaixar_a_professor(usuario, por):
     impede o último coordenador de deixar o sistema sem quem publique curso,
     aceite solicitação ou promova alguém de volta.
     """
-    from apps.contas.models import Usuario
-
     _garante_coordenacao(por, "Somente a coordenação rebaixa.")
     if usuario.pk == por.pk:
         raise ValidationError("Você não pode rebaixar a si mesmo.")
