@@ -455,6 +455,69 @@
       </article>
     </section>
 
+    {% comment %}
+      Depois dos fluxogramas e antes da chamada final: a chamada e o fecho da
+      pagina e continua sendo a ultima coisa que a comunidade le.
+
+      Reaproveita `.pilares`, a grade de cartoes da secao "Por que ele existe" -
+      mesmo desenho, sem CSS novo. As versoes citadas sao so as maiores (Python
+      3.13, Django 5.2): patch escrito aqui envelhece a cada atualizacao e
+      ninguem lembra de vir corrigir uma pagina publica. Os dois testes de
+      test_sobre.py leem a versao instalada e reprovam se a frase divergir.
+    {% endcomment %}
+    <section class="bloco-sobre">
+      <h2>Com o que ele é feito</h2>
+      <p>
+        O IntegraSI é um projeto do curso de Sistemas de Informação, e o código
+        também é material didático: as escolhas abaixo privilegiam ferramentas
+        estáveis, documentadas e que um estudante consegue estudar por inteiro.
+      </p>
+
+      <ul class="pilares">
+        <li>
+          <h3>Servidor</h3>
+          <p>Python 3.13 e Django 5.2, com as telas montadas no servidor. Em
+             produção, Gunicorn atrás de Nginx.</p>
+        </li>
+        <li>
+          <h3>Banco de dados</h3>
+          <p>PostgreSQL, com a busca do catálogo feita pela busca em texto
+             completo do próprio banco, sem serviço de índice à parte.</p>
+        </li>
+        <li>
+          <h3>No navegador</h3>
+          <p>HTMX para as partes que mudam sem recarregar, Quill para os textos
+             formatados e Tippy para as explicações de campo. Nenhuma delas vem
+             de fora: todas moram no repositório.</p>
+        </li>
+        <li>
+          <h3>Verificação</h3>
+          <p>Suíte de testes automatizados que roda a cada mudança, e sanitização
+             de todo texto formatado antes de gravar, para que o que a equipe
+             escreve não vire código na tela de quem lê.</p>
+        </li>
+      </ul>
+    </section>
+
+    <section class="bloco-sobre">
+      <h2>Quem faz</h2>
+      <p>
+        O sistema é desenvolvido e mantido no curso de Sistemas de Informação da
+        UFSM, campus Frederico Westphalen.
+      </p>
+
+      <ul class="pilares">
+        <li>
+          <h3>Cristiano Bertolini</h3>
+          <p>Curso de Sistemas de Informação, UFSM Frederico Westphalen.</p>
+        </li>
+        <li>
+          <h3>Evandro Preuss</h3>
+          <p>Curso de Sistemas de Informação, UFSM Frederico Westphalen.</p>
+        </li>
+      </ul>
+    </section>
+
     <section class="bloco-sobre chamada-sobre">
       <h2>Quer um destes cursos na sua escola?</h2>
       <p>

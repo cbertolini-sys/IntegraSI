@@ -177,3 +177,34 @@ def test_o_fluxo_do_professor_mantem_a_nova_versao(client):
     inicio = conteudo.index('<ol class="fluxograma professor">')
     fluxo = conteudo[inicio : conteudo.index("</ol>", inicio)].lower()
     assert "nova versão" in fluxo
+
+
+@pytest.mark.django_db
+def test_a_stack_cita_a_versao_real_do_django(client):
+    """Lida do próprio Django, e não de um número escrito à mão: uma página
+    pública que anuncia a versão errada é pior que uma que não anuncia nada, e
+    ninguém lembra de voltar aqui no dia da atualização.
+
+    Só maior.menor: o patch muda toda semana e não é o que a frase promete.
+    """
+    import django
+
+    maior_menor = ".".join(django.get_version().split(".")[:2])
+    conteudo = client.get(reverse("sobre")).content.decode()
+    assert f"Django {maior_menor}" in conteudo
+
+
+@pytest.mark.django_db
+def test_a_stack_cita_a_versao_real_do_python(client):
+    """Mesmo motivo do teste do Django, do outro lado da mesma frase."""
+    import sys
+
+    conteudo = client.get(reverse("sobre")).content.decode()
+    assert f"Python {sys.version_info.major}.{sys.version_info.minor}" in conteudo
+
+
+@pytest.mark.django_db
+def test_a_pagina_credita_a_equipe(client):
+    conteudo = client.get(reverse("sobre")).content.decode()
+    for nome in ("Cristiano Bertolini", "Evandro Preuss"):
+        assert nome in conteudo, nome
