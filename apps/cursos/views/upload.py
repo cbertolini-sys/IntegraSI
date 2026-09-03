@@ -8,9 +8,9 @@ Nenhuma delas devolve HTML - quem as chama e o `static/js/upload.js` da Task 3.
 """
 
 import json
+from functools import wraps
 
-from django.contrib.auth.decorators import login_required
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_GET, require_POST
@@ -84,6 +84,42 @@ def _recusa(erro):
     return JsonResponse({"erro": erro.messages[0]}, status=400)
 
 
+def _json_ou_401_e_403(view):
+    """Substitui `@login_required` nestas quatro rotas: nunca deixa a sessao
+    expirada ou uma permissao recusada escapar do contrato JSON.
+
+    `@login_required` redireciona (302) para o login. static/js/upload.js so fala
+    com estas rotas por `fetch`, que SEGUE o redirecionamento: a resposta final
+    chega como 200 com o HTML da tela de login, `resposta.ok` fica verdadeiro e o
+    `.json()` do cliente estoura com erro de sintaxe - depois de, possivelmente,
+    meia hora de upload de video, quando a sessao expira no meio do envio.
+
+    `PermissionDenied` tem o mesmo problema do outro lado: `upload_iniciar` chama
+    `permissions.garante` fora do try/except (regra 2/3), e `upload_concluir`
+    chama um servico que faz o mesmo dentro do try (regra 15) - mas o except so
+    cobre `ValidationError`. Nos dois casos a excecao atravessa a view e cai no
+    handler padrao do Django, que renderiza `403.html` (HTML, nao JSON).
+
+    A verificacao de autenticacao roda ANTES de tudo, na mesma posicao que
+    `@login_required` ja ocupava: e o que impede `_meu_upload` de filtrar por
+    `usuario=AnonymousUser` (erro de banco) e as rotas de POST responderem 405 em
+    vez de dizer que e preciso entrar de novo.
+    """
+
+    @wraps(view)
+    def interno(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return JsonResponse(
+                {"erro": "Sua sessão expirou. Entre de novo e reenvie."}, status=401
+            )
+        try:
+            return view(request, *args, **kwargs)
+        except PermissionDenied as erro:
+            return JsonResponse({"erro": str(erro)}, status=403)
+
+    return interno
+
+
 def _meu_upload(request, identificador):
     """Upload e sempre do proprio usuario: 404 para qualquer outro, e nao 403, para
     nao confirmar a existencia do identificador a quem nao e dono."""
@@ -96,7 +132,7 @@ def _progresso(upload):
     return JsonResponse({"recebido": upload.tamanho_recebido, "total": upload.tamanho_total})
 
 
-@login_required
+@_json_ou_401_e_403
 @require_POST
 def upload_iniciar(request):
     try:
@@ -135,7 +171,7 @@ def upload_iniciar(request):
     return JsonResponse({"identificador": str(upload.identificador), "recebido": 0})
 
 
-@login_required
+@_json_ou_401_e_403
 @require_POST
 def upload_bloco(request, identificador):
     upload = _meu_upload(request, identificador)
@@ -146,14 +182,14 @@ def upload_bloco(request, identificador):
     return _progresso(upload)
 
 
-@login_required
+@_json_ou_401_e_403
 @require_GET
 def upload_estado(request, identificador):
     """Onde o upload parou. E o que permite ao navegador retomar do byte certo."""
     return _progresso(_meu_upload(request, identificador))
 
 
-@login_required
+@_json_ou_401_e_403
 @require_POST
 def upload_concluir(request, identificador):
     upload = _meu_upload(request, identificador)

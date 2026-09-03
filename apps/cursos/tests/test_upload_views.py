@@ -55,7 +55,12 @@ As regras que este arquivo prende, na ordem em que aparecem:
 21. Campo numerico com lixo -> 400, nunca 500.
 21b. Campo textual com lixo tambem: `Path(["aula.mp4"])` levanta TypeError.
 22. Metodo errado -> 405 nas quatro rotas.
-23. Visitante anonimo vai para o login nas quatro rotas.
+23. Visitante anonimo recebe 401 em JSON nas quatro rotas (nao mais o
+    redirecionamento para o login - A4 da auditoria: o fetch do cliente SEGUE um
+    302 e recebe 200 com HTML, e o .json() do JS estoura).
+23b. PermissionDenied levantado dentro da view (upload_iniciar, regra 2) ou de um
+    servico que ela chama (upload_concluir, regra 15) responde JSON, nunca a
+    pagina HTML padrao do Django.
 24. A conclusao nunca le o arquivo inteiro de uma vez (spec 8).
 """
 
@@ -153,7 +158,15 @@ def test_iniciar_devolve_identificador(client, aluno, entregavel_videos):
 def test_aluno_de_fora_nao_inicia_upload(client, outro_aluno, entregavel_videos):
     client.force_login(outro_aluno)
 
-    assert inicia(client, entregavel_videos).status_code == 403
+    resposta = inicia(client, entregavel_videos)
+
+    assert resposta.status_code == 403
+    # JSON, e nao a pagina HTML de 403.html: `permissions.garante` aqui levanta
+    # PermissionDenied FORA do try/except ValidationError da view, e o handler
+    # padrao do Django responde com o template de erro (A4 da auditoria). O
+    # cliente (upload.js) so sabe ler `{"erro": "..."}` - sem isto ele chamaria
+    # `.json()` sobre HTML e a pessoa veria o erro de sintaxe, nao a mensagem.
+    assert resposta.json()["erro"]
     assert not UploadEmAndamento.objects.exists()
 
 
@@ -437,6 +450,11 @@ def test_conclusao_reconfere_se_o_entregavel_ainda_esta_aberto(
     resposta = conclui(client, str(upload_completo.identificador))
 
     assert resposta.status_code == 403
+    # Mesmo defeito da regra 2, do outro lado: aqui quem levanta PermissionDenied
+    # e services.concluir_upload, dentro do try da view, mas o except so cobre
+    # ValidationError. A excecao atravessa a view inteira e cai no handler padrao
+    # do Django - HTML, nao JSON.
+    assert resposta.json()["erro"]
     assert not Anexo.objects.exists()
     assert not Arquivo.objects.exists()
     assert UploadEmAndamento.objects.filter(pk=upload_completo.pk).exists()
@@ -733,16 +751,27 @@ def test_metodo_errado_e_rejeitado(client, aluno, upload_completo, rota, metodo)
 @pytest.mark.parametrize(
     "rota", ["upload_iniciar", "upload_bloco", "upload_estado", "upload_concluir"]
 )
-def test_visitante_anonimo_vai_para_o_login(client, rota):
-    """Sem @login_required *antes* de tudo, `_meu_upload` filtraria por
-    `usuario=AnonymousUser` (erro de banco, 500) e as rotas de POST
-    responderiam 405 - nenhuma delas manda a pessoa fazer login."""
+def test_visitante_anonimo_recebe_json_e_nao_html(client, rota):
+    """401 em JSON, e nao mais o redirecionamento 302 para o login (A4 da
+    auditoria).
+
+    Estas quatro rotas so falam com static/js/upload.js, nunca com um navegador
+    navegando (nenhum link do sistema aponta para elas). O `fetch` do JS SEGUE um
+    302: a resposta final vira 200 com o HTML da tela de login, `resposta.ok` fica
+    verdadeiro e o `.json()` do cliente estoura com erro de sintaxe - depois de,
+    possivelmente, meia hora de upload de video, quando a sessao expira no meio do
+    envio. A checagem continua *antes* de tudo (a guarda original contra
+    `_meu_upload` filtrar por AnonymousUser e as rotas de POST responderem 405
+    continua valendo: e a mesma posicao do decorador, so a resposta mudou de
+    forma).
+    """
     args = [] if rota == "upload_iniciar" else [str(uuid.uuid4())]
 
     resposta = client.get(reverse(rota, args=args))
 
-    assert resposta.status_code == 302
-    assert resposta.url.startswith(reverse("login"))
+    assert resposta.status_code == 401
+    assert resposta["Content-Type"] == "application/json"
+    assert resposta.json()["erro"]
 
 
 # --- Regra 24: 1 GB nunca inteiro na memoria ------------------------------
