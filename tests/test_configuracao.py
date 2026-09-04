@@ -14,8 +14,17 @@ def _importar_settings_em_subprocesso(remover=(), acrescentar=None, expressao="s
     `expressao` é o que o subprocesso imprime: qualquer setting cujo padrão
     dependa de DEBUG só pode ser observado assim."""
     ambiente = {k: v for k, v in os.environ.items() if k not in remover}
-    ambiente.update(acrescentar or {})
     ambiente["DJANGO_SETTINGS_MODULE"] = "config.settings"
+    # Sem isto o `load_dotenv` do settings.py reabre o .env DESTA MAQUINA dentro
+    # do subprocesso e repoe exatamente as variaveis que `remover` acabou de
+    # tirar. O teste passava a medir o .env do desenvolvedor em vez do padrao do
+    # codigo, e reprovava em qualquer instalacao que definisse SEGURANCA_HTTPS -
+    # a do servidor, por exemplo, que roda sem TLS por decisao registrada.
+    # SECRET_KEY e DATABASE_URL continuam vindo do ambiente herdado, que o
+    # processo do pytest ja carregou.
+    # Antes de `acrescentar`, para que um teste possa apontar para outro arquivo.
+    ambiente["ARQUIVO_ENV"] = os.devnull
+    ambiente.update(acrescentar or {})
     return subprocess.run(
         [
             sys.executable,
@@ -283,3 +292,24 @@ def test_a_saude_nao_conta_o_que_deu_errado(client):
         corpo = client.get(reverse("saude")).content.decode()
     assert "password" not in corpo
     assert "FATAL" not in corpo
+
+
+def test_o_arquivo_de_ambiente_pode_ser_apontado_por_variavel(tmp_path):
+    """`ARQUIVO_ENV` e o que permite aos testes de seguranca acima observarem o
+    PADRAO do codigo em vez do .env desta maquina.
+
+    Sem esta afirmacao, apagar o suporte no settings.py so reprovaria em maquinas
+    cujo .env por acaso definisse a variavel em questao - passaria verde aqui e
+    quebraria no servidor, que e exatamente o defeito que o suporte corrige.
+    """
+    alternativo = tmp_path / "outro.env"
+    alternativo.write_text("ALLOWED_HOSTS=so.deste.arquivo\n")
+
+    resultado = _importar_settings_em_subprocesso(
+        remover={"ALLOWED_HOSTS"},
+        acrescentar={"ARQUIVO_ENV": str(alternativo)},
+        expressao="settings.ALLOWED_HOSTS",
+    )
+
+    assert resultado.returncode == 0, resultado.stderr
+    assert resultado.stdout.strip() == "['so.deste.arquivo']"

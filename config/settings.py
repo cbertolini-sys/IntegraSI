@@ -5,7 +5,13 @@ from dotenv import load_dotenv
 import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-load_dotenv(BASE_DIR / ".env")
+# `ARQUIVO_ENV` existe para que os testes possam observar o PADRAO do codigo. Sem
+# ele, `load_dotenv` reabre o .env desta maquina dentro do subprocesso de teste e
+# repoe as variaveis que o teste acabou de remover do ambiente: o teste da
+# seguranca de producao passava a medir "codigo + .env local", e reprovava em
+# qualquer instalacao que definisse SEGURANCA_HTTPS - inclusive a do servidor.
+# Em producao ninguem define esta variavel, e o caminho e o de sempre.
+load_dotenv(os.environ.get("ARQUIVO_ENV") or BASE_DIR / ".env")
 
 SECRET_KEY = os.environ["SECRET_KEY"]
 DEBUG = os.environ.get("DEBUG", "False") == "True"

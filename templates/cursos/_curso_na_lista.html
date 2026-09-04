@@ -17,6 +17,10 @@
         <span class="sep">&middot;</span>
         <span>{{ detalhe }}</span>
       {% endif %}
+      {% if curso.lancamento %}
+        <span class="sep">&middot;</span>
+        <span>{{ curso.lancamento }}</span>
+      {% endif %}
     </p>
   </div>
   {% if selo %}

@@ -38,13 +38,7 @@
         {% if curso.carga_horaria %}<span class="fato">{{ curso.carga_horaria }} horas</span>{% endif %}
         {% if curso.formato %}<span class="fato">{{ curso.get_formato_display }}</span>{% endif %}
         <span class="fato">Versão {{ curso.versao }}</span>
-        {% if curso.publicado_em %}
-          {% comment %}
-            Minusculo de proposito: o pt-br do Django devolve "Setembro", e no meio
-            da frase "Lançado em Setembro de 2026" o maiusculo fica errado.
-          {% endcomment %}
-          <span class="fato">Lançado em {{ curso.publicado_em|date:"F \d\e Y"|lower }}</span>
-        {% endif %}
+        {% if curso.lancamento %}<span class="fato">{{ curso.lancamento }}</span>{% endif %}
       </div>
     </div>
   </section>

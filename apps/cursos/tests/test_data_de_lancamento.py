@@ -95,3 +95,84 @@ def test_a_previa_de_curso_nao_publicado_nao_fala_em_lancamento(
     assert curso.publicado_em is None
     assert "Lançado em" not in html
     assert "None" not in html
+
+
+# --- a mesma frase em todas as telas onde um curso publicado aparece ----------
+# A pagina publica mostrava a data e as telas internas nao, porque a linha delas
+# vem de `Curso.identidade`, que so monta publico, carga horaria e formato. Quem
+# publica um curso e vai olha-lo por dentro nao via de quando ele e.
+
+
+@pytest.mark.django_db
+def test_a_frase_de_lancamento_e_montada_em_python(curso_publicado):
+    """Formatada no modelo, e nao em cada template: eram quatro telas, e o
+    `|date:"F \\d\\e Y"|lower` repetido divergiria na primeira que alguem
+    editasse. Mesma razao de `identidade`."""
+    com_data(curso_publicado, 2026, 3, 15)
+
+    assert curso_publicado.lancamento == "Lançado em março de 2026"
+
+
+@pytest.mark.django_db
+def test_proposta_sem_publicacao_nao_tem_frase_de_lancamento(dados_curso):
+    curso = services.criar_curso(**dados_curso)
+
+    assert curso.lancamento == ""
+
+
+@pytest.mark.django_db
+def test_a_tela_do_curso_diz_quando_ele_foi_lancado(client, curso_publicado, professor):
+    """A tela de trabalho da equipe, em `cursos/curso.html`."""
+    com_data(curso_publicado, 2026, 3, 15)
+
+    client.force_login(professor)
+    html = client.get(reverse("curso", args=[curso_publicado.pk])).content.decode()
+
+    assert "Lançado em março de 2026" in html
+
+
+@pytest.mark.django_db
+def test_a_tela_da_coordenacao_diz_quando_o_curso_foi_lancado(
+    client, curso_publicado, coordenador
+):
+    """`analisar_curso.html`, que e onde o coordenador chega vindo da lista de
+    cursos no catalogo."""
+    com_data(curso_publicado, 2026, 3, 15)
+
+    client.force_login(coordenador)
+    html = client.get(reverse("analisar_curso", args=[curso_publicado.pk])).content.decode()
+
+    assert "Lançado em março de 2026" in html
+
+
+@pytest.mark.django_db
+def test_a_lista_de_cursos_no_catalogo_diz_quando_cada_um_foi_lancado(
+    client, curso_publicado, coordenador
+):
+    """A lista era o outro lugar onde a edicao aparecia, e ficou sem marca de
+    tempo nenhuma quando o app saiu."""
+    com_data(curso_publicado, 2026, 3, 15)
+
+    client.force_login(coordenador)
+    html = client.get(reverse("cursos_no_catalogo")).content.decode()
+
+    assert curso_publicado.titulo in html, "o curso nem apareceu na lista"
+    assert "Lançado em março de 2026" in html
+
+
+@pytest.mark.django_db
+def test_a_lista_nao_inventa_lancamento_para_curso_nao_publicado(
+    client, dados_curso, professor, aluno, coordenador
+):
+    """A mesma parcial serve a fila da coordenacao, com curso em producao."""
+    curso = services.criar_curso(**dados_curso)
+    services.adicionar_membro(curso, aluno, por=professor)
+    curso.entregaveis.update(status=StatusEntregavel.APROVADO)
+    curso.refresh_from_db()
+    services.submeter_ao_coordenador(curso, por=professor)
+
+    client.force_login(coordenador)
+    html = client.get(reverse("fila_coordenacao")).content.decode()
+
+    assert curso.titulo in html, "o curso nem apareceu na fila"
+    assert "Lançado em" not in html

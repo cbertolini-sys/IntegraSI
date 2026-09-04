@@ -8,6 +8,7 @@
       <div>
         <h1>{{ curso.titulo }}</h1>
         <p class="sub">{{ curso.identidade }}</p>
+        {% if curso.lancamento %}<p class="sub">{{ curso.lancamento }}</p>{% endif %}
       </div>
       <div class="acoes">
         {% include "cursos/_selo.html" with situacao=curso.situacao %}

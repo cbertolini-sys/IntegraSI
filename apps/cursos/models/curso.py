@@ -8,6 +8,8 @@ from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models import F, Q, Value
 from django.db.models.functions import Coalesce
+from django.utils import timezone
+from django.utils.formats import date_format
 
 from apps.cursos.busca import CONFIG_TEXTO
 from apps.cursos.choices import Formato, StatusCurso, TipoPratica, TipoPublico
@@ -259,6 +261,23 @@ class Curso(models.Model):
             partes.append(self.get_formato_display())
         partes = [p for p in partes if p]
         return " \u00b7 ".join(partes) if partes else "Ficha ainda não preenchida"
+
+    @property
+    def lancamento(self):
+        """De quando e o curso, para toda tela que mostra curso publicado.
+
+        Montada aqui, e nao em cada template, pela mesma razao de `identidade`:
+        sao quatro telas, e um `|date:"F \\d\\e Y"|lower` copiado quatro vezes
+        diverge na primeira que alguem editar. Vazia enquanto o curso nao foi
+        publicado, para que o template so precise de um `if`.
+
+        Minusculo porque o pt-br do Django devolve "Setembro", e no meio da frase
+        "Lançado em Setembro de 2026" o maiusculo fica errado.
+        """
+        if not self.publicado_em:
+            return ""
+        quando = date_format(timezone.localtime(self.publicado_em), "F \\d\\e Y").lower()
+        return f"Lançado em {quando}"
 
     @property
     def lista_de_palavras_chave(self):
