@@ -193,6 +193,18 @@ def test_cron_tem_as_tres_rotinas(crontab, rotina):
     assert any(rotina in linha for linha in tarefas(crontab))
 
 
+def test_o_envio_de_notificacoes_passa_a_cada_minuto(crontab):
+    """Convite de primeiro acesso e coisa que se espera de olho na caixa. Com
+    `*/5` a pessoa via "convite na fila" e cinco minutos de silencio, o que
+    parece defeito - aconteceu em producao no primeiro convite de verdade.
+
+    A afirmacao e sobre a LINHA da rotina, e nao sobre o arquivo conter `* * * * *`
+    em algum lugar: outras rotinas tem cadencia propria, e um `in` no arquivo
+    inteiro passaria verde com esta aqui de volta em `*/5`."""
+    linha = next(l for l in tarefas(crontab) if "enviar_notificacoes" in l)
+    assert linha.startswith("* * * * * "), linha
+
+
 def test_cron_roda_o_backup(crontab):
     assert any("backup.sh" in linha for linha in tarefas(crontab))
 

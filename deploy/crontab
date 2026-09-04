@@ -9,7 +9,12 @@
 # ninguem le. Trocar o endereco abaixo faz parte da instalacao.
 MAILTO=integrasi-ops@ufsm.br
 
-*/5 * * * * cd /srv/integrasi && .venv/bin/python manage.py enviar_notificacoes >> /var/log/integrasi/cron.log
+# A cada minuto, e nao a cada cinco: convite de primeiro acesso e coisa que se
+# espera de olho na caixa, e cinco minutos de silencio parecem defeito. O comando
+# tem trava (flock) contra execucoes sobrepostas, e uma passada sem nada a enviar
+# e uma consulta curta. O comentario dentro do proprio comando ja pressupunha
+# esta cadencia desde que foi escrito.
+* * * * * cd /srv/integrasi && .venv/bin/python manage.py enviar_notificacoes >> /var/log/integrasi/cron.log
 17 3 * * * cd /srv/integrasi && .venv/bin/python manage.py limpar_uploads >> /var/log/integrasi/cron.log
 32 3 * * * cd /srv/integrasi && .venv/bin/python manage.py limpar_arquivos_orfaos >> /var/log/integrasi/cron.log
 5 2 * * * /srv/integrasi/deploy/backup.sh >> /var/log/integrasi/backup.log

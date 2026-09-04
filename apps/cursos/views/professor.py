@@ -304,8 +304,10 @@ def _alocar_aluno(request, curso):
     else:
         messages.success(
             request,
-            f"{membro.pessoa.identificacao} entrou na equipe. "
-            "Enviamos o convite de primeiro acesso por e-mail.",
+            # Mesmo motivo do aviso em `contas.views.pessoas`: o convite entra na
+            # fila, e o e-mail sai na proxima passada do cron.
+            f"{membro.pessoa.identificacao} entrou na equipe. O convite de primeiro "
+            "acesso está na fila e sai por e-mail em alguns minutos.",
         )
 
 

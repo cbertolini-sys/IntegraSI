@@ -1,5 +1,6 @@
 import pytest
 from django.core.exceptions import PermissionDenied, ValidationError
+from django.urls import reverse
 
 from apps.contas.models import ConviteAluno, Usuario
 from apps.cursos import services
@@ -582,3 +583,22 @@ def test_remover_recusa_antes_de_procurar_o_membro(client, curso, aluno, profess
     client.force_login(aluno)
     resposta = client.post(reverse("remover_da_equipe", args=[curso.pk, 99999]))
     assert resposta.status_code == 403
+
+
+@pytest.mark.django_db
+def test_alocacao_de_aluno_nao_afirma_que_o_email_ja_saiu(client, professor, dados_curso):
+    """Par do teste em `apps/contas/tests/test_aviso_de_convite.py`, onde o motivo
+    esta escrito por extenso: a tela dizia "Enviamos o convite" antes de o e-mail
+    sair da fila, e quem foi olhar a caixa procurou defeito que nao existia."""
+    curso = services.criar_curso(**dados_curso)
+    client.force_login(professor)
+
+    resposta = client.post(
+        reverse("equipe", args=[curso.pk]),
+        {"acao": "aluno", "email": "novo.aluno@ufsm.br"},
+        follow=True,
+    )
+
+    texto = " ".join(str(m) for m in resposta.context["messages"])
+    assert "Enviamos o convite" not in texto, texto
+    assert "minutos" in texto, texto

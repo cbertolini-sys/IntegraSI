@@ -178,8 +178,12 @@ def pessoas(request):
             else:
                 messages.success(
                     request,
-                    f"Convite enviado para {criado.email}. "
-                    "Ele completa o cadastro no primeiro acesso.",
+                    # "Enviado" era mentira, e mentira que custou tempo: o
+                    # sistema enfileira e o cron entrega, entao o e-mail leva
+                    # alguns minutos. Quem foi olhar a caixa antes disso procurou
+                    # defeito que nao existia. Ver test_aviso_de_convite.py.
+                    f"Convite na fila para {criado.email}. O e-mail sai em alguns "
+                    "minutos, e ele completa o cadastro no primeiro acesso.",
                 )
             return redirect("pessoas")
 
