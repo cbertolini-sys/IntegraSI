@@ -72,8 +72,20 @@ class Praticas(NamedTuple):
 class Curso(models.Model):
     titulo = models.CharField("título", max_length=200)
     resumo = models.TextField("resumo", blank=True)
+    # Opcional DE PROPOSITO. A edicao e rotulo de catalogo (spec 4.1): diz em que
+    # semestre o curso foi produzido, para o catalogo continuar legivel daqui a
+    # anos. Rotulo nao tranca porta - exigi-la na criacao travava todo professor
+    # ate a coordenacao lembrar de abrir a edicao corrente, e foi exatamente o que
+    # aconteceu na instalacao nova. `abrir_nova_versao` ja se recusava a depender
+    # disso; agora a criacao tambem. PROTECT continua: edicao com curso apontando
+    # para ela nao se apaga.
     edicao = models.ForeignKey(
-        "edicoes.Edicao", on_delete=models.PROTECT, related_name="cursos", verbose_name="edição"
+        "edicoes.Edicao",
+        on_delete=models.PROTECT,
+        related_name="cursos",
+        verbose_name="edição",
+        null=True,
+        blank=True,
     )
     professor_responsavel = models.ForeignKey(
         settings.AUTH_USER_MODEL,

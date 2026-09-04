@@ -30,18 +30,13 @@ def nova_proposta(request):
     )
     form = PropostaForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
-        # O try e necessario: sem edicao corrente aberta, criar_curso levanta
-        # ValidationError, e sem captura a tela devolveria 500 para o professor.
-        try:
-            curso = services.criar_curso(professor_responsavel=request.user, **form.cleaned_data)
-        except ValidationError as erro:
-            for mensagem in erro.messages:
-                messages.error(request, mensagem)
-        else:
-            messages.success(
-                request, "Proposta criada. Monte a equipe e preencha a ficha do curso."
-            )
-            return redirect("equipe", pk=curso.pk)
+        # Sem try: `criar_curso` nao tem mais como recusar uma proposta valida. A
+        # captura existia so para a edicao corrente ausente, que deixou de ser
+        # motivo de recusa; manter o except aqui seria esconder um defeito real
+        # atras de uma mensagem amigavel.
+        curso = services.criar_curso(professor_responsavel=request.user, **form.cleaned_data)
+        messages.success(request, "Proposta criada. Monte a equipe e preencha a ficha do curso.")
+        return redirect("equipe", pk=curso.pk)
     return render(request, "cursos/nova_proposta.html", {"form": form})
 
 

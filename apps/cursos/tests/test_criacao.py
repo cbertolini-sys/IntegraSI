@@ -221,15 +221,21 @@ def test_proposta_nasce_so_com_titulo(edicao, professor):
 
 
 @pytest.mark.django_db
-def test_proposta_sem_edicao_aberta_e_recusada(professor, db):
-    """Curso.edicao continua PROTECT e nao nula (restricao entre planos). Sem
-    edicao corrente a proposta recusa com mensagem, nunca grava nulo."""
+def test_proposta_sem_edicao_aberta_e_criada(professor, db):
+    """Proposta se faz a qualquer momento, por qualquer professor. Ela nao depende
+    de a coordenacao ter lembrado de abrir a edicao corrente.
+
+    `abrir_nova_versao` ja se recusava a depender disso, com todas as letras no
+    comentario dele. A criacao dependia, e o resultado foi o sistema inteiro
+    travado para todo professor na instalacao nova, ate alguem abrir uma edicao
+    pelo Admin. A edicao e rotulo de catalogo (spec 4.1), e rotulo nao tranca
+    porta."""
     from apps.edicoes.models import Edicao
 
     Edicao.objects.filter(ativa=True).update(ativa=False)
-    with pytest.raises(ValidationError) as erro:
-        services.criar_curso(titulo="Robotica com sucata", professor_responsavel=professor)
-    assert "edição" in str(erro.value).lower()
+    curso = services.criar_curso(titulo="Robotica com sucata", professor_responsavel=professor)
+    assert curso.pk is not None
+    assert curso.edicao is None
 
 
 # --- Seis entregaveis, numerados (a pedido) ----------------------------------

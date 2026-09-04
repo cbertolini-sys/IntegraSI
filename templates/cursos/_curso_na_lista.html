@@ -13,8 +13,10 @@
     <h3><a href="{% url 'analisar_curso' curso.pk %}{{ voltar }}">{{ curso.titulo }}</a></h3>
     <p class="detalhe">
       <span>{{ curso.professor_responsavel.nome_completo }}</span>
-      <span class="sep">&middot;</span>
-      <span>{{ curso.edicao }}</span>
+      {% if curso.edicao %}
+        <span class="sep">&middot;</span>
+        <span>{{ curso.edicao }}</span>
+      {% endif %}
       {% if detalhe %}
         <span class="sep">&middot;</span>
         <span>{{ detalhe }}</span>

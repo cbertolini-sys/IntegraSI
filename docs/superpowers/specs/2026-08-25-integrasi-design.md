@@ -134,6 +134,16 @@ depois - e a LGPD cobra essa explicação.
 data de início, data de fim, ativa. Todo curso pertence a uma edição; é o que
 mantém o catálogo legível ao longo dos anos.
 
+> **Corrigido em 04/09/2026, com o sistema no ar.** A edição é **opcional** no
+> `Curso`. Ela continua sendo o rótulo que mantém o catálogo legível, e continua
+> `PROTECT`, mas deixou de ser exigida para propor: proposta se faz a qualquer
+> momento, por qualquer professor, e não quando a coordenação lembra de abrir a
+> edição corrente. Exigi-la travou o sistema inteiro para produção na instalação
+> nova, onde ainda não havia edição nenhuma, e a tela mandava o professor pedir
+> à coordenação uma coisa que ele não tinha como saber que faltava. O sistema já
+> tinha aceitado esse argumento uma vez, em `abrir_nova_versao` (§4.5), que se
+> recusa a depender da edição corrente pelo mesmo motivo.
+
 **MembroEquipe** - vínculo pessoa ↔ curso, criado pelo professor responsável.
 Único por (curso, pessoa). A equipe de produção tem alunos e pode ter outros
 professores, que produzem material como qualquer membro. O campo se chama
@@ -220,7 +230,8 @@ tela consegue listar.
 
 **Curso** - título, resumo, edição, professor responsável, status.
 
-**A proposta nasce só com o título.** A edição vem da edição corrente (§4.1) e o
+**A proposta nasce só com o título.** A edição vem da edição corrente (§4.1)
+quando há uma aberta, e fica em branco quando não há (ver a nota em §4.1); o
 professor responsável é quem propôs; mais nada é perguntado. O resto é trabalho da
 equipe.
 

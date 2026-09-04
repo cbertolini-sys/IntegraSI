@@ -99,13 +99,9 @@ def criar_curso(**dados):
         # Import adiado, como abrir_nova_versao ja faz neste arquivo.
         from apps.edicoes.models import Edicao
 
-        corrente = Edicao.objects.corrente()
-        if corrente is None:
-            raise ValidationError(
-                "Nenhuma edição da disciplina está aberta. Peça à coordenação para "
-                "abrir a edição corrente antes de propor um curso."
-            )
-        dados["edicao"] = corrente
+        # Sem edicao corrente o curso nasce sem rotulo, e nao deixa de nascer. Ver
+        # o comentario do campo em models/curso.py.
+        dados["edicao"] = Edicao.objects.corrente()
     curso = Curso.objects.create(**dados)
     for tipo in TipoEntregavel:
         entregavel = Entregavel.objects.create(curso=curso, tipo=tipo)
