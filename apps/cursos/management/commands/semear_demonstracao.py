@@ -193,11 +193,13 @@ class Command(BaseCommand):
         for indice, dados in enumerate(pessoas, start=1):
             contas[dados["email"]] = self._conta(indice, dados, senha)
 
-        coordenador = next(
-            c for c in contas.values() if c.papel == Usuario.COORDENADOR
-        )
-        professores = [c for c in contas.values() if c.papel == Usuario.PROFESSOR]
-        alunos = [c for c in contas.values() if c.papel == Usuario.ALUNO]
+        # Pelas propriedades, e nao comparando o campo: a heranca de papel mora
+        # nelas (`e_professor` vale para o coordenador tambem), e comparar a mao
+        # espalha a regra. `e_somente_professor` e justamente quem precisa da
+        # distincao que este trecho quer.
+        coordenador = next(c for c in contas.values() if c.e_coordenador)
+        professores = [c for c in contas.values() if c.e_somente_professor]
+        alunos = [c for c in contas.values() if c.e_aluno]
         if not professores:
             raise CommandError("A lista precisa de ao menos um professor.")
 
@@ -328,7 +330,7 @@ class Command(BaseCommand):
         O comando nao recusa porque nao tem como saber quais enderecos existem: a
         lista e que manda. Mas quem roda precisa saber o que acabou de ligar.
         """
-        novos = [c for c in contas.values() if c.papel == Usuario.COORDENADOR]
+        novos = [c for c in contas.values() if c.e_coordenador]
         if not novos:
             return
         self.stdout.write(

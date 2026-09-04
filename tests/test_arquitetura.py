@@ -120,3 +120,31 @@ def test_so_um_modulo_de_producao_pergunta_quem_e_a_coordenacao():
             achados.append(str(caminho.relative_to(raiz)))
 
     assert achados == ["apps/contas/services.py"], achados
+
+
+def test_o_papel_so_e_comparado_onde_as_propriedades_nascem():
+    """Papel de usuario se pergunta pelas propriedades, e nao comparando o campo.
+
+    A regra esta no CLAUDE.md desde o Plano 5 e existe porque a heranca mora nas
+    propriedades: `e_professor` vale para o coordenador tambem, e
+    `e_somente_professor` e para quem precisa da distincao. Um `usuario.papel ==
+    PROFESSOR` escrito a mao perde a heranca em silencio, e o defeito so aparece
+    no dia em que um coordenador tenta fazer algo de professor.
+
+    So `contas/models.py` compara, porque e onde as propriedades sao definidas.
+
+    A busca e por `.papel ==`, com o ponto: comparar `dados["papel"]` de um
+    dicionario lido de arquivo e outra coisa, e legitima - nao ha objeto ali para
+    ter propriedade nenhuma. Sem o ponto o teste recusaria codigo correto, e um
+    teste que reprova o certo e abandonado na primeira vez que atrapalha.
+    """
+    raiz = Path(settings.BASE_DIR)
+    comparacao = re.compile(r"\.papel\s*==")
+    achados = []
+    for caminho in sorted(raiz.glob("apps/*/**/*.py")):
+        if "/tests/" in str(caminho) or "/migrations/" in str(caminho):
+            continue
+        if comparacao.search(caminho.read_text()):
+            achados.append(str(caminho.relative_to(raiz)))
+
+    assert achados == ["apps/contas/models.py"], achados
