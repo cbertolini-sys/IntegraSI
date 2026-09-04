@@ -27,8 +27,8 @@ from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 
 from apps.cursos import services
-from apps.cursos.choices import Rotulo, StatusCurso, TipoMidia, TipoPratica
-from apps.cursos.models import Anexo, Arquivo, Curso
+from apps.cursos.choices import StatusCurso
+from apps.cursos.models import Curso
 
 
 def consultas(client, url):
@@ -98,47 +98,40 @@ def test_a_lista_do_catalogo_nao_consulta_por_curso(
 # --- a tela do curso, que a equipe mais abre ---------------------------------
 
 
-def anexo_em(entregavel, por, numero):
-    conteudo = f"material {numero}".encode()
-    arquivo = Arquivo.objects.create(
-        nome_original=f"material-{numero}.txt",
-        tamanho=len(conteudo),
-        mime="text/plain",
-        hash_conteudo=f"{numero:064d}",
-        enviado_por=por,
-    )
-    Anexo.objects.create(
-        entregavel=entregavel,
-        arquivo=arquivo,
-        enviado_por=por,
-        tipo_midia=TipoMidia.ARQUIVO,
-        titulo=f"Material {numero}",
-        rotulo=Rotulo.NENHUM,
-        tipo_pratica=TipoPratica.NENHUM,
-    )
+# A tela do curso tem uma dimensao que NAO da para variar: os entregaveis sao
+# sempre seis, fixados por `TipoEntregavel`. E o `prefetch_related("entregaveis__
+# anexos")` evita uma consulta por ENTREGAVEL, e nao por anexo - `validacoes.
+# pendencias` le `entregavel.anexos.all()` uma vez para cada um.
+#
+# Por isso este e o unico teste do arquivo que afirma um numero absoluto. A
+# primeira versao dele variava a quantidade de ANEXOS e passava verde com o
+# prefetch apagado: acrescentar anexos ao mesmo entregavel nao acrescenta consulta
+# nem com prefetch nem sem. Era um teste com nome certo que nao prendia nada, e so
+# a campanha de delecao mostrou isso.
+CONSULTAS_DA_TELA_DO_CURSO = 10
 
 
 @pytest.mark.django_db
-def test_a_tela_do_curso_nao_consulta_por_anexo(client, dados_curso, professor, aluno):
-    """`prefetch_related("entregaveis__anexos")`: o cartão de progresso roda
-    `validacoes.pendencias` nos seis entregáveis, e a regra de cada um lê os
-    anexos."""
+def test_a_tela_do_curso_nao_consulta_por_entregavel(client, dados_curso, professor, aluno):
+    """`prefetch_related("entregaveis__anexos")` no cenario minimo da tela.
+
+    Medido: 10 consultas com o prefetch, 14 sem ele. O cenario e fixo de proposito
+    (um curso, dois membros, os seis entregaveis de sempre) para que o numero
+    signifique alguma coisa.
+    """
     curso = services.criar_curso(**dados_curso)
     services.adicionar_membro(curso, aluno, por=professor)
-    plano = curso.entregaveis.first()
     client.force_login(professor)
     url = reverse("curso", args=[curso.pk])
 
-    anexo_em(plano, professor, 1)
-    client.get(url)
-    com_um = consultas(client, url)
+    client.get(url)  # aquecimento
+    medido = consultas(client, url)
 
-    for numero in range(2, 8):
-        anexo_em(plano, professor, numero)
-    com_sete = consultas(client, url)
-
-    assert com_sete == com_um, (
-        f"{com_um} consultas com 1 anexo e {com_sete} com 7"
+    assert medido == CONSULTAS_DA_TELA_DO_CURSO, (
+        f"a tela do curso passou de {CONSULTAS_DA_TELA_DO_CURSO} para {medido} consultas. "
+        "Se SUBIU, procure um prefetch perdido em `views/aluno.py`: sem "
+        "`entregaveis__anexos` sao 14, uma consulta por entregavel. Se DESCEU, "
+        "alguem otimizou e o numero acima e que deve baixar."
     )
 
 
