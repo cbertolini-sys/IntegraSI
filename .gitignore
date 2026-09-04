@@ -1,7 +1,12 @@
 .venv/
 __pycache__/
 *.pyc
-.env
+# `.env*` e nao so `.env`: a copia de seguranca `.env.bak-<data>` escapou por
+# aqui e foi parar num commit publico, com SECRET_KEY dentro. O curinga cobre
+# qualquer variante futura (.env.local, .env.producao), e a excecao logo abaixo
+# preserva o modelo, que e o unico que deve ser versionado.
+.env*
+!.env.example
 media/
 staticfiles/
 .pytest_cache/
