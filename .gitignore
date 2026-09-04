@@ -18,3 +18,8 @@ enviar_notificacoes.lock
 # de uma maquina so, e alguns deles pessoais - nao entram no repositorio, que e
 # publico.
 docs/temp/
+
+# Lista de pessoas para semear o ambiente de teste: nomes e e-mails, e o que o
+# `semear_demonstracao` le. Fica de fora pelo mesmo motivo do `docs/temp/` acima:
+# sao dados de pessoas, e este repositorio e publico.
+deploy/usersTemp.txt
