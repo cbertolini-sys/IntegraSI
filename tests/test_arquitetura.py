@@ -25,10 +25,9 @@ PERMITIDO = {
     # `notificacoes` e folha (nao importa ninguem), entao todos podem usa-la:
     # `contas` enfileira o convite de primeiro acesso por ali.
     "contas": {"notificacoes"},
-    "edicoes": set(),
     "referenciais": set(),
     "notificacoes": set(),
-    "cursos": {"contas", "edicoes", "referenciais", "notificacoes"},
+    "cursos": {"contas", "referenciais", "notificacoes"},
     "catalogo": {"contas", "cursos", "notificacoes", "referenciais"},
     "turmas": {"contas", "cursos", "catalogo", "notificacoes"},
     "painel": {"contas", "cursos", "catalogo", "turmas", "notificacoes"},

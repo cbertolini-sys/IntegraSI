@@ -8,7 +8,6 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('cursos', '0018_alter_entregavel_status_alter_revisao_decisao'),
-        ('edicoes', '0003_edicao_apenas_uma_edicao_ativa'),
         ('referenciais', '0004_bncc_por_etapa'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]

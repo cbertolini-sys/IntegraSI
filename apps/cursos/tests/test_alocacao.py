@@ -524,7 +524,7 @@ def test_nao_se_remove_membro_de_curso_ja_submetido(curso, professor, aluno):
 
 
 @pytest.mark.django_db
-def test_nao_se_remove_membro_de_outro_curso(dados_curso, professor, aluno, edicao):
+def test_nao_se_remove_membro_de_outro_curso(dados_curso, professor, aluno):
     """A url traz os dois ids. Sem conferir que o membro e deste curso, quem tem
     permissao aqui apagaria vinculo de curso alheio."""
     curso_a = services.criar_curso(**dados_curso)

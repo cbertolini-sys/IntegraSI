@@ -95,13 +95,6 @@ def criar_curso(**dados):
         permissions.pode_criar_curso(dados.get("professor_responsavel")),
         "Somente professor cria curso.",
     )
-    if "edicao" not in dados:
-        # Import adiado, como abrir_nova_versao ja faz neste arquivo.
-        from apps.edicoes.models import Edicao
-
-        # Sem edicao corrente o curso nasce sem rotulo, e nao deixa de nascer. Ver
-        # o comentario do campo em models/curso.py.
-        dados["edicao"] = Edicao.objects.corrente()
     curso = Curso.objects.create(**dados)
     for tipo in TipoEntregavel:
         entregavel = Entregavel.objects.create(curso=curso, tipo=tipo)
@@ -680,16 +673,10 @@ def abrir_nova_versao(curso, por, motivo):
     if em_producao.exists():
         raise ValidationError("Já existe uma versão deste curso em produção.")
 
-    from apps.edicoes.models import Edicao
-
     ultima = versoes.order_by("-versao").first()
     nova = Curso.objects.create(
         titulo=curso.titulo,
         resumo=curso.resumo,
-        # Outro semestre, outra equipe (spec 4.5). Sem edicao corrente aberta,
-        # herda a do curso de origem: `edicao` e obrigatorio no Curso, e abrir
-        # versao nao pode depender de o coordenador ter lembrado da proxima edicao.
-        edicao=Edicao.objects.corrente() or curso.edicao,
         professor_responsavel=curso.professor_responsavel,
         tipo_publico=curso.tipo_publico,
         etapa_ano=curso.etapa_ano,

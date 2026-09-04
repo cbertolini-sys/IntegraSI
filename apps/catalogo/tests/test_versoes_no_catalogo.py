@@ -11,7 +11,7 @@ As regras que este arquivo prende:
  3. Publicada a nova, a anterior vira SUBSTITUIDO: sai da listagem e a pagina
     publica dela responde 404 - a URL antiga nao pode continuar servindo material
     superado.
- 4. A pagina publica diz qual versao e de que edicao ela e.
+ 4. A pagina publica diz qual versao ela e.
 
 O teste do plano contava ocorrencias do titulo no HTML (`count(...) == 1`). Trocado
 por assercao sobre a linhagem em si - a lista de cursos que a view entrega e as
@@ -82,10 +82,9 @@ def test_versao_substituida_sai_do_catalogo_e_a_pagina_dela_some(
 
 
 @pytest.mark.django_db
-def test_pagina_publica_mostra_a_versao_e_a_edicao(client, curso_publicado, professor, coordenador, aluno):
+def test_pagina_publica_mostra_a_versao(client, curso_publicado, professor, coordenador, aluno):
     nova = publica_nova_versao(curso_publicado, professor, coordenador, aluno)
 
     conteudo = client.get(reverse("catalogo_curso", args=[nova.pk])).content.decode()
 
     assert "Versão 2" in conteudo
-    assert str(nova.edicao) in conteudo

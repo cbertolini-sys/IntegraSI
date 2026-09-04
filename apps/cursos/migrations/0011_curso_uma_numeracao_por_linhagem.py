@@ -9,7 +9,6 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('cursos', '0010_versoes'),
-        ('edicoes', '0003_edicao_apenas_uma_edicao_ativa'),
         ('referenciais', '0003_alter_competencia_options_alter_competencia_codigo_and_more'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]

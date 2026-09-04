@@ -22,7 +22,6 @@ INSTALLED_APPS = [
     "apps.catalogo",
     "apps.contas",
     "apps.cursos",
-    "apps.edicoes",
     "apps.notificacoes",
     "apps.referenciais",
     "apps.turmas",

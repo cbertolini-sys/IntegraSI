@@ -26,8 +26,6 @@ As regras que este arquivo prende, na ordem em que aparecem:
 12. O historico de `Revisao` nao e copiado: pertence a versao que o produziu.
 13. A equipe NAO e clonada: a nova versao e produzida por outra equipe, que o
     professor monta (spec 4.5, passo 3).
-14. A nova versao nasce na edicao corrente; sem edicao corrente, herda a do
-    curso de origem.
 15. Temas e competencias vao junto, e o vetor de temas e reindexado - senao a
     nova versao fica invisivel para a busca (spec 4.4).
 16. A versao anterior continua PUBLICADO durante todo o trabalho (spec 4.5).
@@ -222,42 +220,6 @@ def test_equipe_de_alunos_nao_e_clonada(curso_publicado, coordenador, aluno, pro
     assert curso_publicado.membros.count() == 2  # o responsavel e o aluno
     assert nova.tem_membro(aluno) is False
     assert list(nova.membros.values_list("pessoa_id", flat=True)) == [professor.pk]
-
-
-# --- Regra 14: a edicao da nova versao ------------------------------------
-
-
-@pytest.mark.django_db
-def test_nova_versao_nasce_na_edicao_corrente(curso_publicado, coordenador, edicao):
-    """Outro semestre, outra equipe (spec 4.5): a versao nova pertence a edicao
-    em andamento, nao a edicao em que a versao velha foi produzida."""
-    import datetime
-
-    from apps.edicoes.models import Edicao
-
-    edicao.ativa = False
-    edicao.save()
-    corrente = Edicao.objects.create(
-        codigo="2027/1", descricao="Nova edicao", data_inicio=datetime.date(2027, 3, 1),
-        data_fim=datetime.date(2027, 7, 20), ativa=True,
-    )
-
-    nova = services.abrir_nova_versao(curso_publicado, por=coordenador, motivo="Atualizar.")
-
-    assert nova.edicao_id == corrente.pk
-    assert curso_publicado.edicao_id == edicao.pk
-
-
-@pytest.mark.django_db
-def test_sem_edicao_corrente_a_nova_versao_herda_a_do_curso(curso_publicado, coordenador, edicao):
-    """`edicao` e obrigatorio no Curso: se o coordenador ainda nao abriu a
-    proxima edicao, abrir versao nao pode estourar com IntegrityError."""
-    edicao.ativa = False
-    edicao.save()
-
-    nova = services.abrir_nova_versao(curso_publicado, por=coordenador, motivo="Atualizar.")
-
-    assert nova.edicao_id == edicao.pk
 
 
 # --- Regra 15: temas, competencias e reindexacao --------------------------

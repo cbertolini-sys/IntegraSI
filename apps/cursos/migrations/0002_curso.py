@@ -10,7 +10,6 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('cursos', '0001_initial'),
-        ('edicoes', '0003_edicao_apenas_uma_edicao_ativa'),
         ('referenciais', '0003_alter_competencia_options_alter_competencia_codigo_and_more'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
@@ -34,7 +33,6 @@ class Migration(migrations.Migration):
                 ('atualizado_em', models.DateTimeField(auto_now=True, verbose_name='atualizado em')),
                 ('publicado_em', models.DateTimeField(blank=True, null=True, verbose_name='publicado em')),
                 ('competencias', models.ManyToManyField(blank=True, related_name='cursos', to='referenciais.competencia', verbose_name='competências')),
-                ('edicao', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='cursos', to='edicoes.edicao', verbose_name='edição')),
                 ('professor_responsavel', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='cursos_como_responsavel', to=settings.AUTH_USER_MODEL, verbose_name='professor responsável')),
                 ('referencial', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='cursos', to='referenciais.referencial', verbose_name='referencial pedagógico')),
                 ('temas', models.ManyToManyField(blank=True, related_name='cursos', to='cursos.tema', verbose_name='temas')),

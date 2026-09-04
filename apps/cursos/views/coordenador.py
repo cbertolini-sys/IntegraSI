@@ -23,7 +23,7 @@ NO_CATALOGO = [StatusCurso.PUBLICADO, StatusCurso.DESPUBLICADO]
 def fila_coordenacao(request):
     permissions.garante(permissions.pode_publicar(request.user), "Área da coordenação.")
     cursos = Curso.objects.filter(status=StatusCurso.AGUARDANDO_COORDENADOR).select_related(
-        "professor_responsavel", "edicao"
+        "professor_responsavel"
     )
     # Pagina como as outras seis listagens do sistema. A fila e caixa de entrada
     # que esvazia, entao na pratica cabe numa pagina so - mas "na pratica cabe"
@@ -48,7 +48,7 @@ def cursos_no_catalogo(request):
     """
     permissions.garante(permissions.pode_publicar(request.user), "Área da coordenação.")
     cursos = Curso.objects.filter(status__in=NO_CATALOGO).select_related(
-        "professor_responsavel", "edicao"
+        "professor_responsavel"
     )
     pagina = paginar(request, cursos)
     return render(

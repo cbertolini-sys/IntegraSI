@@ -83,7 +83,7 @@ def test_professor_responsavel_precisa_ser_professor(dados_curso, aluno):
 
 
 @pytest.mark.django_db
-def test_identidade_de_proposta_sem_ficha_nao_mostra_none(edicao, professor):
+def test_identidade_de_proposta_sem_ficha_nao_mostra_none(professor):
     """Achado olhando a tela: a pagina de um curso recem-proposto mostrava
     " . Noneh . ", porque o template do Django renderiza None como "None" e a
     ficha nasce vazia (spec 4.3). A suite inteira passava com o defeito no ar."""

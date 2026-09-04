@@ -1,11 +1,9 @@
-import datetime
 
 import pytest
 
 from apps.contas.models import Usuario
 from apps.cursos.choices import Formato, TipoPublico
 from apps.cursos.models import Curso
-from apps.edicoes.models import Edicao
 
 
 @pytest.fixture(autouse=True)
@@ -69,20 +67,10 @@ def outro_professor(db):
 
 
 @pytest.fixture
-def edicao(db):
-    return Edicao.objects.create(
-        codigo="2026/2", descricao="TICs para Inclusao Digital",
-        data_inicio=datetime.date(2026, 8, 1), data_fim=datetime.date(2026, 12, 20),
-        ativa=True,
-    )
-
-
-@pytest.fixture
-def dados_curso(edicao, professor):
+def dados_curso(professor):
     return {
         "titulo": "Pensamento Computacional Desplugado",
         "resumo": "Oficina de logica sem telas para o 5o ano.",
-        "edicao": edicao,
         "professor_responsavel": professor,
         "tipo_publico": TipoPublico.ESCOLAR,
         "etapa_ano": "EF05",

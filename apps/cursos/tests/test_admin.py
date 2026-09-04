@@ -49,7 +49,6 @@ def test_coordenador_anexa_competencias_pelo_admin_libera_a_pendencia_do_plano(
         {
             "titulo": curso.titulo,
             "resumo": curso.resumo,
-            "edicao": curso.edicao_id,
             "professor_responsavel": curso.professor_responsavel_id,
             "tipo_publico": curso.tipo_publico,
             "etapa_ano": curso.etapa_ano,
@@ -106,7 +105,6 @@ def test_curso_admin_nao_aceita_remendar_a_linhagem_pelo_formulario(
         {
             "titulo": nova.titulo,
             "resumo": nova.resumo,
-            "edicao": nova.edicao_id,
             "professor_responsavel": nova.professor_responsavel_id,
             "tipo_publico": nova.tipo_publico,
             "etapa_ano": nova.etapa_ano,
@@ -153,7 +151,6 @@ def test_curso_admin_nao_aceita_editar_status_pelo_formulario(client, dados_curs
         {
             "titulo": curso.titulo,
             "resumo": curso.resumo,
-            "edicao": curso.edicao_id,
             "professor_responsavel": curso.professor_responsavel_id,
             "tipo_publico": curso.tipo_publico,
             "etapa_ano": curso.etapa_ano,

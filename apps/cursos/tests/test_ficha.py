@@ -21,7 +21,7 @@ from apps.cursos.models import Curso, Tema
 
 
 @pytest.fixture
-def proposta(edicao, professor):
+def proposta(professor):
     return services.criar_curso(titulo="Robotica com sucata", professor_responsavel=professor)
 
 

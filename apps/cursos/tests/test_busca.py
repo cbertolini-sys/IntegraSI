@@ -134,7 +134,6 @@ def test_curso_admin_associa_tema_reindexa_para_busca(client, dados_curso, coord
         {
             "titulo": curso.titulo,
             "resumo": curso.resumo,
-            "edicao": curso.edicao_id,
             "professor_responsavel": curso.professor_responsavel_id,
             "tipo_publico": curso.tipo_publico,
             "etapa_ano": curso.etapa_ano,
@@ -193,7 +192,6 @@ def test_renomear_tema_e_depois_reassociar_curso_pelo_admin_convergem(
         {
             "titulo": curso_robotica.titulo,
             "resumo": curso_robotica.resumo,
-            "edicao": curso_robotica.edicao_id,
             "professor_responsavel": curso_robotica.professor_responsavel_id,
             "tipo_publico": curso_robotica.tipo_publico,
             "etapa_ano": curso_robotica.etapa_ano,

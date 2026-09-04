@@ -12,7 +12,6 @@ from apps.cursos.tests.conftest import (  # noqa: F401
     aluno,
     coordenador,
     dados_curso,
-    edicao,
     media_root_isolado,
     outro_aluno,
     outro_professor,

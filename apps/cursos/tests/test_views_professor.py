@@ -33,7 +33,7 @@ def slides_em_revisao(dados_curso, aluno, arquivo_qualquer):
 
 
 @pytest.mark.django_db
-def test_professor_cria_proposta(client, professor, edicao):
+def test_professor_cria_proposta(client, professor):
     client.force_login(professor)
     resposta = client.post(
         reverse("nova_proposta"), {"titulo": "Robotica com sucata"}, follow=True
@@ -41,12 +41,11 @@ def test_professor_cria_proposta(client, professor, edicao):
     assert resposta.status_code == 200
     curso = Curso.objects.get(titulo="Robotica com sucata")
     assert curso.professor_responsavel == professor
-    assert curso.edicao == edicao
     assert curso.entregaveis.count() == 6
 
 
 @pytest.mark.django_db
-def test_criacao_ignora_campos_de_ficha_enviados_no_post(client, professor, edicao):
+def test_criacao_ignora_campos_de_ficha_enviados_no_post(client, professor):
     """O formulario de criacao tem um campo so, entao o que vier alem dele no POST
     nao pode entrar. Prende a porta pelo lado de fora: alguem que reintroduzisse
     `resumo` em PropostaForm quebraria este teste alem do da lista de campos."""
@@ -62,7 +61,7 @@ def test_criacao_ignora_campos_de_ficha_enviados_no_post(client, professor, edic
 
 
 @pytest.mark.django_db
-def test_temas_nao_sao_definidos_na_criacao(client, professor, edicao):
+def test_temas_nao_sao_definidos_na_criacao(client, professor):
     """Ate o Plano 6 esta tela associava temas. Agora eles moram na ficha, junto
     com o resto do que a equipe preenche, e a criacao os ignora.
 

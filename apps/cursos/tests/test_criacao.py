@@ -211,31 +211,12 @@ def test_primeiro_aluno_alocado_tira_o_curso_do_rascunho(dados_curso, professor,
 
 
 @pytest.mark.django_db
-def test_proposta_nasce_so_com_titulo(edicao, professor):
+def test_proposta_nasce_so_com_titulo(professor):
     """Spec 4.3: o professor abre o trabalho, a equipe preenche a ficha."""
     curso = services.criar_curso(titulo="Robotica com sucata", professor_responsavel=professor)
     assert curso.pk is not None
-    assert curso.edicao == edicao
     assert curso.resumo == ""
     assert curso.carga_horaria is None
-
-
-@pytest.mark.django_db
-def test_proposta_sem_edicao_aberta_e_criada(professor, db):
-    """Proposta se faz a qualquer momento, por qualquer professor. Ela nao depende
-    de a coordenacao ter lembrado de abrir a edicao corrente.
-
-    `abrir_nova_versao` ja se recusava a depender disso, com todas as letras no
-    comentario dele. A criacao dependia, e o resultado foi o sistema inteiro
-    travado para todo professor na instalacao nova, ate alguem abrir uma edicao
-    pelo Admin. A edicao e rotulo de catalogo (spec 4.1), e rotulo nao tranca
-    porta."""
-    from apps.edicoes.models import Edicao
-
-    Edicao.objects.filter(ativa=True).update(ativa=False)
-    curso = services.criar_curso(titulo="Robotica com sucata", professor_responsavel=professor)
-    assert curso.pk is not None
-    assert curso.edicao is None
 
 
 # --- Seis entregaveis, numerados (a pedido) ----------------------------------

@@ -74,7 +74,7 @@ e nunca precisa de uma.
 
 ## 3. Fluxo principal
 
-1. O coordenador cadastra a edição da disciplina e as pessoas.
+1. O coordenador cadastra as pessoas.
 2. O professor cria a proposta com o título apenas, e escolhe quem vai produzi-la:
    alunos e, se quiser, outros professores. O título é provisório e a própria
    equipe o ajusta depois.
@@ -130,19 +130,23 @@ para a emissão de certificado no módulo de execução (§1.1). Está registrad
 justamente porque campo sem finalidade declarada é campo que ninguém sabe explicar
 depois - e a LGPD cobra essa explicação.
 
-**Edicao** - a oferta da disciplina. Campos: código (`2026/2`), descrição,
-data de início, data de fim, ativa. Todo curso pertence a uma edição; é o que
-mantém o catálogo legível ao longo dos anos.
+~~**Edicao** - a oferta da disciplina. Todo curso pertence a uma edição.~~
 
-> **Corrigido em 04/09/2026, com o sistema no ar.** A edição é **opcional** no
-> `Curso`. Ela continua sendo o rótulo que mantém o catálogo legível, e continua
-> `PROTECT`, mas deixou de ser exigida para propor: proposta se faz a qualquer
-> momento, por qualquer professor, e não quando a coordenação lembra de abrir a
-> edição corrente. Exigi-la travou o sistema inteiro para produção na instalação
-> nova, onde ainda não havia edição nenhuma, e a tela mandava o professor pedir
-> à coordenação uma coisa que ele não tinha como saber que faltava. O sistema já
-> tinha aceitado esse argumento uma vez, em `abrir_nova_versao` (§4.5), que se
-> recusa a depender da edição corrente pelo mesmo motivo.
+> **Removido em 04/09/2026, com o sistema no ar.** O modelo, o app `edicoes` e o
+> campo `Curso.edicao` não existem mais. **Os cursos são independentes**: uma
+> proposta se faz a qualquer momento, por qualquer professor, e não pertence a
+> semestre nenhum.
+>
+> A exigência caiu em duas etapas no mesmo dia, e a primeira mostrou por que a
+> segunda era certa. Exigir a edição corrente para propor travou o sistema
+> inteiro para produção na instalação nova, onde ainda não havia edição alguma, e
+> a tela mandava o professor pedir à coordenação uma coisa que ele não tinha como
+> saber que faltava. O sistema já tinha rejeitado esse acoplamento uma vez, em
+> `abrir_nova_versao` (§4.5). Tornar o campo opcional resolveu a trava, e deixou
+> à vista que o que sobrava era um rótulo que ninguém ia preencher.
+>
+> Isso custou reescrever seis migrações já aplicadas de `cursos`, que dependiam
+> de `edicoes`. O procedimento e a verificação estão no commit da remoção.
 
 **MembroEquipe** - vínculo pessoa ↔ curso, criado pelo professor responsável.
 Único por (curso, pessoa). A equipe de produção tem alunos e pode ter outros
@@ -230,9 +234,8 @@ tela consegue listar.
 
 **Curso** - título, resumo, edição, professor responsável, status.
 
-**A proposta nasce só com o título.** A edição vem da edição corrente (§4.1)
-quando há uma aberta, e fica em branco quando não há (ver a nota em §4.1); o
-professor responsável é quem propôs; mais nada é perguntado. O resto é trabalho da
+**A proposta nasce só com o título.** O professor responsável é quem propôs;
+mais nada é perguntado. O resto é trabalho da
 equipe.
 
 O que impede um curso incompleto de avançar não é a obrigatoriedade no formulário
@@ -304,7 +307,7 @@ Como funciona:
 
 1. Coordenador ou o professor responsável abre nova versão de um curso publicado,
    informando o motivo.
-2. O sistema clona o curso na edição corrente: dados, entregáveis, seções e anexos.
+2. O sistema clona o curso: dados, entregáveis, seções e anexos.
    Todos os entregáveis clonados voltam a `RASCUNHO`; o histórico de `Revisao` da
    versão anterior **não** é copiado - pertence a ela.
 3. O professor monta a nova equipe. Pode ser outra turma inteira.
@@ -497,7 +500,6 @@ acesso, e o critério que mais pesa é quem mantém isso daqui a dois anos.
 | App | Responsabilidade |
 |---|---|
 | `contas` | `Usuario`, papéis, autenticação. Cadastro de pessoas pelo Django Admin |
-| `edicoes` | `Edicao`. Minúsculo, separado porque tudo aponta para ele e nada de volta |
 | `referenciais` | `Referencial`, `Categoria`, `Competencia` + fixture da BNCC da Computação |
 | `cursos` | `Curso`, `MembroEquipe`, `Entregavel`, `Secao`, `Anexo`, `Arquivo`, `Tema`, `Revisao`, `LogTransicaoCurso`, `services.py`, `permissions.py` |
 | `catalogo` | Páginas públicas, busca, `Solicitacao`. Lê `cursos`, nunca escreve nele |
@@ -592,7 +594,7 @@ apenas baixados. Sem transcodificação no servidor.
 > decisão é acrescentar a assinatura e o teto do contêiner em `ASSINATURAS`,
 > `LIMITES` e `EXTENSOES`, e nada mais.
 
-**Volume esperado**: até 3 GB de vídeo por curso; com ~8 equipes por edição, ~24 GB
+**Volume esperado**: até 3 GB de vídeo por curso; com ~8 equipes por semestre, ~24 GB
 por semestre e ~240 GB em cinco anos. Isso dimensiona disco e estratégia de backup.
 
 ## 9. Notificações
@@ -749,7 +751,7 @@ rollback ou clone de versão, e o modo de falha é apagar arquivo que ainda est�
 uso.
 
 **Carga inicial**: fixture da BNCC da Computação (categorias e competências por
-etapa), fixture de temas iniciais, edição corrente, usuário coordenador.
+etapa), fixture de temas iniciais, usuário coordenador.
 
 ## 14. Fora de escopo na primeira versão
 

@@ -43,7 +43,7 @@ projeto - `REQUIRED_FIELDS` omite `siape` de propósito; use `criar_coordenador`
 Django monolítico com templates no servidor, HTMX nas interações vivas. Apps sob
 `apps/`, cada um com `name = "apps.<app>"` em `apps.py`.
 
-`contas` (usuários e papéis) · `edicoes` (ofertas da disciplina) · `referenciais`
+`contas` (usuários e papéis) · `referenciais`
 (referenciais pedagógicos genéricos) · `cursos` (núcleo; hoje só `Tema`)
 
 Dependência é de mão única. A partir do Plano 3: `turmas` lê `cursos`; `cursos` e

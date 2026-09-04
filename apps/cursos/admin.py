@@ -29,7 +29,7 @@ class CursoAdmin(admin.ModelAdmin):
     # ficha do curso. O registro fica assim mesmo por outro motivo, que continua
     # valendo: a ficha congela quando o curso sai de producao (spec 4.5), e e por
     # aqui que a coordenacao corrige um curso ja publicado sem abrir nova versao.
-    list_display = ["titulo", "professor_responsavel", "edicao", "status", "referencial"]
+    list_display = ["titulo", "professor_responsavel", "status", "referencial"]
     list_filter = ["status", "formato", "tipo_publico", "referencial"]
     search_fields = ["titulo"]
     filter_horizontal = ["competencias", "temas"]
