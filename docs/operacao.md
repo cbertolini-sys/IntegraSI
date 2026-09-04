@@ -154,7 +154,26 @@ de propósito); o coordenador inicial sai do `criar_coordenador`.
 A carga da BNCC completa (habilidades) é descrita em `docs/dados/README.md`. Os
 códigos vêm transcritos da Resolução CNE/CEB nº 1/2022 - **nunca inventados**.
 
-### 1.4 Serviço, proxy e cron
+### 1.4 Rotação dos logs
+
+```bash
+sudo install -o root -g root -m 644 deploy/logrotate-integrasi /etc/logrotate.d/integrasi
+sudo logrotate -f -d /etc/logrotate.d/integrasi   # simula, não escreve nada
+```
+
+**Confira a saída da simulação, e não só o código de retorno.** O `logrotate`
+ignora em silêncio um arquivo de configuração que não seja do root, e a
+mensagem ("Ignoring ... because the file owner is wrong") passa despercebida
+entre dezenas de linhas de depuração. Foi o que aconteceu na primeira
+instalação.
+
+O `app.log` **não** entra nessa rotação, e a razão está escrita no próprio
+arquivo: ele já rotaciona pelo `RotatingFileHandler` do Django, e incluí-lo
+quebraria o log. O gunicorn mantém o arquivo aberto, o `logrotate` rotaciona
+renomeando, e o processo continuaria escrevendo no arquivo renomeado enquanto o
+`app.log` novo ficaria vazio até o próximo reinício.
+
+### 1.5 Serviço, proxy e cron
 
 ```bash
 sudo cp deploy/integrasi.service /etc/systemd/system/

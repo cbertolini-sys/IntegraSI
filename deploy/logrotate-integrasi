@@ -1,0 +1,39 @@
+# Rotacao dos logs do IntegraSI.
+# Instalar com: sudo install -o root -g root -m 644 deploy/logrotate-integrasi \
+#                       /etc/logrotate.d/integrasi
+# (o logrotate RECUSA arquivo de configuracao que nao seja do root, em silencio
+# se voce nao ler a saida: "Ignoring ... because the file owner is wrong")
+#
+# Os dois arquivos estao listados um a um, e NAO como `*.log`, de proposito.
+#
+# O `app.log` fica de fora porque ja rotaciona sozinho, pelo RotatingFileHandler
+# que `config/settings.py` liga quando CAMINHO_DO_LOG existe (10 MB, 10 arquivos).
+# Pior: incluir aqui QUEBRARIA aquele log. O gunicorn mantem o arquivo aberto, e o
+# logrotate rotaciona renomeando; o processo continua escrevendo no arquivo
+# renomeado, e o `app.log` novo nasce vazio e fica vazio ate o proximo reinicio.
+# Isso foi visto rodando `logrotate -f -d`, que simula sem escrever, depois de a
+# primeira versao deste arquivo ter usado curinga.
+#
+# `cron.log` e `backup.log` sao escritos pelo `>>` das linhas do crontab, e ali
+# renomear funciona: cada execucao do cron abre o arquivo de novo, entao a proxima
+# ja escreve no novo. E `>>` nao tem teto, que e o problema que este arquivo
+# resolve - a rotina de notificacoes passa a cada minuto, entao sao 1440 linhas
+# por dia mesmo com a fila vazia.
+#
+# Log novo que venha a existir precisa de uma decisao: se quem escreve mantem o
+# arquivo aberto, ele nao entra aqui sem `copytruncate` ou sem um `postrotate` que
+# mande o processo reabrir.
+/var/log/integrasi/cron.log
+/var/log/integrasi/backup.log {
+    daily
+    rotate 14
+    compress
+    delaycompress
+    missingok
+    notifempty
+    # O dono e o `integrasi`, e nao o root: quem escreve nesses arquivos e o cron
+    # dele. Sem esta linha o arquivo novo nasce do root e as rotinas param de
+    # conseguir escrever, em silencio, na primeira rotacao.
+    create 0664 integrasi integrasi
+    su integrasi integrasi
+}
