@@ -1708,6 +1708,23 @@ textarea:focus {
   min-height: 0;
 }
 
+/* O convite a sugerir um curso, ultimo slide do carrossel.
+
+   Herda a forma do cartao de curso de proposito: ele ocupa o mesmo lugar, e um
+   cartao de outro tamanho faria o carrossel pular de altura a cada passagem. O
+   que muda e o fundo, para a pessoa perceber que este nao e mais um curso da
+   lista - sem virar bloco de propaganda, que numa vitrine de tres cartoes
+   cansaria antes da segunda volta. */
+.convite-vitrine {
+  background: linear-gradient(140deg, #f2f6fb, #e7eef8);
+  border-color: rgba(31, 92, 158, 0.18);
+}
+
+.convite-vitrine .marca-tema {
+  background: rgba(31, 92, 158, 0.12);
+  color: #1a4c84;
+}
+
 /* ---------- controles ---------- */
 
 /* Setas brancas, como o cartão: no vidro anterior elas sumiam no gradiente. */

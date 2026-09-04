@@ -41,7 +41,7 @@
                 <li class="vitrine-slide{% if forloop.first %} ativo{% endif %}"
                     role="group"
                     aria-roledescription="slide"
-                    aria-label="{{ forloop.counter }} de {{ vitrine|length }}"
+                    aria-label="{{ forloop.counter }} de {{ total_vitrine }}"
                     {% if not forloop.first %}aria-hidden="true"{% endif %}>
                   <article class="cartao-vitrine">
                     <p class="etiquetas-vitrine">
@@ -57,34 +57,62 @@
                   </article>
                 </li>
               {% endfor %}
+              {% comment %}
+                O convite fecha o carrossel. Nao e curso, entao nao sai de
+                `vitrine`: e um slide escrito a mao aqui, e por isso o `ponto`
+                correspondente tambem esta escrito a mao logo abaixo. O
+                `vitrine.js` casa os dois PELO INDICE, e slide sem ponto nao
+                quebra a pagina, quebra a navegacao em silencio.
+              {% endcomment %}
+              <li class="vitrine-slide" role="group" aria-roledescription="slide"
+                  aria-label="{{ total_vitrine }} de {{ total_vitrine }}" aria-hidden="true">
+                <article class="cartao-vitrine convite-vitrine">
+                  <p class="etiquetas-vitrine">
+                    <span class="marca-tema">Sua comunidade</span>
+                  </p>
+                  <h3>Precisa de um curso que não está aqui?</h3>
+                  <p class="resumo-vitrine">
+                    Os cursos deste catálogo nascem de demandas reais de escolas e
+                    grupos da região. Conte o que a sua turma precisa aprender.
+                  </p>
+                  <p class="dados-vitrine">Sem conta &middot; leva dois minutos</p>
+                  <a class="ver-mais" href="{% url 'sugerir' %}">Sugerir um curso</a>
+                </article>
+              </li>
             </ul>
 
-            {% if vitrine|length > 1 %}
-              <button type="button" class="seta anterior" data-anterior aria-label="Curso anterior">
+            {% comment %}
+              Sem `{% if vitrine|length > 1 %}`: o convite e sempre um slide a
+              mais, entao um curso so ja da dois e a navegacao faz sentido.
+            {% endcomment %}
+            <button type="button" class="seta anterior" data-anterior aria-label="Curso anterior">
                 <span aria-hidden="true">&lsaquo;</span>
               </button>
-              <button type="button" class="seta proxima" data-proxima aria-label="Próximo curso">
-                <span aria-hidden="true">&rsaquo;</span>
-              </button>
-            {% endif %}
+            <button type="button" class="seta proxima" data-proxima aria-label="Próximo curso">
+              <span aria-hidden="true">&rsaquo;</span>
+            </button>
           </div>
 
-          {% if vitrine|length > 1 %}
-            <div class="pontos" role="tablist" aria-label="Escolher curso" data-pontos>
-              {% for curso in vitrine %}
-                <button type="button" role="tab"
-                        class="ponto{% if forloop.first %} ativo{% endif %}"
-                        aria-label="{{ curso.titulo }}"
-                        aria-selected="{% if forloop.first %}true{% else %}false{% endif %}"
-                        data-ir-para="{{ forloop.counter0 }}"></button>
-              {% endfor %}
-            </div>
-          {% endif %}
+          <div class="pontos" role="tablist" aria-label="Escolher curso" data-pontos>
+            {% for curso in vitrine %}
+              <button type="button" role="tab"
+                      class="ponto{% if forloop.first %} ativo{% endif %}"
+                      aria-label="{{ curso.titulo }}"
+                      aria-selected="{% if forloop.first %}true{% else %}false{% endif %}"
+                      data-ir-para="{{ forloop.counter0 }}"></button>
+            {% endfor %}
+            {% comment %}O ponto do convite. Ver o comentário do slide acima.{% endcomment %}
+            <button type="button" role="tab" class="ponto"
+                    aria-label="Sugerir um curso" aria-selected="false"
+                    data-ir-para="{{ indice_do_convite }}"></button>
+          </div>
         {% else %}
           <div class="cartao-vitrine vazio-vitrine">
             <h3>O catálogo está sendo montado</h3>
             <p class="resumo-vitrine">Os primeiros cursos aparecem aqui assim que a
-               coordenação publicar.</p>
+               coordenação publicar. Enquanto isso, conte o que a sua comunidade
+               precisa: é de demandas assim que os cursos nascem.</p>
+            <a class="ver-mais" href="{% url 'sugerir' %}">Sugerir um curso</a>
           </div>
         {% endif %}
       </div>

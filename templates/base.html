@@ -55,6 +55,13 @@
       </div>
       <nav class="menu">
         <a href="{% url 'sobre' %}">Sobre</a>
+        {% comment %}
+          Fora do `{% if user.is_authenticated %}`: quem sugere um curso e
+          justamente quem nao tem conta. Fica visivel para quem esta logado
+          tambem, porque o professor circula pelo catalogo publico e saber que a
+          porta existe o ajuda quando alguem perguntar.
+        {% endcomment %}
+        <a href="{% url 'sugerir' %}">Sugerir um curso</a>
         {% if user.is_authenticated %}
           <a href="{% url 'painel' %}">Painel</a>
           {% comment %}

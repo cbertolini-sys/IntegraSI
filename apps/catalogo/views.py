@@ -79,6 +79,8 @@ def catalogo(request):
     cursos = buscar(cursos, request.GET.get("q", "")).distinct()
 
     pagina = paginar(request, cursos)
+    # Uma consulta so: o carrossel conta os slides e tambem os percorre.
+    vitrine = list(cursos_publicados()[:CURSOS_NA_VITRINE])
     return render(
         request,
         "catalogo/lista.html",
@@ -102,7 +104,12 @@ def catalogo(request):
             # nao por uma consulta propria: e a unica definicao de "o que o
             # visitante enxerga" (spec 10), e duplica-la aqui e como um dia ela
             # divergiria.
-            "vitrine": cursos_publicados()[:CURSOS_NA_VITRINE],
+            "vitrine": vitrine,
+            # Calculado aqui, e nao com `|add:1` no template: o filtro `add` faz
+            # conversao implicita e falha calado, motivo pelo qual
+            # `Curso.rotulo_da_versao` tambem existe em Python.
+            "total_vitrine": len(vitrine) + 1,
+            "indice_do_convite": len(vitrine),
         },
     )
 
