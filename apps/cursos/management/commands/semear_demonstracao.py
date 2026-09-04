@@ -209,6 +209,7 @@ class Command(BaseCommand):
             equipe = alunos[numero :: len(CURSOS)]
             self._curso(ficha, professor, equipe, coordenador)
 
+        self._avisar_dos_coordenadores(contas)
         self._limpar_fila(contas)
         self.stdout.write(
             f"{len(contas)} contas e "
@@ -232,6 +233,13 @@ class Command(BaseCommand):
             nome_completo=dados["nome"],
             papel=dados["papel"],
             cpf=cpf_de_teste(indice),
+            # `promover_a_coordenador` liga os dois juntos, e este comando gravava
+            # so o papel: o coordenador semeado tinha poder de coordenacao dentro
+            # do sistema e nenhum acesso ao Admin, que e justamente a porta por
+            # onde a coordenacao destrava conta presa (e a unica que o
+            # PerfilCompletoMiddleware deixa passar de proposito). Achado olhando
+            # o servidor, com a suite verde.
+            is_staff=dados["papel"] == Usuario.COORDENADOR,
         )
         if dados["papel"] == Usuario.ALUNO:
             conta.matricula = f"90000{indice:03d}"
@@ -306,6 +314,32 @@ class Command(BaseCommand):
             rotulo=dados.get("rotulo", Rotulo.NENHUM),
             tipo_pratica=dados.get("tipo_pratica", TipoPratica.NENHUM),
             duracao_minutos=dados.get("duracao_minutos"),
+        )
+
+    def _avisar_dos_coordenadores(self, contas):
+        """Diz o preco de ter criado coordenador, sem recusar a fazer.
+
+        Todo coordenador ativo recebe aviso de solicitacao da comunidade e de
+        curso submetido. Com endereco que nao existe, cada uma dessas acoes vira
+        devolucao contra a conta que assina os envios, e devolucao acumulada
+        derruba a reputacao do remetente. Aconteceu com a semeadura de 04/09 e
+        custou um rebaixamento a mao em producao.
+
+        O comando nao recusa porque nao tem como saber quais enderecos existem: a
+        lista e que manda. Mas quem roda precisa saber o que acabou de ligar.
+        """
+        novos = [c for c in contas.values() if c.papel == Usuario.COORDENADOR]
+        if not novos:
+            return
+        self.stdout.write(
+            f"  ATENCAO: {len(novos)} coordenador(es) na lista "
+            f"({', '.join(c.email for c in novos)})."
+        )
+        self.stdout.write(
+            "  Todo coordenador ativo recebe aviso de solicitacao da comunidade e de "
+            "curso submetido. Se o endereco nao existir, cada aviso vira uma devolucao "
+            "contra a conta que assina os envios. Use endereco entregavel, ou rebaixe "
+            "depois com contas.services.rebaixar_a_professor."
         )
 
     def _limpar_fila(self, contas):

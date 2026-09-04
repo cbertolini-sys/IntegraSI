@@ -11,6 +11,8 @@ nao existe. Mandar convite para la geraria devolucao e sujaria a reputacao do
 remetente. O fluxo de convite se testa a parte, com um endereco real.
 """
 
+import io
+
 import pytest
 from django.contrib.auth import authenticate
 from django.core.management import call_command
@@ -50,6 +52,13 @@ def lista(tmp_path):
 @pytest.fixture
 def semeado(lista, db):
     call_command("semear_demonstracao", arquivo=lista, senha="si123456")
+
+
+def semear(lista, **extra):
+    """Roda o comando capturando a saida, para os testes que afirmam sobre o aviso."""
+    saida = io.StringIO()
+    call_command("semear_demonstracao", arquivo=lista, senha="si123456", stdout=saida, **extra)
+    return saida.getvalue()
 
 
 # --- as pessoas ---------------------------------------------------------------
@@ -153,3 +162,39 @@ def test_rodar_duas_vezes_nao_duplica_nada(lista, db):
 
     assert Usuario.objects.count() == 8
     assert Curso.objects.count() == 2
+
+
+# --- o coordenador semeado ----------------------------------------------------
+# Achados rodando o rebaixamento em producao, depois da auditoria de 04/09.
+
+
+@pytest.mark.django_db
+def test_o_coordenador_semeado_entra_com_acesso_ao_admin(semeado):
+    """`promover_a_coordenador` liga `is_staff` junto com o papel, e por bom
+    motivo: o Admin e a porta pela qual a coordenacao destrava conta presa, e e a
+    unica rota que o `PerfilCompletoMiddleware` deixa passar de proposito.
+
+    O comando gravava so o papel. O coordenador semeado tinha poder de coordenacao
+    dentro do sistema e nenhum acesso ao Admin: dois estados que deveriam andar
+    juntos, discordando em silencio. Foi visto no servidor, nao aqui.
+    """
+    coordenador = Usuario.objects.get(email="nick@escola.com")
+
+    assert coordenador.papel == Usuario.COORDENADOR
+    assert coordenador.is_staff, "papel de coordenador sem acesso ao Admin"
+
+
+@pytest.mark.django_db
+def test_o_comando_avisa_o_preco_de_criar_coordenador(lista, db):
+    """Coordenador ficticio nao afeta so quem testa: TODO coordenador ativo recebe
+    aviso de solicitacao da comunidade e de curso submetido. Com endereco que nao
+    existe, cada uma dessas acoes vira devolucao contra a conta que assina os
+    envios. Aconteceu, e custou um rebaixamento a mao em producao.
+
+    O comando nao pode recusar (a lista e que manda, e ele nao sabe quais
+    enderecos existem), mas pode dizer o preco a quem roda.
+    """
+    saida = semear(lista)
+
+    assert "coordenador" in saida.lower()
+    assert "devolu" in saida.lower(), saida
