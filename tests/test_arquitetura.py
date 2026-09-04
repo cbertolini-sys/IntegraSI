@@ -91,3 +91,32 @@ def test_a_lista_de_camadas_cobre_os_apps_instalados():
         f"só em INSTALLED_APPS: {instalados - set(PERMITIDO)}; "
         f"só em PERMITIDO: {set(PERMITIDO) - instalados}"
     )
+
+
+# --- regra escrita num lugar so -----------------------------------------------
+
+
+def test_so_um_modulo_de_producao_pergunta_quem_e_a_coordenacao():
+    """A consulta dos e-mails da coordenacao vive em `contas.services`, e em mais
+    lugar nenhum.
+
+    Este teste e ESTRUTURAL de proposito, e vale dizer por que. Os dois chamadores
+    (`cursos.services` na submissao de curso, `catalogo.views` na solicitacao da
+    comunidade) tinham copias identicas. Um teste de comportamento nao distingue
+    uma copia da outra: as duas devolvem a mesma coisa hoje, entao apagar a
+    unificacao nao reprovaria nada. O que precisa ser preso e a AUSENCIA de uma
+    segunda copia, e isso so um teste de forma alcanca.
+
+    A busca e pela consulta, e nao pela palavra "COORDENADOR": ela aparece
+    legitimamente em choices, em filtros de formulario e em comparacoes de papel.
+    """
+    raiz = Path(settings.BASE_DIR)
+    consulta = re.compile(r"papel=Usuario\.COORDENADOR[^)]*is_active=True")
+    achados = []
+    for caminho in sorted(raiz.glob("apps/*/**/*.py")):
+        if "/tests/" in str(caminho) or "/migrations/" in str(caminho):
+            continue
+        if consulta.search(caminho.read_text()):
+            achados.append(str(caminho.relative_to(raiz)))
+
+    assert achados == ["apps/contas/services.py"], achados

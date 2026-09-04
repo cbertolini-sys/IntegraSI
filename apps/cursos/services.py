@@ -26,6 +26,10 @@ from apps.cursos.models import (
     Revisao,
     Secao,
 )
+# No topo, ao contrario do `convidar` que `alocar_aluno` importa dentro do corpo:
+# aquele precisa ser resolvido a cada chamada porque um teste o substitui por
+# monkeypatch, e este ninguem substitui. Ver o comentario em `alocar_aluno`.
+from apps.contas.services import emails_da_coordenacao
 from apps.notificacoes.services import enfileirar
 
 # Cabecalho suficiente para todas as assinaturas de `arquivos.ASSINATURAS` e para a
@@ -264,13 +268,6 @@ def _emails_da_equipe(curso):
     return [m.pessoa.email for m in curso.membros.select_related("pessoa")]
 
 
-def _emails_dos_coordenadores():
-    from apps.contas.models import Usuario
-
-    return list(
-        Usuario.objects.filter(papel=Usuario.COORDENADOR, is_active=True).values_list("email", flat=True)
-    )
-
 
 @transaction.atomic
 def submeter_ao_coordenador(curso, por):
@@ -296,7 +293,7 @@ def submeter_ao_coordenador(curso, por):
     _transicionar(curso, StatusCurso.AGUARDANDO_COORDENADOR, por)
     enfileirar(
         evento="CURSO_SUBMETIDO",
-        destinatarios=_emails_dos_coordenadores(),
+        destinatarios=emails_da_coordenacao(),
         assunto=f"Curso aguardando aprovação: {curso.titulo}",
         corpo=f"O professor {por.nome_completo} submeteu o curso {curso.titulo} para aprovação.",
     )
@@ -838,9 +835,14 @@ def alocar_aluno(curso, email, por, base_url=""):
     endereco digitado errado poria a pessoa errada numa equipe, e o professor nao
     teria como perceber.
     """
-    # Importes adiados, e nao no topo: `contas.services` nao pode ser importado na
-    # carga deste modulo sem fechar um ciclo (`contas` nao conhece `cursos`, e este
-    # arquivo ja usa o mesmo padrao para `Usuario` em `definir_temas`).
+    # Importes adiados, e nao no topo, mas NAO por causa de ciclo: `contas` nao
+    # conhece `cursos`, e este arquivo importa `contas.services` no topo desde a
+    # unificacao de `emails_da_coordenacao`. O motivo e outro, e e o que se perde
+    # ao "limpar" isto: `test_alocacao_e_atomica_quando_o_convite_falha` troca
+    # `apps.contas.services.convidar` por monkeypatch, e um `from ... import
+    # convidar` no topo congela o nome antes da troca. Resolvido a cada chamada, o
+    # patch pega. Subir estes dois para o topo faz aquele teste reprovar, e foi
+    # medido: o comentario anterior dava o motivo errado para a decisao certa.
     from apps.contas.models import Usuario
     from apps.contas.services import convidar
 

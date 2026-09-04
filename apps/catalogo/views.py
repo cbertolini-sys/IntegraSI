@@ -15,6 +15,7 @@ from apps.catalogo.models import Solicitacao
 from apps.cursos.busca import buscar
 from apps.cursos.choices import Formato, StatusCurso, TipoPublico
 from apps.cursos.models import Curso, Tema
+from apps.contas.services import emails_da_coordenacao
 from apps.notificacoes.services import enfileirar
 from apps.referenciais.choices import ETAPAS
 from apps.referenciais.models import Referencial
@@ -147,13 +148,6 @@ def previa_do_curso(request, pk):
     return render(request, "catalogo/curso.html", {"curso": curso, "previa": True})
 
 
-def _emails_dos_coordenadores():
-    from apps.contas.models import Usuario
-
-    return list(
-        Usuario.objects.filter(papel=Usuario.COORDENADOR, is_active=True).values_list("email", flat=True)
-    )
-
 
 @require_http_methods(["GET", "POST"])
 def solicitar(request, pk):
@@ -196,7 +190,7 @@ def solicitar(request, pk):
 
     enfileirar(
         evento="SOLICITACAO_RECEBIDA",
-        destinatarios=[curso.professor_responsavel.email] + _emails_dos_coordenadores(),
+        destinatarios=[curso.professor_responsavel.email] + emails_da_coordenacao(),
         assunto=f"Nova solicitação: {curso.titulo}",
         corpo=(
             f"{solicitacao.nome} ({solicitacao.instituicao}) solicitou o curso {curso.titulo} "

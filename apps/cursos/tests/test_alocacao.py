@@ -129,8 +129,11 @@ def test_alocacao_e_atomica_quando_o_convite_falha(curso, professor, monkeypatch
     e-mail já cadastrado, e só a coordenação destravaria pelo Admin.
 
     O patch é na origem (`apps.contas.services.convidar`), e não no nome
-    importado: `alocar_aluno` importa a função dentro do corpo, para não fechar
-    ciclo entre `cursos` e `contas`.
+    importado, e é por isso que `alocar_aluno` importa a função dentro do corpo:
+    um `from ... import convidar` no topo congelaria o nome antes da troca e este
+    teste passaria a exercitar o convite de verdade. Não é questão de ciclo, como
+    dizia esta linha antes: `contas` não conhece `cursos`, e o mesmo arquivo
+    importa `contas.services` no topo para `emails_da_coordenacao`.
     """
 
     def explode(*args, **kwargs):

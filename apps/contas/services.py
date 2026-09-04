@@ -132,6 +132,27 @@ def consumir_convite(token, senha, cpf, matricula, telefone, nome=None, siape=No
     return usuario
 
 
+def emails_da_coordenacao():
+    """Para quem vai o aviso que a coordenacao precisa ver.
+
+    Publica e aqui, e nao repetida em cada chamador. Estava escrita duas vezes,
+    identica, em `cursos.services` (submissao de curso) e `catalogo.views`
+    (solicitacao da comunidade). Duas copias iguais nao quebram nada enquanto a
+    regra nao muda, e esta regra ja mostrou que vai mudar: em 04/09 um coordenador
+    com endereco inexistente gerou devolucao a cada aviso. "Excluir coordenador
+    sem endereco entregavel" e o tipo de ajuste que se faz num arquivo e se
+    esquece no outro.
+
+    `is_active` faz parte da regra: desativar a conta e o jeito de tirar alguem da
+    lista de avisos sem apagar o historico dele.
+    """
+    return list(
+        Usuario.objects.filter(papel=Usuario.COORDENADOR, is_active=True).values_list(
+            "email", flat=True
+        )
+    )
+
+
 def _garante_coordenacao(por, mensagem):
     """Checagem local, e não `cursos.permissions.pode_publicar`.
 
