@@ -38,6 +38,24 @@ PostgreSQL local, Python 3.13, Django 5.2. Configuração vem toda de variável 
 ambiente (`.env`, modelo em `.env.example`). `createsuperuser` **não funciona** neste
 projeto - `REQUIRED_FIELDS` omite `siape` de propósito; use `criar_coordenador`.
 
+## Deploy: só quando for pedido
+
+**Nunca publique no servidor por iniciativa própria.** Terminar uma correção,
+deixar a suíte verde e comitar não autoriza deploy. Só o pedido explícito
+autoriza, e ele vale uma vez: autorização de ontem não cobre a mudança de hoje.
+
+Termine no commit e diga que está pronto para subir. Quem decide quando o
+sistema em produção muda é quem responde por ele.
+
+O servidor é `200.132.38.187`, e o que roda lá é a instalação de verdade, com
+gente usando. Cada `systemctl restart` derruba sessão de quem está no meio de
+uma edição, e o que sobe não passou por homologação nenhuma: a suíte verde prova
+o repositório, não a tela.
+
+Vale para tudo que altera o servidor, não só para o `git pull`: `migrate`, SQL,
+`collectstatic`, `systemctl`, crontab, pacote do sistema. Ler o servidor
+(consultar, conferir, olhar log) não precisa de pedido; escrever nele precisa.
+
 ## Arquitetura
 
 Django monolítico com templates no servidor, HTMX nas interações vivas. Apps sob
