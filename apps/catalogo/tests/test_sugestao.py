@@ -128,3 +128,34 @@ def test_a_busca_vazia_oferece_sugerir(client):
     html = client.get(reverse("catalogo"), {"busca": "assunto que nao existe"}).content.decode()
 
     assert reverse("sugerir") in html
+
+
+# --- a tela --------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+def test_a_tela_usa_o_desenho_de_campo_do_projeto(client):
+    """`_campo.html`, e nao o `as_p` do Django.
+
+    Dele vem o `.campo`, o rotulo com o gatilho de ajuda e o balao. Com `as_p` a
+    ajuda vira parágrafo solto sob cada campo, o radio de laboratório sai como
+    lista sem desenho, e a tela deixa de se parecer com o resto do sistema. A
+    afirmação é sobre o que o `_campo.html` PRODUZ, e não sobre o `{% include %}`
+    estar escrito: trocar a inclusão por `as_p` tem que reprovar.
+    """
+    html = client.get(reverse("sugerir")).content.decode()
+
+    assert 'class="campo' in html
+    assert 'class="ajuda-campo"' in html
+    assert "<p><label" not in html, "voltou para o as_p do Django"
+
+
+@pytest.mark.django_db
+def test_a_tela_sabe_voltar(client):
+    """Pagina publica e folha: sem a volta, so o botao do navegador sai dela. E o
+    mesmo defeito que o teste de volta ao painel corrigiu nas telas de dentro,
+    aqui com destino ao catalogo, porque quem chega nao tem conta."""
+    html = client.get(reverse("sugerir")).content.decode()
+
+    assert f'href="{reverse("catalogo")}"' in html
+    assert "Voltar ao catálogo" in html

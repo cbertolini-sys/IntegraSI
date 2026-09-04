@@ -32,11 +32,16 @@
   --azul-forte: #04477c;
   --azul-suave: #e8f1f9;
   --ciano: #38c2c2;
-  /* A unica cor quente do sistema, reservada a ajuda. Branco sobre ela passa em
-     contraste (cerca de 4,8:1), o que #f59e0b e os laranjas mais claros nao
-     fazem: um "?" branco sobre laranja claro seria bonito e ilegivel. */
+  /* A cor quente do sistema. Branco sobre ela passa em contraste (cerca de
+     4,8:1), o que #f59e0b e os laranjas mais claros nao fazem: um "?" branco
+     sobre laranja claro seria bonito e ilegivel - por isso o gatilho de ajuda usa
+     estas duas, e nao o tom claro abaixo. */
   --laranja: #d9530e;
   --laranja-forte: #b8440b;
+  /* Tinta de fundo, no papel do `--azul-suave`: nao serve de fundo para texto
+     branco, serve de chao para cartao. Usada no convite a sugerir um curso, que
+     precisa se distinguir dos cartoes de curso sem virar bloco de propaganda. */
+  --laranja-suave: #fbeee4;
 
   --texto: #16202e;
   --cinza: #5a6675;
@@ -939,6 +944,12 @@ textarea:focus {
 
 /* ---------- páginas estreitas ---------- */
 
+/* A volta no topo de uma pagina publica estreita. Paragrafo proprio, e nao
+   dentro do <h1>, para o botao nao herdar o tamanho do titulo. */
+.voltar-topo {
+  margin: 0 0 1.25rem;
+}
+
 .pagina-estreita {
   max-width: 38rem;
   padding-block: 2.5rem 4rem;
@@ -1716,13 +1727,15 @@ textarea:focus {
    lista - sem virar bloco de propaganda, que numa vitrine de tres cartoes
    cansaria antes da segunda volta. */
 .convite-vitrine {
-  background: linear-gradient(140deg, #f2f6fb, #e7eef8);
-  border-color: rgba(31, 92, 158, 0.18);
+  background: linear-gradient(140deg, var(--laranja-suave), #f7e3d3);
+  border-color: rgba(217, 83, 14, 0.22);
 }
 
+/* A etiqueta acompanha o cartao. `--laranja-forte` no texto, e nao `--laranja`:
+   sobre a tinta clara o tom mais escuro e o que passa em contraste. */
 .convite-vitrine .marca-tema {
-  background: rgba(31, 92, 158, 0.12);
-  color: #1a4c84;
+  background: rgba(217, 83, 14, 0.14);
+  color: var(--laranja-forte);
 }
 
 /* ---------- controles ---------- */
