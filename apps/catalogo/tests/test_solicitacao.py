@@ -61,6 +61,27 @@ def test_solicitacao_avisa_professor_e_coordenador(client, curso_publicado, prof
 
 
 @pytest.mark.django_db
+def test_o_aviso_diz_quem_responde_e_quem_esta_em_copia(client, curso_publicado):
+    """A fila guarda um endereco por linha e o `send_mail` manda uma mensagem
+    separada para cada: nao existe `Cc` no sistema, e ninguem ve quem mais
+    recebeu. Sem esta linha, professor e coordenacao leem mensagens identicas e
+    nenhuma delas diz quem deve responder - as duas esperam pela outra, ou as
+    duas respondem.
+
+    Afirmado no CORPO de quem recebe, e nao numa constante importada: o teste
+    precisa falhar se a linha sumir do e-mail, e nao apenas se sumir do modulo.
+    """
+    client.post(reverse("solicitar", args=[curso_publicado.pk]), dados_validos())
+
+    corpos = Notificacao.objects.filter(evento="SOLICITACAO_RECEBIDA").values_list(
+        "corpo", flat=True
+    )
+    assert corpos, "nenhuma notificação de solicitação foi enfileirada"
+    for corpo in corpos:
+        assert "enviada à coordenação, com cópia para o professor responsável" in corpo
+
+
+@pytest.mark.django_db
 def test_nao_se_solicita_curso_nao_publicado(client, dados_curso):
     curso = services.criar_curso(**dados_curso)
     resposta = client.post(reverse("solicitar", args=[curso.pk]), dados_validos())

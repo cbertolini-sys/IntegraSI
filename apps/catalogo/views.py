@@ -201,6 +201,13 @@ def solicitar(request, pk):
         corpo=(
             f"{solicitacao.nome} ({solicitacao.instituicao}) solicitou o curso {curso.titulo} "
             f"para {solicitacao.num_participantes} participantes.\n\n{solicitacao.mensagem}"
+            # Nao existe `Cc` no sistema: a fila guarda um endereco por linha e o
+            # `send_mail` manda uma mensagem separada para cada, entao ninguem ve
+            # quem mais recebeu. Sem esta linha as duas pessoas leem mensagens
+            # identicas e nenhuma diz quem responde - as duas esperam pela outra,
+            # ou as duas respondem a mesma escola.
+            "\n\nEsta solicitação foi enviada à coordenação, com cópia para o "
+            "professor responsável."
         ),
     )
     return render(request, "catalogo/solicitacao_recebida.html", {"curso": curso})
