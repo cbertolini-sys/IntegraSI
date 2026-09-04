@@ -159,3 +159,24 @@ def test_a_tela_sabe_voltar(client):
 
     assert f'href="{reverse("catalogo")}"' in html
     assert "Voltar ao catálogo" in html
+
+
+@pytest.mark.django_db
+def test_o_laboratorio_e_uma_lista_com_as_tres_opcoes(client):
+    """Lista, e nao radio: sao tres opções curtas no meio de um formulário de
+    campos de uma linha, e o radio empilhava três linhas quebrando o ritmo da
+    coluna.
+
+    A opção vazia fica, e com rótulo de verdade: `---------` é o que o Django põe
+    sozinho, e num formulário público lido por quem nunca viu o sistema isso não
+    diz nada. Ela precisa existir para a escolha ser deliberada, e não a primeira
+    opção por omissão.
+    """
+    html = client.get(reverse("sugerir")).content.decode()
+    inicio = html.index('name="tem_laboratorio"')
+    campo = html[html.rindex("<select", 0, inicio) : html.index("</select>", inicio)]
+
+    assert "---------" not in campo, campo
+    assert "Selecione" in campo
+    for rotulo in ["Sim", "Não", "Não sei informar"]:
+        assert f">{rotulo}</option>" in campo, rotulo

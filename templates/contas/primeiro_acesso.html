@@ -19,9 +19,16 @@
       {% if form.non_field_errors %}
         <p class="erro-acesso">{{ form.non_field_errors|join:" " }}</p>
       {% endif %}
-      <form method="post">
+      <form method="post" class="form-cadastro">
         {% csrf_token %}
-        {{ form.as_p }}
+        {% comment %}
+          Pelo `_campo.html`, e nao pelo `as_p` do Django: e dele que vem o
+          `.campo`, o rotulo com o gatilho de ajuda e o balao. As quatro telas de
+          formulario publico do sistema usam o mesmo desenho desde 04/09.
+        {% endcomment %}
+        {% for campo in form %}
+          {% include "cursos/_campo.html" with campo=campo largo=1 %}
+        {% endfor %}
         <button type="submit" class="botao botao-largo">Criar senha e entrar</button>
       </form>
     </div>

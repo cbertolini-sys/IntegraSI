@@ -3,6 +3,14 @@
 
 {% block conteudo %}
   <div class="faixa pagina-estreita">
+    {% comment %}
+      A volta e para a pagina do curso, e nao para o catalogo: e de la que a
+      pessoa veio, e e onde ela confere ementa e carga horaria antes de decidir.
+    {% endcomment %}
+    <p class="voltar-topo">
+      <a class="botao botao-linha" href="{% url 'catalogo_curso' curso.pk %}">&larr; Voltar ao curso</a>
+    </p>
+
     <h1>Solicitar o curso {{ curso.titulo }}</h1>
     <p class="abertura">
       Conte para quem seria o curso e quando. A coordenação responde combinando
@@ -10,9 +18,16 @@
     </p>
     <div class="cartao">
       {% if erro %}<p class="erro-acesso">{{ erro }}</p>{% endif %}
-      <form method="post">
+      <form method="post" class="form-cadastro">
         {% csrf_token %}
-        {{ form.as_p }}
+        {% comment %}
+          Pelo `_campo.html`, e nao pelo `as_p` do Django: e dele que vem o
+          `.campo`, o rotulo com o gatilho de ajuda e o balao. As quatro telas de
+          formulario publico do sistema usam o mesmo desenho desde 04/09.
+        {% endcomment %}
+        {% for campo in form %}
+          {% include "cursos/_campo.html" with campo=campo largo=1 %}
+        {% endfor %}
         <p class="finalidade">
           Seus dados serão usados exclusivamente para dar andamento a esta solicitação e
           organizar a realização do curso, e ficam acessíveis apenas ao professor responsável

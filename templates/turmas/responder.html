@@ -34,9 +34,17 @@
 
       <div class="bloco">
         <h2>Aceitar e agendar a turma</h2>
-        <form method="post">
+        <form method="post" class="form-cadastro">
           {% csrf_token %}
-          {{ form.as_p }}
+          {% comment %}
+            Pelo `_campo.html`, e nao pelo `as_p`: mesmo desenho de campo do resto
+            do sistema. Esta era a quinta tela fora do padrao, e nao foi eu que a
+            achei - foi o teste, que varre os templates em vez de confiar na
+            lista que eu tinha na cabeca.
+          {% endcomment %}
+          {% for campo in form %}
+            {% include "cursos/_campo.html" with campo=campo largo=1 %}
+          {% endfor %}
           <button type="submit" name="decisao" value="ACEITAR" class="botao botao-largo">Aceitar e agendar</button>
         </form>
       </div>

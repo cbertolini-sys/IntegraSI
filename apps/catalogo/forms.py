@@ -59,7 +59,11 @@ class SugestaoForm(forms.ModelForm):
         ]
         widgets = {
             "demanda": forms.Textarea(attrs={"rows": 6, "maxlength": 2000}),
-            "tem_laboratorio": forms.RadioSelect,
+            # Lista, e nao radio: sao tres opcoes curtas e mutuamente exclusivas
+            # no meio de um formulario de campos de uma linha. O radio empilhava
+            # tres linhas e quebrava o ritmo da coluna, e o `_campo.html` desenha
+            # `<select>` como desenha todos os outros campos do sistema.
+            "tem_laboratorio": forms.Select,
         }
         help_texts = {
             "nome": "Seu nome completo, para a coordenação saber com quem falar.",
@@ -80,6 +84,17 @@ class SugestaoForm(forms.ModelForm):
                 "que puder dar. Quanto mais concreto, maior a chance de virar curso."
             ),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # A opcao vazia continua, para a escolha ser deliberada e nao a primeira
+        # opcao por omissao. O que muda e o rotulo: `---------` e o que o Django
+        # poe sozinho, e num formulario publico, lido por quem nunca viu o
+        # sistema, isso nao diz nada.
+        self.fields["tem_laboratorio"].choices = [
+            ("", "Selecione"),
+            *SugestaoDeCurso.LABORATORIO,
+        ]
 
     def e_robo(self):
         return bool(self.data.get("confirmacao"))

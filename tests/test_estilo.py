@@ -392,3 +392,36 @@ def test_a_interface_diz_aluno_e_nao_estudante():
                 continue
             fora.append(f"{caminho.relative_to(RAIZ)}:{numero}: {linha.strip()[:70]}")
     assert fora == [], "a interface voltou a dizer \"estudante\":\n" + "\n".join(fora)
+
+
+# --- um desenho de campo so ---------------------------------------------------
+
+
+def test_nenhum_template_monta_formulario_com_as_p():
+    """Todo campo do sistema passa por `cursos/_campo.html`.
+
+    Dele vem o `.campo`, o rotulo com o gatilho de ajuda e o balao. O `as_p` do
+    Django desenha outra coisa: a ajuda vira paragrafo solto sob cada campo, os
+    campos de escolha saem sem desenho nenhum, e a tela deixa de se parecer com o
+    resto do sistema.
+
+    A inconsistencia existiu por meses em quatro telas ao mesmo tempo (solicitar,
+    primeiro acesso, nova proposta e sugerir) e so foi percebida quando alguem
+    olhou uma delas. Escrito como teste, o desalinhamento nao volta calado: quem
+    criar a quinta tela descobre a regra na primeira execucao da suite, e nao numa
+    revisao meses depois.
+    """
+    culpados = []
+    for caminho in sorted(RAIZ.glob("templates/**/*.html")):
+        if re.search(r"\{\{\s*\w+\.as_p\s*\}\}", caminho.read_text(encoding="utf-8")):
+            culpados.append(str(caminho.relative_to(RAIZ)))
+
+    assert culpados == [], "formulário fora do desenho do projeto:\n" + "\n".join(culpados)
+
+
+def test_a_varredura_de_as_p_reconheceria_um_culpado(tmp_path):
+    """A varredura acha o padrao quando ele existe: sem isto, um regex que nunca
+    casa passaria verde para sempre e o teste acima seria decoracao."""
+    assert re.search(r"\{\{\s*\w+\.as_p\s*\}\}", "{{ form.as_p }}")
+    assert re.search(r"\{\{\s*\w+\.as_p\s*\}\}", "{{ form_senha.as_p }}")
+    assert not re.search(r"\{\{\s*\w+\.as_p\s*\}\}", "{% include 'cursos/_campo.html' %}")
