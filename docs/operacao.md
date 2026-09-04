@@ -337,6 +337,33 @@ Anote a data das duas; se ninguém sabe qual foi, não há backup conferido.
 
 ## 4. Alertas do cron, e o vazamento que eles pegam
 
+**Mais de um endereço no `ADMINS`.** Canal de alerta com um destinatário só falha
+exatamente quando essa pessoa está de férias. O formato é uma lista separada por
+vírgula, em `Nome:email`:
+
+```
+ADMINS=Cristiano:cbertolini@gmail.com,Evandro:evandro.preuss@ufsm.br
+```
+
+Conferir que a rota inteira funciona (`ADMINS` até o SMTP) sem precisar derrubar
+uma requisição de verdade:
+
+```bash
+.venv/bin/python -c "
+import os, django
+os.environ.setdefault('DJANGO_SETTINGS_MODULE','config.settings'); django.setup()
+from django.core.mail import mail_admins
+mail_admins('teste da rota de alerta', 'Conferindo o canal.', fail_silently=False)
+"
+```
+
+É o mesmo caminho que o `AdminEmailHandler` usa quando uma view estoura. Se o
+comando não levantar exceção e a mensagem chegar nas duas caixas, o canal está de
+pé. **Repita depois de qualquer mudança no SMTP**: um canal de alerta que falha
+calado é pior que não ter canal, porque quem confia nele para de olhar o log.
+
+
+
 O `deploy/crontab` tem `MAILTO=` e **não** redireciona `stderr` para o log: o
 stdout de cada rotina vai para `/var/log/integrasi/cron.log` e todo `stderr` vira
 e-mail para o endereço do `MAILTO`. Foi decisão deliberada - com `2>&1`, o único
