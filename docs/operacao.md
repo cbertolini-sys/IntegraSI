@@ -287,6 +287,16 @@ num banco descartável, conta cursos e usuários, restaura um pedaço da mídia 
 derruba tudo no final - não toca no banco de produção. Anote a data da última
 restauração de teste; se ninguém sabe qual foi, não há backup conferido.
 
+| Instalação | Última restauração de teste conferida |
+| --- | --- |
+| 200.132.38.187 | 03/09/2026 - 1 usuário e 1 arquivo de mídia restaurados, saída 0 |
+
+A metade da mídia só sabe reprovar quando não há mídia nenhuma: um `restic restore`
+que não traz arquivo é indistinguível de um repositório quebrado, e o drill recusa
+os dois. Enquanto o sistema não tiver upload de verdade, o marcador
+`media/materiais/.drill-teste.txt` existe para que essa metade tenha o que provar.
+Pode ser apagado assim que houver arquivo enviado pelas telas.
+
 ---
 
 ## 4. Alertas do cron, e o vazamento que eles pegam

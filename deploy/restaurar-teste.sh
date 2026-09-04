@@ -16,6 +16,13 @@ DESTINO_SQL="${INTEGRASI_BACKUP_SQL:-/srv/backups/sql}"
 MIDIA="${INTEGRASI_MEDIA:-/srv/integrasi/media}"
 MIDIA_TESTE="${INTEGRASI_RESTAURACAO:-/tmp/restauracao-teste}"
 
+# O mesmo caminho de senha que o `backup.sh` exporta. Sem ele o `restic restore`
+# la embaixo para em "an empty password is not allowed", depois de a metade do
+# banco ja ter passado: o operador ve o drill reprovar e nao sabe se o problema e
+# o backup ou o comando. `RESTIC_REPOSITORY` fica por conta de quem chama, porque
+# o cron ja o define para o backup.sh e os testes apontam o drill para um stub.
+export RESTIC_PASSWORD_FILE="${RESTIC_PASSWORD_FILE:-/srv/integrasi/.restic-senha}"
+
 # Falhar no meio e o desfecho NORMAL de um drill que esta fazendo seu trabalho, e
 # era exatamente aí que o script antigo largava para tras um banco
 # `integrasi_restauracao` e uma copia da midia no /tmp do servidor, a cada
