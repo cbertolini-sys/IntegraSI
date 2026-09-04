@@ -7,13 +7,16 @@ verdade dá (o `internal;` do nginx, com um `curl` de fora) está em
 `docs/operacao.md` como passo do operador, e não tem, nem pode ter, teste aqui.
 
 A exceção é o drill de restauração: os testes do fim deste arquivo **executam**
-`deploy/restaurar-teste.sh`, com `psql`, `dropdb`, `createdb` e `restic` de
-mentira no PATH. Grep não enxerga SIGPIPE nem `trap`, e era exatamente disso que
-o script morria: até a revisão de branco ele abortava no meio em qualquer
-instalação com mais de três arquivos de mídia, deixando um banco e uma cópia da
-mídia para trás, enquanto o teste que o cobria (um grep por `restic restore`)
-passava. O que continua sem teste é o outro lado: que o dump e o repositório
-restic do servidor de verdade contenham o que deveriam.
+`deploy/restaurar-teste.sh`, com `psql`, `dropdb` e `createdb` de mentira no
+PATH. Grep não enxerga SIGPIPE nem `trap`, e era exatamente disso que o script
+morria: até a revisão de branco ele abortava no meio, deixando o banco de teste
+para trás, enquanto o teste que o cobria (um grep) passava.
+
+O que continua sem teste é a outra metade inteira do backup. A mídia e o disco
+são cobertos pelo **backup diário da VM, mantido pelo CPD da UFSM**, e nada aqui
+alcança aquilo: conferi-lo é pedir uma restauração de teste ao CPD, e está em
+`docs/operacao.md` como passo do operador. Se essa VM deixar de ser copiada, esta
+suíte continua verde e o sistema fica sem backup de disco.
 """
 
 import gzip
@@ -174,8 +177,8 @@ def crontab():
 def tarefas(crontab):
     """Só as linhas de tarefa: o comentário do arquivo cita as rotinas pelo nome,
     e um grep no arquivo inteiro continuaria verde com a linha do cron apagada.
-    As atribuições de ambiente (MAILTO, RESTIC_REPOSITORY) também saem - elas são
-    configuração do cron, não tarefa, e têm testes próprios."""
+    As atribuições de ambiente (MAILTO) também saem - elas são configuração do
+    cron, não tarefa, e têm testes próprios."""
     return [
         linha
         for linha in sem_comentarios(crontab).splitlines()
@@ -210,44 +213,13 @@ def test_o_erro_de_uma_rotina_vira_alerta(crontab):
 # --- backup ------------------------------------------------------------------
 
 
-def test_backup_cobre_banco_e_midia():
-    """São dois problemas distintos (spec 13): pg_dump salva de erro humano, a
-    cópia incremental salva a mídia, que é grande e cresce.
-
-    A afirmação é sobre os COMANDOS, no início da linha. `"restic" in script`
-    (como este teste estava) continuava verde com os dois `restic` apagados,
-    porque a palavra sobrevivia dentro de `.restic-senha`: a campanha de
-    deleção pegou isso, a enumeração de regras não pegaria."""
+def test_backup_gera_o_dump_diario_do_banco():
+    """A metade que este script cobre (spec 13): `pg_dump` salva de erro humano.
+    A afirmação é sobre o COMANDO, no início da linha - a palavra "pg_dump"
+    sobrevive nos comentários que explicam o script, e um `in` continuaria verde
+    com a linha apagada."""
     script = sem_comentarios((DEPLOY / "backup.sh").read_text())
     assert re.search(r"(?m)^pg_dump\b", script)
-    assert re.search(r"(?m)^restic backup\b", script)
-
-
-def test_o_cron_leva_o_repositorio_restic_no_ambiente():
-    """`backup.sh` abre com `${RESTIC_REPOSITORY:?...}` e o cron não herda o
-    ambiente de login: sem a atribuição no crontab, o backup da mídia falha toda
-    noite - depois de o `pg_dump` do dia já ter rodado, que é o que faz o operador
-    achar que "o backup rodou". Como linha de atribuição, não como menção no
-    comentário que a explica."""
-    crontab = (DEPLOY / "crontab").read_text()
-    assert re.search(r"(?m)^RESTIC_REPOSITORY=\S+", crontab)
-    assert "${RESTIC_REPOSITORY:?" in (DEPLOY / "backup.sh").read_text()
-
-
-def test_o_forget_so_apaga_os_snapshots_desta_instalacao():
-    """Sem `--tag`, esta política de retenção apaga todo snapshot do repositório,
-    inclusive os de outra máquina que o compartilhe. A tag já está no `restic
-    backup` da linha de cima."""
-    script = sem_comentarios((DEPLOY / "backup.sh").read_text())
-    forget = re.search(r"(?m)^restic forget\b.*$", script).group(0)
-    assert "--tag integrasi" in forget, forget
-
-
-def test_o_repositorio_da_midia_nao_cresce_para_sempre():
-    """Sem `restic forget`, o repositório externo acumula todo instantâneo já
-    feito e um dia o backup para por falta de espaço lá."""
-    script = sem_comentarios((DEPLOY / "backup.sh").read_text())
-    assert re.search(r"(?m)^restic forget\b.*--keep-daily", script)
 
 
 def test_backup_guarda_o_banco_por_trinta_dias():
@@ -258,19 +230,19 @@ def test_backup_guarda_o_banco_por_trinta_dias():
 
 
 def test_o_backup_para_no_primeiro_erro():
-    """Sem `set -e`, um pg_dump que falha ainda deixa o restic rodar em seguida e
-    o script termina com sucesso: o operador acha que tem backup e não tem."""
+    """Sem `set -e`, um `pg_dump` que falha ainda deixa a retenção apagar os dumps
+    antigos em seguida e o script termina com sucesso: o operador acha que tem
+    backup, e o que ele tem é um arquivo truncado no lugar do de ontem."""
     assert "set -euo pipefail" in sem_comentarios((DEPLOY / "backup.sh").read_text())
 
 
-def test_a_restauracao_de_teste_confere_banco_e_midia():
+def test_a_restauracao_de_teste_confere_o_banco():
     """Backup que nunca foi restaurado não é backup (spec 13)."""
     script = sem_comentarios((DEPLOY / "restaurar-teste.sh").read_text())
     assert re.search(r"(?m)^createdb\b", script)
     # O dump entra mesmo no banco: um `psql` qualquer não basta, o script tem
     # outros dois só para contar linhas depois.
     assert re.search(r"gunzip -c .*\| psql", script)
-    assert re.search(r"(?m)^restic restore\b", script)
 
 
 @pytest.mark.parametrize("script", ["backup.sh", "restaurar-teste.sh"])
@@ -312,24 +284,6 @@ fi
 exit 0
 """
 
-# Restaura MILHARES de arquivos de propósito: é o que faz `find ... | head -3`
-# levar SIGPIPE. Com três arquivos o bug original não aparece.
-STUB_RESTIC = """#!/usr/bin/env bash
-alvo=""
-anterior=""
-for arg in "$@"; do
-  if [ "$anterior" = "--target" ]; then alvo="$arg"; fi
-  anterior="$arg"
-done
-mkdir -p "$alvo"
-if [ "${STUB_RESTIC_VAZIO:-0}" != 1 ]; then
-  destino="$alvo/srv/integrasi/media/materiais/ab"
-  mkdir -p "$destino"
-  ( cd "$destino" && touch arquivo-de-midia-restaurado-{1..3000} )
-fi
-exit 0
-"""
-
 
 @pytest.fixture
 def drill(tmp_path):
@@ -345,7 +299,6 @@ def drill(tmp_path):
         ("dropdb", STUB_DROPDB),
         ("createdb", STUB_CREATEDB),
         ("psql", STUB_PSQL),
-        ("restic", STUB_RESTIC),
     ]:
         stub = binarios / nome
         stub.write_text(corpo)
@@ -369,7 +322,6 @@ def drill(tmp_path):
             b"1\tCOMMENT ON EXTENSION como titulo de curso\t\n"
         )
 
-    restauracao = tmp_path / "restauracao"
     registro = tmp_path / "dropdb.log"
 
     def executar(**extra):
@@ -378,8 +330,6 @@ def drill(tmp_path):
             "PATH": f"{binarios}:{os.environ['PATH']}",
             "INTEGRASI_BANCO_TESTE": "integrasi_restauracao",
             "INTEGRASI_BACKUP_SQL": str(dumps),
-            "INTEGRASI_MEDIA": "/srv/integrasi/media",
-            "INTEGRASI_RESTAURACAO": str(restauracao),
             "REGISTRO_DROPDB": str(registro),
             **extra,
         }
@@ -391,7 +341,6 @@ def drill(tmp_path):
             ["bash", str(DRILL)], capture_output=True, text=True, env=ambiente
         )
 
-    executar.restauracao = restauracao
     executar.registro = registro
     executar.dumps = dumps
     executar.tmp = tmp_path
@@ -408,12 +357,10 @@ def test_o_drill_chega_ao_fim_e_diz_que_deu_certo(drill):
     assert "concluida com sucesso" in resultado.stdout
 
 
-def test_o_drill_apaga_o_banco_e_a_midia_de_teste(drill):
-    """Sem isto, cada semestre deixa um `integrasi_restauracao` e uma cópia da
-    mídia no /tmp do servidor."""
+def test_o_drill_apaga_o_banco_de_teste(drill):
+    """Sem isto, cada semestre deixa um `integrasi_restauracao` no servidor."""
     drill()
 
-    assert not drill.restauracao.exists()
     # Duas: a de antes de restaurar (linha 41) e a da limpeza (o trap). Afirmar
     # apenas que o nome APARECE deixa a limpeza solta -- a chamada pre-restauracao
     # roda antes de qualquer ponto de falha e sozinha satisfaz um `in`.
@@ -422,11 +369,12 @@ def test_o_drill_apaga_o_banco_e_a_midia_de_teste(drill):
 
 def test_o_drill_limpa_mesmo_quando_reprova(drill):
     """Falhar no meio é o desfecho normal de um drill que está fazendo o trabalho
-    dele: é justamente aí que a limpeza não pode ser pulada."""
-    resultado = drill(STUB_RESTIC_VAZIO="1")
+    dele: é justamente aí que a limpeza não pode ser pulada. O dump quebrado é o
+    ponto de falha mais distante do fim que o drill tem, e portanto o que deixaria
+    mais coisa para trás."""
+    resultado = drill(STUB_DUMP_QUEBRADO="1")
 
     assert resultado.returncode != 0
-    assert not drill.restauracao.exists()
     # A falha e depois do dropdb pre-restauracao, entao aqui tambem sao duas: se o
     # trap nao rodasse, seria uma so, e o banco de teste sobreviveria ao semestre.
     assert len(drill.registro.read_text().splitlines()) == 2
@@ -457,17 +405,6 @@ def test_o_filtro_do_drill_nao_corta_linha_de_dado(drill):
     drill(REGISTRO_PSQL=str(registro))
 
     assert "COMMENT ON EXTENSION como titulo de curso" in registro.read_text()
-
-
-def test_restic_que_nao_traz_arquivo_nenhum_reprova(drill):
-    """Repositório vazio, `--include` errado ou snapshot de outra máquina: em
-    todos, `restic restore` sai 0 sem trazer arquivo. O script antigo teria dito
-    "concluida com sucesso"."""
-    resultado = drill(STUB_RESTIC_VAZIO="1")
-
-    assert resultado.returncode != 0
-    assert "concluida com sucesso" not in resultado.stdout
-    assert "nao trouxe arquivo nenhum" in resultado.stderr
 
 
 def test_banco_restaurado_vazio_reprova(drill):
@@ -613,6 +550,20 @@ def test_operacao_instala_a_extensao_unaccent(operacao):
 
 def test_operacao_manda_restaurar_o_backup(operacao):
     assert "restaurar-teste.sh" in operacao
+
+
+def test_operacao_diz_quem_cobre_a_metade_que_o_backup_sh_nao_cobre(operacao):
+    """`backup.sh` faz o `pg_dump` e mais nada. A outra metade da spec §13, salvar
+    de perder a máquina, é o backup diário da VM mantido pelo CPD da UFSM: uma
+    dependência externa que nenhum teste deste repositório alcança.
+
+    Sem isto escrito, quem abrir o `backup.sh` daqui a dois anos vê um script que
+    só copia o banco, o cron verde ao lado, e conclui que o sistema tem backup de
+    disco. O aviso é a parte que salva, e por isso está afirmado junto: a ausência
+    do backup do CPD não faz nenhum teste, nenhum drill e nenhum cron reprovar."""
+    assert "CPD" in operacao
+    assert "máquina virtual" in operacao
+    assert "nada aqui avisa" in operacao
 
 
 def test_o_cron_confere_a_entrega_protegida():

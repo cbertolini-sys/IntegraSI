@@ -3,6 +3,11 @@
 # do primeiro backup, e uma vez por semestre. Ele derruba o banco de teste no
 # final; nao toca no banco de producao em momento nenhum.
 #
+# Ele prova o `pg_dump` do backup.sh, e SO ele. A midia e o disco inteiro sao
+# cobertos pelo backup diario da VM, que e do CPD da UFSM: conferir aquilo e
+# pedir uma restauracao de teste ao CPD, e esta em docs/operacao.md seccao 3
+# como passo do operador, porque nenhum script daqui alcanca.
+#
 # O drill so vale se ele souber FALHAR. Um script que imprime contagens sem
 # confer-las, ou que sai 0 com o dump quebrado no meio, so devolve a mesma falsa
 # confianca que a spec 13 manda destruir.
@@ -13,23 +18,13 @@ set -euo pipefail
 # de fazer grep nele. Em producao ninguem define nenhuma delas.
 BANCO_TESTE="${INTEGRASI_BANCO_TESTE:-integrasi_restauracao}"
 DESTINO_SQL="${INTEGRASI_BACKUP_SQL:-/srv/backups/sql}"
-MIDIA="${INTEGRASI_MEDIA:-/srv/integrasi/media}"
-MIDIA_TESTE="${INTEGRASI_RESTAURACAO:-/tmp/restauracao-teste}"
-
-# O mesmo caminho de senha que o `backup.sh` exporta. Sem ele o `restic restore`
-# la embaixo para em "an empty password is not allowed", depois de a metade do
-# banco ja ter passado: o operador ve o drill reprovar e nao sabe se o problema e
-# o backup ou o comando. `RESTIC_REPOSITORY` fica por conta de quem chama, porque
-# o cron ja o define para o backup.sh e os testes apontam o drill para um stub.
-export RESTIC_PASSWORD_FILE="${RESTIC_PASSWORD_FILE:-/srv/integrasi/.restic-senha}"
 
 # Falhar no meio e o desfecho NORMAL de um drill que esta fazendo seu trabalho, e
 # era exatamente aí que o script antigo largava para tras um banco
-# `integrasi_restauracao` e uma copia da midia no /tmp do servidor, a cada
-# semestre. O trap limpa nos dois desfechos.
+# `integrasi_restauracao` no servidor, a cada semestre. O trap limpa nos dois
+# desfechos.
 limpar() {
   dropdb --if-exists "$BANCO_TESTE" >/dev/null 2>&1 || true
-  rm -rf "$MIDIA_TESTE"
 }
 trap limpar EXIT
 
@@ -78,19 +73,5 @@ if [ "$USUARIOS" -eq 0 ]; then
   echo "Restauracao vazia: nenhum usuario no banco restaurado." >&2
   exit 1
 fi
-
-echo "Conferindo um arquivo de midia do backup:"
-restic restore latest --target "$MIDIA_TESTE" --include "$MIDIA"
-# `-print -quit` para no primeiro arquivo e nao usa cano nenhum: e a mesma
-# armadilha de SIGPIPE do `ls` acima, so que garantida, porque a midia restaurada
-# tem milhares de arquivos.
-ACHADO=$(find "$MIDIA_TESTE" -type f -print -quit 2>/dev/null || true)
-if [ -z "$ACHADO" ]; then
-  # Repositorio vazio, `--include` errado, snapshot de outra maquina: em todos, o
-  # `restic restore` sai 0 sem trazer arquivo nenhum.
-  echo "O restic restore nao trouxe arquivo nenhum de $MIDIA." >&2
-  exit 1
-fi
-echo "Arquivo restaurado: $ACHADO"
 
 echo "Restauracao de teste concluida com sucesso."

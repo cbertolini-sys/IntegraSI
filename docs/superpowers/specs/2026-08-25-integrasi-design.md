@@ -717,6 +717,14 @@ ela cresce e o resto não.
 ou `borg` para destino fora do servidor. Backup que nunca foi restaurado não é
 backup: uma restauração de teste faz parte da entrega.
 
+> **Como ficou na instalação de 200.132.38.187 (04/09/2026).** A segunda metade
+> é atendida pelo backup diário da máquina virtual, mantido pelo CPD da UFSM, e
+> não por ferramenta deste repositório: ele já copia o disco inteiro para fora do
+> servidor, incluindo a mídia. O `restic` foi removido do `backup.sh` por isso.
+> A exigência da spec continua valendo palavra por palavra, com outro executor;
+> o que muda é que conferi-la virou passo de operador (pedir uma restauração de
+> teste ao CPD) em vez de script. Está em `docs/operacao.md` seção 3.
+
 **Rotinas de cron**: reenvio de notificações pendentes; limpeza de uploads em
 blocos abandonados há mais de 24 h (sem ela, o disco enche de fragmentos de vídeo
 que ninguém reclamou); remoção de `Arquivo` órfão.

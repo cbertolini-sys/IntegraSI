@@ -15,7 +15,7 @@ configuração inteira por variável de ambiente.
 ### 1.1 Sistema e usuário
 
 ```bash
-sudo apt install python3.13 python3.13-venv postgresql nginx restic
+sudo apt install python3.13 python3.13-venv postgresql nginx
 sudo adduser --system --group --home /srv/integrasi integrasi
 ```
 
@@ -266,36 +266,53 @@ semana pelo cron.
 
 ## 3. Backup e restauração
 
-`deploy/backup.sh` roda às 02:05 pelo cron e resolve dois problemas distintos
-(spec §13):
+Backup são dois problemas distintos (spec §13), e nesta instalação cada um tem
+um dono diferente:
 
-- **banco**: `pg_dump` diário em `/srv/backups/sql`, retenção de 30 dias - é o
-  que salva de erro humano;
-- **mídia**: cópia incremental deduplicada com `restic` para destino **fora do
-  servidor** - é o que salva de perda de disco.
+| O que salva de | Quem faz | Onde |
+| --- | --- | --- |
+| erro humano (curso apagado, `migrate` errado) | `deploy/backup.sh`, 02:05 | `pg_dump` diário em `/srv/backups/sql`, 30 dias |
+| perder a máquina (disco, VM, datacenter) | **CPD da UFSM** | backup diário da máquina virtual inteira |
 
-Antes do primeiro backup: crie o repositório restic, grave a senha em
-`/srv/integrasi/.restic-senha` (modo `600`, dono `integrasi`) e exporte
-`RESTIC_REPOSITORY` no ambiente do cron. **Guarde a senha do restic fora do
-servidor**: sem ela o repositório é lixo criptografado.
+**A segunda linha é uma dependência externa, e é o ponto frágil desta seção.**
+O backup do CPD leva o disco inteiro, e portanto leva junto tanto a mídia em
+`/srv/integrasi/media` quanto os dumps que o `backup.sh` deixa em
+`/srv/backups/sql`. É por isso que o dump fica no disco da própria VM de
+propósito, em vez de num destino externo com ferramenta própria: seria copiar
+duas vezes a mesma coisa, e cada cópia a mais é uma senha a mais para guardar.
+
+A consequência é que **se esta VM deixar de ser copiada pelo CPD, o sistema fica
+sem backup de disco e nada aqui avisa**: o `backup.sh` continua rodando às 02:05,
+o drill continua passando e a suíte de testes continua verde. Nenhum teste deste
+repositório alcança a máquina virtual. Confirme com o CPD e anote:
+
+| Pergunta ao CPD | Resposta | Conferido em |
+| --- | --- | --- |
+| Esta VM está no backup diário? | sim (informado pela coordenação) | 04/09/2026 |
+| Retenção: quantos dias dá para voltar? | a confirmar | |
+| Como se pede uma restauração, e quanto demora? | a confirmar | |
+
+As duas linhas em aberto não são burocracia. Backup que ninguém sabe pedir tem o
+mesmo valor prático de backup que não existe, e a hora de descobrir o
+procedimento não é a hora em que o disco morreu.
+
+### 3.1 A restauração de teste
 
 **Backup que nunca foi restaurado não é backup.** Rode `deploy/restaurar-teste.sh`
-depois do primeiro backup e **uma vez por semestre**. Ele depende dos dois passos
-de banco da seção 1.2 (`unaccent` no `template1` e `CREATEDB` no papel); sem eles
-ele para antes de restaurar a primeira linha. Ele restaura o último dump
-num banco descartável, conta cursos e usuários, restaura um pedaço da mídia e
-derruba tudo no final - não toca no banco de produção. Anote a data da última
-restauração de teste; se ninguém sabe qual foi, não há backup conferido.
+depois do primeiro backup e **uma vez por semestre**. Ele restaura o último dump
+num banco descartável, confere que voltou usuário, e derruba o banco no final -
+não toca no banco de produção em momento nenhum. Ele depende dos dois passos de
+banco da seção 1.2 (`unaccent` no `template1` e `CREATEDB` no papel); sem eles
+ele para antes de restaurar a primeira linha.
 
-| Instalação | Última restauração de teste conferida |
-| --- | --- |
-| 200.132.38.187 | 03/09/2026 - 1 usuário e 1 arquivo de mídia restaurados, saída 0 |
+Ele prova o `pg_dump`, e só ele. A metade do CPD se confere pedindo ao CPD uma
+restauração de teste da VM, o que é passo de operador e não tem script aqui.
 
-A metade da mídia só sabe reprovar quando não há mídia nenhuma: um `restic restore`
-que não traz arquivo é indistinguível de um repositório quebrado, e o drill recusa
-os dois. Enquanto o sistema não tiver upload de verdade, o marcador
-`media/materiais/.drill-teste.txt` existe para que essa metade tenha o que provar.
-Pode ser apagado assim que houver arquivo enviado pelas telas.
+Anote a data das duas; se ninguém sabe qual foi, não há backup conferido.
+
+| Instalação | Restauração de teste do dump | Restauração de teste da VM (CPD) |
+| --- | --- | --- |
+| 200.132.38.187 | 03/09/2026 - 1 usuário restaurado, saída 0 | nunca pedida |
 
 ---
 

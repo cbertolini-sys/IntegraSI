@@ -1,25 +1,25 @@
 #!/usr/bin/env bash
-# Backup do IntegraSI. Sao dois problemas diferentes (spec 13):
-#   - o banco e pequeno e o que salva de erro humano -> pg_dump diario, 30 dias
-#   - a midia e grande e cresce -> copia incremental deduplicada para fora do servidor
+# Backup do IntegraSI (spec 13). Sao dois problemas distintos, e este script
+# resolve UM deles:
+#
+#   - erro humano (um curso apagado, um migrate errado) -> `pg_dump` diario,
+#     30 dias de retencao. E o que este script faz.
+#   - perder a maquina -> backup diario da VM, mantido pelo CPD da UFSM. Ele
+#     leva o disco inteiro, e portanto tambem a midia em /srv/integrasi/media e
+#     os dumps que este script deixa em /srv/backups/sql.
+#
+# Por isso o dump fica no disco da propria VM DE PROPOSITO, e nao num destino
+# externo: quem o tira daqui e o backup do CPD. A consequencia esta escrita em
+# docs/operacao.md seccao 3, e vale repetir onde o operador vai ler primeiro:
+# se um dia esta VM deixar de ser copiada pelo CPD, este script passa a nao
+# proteger de perda de disco nenhuma, e o backup precisa de destino proprio.
 set -euo pipefail
 
 DESTINO_SQL=/srv/backups/sql
-MEDIA=/srv/integrasi/media
-export RESTIC_REPOSITORY="${RESTIC_REPOSITORY:?defina o repositorio restic}"
-export RESTIC_PASSWORD_FILE=/srv/integrasi/.restic-senha
-
 mkdir -p "$DESTINO_SQL"
 ARQUIVO="$DESTINO_SQL/integrasi-$(date +%Y%m%d).sql.gz"
 
 pg_dump --no-owner integrasi | gzip > "$ARQUIVO"
 find "$DESTINO_SQL" -name 'integrasi-*.sql.gz' -mtime +30 -delete
-
-restic backup "$MEDIA" "$DESTINO_SQL" --tag integrasi
-# `--tag integrasi`, a mesma da linha acima: sem ela esta politica de retencao
-# apaga TODO snapshot do repositorio, inclusive os de outra maquina que o
-# compartilhe. `docs/operacao.md` pressupoe repositorio dedicado, mas a tag ja
-# esta escrita uma linha acima e sai de graca.
-restic forget --tag integrasi --keep-daily 7 --keep-weekly 5 --keep-monthly 12 --prune
 
 echo "Backup concluido em $(date --iso-8601=seconds)"
