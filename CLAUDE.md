@@ -12,9 +12,13 @@ material, não quem assiste.
 
 - `docs/superpowers/specs/2026-08-25-integrasi-design.md` - a spec. É a autoridade;
   os planos argumentam a partir dela.
-- `docs/superpowers/plans/` - quatro planos, executados em ordem:
-  1. fundação e cadastros (**concluído**), 2. produção de cursos,
-  3. publicação, catálogo e demanda, 4. mídia, versões e operação.
+- `docs/superpowers/plans/` - sete planos, todos executados:
+  1. fundação e cadastros, 2. produção de cursos, 3. publicação, catálogo e
+  demanda, 4. mídia, versões e operação, 5. papéis, alocação de aluno e primeiro
+  acesso, 6. proposta enxuta, equipe mista e ficha do curso, 7. a BNCC por etapa
+  na ficha. Os quatro primeiros nasceram juntos; os três últimos vieram de
+  problemas achados usando o sistema, e é por isso que a numeração deles não segue
+  a data do arquivo.
 - `docs/onde-mora-a-validacao.md` - qual mecanismo de validação usar para quê.
   **Leia antes de acrescentar validação a qualquer modelo.**
 - `docs/dados/README.md` - como carregar a BNCC.
@@ -61,11 +65,28 @@ Vale para tudo que altera o servidor, não só para o `git pull`: `migrate`, SQL
 Django monolítico com templates no servidor, HTMX nas interações vivas. Apps sob
 `apps/`, cada um com `name = "apps.<app>"` em `apps.py`.
 
-`contas` (usuários e papéis) · `referenciais`
-(referenciais pedagógicos genéricos) · `cursos` (núcleo; hoje só `Tema`)
+São oito, em camadas. **A fonte desta lista é `tests/test_arquitetura.py`**, que
+declara quem pode conhecer quem e reprova se alguém extrapolar. Se a tabela abaixo
+divergir dele, ele é que está certo.
 
-Dependência é de mão única. A partir do Plano 3: `turmas` lê `cursos`; `cursos` e
-`catalogo` **não** conhecem `turmas`.
+| App | O que é | Pode conhecer |
+| --- | --- | --- |
+| `contas` | usuários, papéis, convite de primeiro acesso | `notificacoes` |
+| `referenciais` | referenciais pedagógicos genéricos (a BNCC é um deles) | ninguém |
+| `notificacoes` | fila de e-mail; folha, por isso todos a usam | ninguém |
+| `cursos` | o núcleo: `Curso`, `Entregavel`, `Secao`, `Anexo`, `Arquivo`, `MembroEquipe`, `Revisao`, `Tema`, `LogTransicaoCurso`, `UploadEmAndamento` | `contas`, `referenciais`, `notificacoes` |
+| `catalogo` | vitrine pública, página do curso, solicitação da comunidade | `contas`, `cursos`, `referenciais`, `notificacoes` |
+| `turmas` | resposta às solicitações recebidas | `contas`, `cursos`, `catalogo`, `notificacoes` |
+| `painel` | a tela de entrada; existe justamente para poder olhar todos | todos os acima |
+
+Dependência é de mão única: `turmas` lê `cursos`, e `cursos` e `catalogo` **não**
+conhecem `turmas`.
+
+**Importe adiado dentro de função não é sinal de ciclo.** Em `cursos.services` há
+dois, e o motivo real é outro: um teste troca `contas.services.convidar` por
+monkeypatch, e importar o nome no topo o congelaria antes da troca. O mesmo
+arquivo importa `contas.services` no topo para `emails_da_coordenacao`. O
+comentário no código diz qual é qual.
 
 **Fronteira de módulo (spec §1.1):** este é o módulo de *produção*. Frequência,
 avaliação e certificado pertencem a um módulo de *execução* futuro. Qualquer campo
