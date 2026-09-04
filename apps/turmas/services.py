@@ -1,7 +1,7 @@
 from django.core.exceptions import ValidationError
 from django.db import transaction
 
-from apps.catalogo.models import Solicitacao
+from apps.catalogo.models import Solicitacao, SugestaoDeCurso
 from apps.cursos import permissions
 from apps.notificacoes.services import enfileirar
 from apps.turmas.models import Turma
@@ -57,3 +57,56 @@ def recusar_solicitacao(solicitacao, por, resposta):
         corpo=resposta,
     )
     return solicitacao
+
+
+def _responder_sugestao(sugestao, por, resposta, status, evento, assunto):
+    """O tronco comum das duas decisoes sobre uma sugestao.
+
+    Nao ha turma a criar, ao contrario de `aceitar_solicitacao`: aceitar uma
+    sugestao diz "vamos produzir isto", e a producao comeca depois, quando um
+    professor abre a proposta. Por isso os dois desfechos sao a mesma operacao
+    com outro rotulo, e por isso a resposta escrita e obrigatoria nos DOIS: sem
+    turma e sem curso, ela e a unica coisa que a pessoa recebe.
+    """
+    permissions.garante(
+        permissions.pode_publicar(por), "Somente a coordenação responde sugestões."
+    )
+    if sugestao.status in (SugestaoDeCurso.ACEITA, SugestaoDeCurso.RECUSADA):
+        raise ValidationError("Esta sugestão já foi respondida.")
+    if not (resposta or "").strip():
+        raise ValidationError("Escreva a resposta a quem sugeriu.")
+
+    sugestao.status = status
+    sugestao.resposta = resposta
+    sugestao.save(update_fields=["status", "resposta"])
+    enfileirar(
+        evento=evento,
+        destinatarios=[sugestao.email],
+        assunto=assunto,
+        corpo=resposta,
+    )
+    return sugestao
+
+
+@transaction.atomic
+def aceitar_sugestao(sugestao, por, resposta):
+    return _responder_sugestao(
+        sugestao,
+        por,
+        resposta,
+        status=SugestaoDeCurso.ACEITA,
+        evento="SUGESTAO_ACEITA",
+        assunto="Sua sugestão de curso foi aceita",
+    )
+
+
+@transaction.atomic
+def recusar_sugestao(sugestao, por, resposta):
+    return _responder_sugestao(
+        sugestao,
+        por,
+        resposta,
+        status=SugestaoDeCurso.RECUSADA,
+        evento="SUGESTAO_RECUSADA",
+        assunto="Sobre a sua sugestão de curso",
+    )

@@ -26,7 +26,12 @@ def cartoes(html, depois_de=None):
 
 
 DO_PROFESSOR = ["Cursos publicados", "Cursos em desenvolvimento", "Entregáveis para revisar"]
-DA_COORDENACAO = ["Aguardando aprovação", "Solicitações a responder", "Cursos no catálogo"]
+DA_COORDENACAO = [
+    "Aguardando aprovação",
+    "Solicitações a responder",
+    "Sugestões a responder",
+    "Cursos no catálogo",
+]
 
 
 @pytest.mark.django_db

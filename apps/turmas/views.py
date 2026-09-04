@@ -2,8 +2,9 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_http_methods
 
-from apps.catalogo.models import Solicitacao
+from apps.catalogo.models import Solicitacao, SugestaoDeCurso
 from apps.cursos import permissions
 from apps.turmas import services
 from apps.turmas.forms import TurmaForm
@@ -17,6 +18,7 @@ ACEITAR = "ACEITAR"
 RECUSAR = "RECUSAR"
 
 PENDENTES = [Solicitacao.RECEBIDA, Solicitacao.EM_ANALISE]
+PENDENTES_SUGESTAO = [SugestaoDeCurso.RECEBIDA, SugestaoDeCurso.EM_ANALISE]
 
 
 @login_required
@@ -101,3 +103,57 @@ def minhas_turmas(request):
     return render(
         request, "turmas/minhas_turmas.html", {"turmas": pagina, "pagina": pagina}
     )
+
+
+@login_required
+def sugestoes(request):
+    """As demandas por cursos que ainda nao existem.
+
+    Tela separada da de solicitacoes de proposito: sao decisoes diferentes.
+    Responder uma solicitacao e agendar; responder uma sugestao e decidir se a
+    universidade vai produzir um curso novo. Juntar as duas obrigaria quem
+    responde a separar na cabeca o que o sistema pode separar na tela.
+    """
+    permissions.garante(permissions.pode_publicar(request.user), "Área da coordenação.")
+    pendentes = SugestaoDeCurso.objects.filter(status__in=PENDENTES_SUGESTAO)
+    respondidas = SugestaoDeCurso.objects.exclude(status__in=PENDENTES_SUGESTAO)
+    pagina = paginar(request, respondidas)
+    return render(
+        request,
+        "turmas/sugestoes.html",
+        {"pendentes": pendentes, "respondidas": pagina, "pagina": pagina},
+    )
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def responder_sugestao(request, pk):
+    permissions.garante(permissions.pode_publicar(request.user), "Área da coordenação.")
+    sugestao = get_object_or_404(SugestaoDeCurso, pk=pk)
+
+    if request.method == "POST":
+        # Igualdade explicita nos dois ramos, sem pega-tudo: uma `decisao`
+        # inesperada nao pode cair em nenhum dos dois. O ramo pega-tudo ja mordeu
+        # este projeto tres vezes (decidir_curso, o RECUSAR das solicitacoes e a
+        # alocacao de aluno na tela de equipe).
+        decisao = request.POST.get("decisao")
+        resposta = request.POST.get("resposta", "")
+        servico = None
+        if decisao == "ACEITAR":
+            servico = services.aceitar_sugestao
+        elif decisao == "RECUSAR":
+            servico = services.recusar_sugestao
+
+        if servico is None:
+            messages.error(request, "Ação não reconhecida.")
+        else:
+            try:
+                servico(sugestao, por=request.user, resposta=resposta)
+            except ValidationError as erro:
+                for mensagem in erro.messages:
+                    messages.error(request, mensagem)
+            else:
+                messages.success(request, "Sugestão respondida. Quem sugeriu foi avisado por e-mail.")
+                return redirect("sugestoes")
+
+    return render(request, "turmas/responder_sugestao.html", {"sugestao": sugestao})

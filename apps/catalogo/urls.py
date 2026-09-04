@@ -8,4 +8,6 @@ urlpatterns = [
     path("cursos/<int:pk>/publico/", views.catalogo_curso, name="catalogo_curso"),
     path("cursos/<int:pk>/previa/", views.previa_do_curso, name="previa_do_curso"),
     path("cursos/<int:pk>/solicitar/", views.solicitar, name="solicitar"),
+    # Sem `pk` de proposito: a sugestao e por um curso que ainda nao existe.
+    path("sugerir/", views.sugerir, name="sugerir"),
 ]

@@ -208,3 +208,25 @@ def test_a_pagina_credita_a_equipe(client):
     conteudo = client.get(reverse("sobre")).content.decode()
     for nome in ("Cristiano Bertolini", "Evandro Preuss"):
         assert nome in conteudo, nome
+
+
+@pytest.mark.django_db
+def test_o_ramo_de_quem_nao_encontra_curso_tem_saida(client):
+    """O laço que a auditoria do fluxograma achou.
+
+    O nó "Encontrou um curso adequado?" oferecia, no ramo Não, apenas "ajusta os
+    filtros e procura de novo · volta ao passo 2". Quem procurava um curso que não
+    existe girava nos filtros até desistir, e a universidade nunca ficava sabendo
+    que a demanda existiu.
+
+    A afirmação é sobre o RAMO, e não sobre a página conter a palavra "sugerir" em
+    algum lugar: o link do rodapé faria um teste frouxo passar com o fluxograma
+    inalterado, que é justamente o defeito que este teste existe para impedir.
+    """
+    html = client.get(reverse("sobre")).content.decode()
+    inicio = html.index("Encontrou um curso adequado?")
+    fim = html.index("</li>", inicio)
+    ramo_nao = html[inicio:fim]
+
+    assert "Sugere" in ramo_nao or "sugere" in ramo_nao, ramo_nao
+    assert "sugerir" in ramo_nao or "Sugestão" in ramo_nao, ramo_nao

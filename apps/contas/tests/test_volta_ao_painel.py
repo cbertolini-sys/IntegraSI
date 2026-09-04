@@ -19,6 +19,8 @@ DESTINOS = [
     "fila_revisao",
     "fila_coordenacao",
     "solicitacoes",
+    # Demanda por curso que ainda nao existe, ao lado das solicitacoes.
+    "sugestoes",
     "pessoas",
     # Virou destino do painel quando os cartoes da coordenacao ganharam secao
     # propria: o cartao "Cursos no catálogo" leva ate la.

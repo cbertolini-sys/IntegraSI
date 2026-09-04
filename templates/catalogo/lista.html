@@ -160,9 +160,19 @@
             </li>
           {% endwith %}
         {% empty %}
+          {% comment %}
+            Quem procurou e nao encontrou e exatamente quem tem uma demanda a
+            contar. Ate aqui esta tela so oferecia procurar de novo, e o
+            fluxograma da pagina Sobre mostrava esse laco sem saida no ramo "Nao"
+            do passo 3.
+          {% endcomment %}
           <li class="vazio">
             <p>Nenhum curso encontrado com esses filtros.</p>
             <p><a class="botao botao-linha" href="{% url 'catalogo' %}">Ver o catálogo inteiro</a></p>
+            <p class="detalhe">
+              O curso que a sua comunidade precisa ainda não existe?
+              <a href="{% url 'sugerir' %}">Sugira um curso</a>.
+            </p>
           </li>
         {% endfor %}
       </ul>

@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block titulo %} - Sugestões de curso{% endblock %}
+
+{% block conteudo %}
+  <div class="faixa">
+    <div class="cabecalho-pagina">
+      <div>
+        <h1>Sugestões de curso</h1>
+        <p class="abertura">
+          Demandas da comunidade por cursos que ainda não existem. Aceitar uma
+          sugestão não cria nada sozinha: ela vira curso quando um professor abre
+          a proposta.
+        </p>
+      </div>
+      <div class="acoes">
+        <a class="botao botao-linha" href="{% url 'painel' %}">&larr; Voltar ao painel</a>
+      </div>
+    </div>
+
+    <h2>A responder</h2>
+    <ul class="registros">
+      {% for sugestao in pendentes %}
+        <li class="registro">
+          <div>
+            <h3><a href="{% url 'responder_sugestao' sugestao.pk %}">{{ sugestao.instituicao }}</a></h3>
+            <p class="detalhe">
+              <span>{{ sugestao.nome }}</span>
+              <span class="sep">&middot;</span>
+              <span>{{ sugestao.publico_alvo }}</span>
+              <span class="sep">&middot;</span>
+              <span>Laboratório: {{ sugestao.get_tem_laboratorio_display }}</span>
+            </p>
+          </div>
+          <span class="estado {{ sugestao.situacao.tom }}">{{ sugestao.situacao.rotulo }}</span>
+        </li>
+      {% empty %}
+        <li class="vazio"><p>Nenhuma sugestão esperando resposta.</p></li>
+      {% endfor %}
+    </ul>
+
+    <h2>Já respondidas</h2>
+    <ul class="registros">
+      {% for sugestao in respondidas %}
+        <li class="registro">
+          <div>
+            <h3><a href="{% url 'responder_sugestao' sugestao.pk %}">{{ sugestao.instituicao }}</a></h3>
+            <p class="detalhe">
+              <span>{{ sugestao.nome }}</span>
+              <span class="sep">&middot;</span>
+              <span>{{ sugestao.publico_alvo }}</span>
+            </p>
+          </div>
+          <span class="estado {{ sugestao.situacao.tom }}">{{ sugestao.situacao.rotulo }}</span>
+        </li>
+      {% empty %}
+        <li class="vazio"><p>Nenhuma sugestão respondida ainda.</p></li>
+      {% endfor %}
+    </ul>
+    {% include "_paginacao.html" %}
+  </div>
+{% endblock %}

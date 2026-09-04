@@ -81,6 +81,14 @@
             instituição, número de participantes e período pretendido.
           </p>
           <p>
+            <strong>E se o curso não existir?</strong> Aí ela sugere um: descreve a
+            demanda, quem participaria e se o grupo tem laboratório de informática.
+            A sugestão vai para a coordenação, que responde por e-mail. Sugestão
+            aceita não vira curso sozinha: ela entra na fila para um professor
+            abrir a proposta, e daí em diante segue o mesmo caminho de qualquer
+            outro curso do catálogo.
+          </p>
+          <p>
             O pedido chega ao professor responsável e à coordenação por e-mail. Daí
             em diante o contato é por e-mail: <strong>quem solicita não ganha acesso
             ao sistema</strong> e não acompanha o andamento por dentro.
@@ -104,7 +112,9 @@
               <h4>Encontrou um curso adequado?</h4>
               <div class="ramos">
                 <div class="ramo nao"><span class="ramo-rotulo">Não</span>
-                  <p>Ajusta os filtros e procura de novo.</p>
+                  <p>Ajusta os filtros e procura de novo, ou
+                     <a href="{% url 'sugerir' %}">sugere um curso</a> que ainda
+                     não existe.</p>
                   <span class="volta">volta ao passo 2</span></div>
                 <div class="ramo sim"><span class="ramo-rotulo">Sim</span>
                   <p>Abre a página do curso.</p></div>

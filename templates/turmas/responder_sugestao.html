@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block titulo %} - Sugestão de {{ sugestao.instituicao }}{% endblock %}
+
+{% block conteudo %}
+  <div class="faixa pagina-estreita">
+    <h1>{{ sugestao.instituicao }}</h1>
+    <p class="sub">{{ sugestao.nome }} &middot; {{ sugestao.criado_em|date:"d/m/Y" }}</p>
+
+    <div class="cartao">
+      <h2>A demanda</h2>
+      <p class="detalhe">
+        <span>Público-alvo: {{ sugestao.publico_alvo }}</span>
+        <span class="sep">&middot;</span>
+        <span>Laboratório de informática: {{ sugestao.get_tem_laboratorio_display }}</span>
+      </p>
+      <p>{{ sugestao.demanda|linebreaksbr }}</p>
+      <p class="detalhe">
+        <span>Contato: {{ sugestao.email }}</span>
+        {% if sugestao.telefone %}
+          <span class="sep">&middot;</span><span>{{ sugestao.telefone }}</span>
+        {% endif %}
+      </p>
+    </div>
+
+    {% if sugestao.resposta %}
+      <div class="cartao">
+        <h2>Resposta enviada</h2>
+        <span class="estado {{ sugestao.situacao.tom }}">{{ sugestao.situacao.rotulo }}</span>
+        <p>{{ sugestao.resposta|linebreaksbr }}</p>
+      </div>
+    {% else %}
+      <div class="cartao">
+        <h2>Sua decisão</h2>
+        <p class="detalhe">
+          O texto abaixo é o que chega por e-mail a quem sugeriu, nos dois casos.
+          É a única resposta que essa pessoa recebe.
+        </p>
+        <form method="post">
+          {% csrf_token %}
+          <p>
+            <span class="rotulo-campo">
+              <label for="resposta">Resposta a quem sugeriu</label>
+              <button type="button" class="ajuda-campo"
+                data-ajuda="Vai por e-mail, e é a única resposta que essa pessoa recebe. Aceitando, diga o que acontece agora e em quanto tempo. Recusando, diga por quê e sugira uma alternativa se houver."
+                tabindex="-1" aria-label="O que escrever na resposta">?</button>
+            </span>
+            <textarea id="resposta" name="resposta" rows="5" required></textarea>
+          </p>
+          <button type="submit" name="decisao" value="ACEITAR" class="botao">Aceitar a sugestão</button>
+          <button type="submit" name="decisao" value="RECUSAR" class="botao botao-linha">Recusar</button>
+        </form>
+      </div>
+    {% endif %}
+
+    <p><a class="botao botao-linha" href="{% url 'sugestoes' %}">&larr; Voltar às sugestões</a></p>
+  </div>
+{% endblock %}

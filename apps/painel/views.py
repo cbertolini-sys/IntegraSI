@@ -12,7 +12,7 @@ import datetime
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 
-from apps.catalogo.models import Solicitacao
+from apps.catalogo.models import Solicitacao, SugestaoDeCurso
 from apps.cursos.choices import STATUS_EM_DESENVOLVIMENTO, StatusCurso
 from apps.cursos.models import Curso, Entregavel
 
@@ -89,6 +89,16 @@ def _coordenacao(usuario):
                 status__in=[Solicitacao.RECEBIDA, Solicitacao.EM_ANALISE]
             ).count(),
             "url": "solicitacoes",
+        },
+        {
+            # Ao lado das solicitacoes, e nao no lugar delas: sao decisoes
+            # diferentes (agendar um curso pronto contra decidir produzir um
+            # curso novo), e quem coordena precisa ver as duas filas separadas.
+            "rotulo": "Sugestões a responder",
+            "valor": SugestaoDeCurso.objects.filter(
+                status__in=[SugestaoDeCurso.RECEBIDA, SugestaoDeCurso.EM_ANALISE]
+            ).count(),
+            "url": "sugestoes",
         },
         {
             "rotulo": "Cursos no catálogo",

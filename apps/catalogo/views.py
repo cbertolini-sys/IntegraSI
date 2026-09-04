@@ -8,10 +8,10 @@ from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
-from apps.catalogo.forms import SolicitacaoForm
+from apps.catalogo.forms import SolicitacaoForm, SugestaoForm
 from apps.contas.paginacao import paginar
 from apps.contas.rede import ip_da_requisicao
-from apps.catalogo.models import Solicitacao
+from apps.catalogo.models import Solicitacao, SugestaoDeCurso
 from apps.cursos.busca import buscar
 from apps.cursos.choices import Formato, StatusCurso, TipoPublico
 from apps.cursos.models import Curso, Tema
@@ -205,3 +205,62 @@ def solicitar(request, pk):
         ),
     )
     return render(request, "catalogo/solicitacao_recebida.html", {"curso": curso})
+
+
+@require_http_methods(["GET", "POST"])
+def sugerir(request):
+    """Demanda por um curso que ainda nao existe.
+
+    Sem `pk`: nao ha curso a que se referir, e e justamente esse o ponto. Espelha
+    `solicitar` nas defesas (honeypot, limite por IP, recusa silenciosa a robo) e
+    diverge no destinatario do aviso - so a coordenacao, porque sem curso nao ha
+    professor responsavel a quem dar copia.
+
+    O limite por IP conta as sugestoes, e nao a soma com as solicitacoes: sao
+    formularios diferentes, e somar faria quem pediu cinco cursos ficar impedido
+    de sugerir um, o que a pessoa nao teria como entender.
+    """
+    if request.method != "POST":
+        return render(request, "catalogo/sugerir.html", {"form": SugestaoForm()})
+
+    form = SugestaoForm(request.POST)
+    if form.e_robo():
+        # Descarte silencioso, como em `solicitar`: responder com erro so ensina o
+        # robo a acertar da proxima vez (spec 10).
+        return render(request, "catalogo/sugestao_recebida.html", {})
+
+    ip = ip_da_requisicao(request)
+    uma_hora_atras = timezone.now() - datetime.timedelta(hours=1)
+    recentes = SugestaoDeCurso.objects.filter(ip_origem=ip, criado_em__gte=uma_hora_atras)
+    if recentes.count() >= LIMITE_POR_IP_POR_HORA:
+        return render(
+            request,
+            "catalogo/sugerir.html",
+            {
+                "form": form,
+                "erro": "Muitas sugestões deste endereço. Tente novamente mais tarde.",
+            },
+        )
+
+    if not form.is_valid():
+        return render(request, "catalogo/sugerir.html", {"form": form})
+
+    sugestao = form.save(commit=False)
+    sugestao.ip_origem = ip
+    sugestao.save()
+
+    enfileirar(
+        evento="SUGESTAO_RECEBIDA",
+        destinatarios=emails_da_coordenacao(),
+        assunto=f"Nova sugestão de curso: {sugestao.instituicao}",
+        corpo=(
+            f"{sugestao.nome}, de {sugestao.instituicao}, sugeriu um curso novo.\n\n"
+            f"Público-alvo: {sugestao.publico_alvo}\n"
+            f"Laboratório de informática: {sugestao.get_tem_laboratorio_display()}\n"
+            f"Contato: {sugestao.email}"
+            + (f" · {sugestao.telefone}" if sugestao.telefone else "")
+            + f"\n\nA demanda, nas palavras de quem sugeriu:\n{sugestao.demanda}"
+            "\n\nResponda pela tela de sugestões, na área da coordenação."
+        ),
+    )
+    return render(request, "catalogo/sugestao_recebida.html", {})
