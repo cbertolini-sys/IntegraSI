@@ -246,7 +246,12 @@ def _transicionar(curso, para, por, observacao=""):
     de = curso.status
     curso.status = para
     campos = ["status", "atualizado_em"]
-    if para == StatusCurso.PUBLICADO:
+    # `publicado_em` e a data de LANCAMENTO, e a pagina publica a mostra. Por isso
+    # so a primeira publicacao a grava: um curso despublicado para ajuste e
+    # reposto no ar nao virou curso novo, e regravar aqui o faria alegar um
+    # lancamento que nao houve. E tambem por que nao existe campo separado de
+    # "data de lancamento": seria segunda fonte de verdade para a mesma pergunta.
+    if para == StatusCurso.PUBLICADO and curso.publicado_em is None:
         curso.publicado_em = timezone.now()
         campos.append("publicado_em")
     curso.save(update_fields=campos)
