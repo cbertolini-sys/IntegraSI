@@ -73,11 +73,25 @@ def test_o_atalho_fica_escondido_ate_receber_foco():
     """Se aparecesse sempre, seria um link estranho no topo de toda tela para
     quem usa mouse. A regra que o revela precisa ser a do foco: um `display:
     none` o esconderia tambem do teclado, que e justamente quem precisa dele."""
-    assert ".pular-para-conteudo {" in CSS
-    assert ".pular-para-conteudo:focus" in CSS
-    trecho = CSS[CSS.index(".pular-para-conteudo {") : CSS.index(".pular-para-conteudo:focus")]
-    assert "display: none" not in trecho, (
-        "escondido com display:none o atalho some também para o teclado"
+    assert ".pular-para-conteudo {" in CSS, "o atalho não tem estilo nenhum"
+
+    # A chave faz parte do alvo de propósito: sem ela, `:focus-within` satisfaz a
+    # busca por `:focus` e o teste fica verde com uma regra que nunca dispara
+    # (o atalho não tem filho nenhum para receber foco). Encontrado quebrando
+    # esta guarda: era exatamente a mutação que passava.
+    assert ".pular-para-conteudo:focus {" in CSS, "o atalho não volta à tela ao receber foco"
+
+    inicio = CSS.index(".pular-para-conteudo {")
+    repouso = CSS[inicio : CSS.index("}", inicio)]
+    assert "display: none" not in repouso and "visibility: hidden" not in repouso, (
+        "escondido assim, o atalho sai também da ordem de tabulação, que é quem "
+        "precisa dele"
+    )
+
+    inicio_foco = CSS.index(".pular-para-conteudo:focus {")
+    ao_focar = CSS[inicio_foco : CSS.index("}", inicio_foco)]
+    assert "left: 0" in ao_focar, (
+        "a regra de foco existe mas não traz o atalho de volta à tela"
     )
 
 
