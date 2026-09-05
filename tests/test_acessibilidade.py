@@ -109,12 +109,16 @@ def test_as_mensagens_sao_anunciadas(pagina):
 
 
 def test_a_regiao_de_mensagens_existe_mesmo_vazia(pagina):
-    """Este e o ponto do ajuste, e nao um detalhe.
+    """Guarda sobre o teste acima, e nao sobre o `base.html`.
 
-    Uma regiao viva so anuncia o que ENTRA nela depois de ela existir: criada
-    junto com o proprio conteudo, como acontecia com o `{% if messages %}` em
-    volta da lista, nao dispara anuncio nenhum. O catalogo publico nunca tem
-    mensagem, entao esta pagina prova o caso vazio.
+    Devolver o `{% if messages %}` para o lugar reprova os DOIS testes, entao
+    quem prende a regra sozinho e o de cima. O que este aqui prende e que a
+    pagina usada como cenario esta mesmo sem mensagem nenhuma: e o caso vazio
+    que importa, porque uma regiao viva so anuncia o que ENTRA nela depois de
+    ela existir, e criada junto com o proprio conteudo nao dispara nada.
+
+    Sem esta verificacao, o dia em que o catalogo passar a enfileirar uma
+    mensagem qualquer o teste de cima continuaria verde medindo outra coisa.
     """
     inicio = pagina.index('class="mensagens"')
     regiao = pagina[inicio : pagina.index("</ul>", inicio)]
