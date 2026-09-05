@@ -280,13 +280,42 @@ def test_o_desempate_e_estavel(dois_cursos):
 
 
 @pytest.mark.django_db
-def test_curso_sem_tema_nao_some_da_busca(curso_robotica):
+def test_curso_sem_tema_nao_fura_a_fila(dados_curso, professor):
     """`vetor_temas` e nulo enquanto ninguem definir tema, e a relevancia soma os
-    dois vetores. Sem tratar o nulo, a soma vira NULL e o curso ou desaparece da
-    ordenacao ou vai para o fim: um curso deixaria de ser encontrado por ter um
-    campo opcional vazio."""
-    assert curso_robotica.vetor_temas is None
+    dois vetores: sem `Coalesce`, a soma vira NULL.
 
-    achados = list(busca.buscar(Curso.objects.all(), "robotica"))
+    A direcao importa, e a primeira versao deste teste errou. `ORDER BY ... DESC`
+    no PostgreSQL poe NULL PRIMEIRO, e nao por ultimo (conferido no banco). Entao
+    sem o `Coalesce` o curso sem tema nao "vai para o fim": ele PULA PARA O TOPO,
+    na frente de resultados de fato mais pertinentes. E o desfecho pior dos dois.
 
-    assert [c.pk for c in achados] == [curso_robotica.pk]
+    O cenario precisa ser este e nao outro: o curso sem tema tem que ser o MENOS
+    relevante. Com ele sendo o mais relevante, ele viria em primeiro pelos dois
+    caminhos e o teste passaria verde sem `Coalesce` nenhum - foi assim que a
+    primeira versao passou, e so a campanha de delecao mostrou.
+    """
+    from apps.cursos.models import Tema
+
+    fraco = services.criar_curso(**dict(
+        dados_curso,
+        titulo="Robótica com sucata",
+        resumo="Oficina de robótica. Cita segurança do laboratório de passagem.",
+        palavras_chave="arduino, motores, reciclagem, oficina, sucata",
+    ))
+    forte = services.criar_curso(**dict(
+        dados_curso,
+        titulo="Segurança digital",
+        resumo="Segurança na internet: senha segura e segurança de dados.",
+        palavras_chave="segurança, senha, golpe, privacidade, internet",
+    ))
+    tema = Tema.objects.create(nome="Segurança")
+    services.definir_temas(forte, [tema], por=professor)
+    forte.refresh_from_db()
+
+    assert fraco.vetor_temas is None, "o cenário precisa do curso fraco SEM tema"
+
+    achados = list(busca.buscar(Curso.objects.all(), "segurança"))
+
+    assert [c.pk for c in achados] == [forte.pk, fraco.pk], (
+        [(c.titulo, c.vetor_temas) for c in achados]
+    )
