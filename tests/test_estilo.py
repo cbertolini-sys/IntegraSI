@@ -425,3 +425,35 @@ def test_a_varredura_de_as_p_reconheceria_um_culpado(tmp_path):
     assert re.search(r"\{\{\s*\w+\.as_p\s*\}\}", "{{ form.as_p }}")
     assert re.search(r"\{\{\s*\w+\.as_p\s*\}\}", "{{ form_senha.as_p }}")
     assert not re.search(r"\{\{\s*\w+\.as_p\s*\}\}", "{% include 'cursos/_campo.html' %}")
+
+
+# --- o cabecalho de pagina tem uma ordem, e ela nao e opcional ----------------
+
+
+def test_o_cabecalho_de_pagina_contem_a_faixa_e_nao_o_contrario():
+    """`.cabecalho-pagina` por FORA, `.faixa` por dentro.
+
+    A regra que poe o botao a direita do titulo e `.cabecalho-pagina .faixa`, com
+    `display: flex` e `justify-content: space-between`. Escrito ao contrario, o
+    seletor nunca casa: o `.acoes` continua no lugar certo do HTML, o teste que
+    procurava o botao dentro dele passa, e na tela o botao cai embaixo do titulo,
+    a esquerda.
+
+    Quatro telas nasceram invertidas antes de alguem olhar. Nenhum teste de
+    conteudo pega isso, porque nao ha nada errado com o conteudo: e a ORDEM do
+    aninhamento, e so um teste de forma alcanca.
+    """
+    invertidos = []
+    for caminho in sorted(RAIZ.glob("templates/**/*.html")):
+        texto = caminho.read_text(encoding="utf-8")
+        for m in re.finditer(r'class="cabecalho-pagina"', texto):
+            depois = texto[m.end() : m.end() + 220]
+            # A `.faixa` tem que ser o proximo elemento aberto, e nao um ancestral.
+            if not re.search(r'<div class="faixa\b', depois):
+                invertidos.append(str(caminho.relative_to(RAIZ)))
+                break
+
+    assert invertidos == [], (
+        "`.cabecalho-pagina` sem `.faixa` dentro (o botão de ação vai cair "
+        "embaixo do título em vez de à direita):\n" + "\n".join(invertidos)
+    )

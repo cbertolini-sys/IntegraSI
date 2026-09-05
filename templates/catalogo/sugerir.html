@@ -2,8 +2,8 @@
 {% block titulo %} - Sugerir um curso{% endblock %}
 
 {% block conteudo %}
-  <div class="faixa pagina-estreita">
-    <div class="cabecalho-pagina">
+  <div class="cabecalho-pagina">
+    <div class="faixa pagina-estreita">
       <div>
         <h1>Sugerir um curso</h1>
         <p class="abertura">
@@ -24,6 +24,9 @@
         <a class="botao botao-linha" href="{% url 'catalogo' %}">&larr; Voltar ao catálogo</a>
       </div>
     </div>
+  </div>
+
+  <div class="faixa pagina-estreita corpo-trabalho">
 
     <div class="cartao cartao-acao">
       {% if erro %}<p class="erro-acesso">{{ erro }}</p>{% endif %}

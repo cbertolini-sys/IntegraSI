@@ -2,8 +2,8 @@
 {% block titulo %} - Solicitar {{ curso.titulo }}{% endblock %}
 
 {% block conteudo %}
-  <div class="faixa pagina-estreita">
-    <div class="cabecalho-pagina">
+  <div class="cabecalho-pagina">
+    <div class="faixa pagina-estreita">
       <div>
         <h1>Solicitar o curso {{ curso.titulo }}</h1>
         <p class="abertura">
@@ -19,6 +19,9 @@
         <a class="botao botao-linha" href="{% url 'catalogo_curso' curso.pk %}">&larr; Voltar ao curso</a>
       </div>
     </div>
+  </div>
+
+  <div class="faixa pagina-estreita corpo-trabalho">
     <div class="cartao">
       {% if erro %}<p class="erro-acesso">{{ erro }}</p>{% endif %}
       <form method="post" class="form-cadastro">
