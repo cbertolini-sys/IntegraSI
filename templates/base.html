@@ -32,6 +32,17 @@
   <script src="{% estatico 'js/menu.js' %}" defer></script>
 </head>
 <body>
+  {% comment %}
+    Primeiro elemento focável da página, de propósito, e escondido fora da tela
+    até receber foco: quem usa mouse nunca o vê, quem usa teclado o encontra na
+    primeira tabulação e pula o cabeçalho inteiro.
+
+    O `tabindex="-1"` no <main> não é enfeite: Safari e Chrome rolam até a
+    âncora mas NÃO movem o foco quando o alvo não é focável, e a pessoa
+    continuaria tabulando dentro do menu que acabou de pular.
+  {% endcomment %}
+  <a class="pular-para-conteudo" href="#conteudo">Pular para o conteúdo</a>
+
   <header class="barra">
     <div class="faixa">
       <div class="marcas-barra">
@@ -119,15 +130,25 @@
 
   {% block topo %}{% endblock %}
 
-  {% if messages %}
-    <ul class="mensagens">
-      {% for message in messages %}
-        <li>{{ message }}</li>
-      {% endfor %}
-    </ul>
-  {% endif %}
+  {% comment %}
+    Fora do `{% if messages %}` de propósito, e este é o ponto do ajuste.
 
-  <main>
+    Uma região viva só anuncia o que ENTRA nela depois de ela existir: criada
+    junto com o próprio conteúdo, ela não dispara anúncio nenhum. Com o `if` em
+    volta do <ul>, uma mensagem inserida por HTMX chegava calada para quem usa
+    leitor de tela. O CSS esconde a lista vazia com `.mensagens:empty`.
+
+    `role="status"` e não `role="alert"`: estas mensagens confirmam algo que a
+    própria pessoa acabou de fazer, e não são emergência que justifique
+    interromper a leitura em curso.
+  {% endcomment %}
+  <ul class="mensagens" role="status" aria-label="Mensagens do sistema">
+    {% for message in messages %}
+      <li>{{ message }}</li>
+    {% endfor %}
+  </ul>
+
+  <main id="conteudo" tabindex="-1">
     {% block conteudo %}{% endblock %}
   </main>
 
