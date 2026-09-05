@@ -12,7 +12,7 @@ As regras que este arquivo prende:
 """
 
 import pytest
-from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.exceptions import PermissionDenied
 from django.urls import reverse
 
 from apps.cursos import busca, permissions, services

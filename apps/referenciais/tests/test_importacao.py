@@ -2,7 +2,7 @@ import pytest
 from django.core.management import call_command
 from django.core.management.base import CommandError
 
-from apps.referenciais.models import Categoria, Competencia, Referencial
+from apps.referenciais.models import Competencia, Referencial
 
 CSV = """codigo,descricao,etapa,categoria
 EF05CO01,Decompor um problema em partes menores,EF05,Pensamento Computacional

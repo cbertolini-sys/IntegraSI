@@ -10,7 +10,6 @@ import importlib
 import re
 from pathlib import Path
 
-import pytest
 from django import forms
 from django.apps import apps as registro_de_apps
 from django.conf import settings

@@ -16,7 +16,6 @@ from apps.cursos.forms import (
     PropostaForm,
 )
 from apps.cursos.models import Curso, Entregavel, MembroEquipe
-from apps.referenciais.models import Referencial
 
 
 @login_required

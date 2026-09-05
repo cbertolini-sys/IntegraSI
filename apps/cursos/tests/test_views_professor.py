@@ -3,7 +3,7 @@ from django.core.exceptions import ValidationError
 from django.urls import reverse
 
 from apps.cursos import services
-from apps.cursos.choices import StatusEntregavel, TipoEntregavel, TipoMidia, TipoPublico
+from apps.cursos.choices import StatusEntregavel, TipoEntregavel, TipoMidia
 from apps.cursos.forms import PropostaForm
 from apps.cursos.models import Anexo, Curso, Tema
 

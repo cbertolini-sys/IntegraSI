@@ -81,8 +81,7 @@ def test_quem_so_revisou_tambem_e_desativado(dados_curso, professor, aluno, coor
     relacoes do modelo, o sistema tentaria apagar e estouraria ProtectedError por
     causa de `Revisao.revisor`.
     """
-    from apps.cursos.choices import StatusEntregavel
-    from apps.cursos.models import Entregavel, Revisao
+    from apps.cursos.models import Revisao
 
     curso = services.criar_curso(**dados_curso)
     entregavel = curso.entregaveis.first()

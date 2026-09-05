@@ -14,7 +14,6 @@ from django.urls import reverse
 
 from apps.cursos import services
 from apps.cursos.choices import StatusEntregavel, TipoEntregavel
-from apps.cursos.models import Entregavel
 
 
 @pytest.fixture

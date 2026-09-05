@@ -15,7 +15,7 @@ from apps.cursos.choices import (
     TipoMidia,
 )
 from apps.cursos.forms import AnexoForm, EnvioDeVideoForm, SecaoForm, oferece_anexo
-from apps.cursos.models import Anexo, Arquivo, Curso, Entregavel, Secao
+from apps.cursos.models import Arquivo, Curso, Entregavel, Secao
 from apps.cursos.views.upload import UUID_MODELO
 
 

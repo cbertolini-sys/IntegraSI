@@ -85,9 +85,6 @@ def test_o_professor_nao_tem_mais_porta_para_turmas(client, professor):
     dele: so digitando o endereco. A pagina Sobre ainda diz que ele conduz as
     turmas - as duas coisas nao podem ficar assim, e a escolha e do produto.
     """
-    import re
-    import subprocess
-    from pathlib import Path
     from django.urls import reverse
 
     client.force_login(professor)

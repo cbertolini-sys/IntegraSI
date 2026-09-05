@@ -1,14 +1,12 @@
 import hashlib
-import os
 
 import pytest
-from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 
 from apps.cursos import services
 from apps.cursos.choices import Rotulo, StatusEntregavel, TipoEntregavel, TipoMidia, TipoPratica
-from apps.cursos.models import Anexo, Arquivo
+from apps.cursos.models import Anexo
 
 
 @pytest.fixture

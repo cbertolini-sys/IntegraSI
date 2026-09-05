@@ -7,8 +7,6 @@ fazia `contas` importar `cursos`, `catalogo` e `turmas`, e os tres importam
 nenhum precise olhar para ele.
 """
 
-import datetime
-
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 

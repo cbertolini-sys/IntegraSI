@@ -16,7 +16,6 @@ o que nao se pode ler.
 import pytest
 
 from apps.cursos import permissions, services
-from apps.cursos.models import Curso
 
 
 @pytest.fixture
