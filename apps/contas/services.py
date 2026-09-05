@@ -1,6 +1,8 @@
 from django.contrib.auth.password_validation import validate_password
+from dataclasses import dataclass
+
 from django.core.exceptions import ValidationError
-from django.db import transaction
+from django.db import models, transaction
 from django.utils import timezone
 
 from apps.contas.models import ConviteAluno, Usuario
@@ -197,4 +199,90 @@ def rebaixar_a_professor(usuario, por):
     usuario.papel = Usuario.PROFESSOR
     usuario.is_staff = False
     usuario.save(update_fields=["papel", "is_staff"])
+    return usuario
+
+
+@dataclass(frozen=True)
+class Exclusao:
+    """O que aconteceu com a conta, e por que.
+
+    Devolvido em vez de levantado: desativar nao e erro, e o caminho normal para
+    quem produziu alguma coisa. Quem chama precisa da diferenca para escrever a
+    mensagem certa, e `motivos` e o que transforma "não foi possível excluir" em
+    algo que a pessoa entende.
+    """
+
+    apagada: bool
+    motivos: tuple
+
+
+def _o_que_prende(usuario):
+    """O que essa conta deixaria orfao, LIDO DAS RELACOES DO MODELO.
+
+    Nao e uma lista de nomes de propósito. Sao oito relacoes PROTECT apontando
+    para `Usuario` hoje, e a regra pedida citava duas (equipe e responsavel).
+    Quem so revisou um entregavel, ou so moveu um curso no fluxo, tambem prende a
+    conta - e apagar mesmo assim estouraria `ProtectedError`, um 500 na cara de
+    quem clicou.
+
+    Lendo do modelo, um vinculo novo entra na conta sozinho. Escrito a mao, o
+    proximo `PROTECT` que alguem acrescentar so apareceria em producao.
+
+    E tambem por isto que `contas` continua sem importar `cursos`: a introspeccao
+    nao precisa conhecer nenhum dos modelos que apontam para ca.
+    """
+    prendem = []
+    for relacao in usuario._meta.related_objects:
+        if getattr(relacao, "on_delete", None) is not models.PROTECT:
+            continue
+        quantos = relacao.related_model._default_manager.filter(
+            **{relacao.field.name: usuario}
+        ).count()
+        if quantos:
+            nome = relacao.related_model._meta.verbose_name_plural
+            prendem.append(f"{quantos} {nome}")
+    return tuple(prendem)
+
+
+@transaction.atomic
+def excluir_pessoa(usuario, por):
+    """Apaga a conta, ou desativa quando ela deixou rastro de producao.
+
+    Uma acao so na tela, e a decisao aqui: quem clica nao tem como saber se
+    aquela pessoa revisou um entregavel dois semestres atras, e obrigar a
+    descobrir antes de escolher o botao seria transferir o trabalho do sistema
+    para a pessoa.
+    """
+    _garante_coordenacao(por, "Somente a coordenação exclui pessoas.")
+    if usuario.pk == por.pk:
+        # Mesma razao do rebaixamento: o Admin nao tem como recusar, e uma
+        # coordenacao que se apaga deixa o sistema sem quem publique curso.
+        raise ValidationError("Você não pode excluir a si mesmo.")
+    if usuario.e_coordenador:
+        outros = Usuario.objects.filter(
+            papel=Usuario.COORDENADOR, is_active=True
+        ).exclude(pk=usuario.pk)
+        if not outros.exists():
+            raise ValidationError(
+                "Esta é a última coordenação ativa. Sem ela ninguém publica curso, "
+                "aceita solicitação ou promove alguém de volta."
+            )
+
+    motivos = _o_que_prende(usuario)
+    if motivos:
+        usuario.is_active = False
+        usuario.save(update_fields=["is_active"])
+        return Exclusao(apagada=False, motivos=motivos)
+
+    usuario.delete()
+    return Exclusao(apagada=True, motivos=())
+
+
+@transaction.atomic
+def reativar_pessoa(usuario, por):
+    """Devolve o acesso a quem foi desativado. Sem isto, um clique errado seria
+    permanente e so o Admin destravaria."""
+    _garante_coordenacao(por, "Somente a coordenação reativa pessoas.")
+    usuario.is_active = True
+    usuario.save(update_fields=["is_active"])
     return usuario

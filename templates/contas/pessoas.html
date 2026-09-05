@@ -48,14 +48,45 @@
           <form method="post" class="form-em-linha">
             {% csrf_token %}
             <input type="hidden" name="usuario" value="{{ pessoa.pk }}">
-            {% if pessoa.e_coordenador %}
+            {% if not pessoa.is_active %}
+              <span class="estado recusa">Desativado</span>
+            {% elif pessoa.e_coordenador %}
               <span class="estado ok">Coordenador</span>
-              {% if pessoa.pk != user.pk %}
-                <button type="submit" name="acao" value="REBAIXAR" class="botao botao-linha">Tornar Professor</button>
-              {% endif %}
+            {% elif pessoa.e_aluno %}
+              <span class="estado">Aluno</span>
             {% else %}
               <span class="estado">Professor</span>
-              <button type="submit" name="acao" value="PROMOVER" class="botao botao-linha">Tornar Coordenador</button>
+            {% endif %}
+
+            {% comment %}
+              A promocao so vale entre professor e coordenacao: aluno nao vira
+              coordenador, e o botao nem aparece para ele. `e_somente_professor`,
+              e nao `e_professor`, porque este ultimo vale tambem para o
+              coordenador e o botao apareceria duas vezes na mesma linha.
+            {% endcomment %}
+            {% if pessoa.is_active %}
+              {% if pessoa.e_coordenador and pessoa.pk != user.pk %}
+                <button type="submit" name="acao" value="REBAIXAR" class="botao botao-linha">Tornar Professor</button>
+              {% elif pessoa.e_somente_professor %}
+                <button type="submit" name="acao" value="PROMOVER" class="botao botao-linha">Tornar Coordenador</button>
+              {% endif %}
+            {% endif %}
+
+            {% comment %}
+              O botao nao aparece para si mesmo. O servico ja recusa, e e ele que
+              garante; oferecer aqui seria oferecer um erro, e quem clicasse levaria
+              a recusa sem entender por que o botao existia.
+
+              Um botao so, "Excluir": quem clica nao tem como saber se aquela
+              pessoa revisou um entregavel dois semestres atras. Quem decide entre
+              apagar e desativar e o servico, e a mensagem diz o que aconteceu.
+            {% endcomment %}
+            {% if pessoa.pk != user.pk %}
+              {% if pessoa.is_active %}
+                <button type="submit" name="acao" value="EXCLUIR" class="botao botao-linha">Excluir</button>
+              {% else %}
+                <button type="submit" name="acao" value="REATIVAR" class="botao botao-linha">Reativar</button>
+              {% endif %}
             {% endif %}
           </form>
         </li>

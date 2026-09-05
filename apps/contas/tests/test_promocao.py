@@ -109,11 +109,27 @@ def test_coordenador_ve_a_tela_de_pessoas(client, coordenador, professor):
 
 
 @pytest.mark.django_db
-def test_a_tela_nao_lista_alunos(client, coordenador, aluno):
-    """A tela é de professores e coordenação: aluno não aparece, senão o botão de
-    promover apareceria para quem não pode ser promovido."""
+def test_o_aluno_nao_ganha_botao_de_promover(client, coordenador, aluno):
+    """Este teste dizia "a tela não lista alunos", e o motivo escrito nele era
+    outro: "senão o botão de promover apareceria para quem não pode ser
+    promovido". O motivo continua valendo; a implementação que o evitava, não.
+
+    A tela passou a listar todo mundo, porque a coordenação precisa poder excluir
+    aluno e fora dali ele só era alcançável dentro da equipe de um curso. O que
+    protege agora é o próprio botão, condicionado a `e_somente_professor`.
+
+    O recorte é a LINHA do aluno: afirmar que a página inteira não tem "PROMOVER"
+    passaria a reprovar por causa da linha de qualquer professor, que legitimamente
+    tem o botão.
+    """
     client.force_login(coordenador)
-    assert aluno.nome_completo not in client.get(reverse("pessoas")).content.decode()
+    html = client.get(reverse("pessoas")).content.decode()
+    inicio = html.index(aluno.nome_completo)
+    linha = html[inicio : html.index("</li>", inicio)]
+
+    assert aluno.nome_completo in html, "o aluno precisa aparecer para poder ser excluído"
+    assert 'value="PROMOVER"' not in linha, linha
+    assert 'value="REBAIXAR"' not in linha, linha
 
 
 @pytest.mark.django_db

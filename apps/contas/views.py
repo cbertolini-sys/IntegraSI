@@ -187,6 +187,31 @@ def pessoas(request):
                 )
             return redirect("pessoas")
 
+        if acao in ("EXCLUIR", "REATIVAR") and request.POST.get("usuario"):
+            alvo = get_object_or_404(Usuario, pk=request.POST["usuario"])
+            try:
+                if acao == "EXCLUIR":
+                    resultado = services.excluir_pessoa(alvo, por=request.user)
+                    if resultado.apagada:
+                        messages.success(request, f"{alvo.identificacao} foi excluída.")
+                    else:
+                        # O motivo, e nao so o desfecho: sem ele a pessoa clica em
+                        # "Excluir", ve a conta continuar na lista e conclui que o
+                        # botao nao funcionou.
+                        messages.success(
+                            request,
+                            f"{alvo.identificacao} foi desativada em vez de excluída, "
+                            f"porque tem {', '.join(resultado.motivos)} no sistema. "
+                            "O que ela produziu continua no nome dela.",
+                        )
+                else:
+                    services.reativar_pessoa(alvo, por=request.user)
+                    messages.success(request, f"{alvo.identificacao} voltou a ter acesso.")
+            except ValidationError as erro:
+                for mensagem in erro.messages:
+                    messages.error(request, mensagem)
+            return redirect("pessoas")
+
         if not request.POST.get("usuario"):
             # Acao desconhecida e sem pessoa alvo. Sem esta linha cairia no
             # `get_object_or_404` com `pk=None` e a tela devolveria 404, como se a
@@ -213,9 +238,13 @@ def pessoas(request):
                 messages.error(request, mensagem)
         return redirect("pessoas")
 
-    equipe = Usuario.objects.filter(
-        papel__in=[Usuario.PROFESSOR, Usuario.COORDENADOR]
-    ).order_by("nome_completo")
+    # Todo mundo, e nao so professor e coordenacao: desde que a coordenacao passou
+    # a poder excluir pessoas, e a regra vale igual para aluno, ele precisa ter
+    # porta. Fora daqui o aluno so era alcancavel dentro da equipe de um curso.
+    #
+    # Ordenado por papel antes do nome para a lista nao virar mistura: coordenacao,
+    # professores e alunos, nessa ordem.
+    equipe = Usuario.objects.order_by("papel", "nome_completo", "email")
     pagina = paginar(request, equipe)
     return render(
         request,
