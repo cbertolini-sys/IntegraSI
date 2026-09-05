@@ -83,6 +83,32 @@ DATABASES = {
     )
 }
 
+# Cache em memoria do PROPRIO processo, e nao um servico a parte. A consequencia
+# esta escrita porque muda o que dele se pode esperar: sao nove operarios do
+# gunicorn, cada um com o seu, e uma sessao aquecida no operario 3 nao existe no
+# 7. O ganho e parcial, proporcional a quantas requisicoes seguidas caem no mesmo
+# operario.
+#
+# Redis ou Memcached tornariam o ganho completo, ao preco de um servico a mais
+# para instalar, monitorar e reiniciar. Para este tamanho nao paga, e a hora de
+# rever isto e quando o painel de acesso mostrar volume que justifique.
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "integrasi",
+    }
+}
+
+# `cached_db`, e NAO `cache` puro. O `cache` guarda a sessao so na memoria: um
+# reinicio do gunicorn, ou a expiracao de uma entrada, deslogaria todo mundo em
+# silencio - e o gunicorn agora recicla operario a cada mil requisicoes. Com
+# `cached_db` o banco continua sendo a verdade e o cache e so atalho: esvaziar o
+# cache custa uma consulta, e nao a sessao de ninguem.
+#
+# Medido antes: uma requisicao autenticada ao painel gastava 6 consultas, e UMA
+# era so para ler `django_session`.
+SESSION_ENGINE = "django.contrib.sessions.backends.cached_db"
+
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},

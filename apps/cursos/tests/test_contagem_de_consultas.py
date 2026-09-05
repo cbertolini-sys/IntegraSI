@@ -108,7 +108,11 @@ def test_a_lista_do_catalogo_nao_consulta_por_curso(
 # prefetch apagado: acrescentar anexos ao mesmo entregavel nao acrescenta consulta
 # nem com prefetch nem sem. Era um teste com nome certo que nao prendia nada, e so
 # a campanha de delecao mostrou isso.
-CONSULTAS_DA_TELA_DO_CURSO = 10
+# Era 10 ate 05/09/2026, quando a sessao passou a vir do cache (`cached_db`) e
+# deixou de custar uma consulta por requisicao autenticada. Baixou por MELHORIA, e
+# nao por regressao: foi a propria mensagem de falha deste teste que disse qual
+# das duas era, e por isso ela existe.
+CONSULTAS_DA_TELA_DO_CURSO = 9
 
 
 @pytest.mark.django_db

@@ -779,3 +779,16 @@ def test_o_log_de_acesso_rotaciona_e_o_gunicorn_reabre():
     assert "acesso.log" in lr, "o log de acesso ficou de fora da rotação"
     assert "postrotate" in lr, "sem postrotate o gunicorn escreve no arquivo renomeado"
     assert "USR1" in lr, "o sinal que faz o gunicorn reabrir o arquivo é o SIGUSR1"
+
+
+def test_o_nginx_nao_anuncia_a_propria_versao(nginx):
+    """`server_tokens off`.
+
+    Nao e vulnerabilidade, e reconhecimento facilitado: toda resposta trazia
+    `server: nginx/1.26.3 (Ubuntu)`, e a sonda de ransomware que ja aparece no
+    `app.log` deste servidor filtra alvos exatamente por esse cabecalho.
+
+    Fica no arquivo VERSIONADO, e nao no `nginx.conf` global do sistema, para a
+    proxima instalacao nascer com ele sem depender de alguem lembrar.
+    """
+    assert re.search(r"(?m)^\s*server_tokens off;", sem_comentarios(nginx))
