@@ -944,12 +944,6 @@ textarea:focus {
 
 /* ---------- páginas estreitas ---------- */
 
-/* A volta no topo de uma pagina publica estreita. Paragrafo proprio, e nao
-   dentro do <h1>, para o botao nao herdar o tamanho do titulo. */
-.voltar-topo {
-  margin: 0 0 1.25rem;
-}
-
 .pagina-estreita {
   max-width: 38rem;
   padding-block: 2.5rem 4rem;

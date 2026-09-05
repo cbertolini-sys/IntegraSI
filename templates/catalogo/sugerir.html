@@ -3,22 +3,27 @@
 
 {% block conteudo %}
   <div class="faixa pagina-estreita">
-    {% comment %}
-      A volta e para o catalogo, e nao para o painel: esta tela e publica, e quem
-      chega aqui na maioria das vezes nao tem conta. Sem ela a pagina e folha, e
-      so o botao do navegador sai dela - o mesmo defeito que o teste de volta ao
-      painel corrigiu nas telas de dentro.
-    {% endcomment %}
-    <p class="voltar-topo">
-      <a class="botao botao-linha" href="{% url 'catalogo' %}">&larr; Voltar ao catálogo</a>
-    </p>
+    <div class="cabecalho-pagina">
+      <div>
+        <h1>Sugerir um curso</h1>
+        <p class="abertura">
+          Não encontrou o que a sua comunidade precisa? Conte para a coordenação.
+          As propostas de curso nascem de demandas como a sua, e um pedido
+          concreto vale mais que uma ideia genérica.
+        </p>
+      </div>
+      {% comment %}
+        A volta fica aqui, no `.acoes` do cabecalho, como em todas as outras
+        telas. A primeira versao desta pagina inventou um `.voltar-topo` proprio
+        acima do titulo, e ficou diferente de todo o resto.
 
-    <h1>Sugerir um curso</h1>
-    <p class="abertura">
-      Não encontrou o que a sua comunidade precisa? Conte para a coordenação. As
-      propostas de curso nascem de demandas como a sua, e um pedido concreto vale
-      mais que uma ideia genérica.
-    </p>
+        O destino e o catalogo, e nao o painel: esta tela e publica, e quem chega
+        aqui na maioria das vezes nao tem conta para voltar a painel nenhum.
+      {% endcomment %}
+      <div class="acoes">
+        <a class="botao botao-linha" href="{% url 'catalogo' %}">&larr; Voltar ao catálogo</a>
+      </div>
+    </div>
 
     <div class="cartao cartao-acao">
       {% if erro %}<p class="erro-acesso">{{ erro }}</p>{% endif %}

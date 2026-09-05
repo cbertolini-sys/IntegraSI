@@ -151,14 +151,23 @@ def test_a_tela_usa_o_desenho_de_campo_do_projeto(client):
 
 
 @pytest.mark.django_db
-def test_a_tela_sabe_voltar(client):
-    """Pagina publica e folha: sem a volta, so o botao do navegador sai dela. E o
-    mesmo defeito que o teste de volta ao painel corrigiu nas telas de dentro,
-    aqui com destino ao catalogo, porque quem chega nao tem conta."""
-    html = client.get(reverse("sugerir")).content.decode()
+def test_a_tela_sabe_voltar_no_lugar_de_sempre(client):
+    """Pagina publica e folha: sem a volta, so o botao do navegador sai dela.
 
-    assert f'href="{reverse("catalogo")}"' in html
-    assert "Voltar ao catálogo" in html
+    E a volta fica ONDE ELA FICA no resto do sistema: dentro do `.acoes` da
+    `.cabecalho-pagina`, a direita do titulo. A primeira versao desta tela
+    inventou um `.voltar-topo` proprio, num paragrafo acima do `<h1>`, e ficou
+    diferente de todas as outras - foi visto olhando a tela, com a suite verde.
+
+    O recorte pelo `.acoes` e o que faz a afirmacao ser sobre o LUGAR: procurar o
+    link na pagina inteira passaria verde com ele solto em qualquer canto.
+    """
+    html = client.get(reverse("sugerir")).content.decode()
+    inicio = html.index('class="acoes"')
+    acoes = html[inicio : html.index("</div>", inicio)]
+
+    assert f'href="{reverse("catalogo")}"' in acoes, acoes
+    assert "Voltar ao catálogo" in acoes
 
 
 @pytest.mark.django_db

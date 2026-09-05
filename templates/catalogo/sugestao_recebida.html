@@ -3,17 +3,24 @@
 
 {% block conteudo %}
   <div class="faixa pagina-estreita">
-    <h1>Sugestão registrada</h1>
-    <p class="abertura">
-      A coordenação recebeu a sua sugestão e responde no e-mail que você informou.
-    </p>
+    <div class="cabecalho-pagina">
+      <div>
+        <h1>Sugestão registrada</h1>
+        <p class="abertura">
+          A coordenação recebeu a sua sugestão e responde no e-mail que você
+          informou.
+        </p>
+      </div>
+      <div class="acoes">
+        <a class="botao botao-linha" href="{% url 'catalogo' %}">&larr; Voltar ao catálogo</a>
+      </div>
+    </div>
     <div class="cartao cartao-acao">
       <p>
         Uma sugestão não vira curso da noite para o dia: ela é avaliada pela
         coordenação e, se houver professor e equipe disponíveis, entra em produção
         como qualquer outro curso do catálogo.
       </p>
-      <p><a class="botao botao-linha" href="{% url 'catalogo' %}">&larr; Voltar ao catálogo</a></p>
     </div>
   </div>
 {% endblock %}
