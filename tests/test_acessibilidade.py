@@ -132,3 +132,25 @@ def test_a_regiao_vazia_nao_ocupa_espaco_na_tela():
     toda pagina do sistema, que e o preco que nao vale a pena pagar pelo
     anuncio."""
     assert ".mensagens:empty" in CSS, "lista vazia sem regra de ocultação"
+
+
+def test_a_lista_vazia_nao_tem_nem_espaco_em_branco(pagina):
+    """A regra de CSS acima nao basta sozinha, e este teste existe por causa
+    disso.
+
+    `:empty` exige ZERO nos filhos, e uma quebra de linha entre `<ul>` e `</ul>`
+    ja e um no de texto. Com o laco indentado, como estava, a lista vazia nao
+    casava com `.mensagens:empty` e empurrava o conteudo de TODA tela 1,5rem
+    para baixo. Medido na tela: 24px, com a suite verde e o seletor certo no
+    CSS.
+
+    Por isso a assercao e sobre o HTML renderizado, e nao sobre o template: o
+    defeito era invisivel tanto ao CSS quanto a leitura do arquivo.
+    """
+    inicio = pagina.index('<ul class="mensagens"')
+    fim = pagina.index("</ul>", inicio)
+    dentro = pagina[pagina.index(">", inicio) + 1 : fim]
+    assert dentro == "", (
+        f"a lista vazia carrega {dentro!r}, então `:empty` não casa e ela abre "
+        "um vão no topo de toda tela"
+    )
