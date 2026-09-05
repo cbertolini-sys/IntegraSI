@@ -465,3 +465,44 @@ def test_o_cabecalho_de_pagina_contem_a_faixa_e_nao_o_contrario():
         "`.cabecalho-pagina` sem `.faixa` dentro (o botão de ação vai cair "
         "embaixo do título em vez de à direita):\n" + "\n".join(invertidos)
     )
+
+
+def test_o_cabecalho_de_pagina_usa_subtitulo_curto():
+    """No `.cabecalho-pagina` vai `.sub`, e nunca `.abertura`.
+
+    Nao e preferencia de estilo, e layout. `.cabecalho-pagina .faixa` e um flex
+    com `flex-wrap`, e o navegador decide a quebra de linha pelo tamanho BASE dos
+    itens, nao pelo tamanho depois de encolher. Um `.abertura` de tres linhas da
+    base enorme ao bloco de texto, os dois itens deixam de caber numa linha, e o
+    `.acoes` desce - com o botao no canto ESQUERDO da linha de baixo, que e o
+    oposto do que a regra `justify-content: space-between` existe para fazer.
+
+    Custou tres tentativas erradas nesta tela. As duas primeiras corrigiram coisas
+    reais (o botao fora do `.acoes`, o aninhamento invertido) sem resolver o que
+    aparecia na tela, porque eu estava deduzindo do CSS em vez de olhar a pagina
+    renderizada. A terceira so foi certeira depois de uma captura de tela.
+    """
+    culpados = []
+    for caminho in sorted(RAIZ.glob("templates/**/*.html")):
+        texto = re.sub(
+            r"\{%\s*comment\s*%\}.*?\{%\s*endcomment\s*%\}", "",
+            caminho.read_text(encoding="utf-8"), flags=re.S,
+        )
+        for m in re.finditer(r'class="cabecalho-pagina"', texto):
+            # Ate o comeco do corpo: e o trecho que o flex do cabecalho governa.
+            # O corte procura `corpo-trabalho` SOLTO, e nao `class="corpo-trabalho"`:
+            # o atributo real e `class="faixa pagina-estreita corpo-trabalho"`, e a
+            # primeira versao deste teste nunca encontrava o corte - lia o corpo
+            # junto e reprovava arquivo correto.
+            trecho = texto[m.end() : m.end() + 900]
+            corte = trecho.find("corpo-trabalho")
+            if corte != -1:
+                trecho = trecho[:corte]
+            if 'class="abertura"' in trecho:
+                culpados.append(str(caminho.relative_to(RAIZ)))
+                break
+
+    assert culpados == [], (
+        "`.abertura` dentro do cabeçalho empurra o botão de ação para a linha "
+        "de baixo:\n" + "\n".join(culpados)
+    )

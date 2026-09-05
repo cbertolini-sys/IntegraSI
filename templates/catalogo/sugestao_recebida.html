@@ -15,10 +15,8 @@
     <div class="faixa">
       <div>
         <h1>Sugestão registrada</h1>
-        <p class="abertura">
-          A coordenação recebeu a sua sugestão e responde no e-mail que você
-          informou.
-        </p>
+        {% comment %}Curto, pelo mesmo motivo de layout descrito em sugerir.html.{% endcomment %}
+        <p class="sub">A coordenação responde no e-mail que você informou.</p>
       </div>
       <div class="acoes">
         <a class="botao botao-linha" href="{% url 'catalogo' %}">&larr; Voltar ao catálogo</a>

@@ -6,12 +6,8 @@
     <div class="faixa">
       <div>
         <h1>Sugestões de curso</h1>
-        <p class="abertura">
-          Escolas e grupos pedindo um curso <strong>que ainda não existe</strong>.
-          Aceitar não cria nada sozinho: a sugestão vira curso quando um professor
-          abre a proposta. Pedidos por um curso que já está no catálogo ficam em
-          <a href="{% url 'solicitacoes' %}">Solicitações recebidas</a>.
-        </p>
+        {% comment %}Curto, pelo mesmo motivo de layout descrito em sugerir.html.{% endcomment %}
+        <p class="sub">Pedidos por um curso que ainda não existe.</p>
       </div>
       <div class="acoes">
         <a class="botao botao-linha" href="{% url 'painel' %}">&larr; Voltar ao painel</a>
@@ -20,6 +16,13 @@
   </div>
 
   <div class="faixa corpo-trabalho">
+
+    <p class="abertura">
+      Escolas e grupos pedindo um curso <strong>que ainda não existe</strong>.
+      Aceitar não cria nada sozinho: a sugestão vira curso quando um professor
+      abre a proposta. Pedidos por um curso que já está no catálogo ficam em
+      <a href="{% url 'solicitacoes' %}">Solicitações recebidas</a>.
+    </p>
 
     <h2>A responder</h2>
     <ul class="registros">

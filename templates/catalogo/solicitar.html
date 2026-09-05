@@ -15,10 +15,8 @@
     <div class="faixa">
       <div>
         <h1>Solicitar o curso {{ curso.titulo }}</h1>
-        <p class="abertura">
-          Conte para quem seria o curso e quando. A coordenação responde
-          combinando data, local e número de vagas.
-        </p>
+        {% comment %}Curto, pelo mesmo motivo de layout descrito em sugerir.html.{% endcomment %}
+        <p class="sub">Peça este curso para a sua escola ou grupo.</p>
       </div>
       {% comment %}
         A volta e para a pagina do curso, e nao para o catalogo: e de la que a
@@ -31,6 +29,11 @@
   </div>
 
   <div class="faixa pagina-estreita corpo-trabalho">
+    <p class="abertura">
+      Conte para quem seria o curso e quando. A coordenação responde combinando
+      data, local e número de vagas.
+    </p>
+
     <div class="cartao">
       {% if erro %}<p class="erro-acesso">{{ erro }}</p>{% endif %}
       <form method="post" class="form-cadastro">

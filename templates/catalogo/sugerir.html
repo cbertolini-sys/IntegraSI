@@ -15,11 +15,15 @@
     <div class="faixa">
       <div>
         <h1>Sugerir um curso</h1>
-        <p class="abertura">
-          Não encontrou o que a sua comunidade precisa? Conte para a coordenação.
-          As propostas de curso nascem de demandas como a sua, e um pedido
-          concreto vale mais que uma ideia genérica.
-        </p>
+        {% comment %}
+          `.sub`, curto, como em todas as outras telas, e NAO um `.abertura` de
+          tres linhas. O motivo e de layout: `.cabecalho-pagina .faixa` e um flex
+          com `flex-wrap`, e o navegador decide a quebra pelo tamanho BASE dos
+          itens, nao pelo encolhido. Um paragrafo longo da base enorme ao bloco de
+          texto, os dois itens nao cabem numa linha, e o `.acoes` desce - com o
+          botao no canto esquerdo da linha de baixo.
+        {% endcomment %}
+        <p class="sub">Peça um curso que ainda não existe no catálogo.</p>
       </div>
       {% comment %}
         A volta fica aqui, no `.acoes` do cabecalho, como em todas as outras
@@ -36,6 +40,12 @@
   </div>
 
   <div class="faixa pagina-estreita corpo-trabalho">
+
+    <p class="abertura">
+      Não encontrou o que a sua comunidade precisa? Conte para a coordenação. As
+      propostas de curso nascem de demandas como a sua, e um pedido concreto vale
+      mais que uma ideia genérica.
+    </p>
 
     <div class="cartao cartao-acao">
       {% if erro %}<p class="erro-acesso">{{ erro }}</p>{% endif %}
