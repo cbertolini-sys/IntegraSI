@@ -28,8 +28,8 @@ def cartoes(html, depois_de=None):
 DO_PROFESSOR = ["Cursos publicados", "Cursos em desenvolvimento", "Entregáveis para revisar"]
 DA_COORDENACAO = [
     "Aguardando aprovação",
-    "Solicitações a responder",
-    "Sugestões recebidas",
+    "Solicitações de curso do catálogo",
+    "Sugestões de curso novo",
     "Cursos no catálogo",
 ]
 

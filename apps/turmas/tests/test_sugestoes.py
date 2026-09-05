@@ -138,7 +138,7 @@ def test_o_painel_conta_todas_as_sugestoes_e_nao_so_as_pendentes(
 
     client.force_login(coordenador)
     html = client.get(reverse("painel")).content.decode()
-    inicio = html.index("Sugestões recebidas")
+    inicio = html.index("Sugestões de curso novo")
     cartao = html[max(0, inicio - 400) : inicio + 200]
 
     assert "Sugestões a responder" not in html
@@ -186,3 +186,41 @@ def test_o_detalhe_mostra_tudo_o_que_a_pessoa_preencheu(client, sugestao, coorde
         sugestao.get_tem_laboratorio_display(),
     ]:
         assert valor in html, valor
+
+
+# --- as duas palavras que se pareciam demais ----------------------------------
+
+
+@pytest.mark.django_db
+def test_o_painel_distingue_solicitacao_de_sugestao(client, coordenador):
+    """"Solicitação" e "sugestão" são quase sinônimos em português, e os dois
+    cartões ficam lado a lado no painel com um número cada e mais nada. Quem
+    coordena tinha que adivinhar qual era qual, e a primeira versão desta tela
+    conseguiu confundir quem projetou o sistema.
+
+    A afirmação é sobre o QUALIFICADOR, e não sobre o texto inteiro: o que
+    resolve a ambiguidade é dizer "do catálogo" de um lado e "novo" do outro. Sem
+    um deles, os rótulos voltam a ser duas palavras parecidas.
+    """
+    client.force_login(coordenador)
+    html = client.get(reverse("painel")).content.decode()
+
+    assert "Solicitações de curso do catálogo" in html
+    assert "Sugestões de curso novo" in html
+    assert "Solicitações a responder" not in html
+
+
+@pytest.mark.django_db
+def test_cada_tela_diz_o_que_e_e_onde_esta_a_outra(client, coordenador):
+    """Quem cai na tela errada precisa de saída. Sem o ponteiro cruzado, a pessoa
+    lê uma lista que não é a que procurava e conclui que o sistema perdeu o
+    registro."""
+    client.force_login(coordenador)
+
+    solicitacoes = client.get(reverse("solicitacoes")).content.decode()
+    assert "já está no catálogo" in solicitacoes
+    assert reverse("sugestoes") in solicitacoes
+
+    sugestoes = client.get(reverse("sugestoes")).content.decode()
+    assert "ainda não existe" in sugestoes
+    assert reverse("solicitacoes") in sugestoes

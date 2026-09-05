@@ -7,7 +7,17 @@
     <div class="faixa">
       <div>
         <h1>Solicitações recebidas</h1>
-        <p class="sub">Pedidos de escolas e grupos da comunidade pelo formulário público.</p>
+        {% comment %}
+          A legenda antiga dizia "Pedidos de escolas e grupos da comunidade pelo
+          formulário público", o que descreve as SUGESTOES exatamente igual. Quem
+          caisse aqui procurando as outras leria uma lista que nao e a dela e
+          concluiria que o sistema perdeu o registro.
+        {% endcomment %}
+        <p class="sub">
+          Escolas e grupos pedindo um curso <strong>que já está no catálogo</strong>.
+          Responder é agendar a turma. Pedidos por um curso que ainda não existe
+          ficam em <a href="{% url 'sugestoes' %}">Sugestões de curso novo</a>.
+        </p>
       </div>
       <div class="acoes">
         <a class="botao botao-linha" href="{% url 'painel' %}">&larr; Voltar ao painel</a>

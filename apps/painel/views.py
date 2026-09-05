@@ -84,7 +84,11 @@ def _coordenacao(usuario):
             "url": "fila_coordenacao",
         },
         {
-            "rotulo": "Solicitações a responder",
+            # "do catálogo" e "novo", nos dois cartoes: sem os qualificadores
+            # sobram "solicitações" e "sugestões", que em portugues sao quase
+            # sinonimos, lado a lado, com um numero cada e mais nada. A primeira
+            # versao desta tela confundiu quem projetou o sistema.
+            "rotulo": "Solicitações de curso do catálogo",
             "valor": Solicitacao.objects.filter(
                 status__in=[Solicitacao.RECEBIDA, Solicitacao.EM_ANALISE]
             ).count(),
@@ -100,7 +104,7 @@ def _coordenacao(usuario):
             # numero que zera quando a ultima e respondida esconderia justamente
             # o historico que da valor a essa tela. Segue o padrao de "Cursos no
             # catálogo", que tambem e inventario e nao fila.
-            "rotulo": "Sugestões recebidas",
+            "rotulo": "Sugestões de curso novo",
             "valor": SugestaoDeCurso.objects.count(),
             "url": "sugestoes",
         },
