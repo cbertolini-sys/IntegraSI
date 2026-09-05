@@ -26,7 +26,18 @@
     // sistema com a página aberta para o autoplay na hora, sem recarregar.
     var semMovimento = window.matchMedia('(prefers-reduced-motion: reduce)');
 
-    function mostrar(indice) {
+    // `porPessoa` decide se a troca e anunciada.
+    //
+    // O carrossel gira sozinho de seis em seis segundos. Com `aria-live` fixo no
+    // palco, o leitor de tela leria um curso novo nesse ritmo enquanto a pessoa
+    // tenta ler outra coisa da pagina - pior que o silencio de antes. Ligado so
+    // quando a troca veio da seta, do ponto ou do arrasto, o anuncio responde a
+    // uma acao, que e para o que a regiao viva serve.
+    //
+    // O atributo e definido ANTES do laco: `aria-live` e lido no momento da
+    // mutacao, e defini-lo depois deixaria a troca acontecer com o valor antigo.
+    function mostrar(indice, porPessoa) {
+      palco.setAttribute('aria-live', porPessoa ? 'polite' : 'off');
       atual = (indice + slides.length) % slides.length;
       slides.forEach(function (slide, i) {
         var ativo = i === atual;
@@ -41,8 +52,8 @@
       });
     }
 
-    function andar(passo) {
-      mostrar(atual + passo);
+    function andar(passo, porPessoa) {
+      mostrar(atual + passo, porPessoa);
     }
 
     function tocar() {
@@ -62,19 +73,19 @@
 
     if (anterior) {
       anterior.addEventListener('click', function () {
-        andar(-1);
+        andar(-1, true);
         tocar();
       });
     }
     if (proxima) {
       proxima.addEventListener('click', function () {
-        andar(1);
+        andar(1, true);
         tocar();
       });
     }
     pontos.forEach(function (ponto) {
       ponto.addEventListener('click', function () {
-        mostrar(parseInt(ponto.dataset.irPara, 10));
+        mostrar(parseInt(ponto.dataset.irPara, 10), true);
         tocar();
       });
     });
@@ -118,7 +129,7 @@
       var dy = evento.clientY - partiu.y;
       partiu = null;
       if (Math.abs(dx) < DESLOCAMENTO_MINIMO || Math.abs(dx) <= Math.abs(dy)) return;
-      andar(dx < 0 ? 1 : -1);
+      andar(dx < 0 ? 1 : -1, true);
       tocar();
     });
 
@@ -133,10 +144,10 @@
 
     raiz.addEventListener('keydown', function (evento) {
       if (evento.key === 'ArrowLeft') {
-        andar(-1);
+        andar(-1, true);
         tocar();
       } else if (evento.key === 'ArrowRight') {
-        andar(1);
+        andar(1, true);
         tocar();
       }
     });

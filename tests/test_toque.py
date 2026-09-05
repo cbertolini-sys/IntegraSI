@@ -261,3 +261,60 @@ def test_nenhum_breakpoint_novo_entrou_fora_da_lista():
     assert larguras <= {"30", "44", "48", "56", "58", "62"}, (
         f"breakpoint fora da lista: {sorted(larguras - {'30', '44', '48', '56', '58', '62'})}"
     )
+
+
+# --- A troca de slide, para quem nao ve a tela --------------------------------
+
+VITRINE = (RAIZ / "static" / "js" / "vitrine.js").read_text(encoding="utf-8")
+
+
+def test_o_carrossel_so_anuncia_a_troca_que_a_pessoa_pediu():
+    """A regiao viva precisa ser LIGADA e DESLIGADA, e a diferenca e quem trocou.
+
+    Com `aria-live` fixo, o leitor de tela leria um curso novo a cada seis
+    segundos enquanto a pessoa tenta ler outra coisa da pagina: pior que o
+    silencio de hoje. Com ele so no clique, na seta e no arrasto, o anuncio
+    responde a uma acao e nada fala sozinho.
+
+    Este teste e estatico porque `vitrine.js` precisa de DOM para rodar, e o
+    unico harness de node do projeto e o do `upload.js`, que nao depende de
+    nenhum. Ele prende que os dois valores existem; que o leitor de tela de fato
+    fala, so um leitor de tela prova.
+    """
+    assert "aria-live" in VITRINE, "o carrossel não declara região viva"
+    assert "'polite'" in VITRINE, "nada liga o anúncio"
+    assert "'off'" in VITRINE, "nada desliga o anúncio na troca automática"
+
+
+def test_a_regiao_viva_e_armada_antes_de_o_slide_trocar():
+    """Ordem, e nao so presenca.
+
+    `aria-live` e lido no momento da mutacao: definido DEPOIS de trocar o slide,
+    a troca ja aconteceu com a regiao no valor antigo e o anuncio sai errado (ou
+    nao sai). O `setAttribute` precisa vir antes do laco que mexe nos slides.
+    """
+    corpo = VITRINE[VITRINE.index("function mostrar"):]
+    corpo = corpo[: corpo.index("function andar")]
+    assert corpo.index("aria-live") < corpo.index("slides.forEach"), (
+        "a região viva é armada depois da troca, quando já não vale para ela"
+    )
+
+
+def test_a_troca_automatica_nao_anuncia():
+    """A metade da regra que, se regredir, e pior que nao ter feito nada.
+
+    Marcar o relogio como "veio da pessoa" faria o leitor de tela ler um curso
+    novo de seis em seis segundos, por cima do que a pessoa estivesse lendo. O
+    silencio de antes era ruim; isso seria a pagina falando sozinha sem parar.
+
+    A verificacao e sobre o corpo do `tocar()`, e nao sobre o arquivo: e ali que
+    o `setInterval` chama `andar`, e e so ali que a chamada precisa ficar sem a
+    marca. As outras cinco (duas setas, ponto, arrasto, teclado) devem te-la.
+    """
+    corpo = VITRINE[VITRINE.index("function tocar()"):]
+    corpo = corpo[: corpo.index("function parar()")]
+    assert "andar(1)" in corpo, "o relógio deixou de chamar `andar`; reveja este teste"
+    assert "true" not in corpo, (
+        "a troca automática está marcada como ação da pessoa e vai anunciar a "
+        "cada seis segundos"
+    )
