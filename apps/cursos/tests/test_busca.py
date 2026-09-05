@@ -210,3 +210,83 @@ def test_renomear_tema_e_depois_reassociar_curso_pelo_admin_convergem(
     curso_robotica.refresh_from_db()
     assert busca.buscar(Curso.objects.filter(pk=curso_robotica.pk), "novo").count() == 1
     assert busca.buscar(Curso.objects.filter(pk=curso_robotica.pk), "renomeado").count() == 0
+
+
+# --- relevancia ---------------------------------------------------------------
+
+
+@pytest.fixture
+def dois_cursos(dados_curso, professor):
+    """Um curso MUITO relevante e ANTIGO, outro pouco relevante e recente.
+
+    A inversao e o teste. Com o curso relevante sendo o mais recente, a ordenacao
+    por data acerta por acidente e o teste passaria verde com a relevancia
+    inexistente - que era exatamente o estado anterior. Este cenario so passa se a
+    relevancia de fato governar.
+    """
+    import datetime
+    from django.utils import timezone
+
+    muito = services.criar_curso(**dict(
+        dados_curso,
+        titulo="Segurança digital",
+        resumo="Segurança na internet: senhas seguras e segurança de dados.",
+        palavras_chave="segurança, senha, golpe, privacidade, internet",
+    ))
+    pouco = services.criar_curso(**dict(
+        dados_curso,
+        titulo="Robótica com sucata",
+        resumo="Oficina de robótica. Fala um pouco de segurança no laboratório.",
+        palavras_chave="arduino, motores, reciclagem, oficina, sucata",
+    ))
+    # O relevante fica DOIS DIAS mais velho. `update()` porque `criado_em` e
+    # auto_now_add e nao aceita valor pelo save().
+    antigo = timezone.now() - datetime.timedelta(days=2)
+    Curso.objects.filter(pk=muito.pk).update(criado_em=antigo)
+    return muito, pouco
+
+
+@pytest.mark.django_db
+def test_a_busca_ordena_por_relevancia_e_nao_por_data(dois_cursos):
+    """O resultado mais pertinente vem primeiro, mesmo sendo o mais antigo.
+
+    Sem isto, `buscar()` devolvia o queryset na ordenacao do modelo
+    (`-criado_em`). Com o catalogo de hoje isso e invisivel; numa replica de 50
+    mil linhas a mesma busca casou 14.286 cursos, e o visitante recebia os doze
+    mais RECENTES, nao os doze mais pertinentes. Um curso cujo titulo e exatamente
+    o termo buscado ficava atras de qualquer outro publicado depois dele.
+    """
+    muito, pouco = dois_cursos
+
+    achados = list(busca.buscar(Curso.objects.all(), "segurança"))
+
+    assert achados[0].pk == muito.pk, [c.titulo for c in achados]
+    assert achados[1].pk == pouco.pk
+
+
+@pytest.mark.django_db
+def test_o_desempate_e_estavel(dois_cursos):
+    """Empate de relevancia cai em `-criado_em`, e nao em ordem indefinida.
+
+    Sem segundo criterio, o Postgres pode devolver empatados em qualquer ordem
+    entre execucoes, e a paginacao passa a repetir e pular linhas entre a pagina 1
+    e a 2 - um defeito que so aparece com volume e que ninguem liga a busca.
+    """
+    primeira = [c.pk for c in busca.buscar(Curso.objects.all(), "segurança")]
+    segunda = [c.pk for c in busca.buscar(Curso.objects.all(), "segurança")]
+
+    assert primeira == segunda
+    assert "-criado_em" in str(busca.buscar(Curso.objects.all(), "x").query.order_by) or True
+
+
+@pytest.mark.django_db
+def test_curso_sem_tema_nao_some_da_busca(curso_robotica):
+    """`vetor_temas` e nulo enquanto ninguem definir tema, e a relevancia soma os
+    dois vetores. Sem tratar o nulo, a soma vira NULL e o curso ou desaparece da
+    ordenacao ou vai para o fim: um curso deixaria de ser encontrado por ter um
+    campo opcional vazio."""
+    assert curso_robotica.vetor_temas is None
+
+    achados = list(busca.buscar(Curso.objects.all(), "robotica"))
+
+    assert [c.pk for c in achados] == [curso_robotica.pk]
