@@ -225,20 +225,49 @@ Um 404 aqui, com o (1) devolvendo 404 também, costuma ser desencontro entre o
 
 ### 2.2 HTTPS, HSTS e cookies
 
+**Feito em 04/09/2026.** O DNS veio do CPD: `integrasi.ufsm.br` é apelido de
+`integrasi.cfw.ufsm.br`, que aponta para 200.132.38.187.
+
 ```bash
-curl -sI http://integrasi.ufsm.br/            | grep -i '^location:'
-curl -sI https://integrasi.ufsm.br/           | grep -i 'strict-transport-security'
-curl -sI https://integrasi.ufsm.br/contas/login/ | grep -i 'set-cookie'
+sudo apt install certbot python3-certbot-nginx
+sudo certbot certonly --nginx -d integrasi.ufsm.br -d integrasi.cfw.ufsm.br
 ```
 
-Esperado: `301` para `https://`, `Strict-Transport-Security: max-age=31536000;
-includeSubDomains; preload`, e todo cookie com `Secure; HttpOnly`.
+**`certonly`, e não `certbot --nginx` puro.** O segundo reescreve a configuração
+do nginx, e a deste servidor é versionada em `deploy/nginx.conf`: deixar o certbot
+mexer nela faz o servidor divergir do repositório em silêncio, e a divergência só
+aparece quando alguém compara os dois.
 
-Se a página entrar em **laço de redirecionamento**, o nginx não está mandando
-`X-Forwarded-Proto` - o Django acha que a requisição é http e redireciona de
-novo. Se um POST passar a falhar com erro de CSRF, o suspeito é o `Host`: o
-Django compara o `Origin` do navegador com o host da requisição, e o
-`proxy_set_header Host $host` é quem faz os dois baterem.
+Depois, no `.env`, **apague** a linha `SEGURANCA_HTTPS=False` em vez de trocá-la
+para `True`: o padrão com `DEBUG=False` já liga tudo, e uma linha a menos é uma
+chance a menos de a configuração e o padrão discordarem. E ponha o domínio no
+`ALLOWED_HOSTS`, mantendo o IP, para quem tiver o endereço antigo guardado.
+
+Confira, e não confie:
+
+```bash
+.venv/bin/python manage.py check --deploy    # tem que dizer "no issues"
+curl -sI https://integrasi.ufsm.br/ | grep -i strict-transport
+curl -sI https://integrasi.ufsm.br/contas/login/ | grep -i set-cookie   # tem que ter Secure
+curl -s -o /dev/null -w "%{http_code}\n" https://integrasi.ufsm.br/protegido/qualquer  # 404
+```
+
+**A renovação é a parte que falha calada.** O certificado vale 90 dias e o
+`certbot.timer` renova sozinho; o que precisa ser provado é que ele consegue:
+
+```bash
+sudo certbot renew --dry-run
+```
+
+Duas coisas fazem essa renovação funcionar, e as duas estão em `deploy/nginx.conf`:
+o bloco 80 tem uma exceção para `/.well-known/acme-challenge/` **antes** do
+`return 301` (sem ela o desafio é redirecionado para https e a renovação falha), e
+o `ssl_certificate` aponta para `/etc/letsencrypt/live/`, que a renovação
+reescreve, e não para uma cópia em `/etc/ssl`, que ficaria velha.
+
+Com HSTS de um ano ligado, certificado vencido **não é uma tela feia, é um site
+inacessível**: o navegador recusa a conexão e não oferece como prosseguir. Rode o
+ensaio acima depois de qualquer mexida em nginx.
 
 ### 2.3 O limite por IP do formulário público
 

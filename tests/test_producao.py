@@ -143,10 +143,49 @@ def test_o_proxy_repassa_o_esquema(nginx):
 
 
 def test_http_vai_para_https(nginx):
-    """HTTPS obrigatório (spec 13). A porta 80 existe só para redirecionar."""
+    """HTTPS obrigatório (spec 13). A porta 80 existe para redirecionar e para o
+    desafio de renovação do certificado, e para mais nada."""
     conf = sem_comentarios(nginx)
     assert "listen 80;" in conf
-    assert "return 301 https://$host$request_uri;" in conf
+    assert re.search(r"return 301 https://\S+\$request_uri;", conf)
+
+
+def test_o_redirecionamento_aponta_para_um_nome_do_certificado(nginx):
+    """`$host`, e nao um nome fixo, era o que estava aqui, e quebra desde que a
+    porta 80 passou a atender tambem o IP.
+
+    O certificado cobre `integrasi.ufsm.br` e `integrasi.cfw.ufsm.br`, e nao o
+    200.132.38.187. Com `$host`, quem tem o IP guardado nos favoritos e mandado
+    para `https://200.132.38.187/`, que existe, responde, e apresenta um
+    certificado emitido para outro nome: o navegador barra com aviso de site
+    inseguro. O destino fixo leva essa pessoa ao dominio, onde o certificado vale.
+    """
+    conf = sem_comentarios(nginx)
+    destino = re.search(r"return 301 https://(\S+?)\$request_uri;", conf).group(1)
+
+    assert "$host" not in destino, destino
+    assert destino.rstrip("/") in bloco(nginx, "listen 443"), (
+        f"o redirecionamento manda para {destino}, que nao e um server_name do bloco 443"
+    )
+
+
+def test_a_porta_80_deixa_passar_o_desafio_do_certbot(nginx):
+    """A excecao do `/.well-known/acme-challenge/` vem ANTES do `return 301`.
+
+    Sem ela, o desafio HTTP-01 da renovacao e redirecionado para https e a
+    renovacao falha. E a falha mais silenciosa que este servidor tem: nada quebra
+    hoje, nada quebra em trinta dias, e no dia 90 o certificado vence. Com HSTS de
+    um ano ligado, certificado vencido nao e tela feia - e site inacessivel, sem
+    opcao de prosseguir.
+    """
+    conf = sem_comentarios(nginx)
+    desafio = conf.index(".well-known/acme-challenge")
+    redireciona = conf.index("return 301 https://")
+
+    assert desafio < redireciona, (
+        "o `return 301` vem antes da exceção do acme-challenge: "
+        "a renovação do certificado seria redirecionada e falharia"
+    )
 
 
 # --- systemd -----------------------------------------------------------------

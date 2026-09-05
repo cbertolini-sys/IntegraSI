@@ -22,4 +22,7 @@ MAILTO=integrasi-ops@ufsm.br
 # Confere semanalmente se o /protegido/ do nginx continua `internal;`. E a unica
 # checagem que a suite de testes nao alcanca -- sem nginx, o pytest fala direto
 # com o Django -- e a que abre o sistema inteiro se falhar em silencio.
+#
+# `https` e o dominio, e nao o IP: com o redirecionamento ligado, o IP responde
+# 301 e a conferencia passaria a medir o redirecionamento em vez do `internal;`.
 30 6 * * 1 cd /srv/integrasi && .venv/bin/python manage.py conferir_entrega_protegida --base-url https://integrasi.ufsm.br >> /var/log/integrasi/cron.log
