@@ -69,9 +69,7 @@
           Cada um com a sua cor: producao no azul do sistema, revisao no ciano.
         {% endcomment %}
         <div class="cartao-progresso producao">
-          <h2>Progresso da produção<button type="button" class="ajuda-campo"
-            data-ajuda="Pronta é a etapa sem nenhuma pendência na coluna “Ainda falta”. A porcentagem é quantas das seis etapas estão prontas."
-            tabindex="-1" aria-label="Como a produção é contada">?</button></h2>
+          <h2>Progresso da produção{% include "_gatilho_ajuda.html" with id="progresso-producao" rotulo="Como a produção é contada" texto="Pronta é a etapa sem nenhuma pendência na coluna “Ainda falta”. A porcentagem é quantas das seis etapas estão prontas." %}</h2>
           <p class="progresso-numero">{{ p.percentual }}%</p>
           <progress class="barra-progresso" value="{{ p.prontos }}" max="{{ p.total }}"
                     aria-label="Progresso da produção"></progress>
@@ -79,9 +77,7 @@
         </div>
 
         <div class="cartao-progresso revisao">
-          <h2>Progresso da revisão<button type="button" class="ajuda-campo"
-            data-ajuda="Revisada é a etapa que o professor responsável já aprovou. Com as seis revisadas, o curso pode ser submetido à coordenação."
-            tabindex="-1" aria-label="Como a revisão é contada">?</button></h2>
+          <h2>Progresso da revisão{% include "_gatilho_ajuda.html" with id="progresso-revisao" rotulo="Como a revisão é contada" texto="Revisada é a etapa que o professor responsável já aprovou. Com as seis revisadas, o curso pode ser submetido à coordenação." %}</h2>
           <p class="progresso-numero">{{ p.percentual_revisado }}%</p>
           <progress class="barra-progresso" value="{{ p.revisados }}" max="{{ p.total }}"
                     aria-label="Progresso da revisão"></progress>

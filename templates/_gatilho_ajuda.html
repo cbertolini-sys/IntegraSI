@@ -1,0 +1,30 @@
+{% comment %}
+  O gatilho de ajuda FORA de campo de formulário.
+
+  `cursos/_campo.html` resolve o caso do campo, onde o Django já escreve
+  `aria-describedby="<id>_helptext"` no campo sozinho. Aqui não há campo nenhum
+  para emiti-lo, então o texto precisa existir como elemento e o botão precisa
+  apontar para ele.
+
+  Sem isso a ajuda vive só no `data-ajuda`, que não entra na árvore de
+  acessibilidade: leitor de tela nenhum a expõe. Com `tabindex="-1"` junto, como
+  estava em nove gatilhos escritos à mão, sobrava apenas quem usa mouse e
+  enxerga. O `aria-label` não cobre a falta: ele nomeia o botão ("O que escrever
+  no comentário"), e não diz o que o balão diria.
+
+  Sem `tabindex="-1"`, ao contrário do `_campo.html`: lá o motivo é a ficha com
+  doze campos, onde doze gatilhos dobrariam as paradas de tabulação, e o campo
+  já leva a descrição por conta do Django. Aqui o botão é o único caminho até o
+  texto, então tirá-lo do teclado é tirar a ajuda de quem só tem teclado.
+
+  Uso:
+    {% include "_gatilho_ajuda.html" with id="motivo" rotulo="O que escrever no motivo" texto="..." %}
+
+  `id` precisa ser único na página: `analisar_curso.html` e `curso.html` têm
+  dois gatilhos cada, e `_secao.html` tem um por seção.
+{% endcomment %}
+<button type="button" class="ajuda-campo"
+  data-ajuda="{{ texto }}"
+  aria-describedby="ajuda-{{ id }}"
+  aria-label="{{ rotulo }}">?</button>
+<span class="visualmente-oculto" id="ajuda-{{ id }}">{{ texto }}</span>

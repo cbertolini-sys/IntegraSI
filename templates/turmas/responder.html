@@ -59,9 +59,7 @@
         <div class="campo">
           <span class="rotulo-campo">
             <label for="resposta">Resposta ao solicitante</label>
-            <button type="button" class="ajuda-campo"
-              data-ajuda="Vai por e-mail para quem pediu o curso. Diga por que não dá para atender agora, e sugira uma alternativa se houver uma."
-              tabindex="-1" aria-label="O que escrever na resposta">?</button>
+            {% include "_gatilho_ajuda.html" with id="resposta" rotulo="O que escrever na resposta" texto="Vai por e-mail para quem pediu o curso. Diga por que não dá para atender agora, e sugira uma alternativa se houver uma." %}
           </span>
           <textarea id="resposta" name="resposta" rows="4"></textarea>
         </div>

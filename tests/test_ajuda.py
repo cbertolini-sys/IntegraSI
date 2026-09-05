@@ -251,17 +251,25 @@ def test_todo_campo_escrito_a_mao_tambem_tem_balao():
     """A mesma exigencia do teste acima, para quem nao passa pela varredura de
     formularios.py: um <input>/<select>/<textarea> escrito direto no template.
 
-    So reprova campo que nao tem ajuda NENHUMA: nem um `data-ajuda` companheiro no
+    So reprova campo que nao tem ajuda NENHUMA: nem um gatilho companheiro no
     mesmo <form>, nem estar na lista explicita de campos que um form.py ja cobre.
-    Os dois caminhos contam porque os dois colocam explicacao na tela; e a tela,
+    Os caminhos todos contam porque todos colocam explicacao na tela; e a tela,
     nao o mecanismo, que este arquivo protege.
+
+    O gatilho companheiro conta de duas formas: escrito a mao (`data-ajuda=`) ou
+    incluido pelo `_gatilho_ajuda.html`. Sem a segunda, este teste reprovaria
+    exatamente a correcao que tirou a ajuda de dentro do `data-ajuda` solto e a
+    ligou por `aria-describedby` - punindo a melhoria por ela ter mudado o
+    mecanismo que o teste media, e nao a tela que ele protege.
     """
     sem_ajuda = []
     for caminho in RAIZ.glob("templates/**/*.html"):
         relativo = str(caminho.relative_to(RAIZ / "templates"))
         texto = caminho.read_text(encoding="utf-8")
         for bloco in re.findall(r"<form\b.*?</form>", texto, re.S):
-            tem_ajuda_no_bloco = "data-ajuda=" in bloco
+            tem_ajuda_no_bloco = (
+                "data-ajuda=" in bloco or "_gatilho_ajuda.html" in bloco
+            )
             for campo in _CAMPO_SEM_AJUDA.findall(bloco):
                 if (relativo, campo) in ISENTOS_DO_TEMPLATE:
                     continue
@@ -298,3 +306,89 @@ def test_a_lista_de_isentos_continua_justificada():
     assert COBERTO_POR_FORM_QUE_O_TEMPLATE_NAO_RENDERIZA == {
         ("cursos/_secao.html", "conteudo"),
     }
+
+
+# --- O gatilho de ajuda precisa alcancar quem nao usa mouse -------------------
+
+# `cursos/_campo.html` e o unico gatilho que NAO carrega o proprio
+# `aria-describedby`, e por um motivo de verdade: ali existe um campo de
+# formulario, e o Django escreve `aria-describedby="<id>_helptext"` NO CAMPO
+# sempre que ha help_text. O `span.helptext.visualmente-oculto` do template e o
+# alvo dessa referencia, e o comentario no proprio arquivo explica isso. Um
+# regex sobre o template nao enxerga atributo que so nasce ao renderizar, entao
+# a isencao precisa ser explicita - e uma so.
+GATILHO_QUE_O_DJANGO_JA_DESCREVE = {"cursos/_campo.html"}
+
+_GATILHO = re.compile(r"<button\b[^>]*\bdata-ajuda=[^>]*>", re.S)
+_DESCREVE = re.compile(r'aria-describedby="([^"]+)"')
+_IDS = re.compile(r'\bid="([^"]+)"')
+
+
+def test_todo_gatilho_de_ajuda_aponta_para_um_texto_que_existe():
+    """A explicacao precisa existir como elemento, e nao so como `data-ajuda`.
+
+    Um atributo `data-*` nao entra na arvore de acessibilidade: leitor de tela
+    nenhum o expoe. Com `tabindex="-1"` junto, como estava em seis gatilhos
+    escritos a mao, a ajuda sobrava apenas para quem usa mouse e enxerga - entre
+    elas a das telas de decisao do professor e da coordenacao, que explicam o que
+    fica registrado no historico.
+
+    O `aria-label` que esses botoes ja tinham nao resolve: ele nomeia o BOTAO
+    ("O que escrever no comentario"), e nao diz o que o balao diria.
+    """
+    soltos = []
+    for caminho in sorted(RAIZ.glob("templates/**/*.html")):
+        relativo = str(caminho.relative_to(RAIZ / "templates"))
+        if relativo in GATILHO_QUE_O_DJANGO_JA_DESCREVE:
+            continue
+        texto = caminho.read_text(encoding="utf-8")
+        ids = set(_IDS.findall(texto))
+        for gatilho in _GATILHO.findall(texto):
+            alvo = _DESCREVE.search(gatilho)
+            if not alvo:
+                soltos.append(f"{relativo}: gatilho sem aria-describedby")
+            elif alvo.group(1) not in ids:
+                soltos.append(f"{relativo}: aria-describedby={alvo.group(1)} não existe")
+    assert soltos == [], (
+        "ajuda que não chega a leitor de tela nem a teclado:\n" + "\n".join(soltos)
+    )
+
+
+def test_a_varredura_de_gatilhos_acha_alguma_coisa():
+    """Um regex errado devolveria lista vazia e o teste acima ficaria verde para
+    sempre, com o repositorio inteiro voltando ao `data-ajuda` solto."""
+    achados = {
+        str(caminho.relative_to(RAIZ / "templates"))
+        for caminho in RAIZ.glob("templates/**/*.html")
+        if _GATILHO.search(caminho.read_text(encoding="utf-8"))
+    }
+    assert "cursos/_campo.html" in achados, "o gatilho do campo sumiu da varredura"
+    assert "_gatilho_ajuda.html" in achados, "o gatilho fora de formulário sumiu"
+
+
+def test_todo_include_do_gatilho_passa_texto_id_e_rotulo():
+    """O parcial monta o `span` a partir de `texto` e o liga pelo `id`.
+
+    Um include sem `texto` desenha span vazio e o `aria-describedby` passa a
+    apontar para o nada, que e o mesmo defeito de antes com outra roupa. Sem
+    `id`, dois gatilhos na mesma tela colidiriam no mesmo alvo (acontece em
+    `analisar_curso.html` e em `curso.html`, que tem dois cada).
+    """
+    incompletos = []
+    for caminho in sorted(RAIZ.glob("templates/**/*.html")):
+        relativo = str(caminho.relative_to(RAIZ / "templates"))
+        texto = caminho.read_text(encoding="utf-8")
+        for include in re.findall(
+            r'{%\s*include\s+"_gatilho_ajuda\.html".*?%}', texto, re.S
+        ):
+            faltando = [a for a in ("texto=", "id=", "rotulo=") if a not in include]
+            if faltando:
+                incompletos.append(f"{relativo}: falta {', '.join(faltando)}")
+    assert incompletos == [], "include incompleto:\n" + "\n".join(incompletos)
+
+
+def test_a_isencao_do_gatilho_do_campo_continua_justificada():
+    """Uma segunda isencao seria a lista crescendo pelo caminho mais facil: quem
+    escrever um gatilho novo sem `aria-describedby` conserta o gatilho, e nao
+    esta lista."""
+    assert GATILHO_QUE_O_DJANGO_JA_DESCREVE == {"cursos/_campo.html"}

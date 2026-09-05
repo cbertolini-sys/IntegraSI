@@ -69,9 +69,7 @@
           <div class="campo">
             <span class="rotulo-campo">
               <label for="comentario">Comentário</label>
-              <button type="button" class="ajuda-campo"
-                data-ajuda="Fica no histórico do curso, visível à equipe. Ao devolver, diga o que falta corrigir. Ao publicar, é opcional. Aceita negrito, listas e links."
-                tabindex="-1" aria-label="O que escrever no comentário">?</button>
+              {% include "_gatilho_ajuda.html" with id="comentario" rotulo="O que escrever no comentário" texto="Fica no histórico do curso, visível à equipe. Ao devolver, diga o que falta corrigir. Ao publicar, é opcional. Aceita negrito, listas e links." %}
             </span>
             <textarea id="comentario" name="comentario" rows="4" data-editor></textarea>
           </div>
@@ -93,9 +91,7 @@
             <span class="rotulo-campo">
               <label for="comentario">Motivo da despublicação</label>
               <span class="obrigatorio" aria-hidden="true">*</span>
-              <button type="button" class="ajuda-campo"
-                data-ajuda="Fica no histórico do curso, visível à equipe. Diga por que o curso está saindo do catálogo público - a equipe precisa saber para poder corrigir."
-                tabindex="-1" aria-label="O que escrever no motivo da despublicação">?</button>
+              {% include "_gatilho_ajuda.html" with id="motivo-despublicacao" rotulo="O que escrever no motivo da despublicação" texto="Fica no histórico do curso, visível à equipe. Diga por que o curso está saindo do catálogo público - a equipe precisa saber para poder corrigir." %}
             </span>
             <textarea id="comentario" name="comentario" rows="4" data-editor required></textarea>
           </div>

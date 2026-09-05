@@ -23,6 +23,11 @@
     delay: [250, 0],
     // Toque longo no celular: toque curto ali e a pessoa tentando usar o campo.
     touch: ['hold', 400],
+    // O Tippy escreve `aria-describedby` no gatilho ao abrir o balao. Aqui isso
+    // duplicaria a leitura: o `_gatilho_ajuda.html` ja aponta o botao para um
+    // span com o mesmo texto, e o `_campo.html` deixa o Django apontar o campo.
+    // Nos dois casos a descricao existe antes de o balao abrir, e e estatica.
+    aria: { content: null, expanded: false },
     appendTo: function () { return document.body; }
   };
 

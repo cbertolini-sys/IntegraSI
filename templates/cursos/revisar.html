@@ -69,9 +69,7 @@
               <span class="rotulo-campo">
                 <label for="comentario">Comentário</label>
                 <span class="obrigatorio" aria-hidden="true">*</span>
-                <button type="button" class="ajuda-campo"
-                  data-ajuda="Toda decisão fica no histórico com o seu nome, e é este texto que a equipe lê. Ao devolver, diga o que falta e onde. Aceita negrito, listas e links."
-                  tabindex="-1" aria-label="O que escrever no comentário">?</button>
+                {% include "_gatilho_ajuda.html" with id="comentario" rotulo="O que escrever no comentário" texto="Toda decisão fica no histórico com o seu nome, e é este texto que a equipe lê. Ao devolver, diga o que falta e onde. Aceita negrito, listas e links." %}
               </span>
               {# rows=4 poe o editor curto: um comentario nao e uma secao do plano. #}
               <textarea id="comentario" name="comentario" rows="4" data-editor required></textarea>
