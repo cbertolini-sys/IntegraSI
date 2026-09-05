@@ -264,6 +264,64 @@ def test_a_varredura_de_cerquilha_enxerga_comentario_de_uma_linha():
     assert de_uma_linha > 0, "a varredura não achou nenhum comentário de cerquilha"
 
 
+# --- A mesma limitacao do lexer, agora para `{% %}` ----------------------------
+
+
+def tags_de_template_abertas():
+    """Toda `{% ... %}` que comeca numa linha e fecha noutra.
+
+    `{% comment %}` e `{% endcomment %}` ficam de fora: sao duas tags de uma
+    linha cada, e o que ha entre elas e conteudo, nao tag. O mesmo vale para
+    qualquer par de abertura e fechamento - o que este teste procura e a TAG
+    partida ao meio.
+    """
+    achados = []
+    for caminho in arquivos_versionados():
+        if not caminho.startswith("templates/") or not caminho.endswith(".html"):
+            continue
+        conteudo = texto_de(caminho)
+        if conteudo is None:
+            continue
+        for numero, linha in enumerate(conteudo.splitlines(), start=1):
+            if linha.count("{%") > linha.count("%}"):
+                achados.append(f"{caminho}:{numero}: {linha.strip()[:80]}")
+    return achados
+
+
+def test_nenhuma_tag_de_template_atravessa_a_linha():
+    """Mesmo fato do lexer que reprova o `{# #}` de duas linhas, e a mesma
+    consequencia: `tag_re` e `({%.*?%}|{{.*?}}|{#.*?#})` SEM `re.DOTALL`, entao
+    uma tag partida ao meio nao e reconhecida e sai impressa na tela.
+
+    Custou um defeito de verdade: nove `{% include "_gatilho_ajuda.html" %}`
+    quebrados em tres linhas para caber na margem apareceram como texto cru
+    dentro do <h2> da ficha do curso e nas telas de revisao. A suite pegou por
+    um teste so, que por acaso conferia o gatilho renderizado.
+
+    Se este teste reprovar, junte a tag numa linha so, por mais longa que fique.
+    """
+    achados = tags_de_template_abertas()
+    assert not achados, (
+        "tag de template partida em mais de uma linha (o lexer não a reconhece "
+        "e ela sai renderizada como texto) em:\n" + "\n".join(achados)
+    )
+
+
+def test_a_varredura_de_tags_enxerga_tag_de_uma_linha():
+    """Sem isto, um seletor errado devolveria lista vazia e o teste acima ficaria
+    verde para sempre, com o repositorio inteiro livre para partir tags."""
+    de_uma_linha = 0
+    for caminho in arquivos_versionados():
+        if not caminho.startswith("templates/") or not caminho.endswith(".html"):
+            continue
+        conteudo = texto_de(caminho) or ""
+        de_uma_linha += sum(
+            1 for linha in conteudo.splitlines()
+            if linha.count("{%") and linha.count("{%") == linha.count("%}")
+        )
+    assert de_uma_linha > 100, "a varredura não achou tags de template"
+
+
 # --- Regra de CSS que anula um `hidden` do template ---------------------------
 
 
