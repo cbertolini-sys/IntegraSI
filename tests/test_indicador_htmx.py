@@ -41,3 +41,45 @@ def test_salvar_secao_tem_indicador_proprio():
     texto = (RAIZ / "templates" / "cursos" / "_secao.html").read_text(encoding="utf-8")
     assert "hx-indicator=" in texto
     assert 'class="htmx-indicator"' in texto or "htmx-indicator" in texto
+
+
+# --- O indicador tambem precisa existir para quem nao ve a tela ---------------
+
+
+def test_o_indicador_parado_nao_e_anunciado():
+    """`opacity: 0` esconde do olho e NAO tira da arvore de acessibilidade.
+
+    Com so a opacidade, o texto "Salvando…" fica permanentemente exposto: quem
+    usa leitor de tela o ouve ao percorrer a secao, mesmo com nada salvando, e
+    nunca o ouve no momento em que ele realmente aparece. As duas metades do
+    defeito vem da mesma causa.
+
+    `visibility: hidden` remove da arvore; voltando a `visible`, o leitor de tela
+    trata como conteudo que entrou na regiao viva e anuncia. A opacidade fica
+    para o esmaecimento continuar existindo.
+    """
+    inicio = CSS.index(".htmx-indicator {")
+    parado = CSS[inicio : CSS.index("}", inicio)]
+    assert "visibility: hidden" in parado, (
+        "com só `opacity: 0` o texto do indicador é anunciado o tempo todo"
+    )
+
+
+def test_o_indicador_em_movimento_volta_para_a_arvore():
+    """Guarda separada da de cima: esconder sem voltar deixaria o indicador
+    invisivel para sempre a quem usa leitor de tela, que e pior que o defeito
+    original."""
+    inicio = CSS.index(".htmx-request .htmx-indicator,")
+    ativo = CSS[inicio : CSS.index("}", inicio)]
+    assert "visibility: visible" in ativo, (
+        "o indicador some da árvore de acessibilidade e nunca volta"
+    )
+
+
+def test_o_indicador_de_salvar_secao_e_uma_regiao_viva():
+    """Sem `role="status"`, voltar a arvore nao anuncia nada: o leitor de tela
+    so fala sozinho sobre regiao que foi declarada viva."""
+    texto = (RAIZ / "templates" / "cursos" / "_secao.html").read_text(encoding="utf-8")
+    inicio = texto.index('class="htmx-indicator')
+    tag = texto[texto.rindex("<span", 0, inicio) : texto.index(">", inicio) + 1]
+    assert 'role="status"' in tag, f"o indicador não é região viva: {tag}"

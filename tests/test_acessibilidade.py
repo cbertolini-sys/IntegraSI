@@ -127,6 +127,24 @@ def test_a_regiao_de_mensagens_existe_mesmo_vazia(pagina):
     )
 
 
+def test_a_regiao_de_mensagens_fica_dentro_de_um_marco(pagina):
+    """Solta entre o cabecalho e o `<main>`, a regiao nao pertencia a marco
+    nenhum: `<header>`, `<nav>`, `<main>` e `<footer>` sao os quatro que a
+    pagina tem, e ela ficava fora dos quatro.
+
+    Quem navega saltando entre marcos (pratica comum em leitor de tela) nunca a
+    alcancava. `role="status"` faz a mensagem ser anunciada quando chega; estar
+    dentro de um marco e o que permite voltar a ela depois.
+    """
+    inicio_main = pagina.index("<main")
+    assert pagina.index('class="mensagens"') > inicio_main, (
+        "a região de mensagens está antes do <main>, fora de qualquer marco"
+    )
+    assert pagina.index('class="mensagens"') < pagina.index("</main>"), (
+        "a região de mensagens está depois do <main>"
+    )
+
+
 def test_a_regiao_vazia_nao_ocupa_espaco_na_tela():
     """A regiao passou a existir sempre; sem isto ela abriria um vao no topo de
     toda pagina do sistema, que e o preco que nao vale a pena pagar pelo

@@ -142,15 +142,21 @@
     própria pessoa acabou de fazer, e não são emergência que justifique
     interromper a leitura em curso.
 
+    Dentro do <main>, e não entre o cabeçalho e ele: solta ali, a região não
+    pertencia a marco nenhum, e quem navega saltando entre marcos (prática
+    comum em leitor de tela) nunca a encontrava. `role="status"` faz a mensagem
+    ser anunciada quando chega; estar num marco é o que permite voltar a ela
+    depois.
+
     O laço encostado nas duas tags <ul> não é descuido de formatação: `:empty`
     do CSS exige ZERO nós filhos, e uma quebra de linha entre `<ul>` e `</ul>`
     já é um nó de texto. Indentado, a lista vazia deixava de casar com
     `.mensagens:empty` e abria um vão de 1,5rem no topo de toda tela do
     sistema. Achado olhando a tela, com a suíte verde.
   {% endcomment %}
-  <ul class="mensagens" role="status" aria-label="Mensagens do sistema">{% for message in messages %}<li>{{ message }}</li>{% endfor %}</ul>
-
   <main id="conteudo" tabindex="-1">
+    <ul class="mensagens" role="status" aria-label="Mensagens do sistema">{% for message in messages %}<li>{{ message }}</li>{% endfor %}</ul>
+
     {% block conteudo %}{% endblock %}
   </main>
 
