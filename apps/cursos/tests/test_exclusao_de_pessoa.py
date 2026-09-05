@@ -119,11 +119,19 @@ def test_a_recusa_diz_o_que_prende_a_pessoa(dados_curso, professor, aluno, coord
 
 
 @pytest.mark.django_db
-def test_ninguem_se_exclui(coordenador):
-    """Mesma razão do rebaixamento: o Admin não tem como recusar, e uma
-    coordenação que se apaga deixa o sistema sem quem publique curso."""
-    with pytest.raises(ValidationError):
+def test_ninguem_se_exclui(coordenador, segundo_coordenador):
+    """Mesma razão do rebaixamento: o Admin não tem como recusar.
+
+    DOIS coordenadores de propósito, e a mensagem afirmada por extenso. A primeira
+    versão deste teste usava um só, e passava com a guarda de autoexclusão
+    apagada: sem ela, o cenário caía na regra da última coordenação, que levanta a
+    MESMA `ValidationError`. Duas regras violadas pelo mesmo cenário não prendem
+    nenhuma das duas, e só a campanha de deleção mostrou isso.
+    """
+    with pytest.raises(ValidationError) as erro:
         contas.excluir_pessoa(coordenador, por=coordenador)
+
+    assert "a si mesmo" in str(erro.value), str(erro.value)
 
 
 @pytest.mark.django_db
