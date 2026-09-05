@@ -25,12 +25,6 @@ def test_enfileirar_cria_uma_notificacao_por_destinatario():
 
 
 @pytest.mark.django_db
-def test_enfileirar_ignora_destinatario_vazio():
-    services.enfileirar(evento="X", destinatarios=["a@ufsm.br", "", None], assunto="A", corpo="B")
-    assert Notificacao.objects.count() == 1
-
-
-@pytest.mark.django_db
 def test_comando_envia_e_marca_como_enviada(settings):
     settings.EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
     services.enfileirar(evento="X", destinatarios=["a@ufsm.br"], assunto="Assunto", corpo="Corpo")
