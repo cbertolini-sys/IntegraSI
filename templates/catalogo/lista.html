@@ -33,7 +33,7 @@
            {% if vitrine %}aria-roledescription="carrossel"{% endif %}
            aria-label="Últimos cursos publicados">
         {% if vitrine %}
-          <p class="vitrine-rotulo">Últimos cursos publicados</p>
+          <h2 class="vitrine-rotulo">Últimos cursos publicados</h2>
 
           <div class="vitrine-palco">
             <ul class="vitrine-slides" data-slides>
@@ -107,6 +107,7 @@
                     data-ir-para="{{ indice_do_convite }}"></button>
           </div>
         {% else %}
+          <h2 class="visualmente-oculto">Catálogo em preparação</h2>
           <div class="cartao-vitrine vazio-vitrine">
             <h3>O catálogo está sendo montado</h3>
             <p class="resumo-vitrine">Os primeiros cursos aparecem aqui assim que a

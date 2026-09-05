@@ -397,19 +397,43 @@ def test_o_gatilho_de_ajuda_carrega_o_proprio_espaco():
 
 
 @pytest.mark.django_db
-def test_os_cartoes_do_painel_do_curso_sao_section_com_h3(
+def test_os_cartoes_do_painel_do_curso_sao_section_com_h2(
     client, curso_em_producao, professor
 ):
-    """O painel do curso ficou de fora da rodada que uniformizou os entregáveis:
-    continuava com `<div class="bloco">` e `<h2>`.
+    """A mesma estrutura descrita do mesmo jeito nas telas vizinhas.
 
-    Não era defeito visual - `.bloco > h2` e `.bloco > h3` são desenhados igual -,
-    mas é a mesma estrutura descrita de dois jeitos em duas telas vizinhas, e a
-    próxima regra escrita para uma delas passa a valer só para metade.
+    A regra continua sendo a de antes - `<section class="bloco">` com um título
+    de seção, e não `<div>` com outro nível -, mas o nível unificado passa a ser
+    `<h2>`, e não `<h3>`.
+
+    Duas razões. A primeira é aritmética: `h2` já era o que dez dos catorze
+    títulos de seção do sistema usavam (`revisar`, `analisar_curso`,
+    `responder`, `fila_revisao`), e esta regra vinha puxando duas telas para a
+    minoria. A segunda é de acessibilidade: o `<h1>` da página é seguido direto
+    pelo título de seção, e com `h3` ali quem navega por títulos ouvia um salto
+    anunciando uma seção que a tela não tem (WCAG 1.3.1). O nível é preso em
+    `apps/painel/tests/test_hierarquia_de_titulos.py`, sobre a página inteira.
+
+    `.bloco > h2` e `.bloco > h3` continuam desenhados igual, então não houve
+    mudança visual - a mesma observação da versão anterior deste teste.
+
+    A asserção olha o título QUE ABRE cada `.bloco`, e não a ausência de `<h3>`
+    na tela. A versão anterior podia cobrar "nenhum h2 no corpo" porque título
+    de seção e título de cartão eram ambos `h3`, e a checagem grosseira dava no
+    mesmo por acidente. Agora os dois níveis são diferentes de propósito: a
+    seção é `h2` e os cartões dentro dela são `h3`.
     """
     client.force_login(professor)
     html = client.get(reverse("curso", args=[curso_em_producao.pk])).content.decode()
     corpo = html[html.index("corpo-trabalho") : html.index("<aside")]
     assert '<div class="bloco"' not in corpo
-    assert "<h2" not in corpo
-    assert corpo.count('class="bloco"') >= 1
+
+    aberturas = [
+        corpo[i : i + 200].split(">", 1)[1].lstrip()[:4]
+        for i in range(len(corpo))
+        if corpo.startswith('<section class="bloco">', i)
+    ]
+    assert aberturas, "nenhum `<section class=\"bloco\">` no corpo da ficha"
+    assert all(a.startswith("<h2") for a in aberturas), (
+        f"título de seção fora do h2: {aberturas}"
+    )

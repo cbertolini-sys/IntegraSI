@@ -439,7 +439,10 @@ def test_os_outros_entregaveis_continuam_oferecendo(client, curso_com_equipe, al
     client.force_login(aluno)
     html = client.get(reverse("entregavel", args=[slides.pk])).content.decode()
     assert "Anexar material" in html
-    assert "<h3>Materiais</h3>" in html
+    # `>Materiais<` e nao `<h3>Materiais</h3>`: o que este teste mede e a
+    # presenca da secao, e prender o nivel do titulo junto o fazia reprovar numa
+    # mudanca que nao tem nada a ver com o que ele diz medir.
+    assert ">Materiais<" in html
 
 
 @pytest.mark.django_db
@@ -796,15 +799,23 @@ def tela_do_entregavel(client, curso, tipo):
 
 
 @pytest.mark.django_db
-def test_os_cartoes_das_seis_telas_sao_section_com_h3(client, curso_com_equipe, aluno):
-    """`.bloco` e `<section>` com `<h3>` no Plano de Ensino, e o CSS desenha o
-    titulo do cartao por `.bloco > h3`. Com `<h2>`, os outros cinco pegavam outro
-    tamanho de fonte no mesmo lugar da tela."""
+def test_os_cartoes_das_seis_telas_sao_section_com_h2(client, curso_com_equipe, aluno):
+    """`.bloco` e `<section>` com um titulo de secao unico nas seis telas.
+
+    O nivel unificado passa a ser `<h2>`, e nao `<h3>`. A versao anterior deste
+    teste dizia que `<h2>` pegaria outro tamanho de fonte: nao pega, porque a
+    regra do CSS lista `.bloco > h2` e `.bloco > h3` juntos e os desenha igual.
+
+    O motivo de ser `h2` e de fora do CSS: o `<h1>` da pagina e seguido direto
+    pelo titulo de secao, e com `h3` ali quem navega por titulos ouve um salto
+    anunciando uma secao que a tela nao tem (WCAG 1.3.1). `h2` tambem ja era o
+    que dez dos catorze titulos de secao do sistema usavam.
+    """
     client.force_login(aluno)
     for tipo in TipoEntregavel:
         corpo = coluna_de_trabalho(tela_do_entregavel(client, curso_com_equipe, tipo))
         assert '<div class="bloco"' not in corpo, tipo
-        assert "<h2" not in corpo, tipo
+        assert "<h3" not in corpo, tipo
         assert corpo.count('class="bloco"') >= 1, tipo
         # Todo `.bloco` da coluna e <section>: no Plano de Ensino ele vem com id
         # antes da classe (`<section id="secao-N" class="bloco">`), entao a conta

@@ -2942,6 +2942,7 @@ textarea:focus {
 
 /* No titulo da secao do Plano de Ensino o rotulo e versalete pequeno, entao o
    asterisco acompanha o tamanho de la em vez de ficar maior que a palavra. */
+.bloco > h2 .obrigatorio,
 .bloco > h3 .obrigatorio {
   font-size: 0.625rem;
   margin-left: 0.125rem;
@@ -3741,14 +3742,25 @@ textarea:focus {
    tira sozinho durante a requisicao. Escrita aqui, e nao deixada para o
    `includeIndicatorStyles` automatico dele, para usar a mesma transicao suave
    do resto do sistema. */
+/* `visibility` alem da opacidade, e nao no lugar dela.
+   `opacity: 0` esconde do olho e NAO tira da arvore de acessibilidade: com so
+   ela, o "Salvando..." ficava permanentemente exposto, ouvido ao percorrer a
+   secao com nada salvando, e nunca ouvido na hora em que aparecia de verdade.
+   `visibility: hidden` remove da arvore, e voltar a `visible` faz o leitor de
+   tela tratar como conteudo que entrou na regiao viva.
+   O atraso de 0,15s na saida deixa o esmaecimento terminar antes de sumir; na
+   entrada nao ha atraso, senao o elemento apareceria depois do proprio fade. */
 .htmx-indicator {
   opacity: 0;
-  transition: opacity 0.15s ease;
+  visibility: hidden;
+  transition: opacity 0.15s ease, visibility 0s linear 0.15s;
 }
 
 .htmx-request .htmx-indicator,
 .htmx-request.htmx-indicator {
   opacity: 1;
+  visibility: visible;
+  transition: opacity 0.15s ease, visibility 0s;
 }
 
 /* A regiao que o HTMX troca por inteiro (referencial, etapa, habilidades)

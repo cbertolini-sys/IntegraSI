@@ -4,7 +4,7 @@
     qualquer uma vazia. O asterisco e fixo porque a regra e fixa; se um dia uma
     secao virar opcional, ele passa a sair de um campo da propria Secao.
   {% endcomment %}
-  <h3>{{ secao.titulo }}<span class="obrigatorio" aria-hidden="true">*</span>{% if secao.ajuda %}{% include "_gatilho_ajuda.html" with id=secao.pk texto=secao.ajuda rotulo="O que escrever em "|add:secao.titulo %}{% endif %}</h3>
+  <h2>{{ secao.titulo }}<span class="obrigatorio" aria-hidden="true">*</span>{% if secao.ajuda %}{% include "_gatilho_ajuda.html" with id=secao.pk texto=secao.ajuda rotulo="O que escrever em "|add:secao.titulo %}{% endif %}</h2>
   {% if pode_editar %}
     {% if salvo %}<p class="mensagem">Salvo.</p>{% endif %}
     {% if erro %}<p class="mensagem">{{ erro }}</p>{% endif %}
@@ -27,7 +27,8 @@
       <textarea name="conteudo" rows="10" data-editor>{{ secao.conteudo }}</textarea>
       <div class="acoes-secao">
         <button type="submit" class="botao">Salvar seção</button>
-        <span id="indicador-secao-{{ secao.pk }}" class="htmx-indicator aviso-salvando">Salvando…</span>
+        <span id="indicador-secao-{{ secao.pk }}" class="htmx-indicator aviso-salvando"
+                role="status">Salvando…</span>
       </div>
     </form>
   {% else %}

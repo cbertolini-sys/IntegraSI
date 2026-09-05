@@ -126,12 +126,24 @@ def test_as_secoes_do_plano_de_ensino_tambem_sao_marcadas(client, curso_com_equi
 
     client.force_login(aluno)
     html = tela(client, curso_com_equipe, TipoEntregavel.PLANO_ENSINO)
-    # So os titulos de secao: contar a pagina inteira somaria a legenda "* Campo
-    # obrigatório." e o numero deixaria de dizer o que o nome do teste promete.
-    titulos = re.findall(r"<h3>.*?</h3>", html, re.S)
-    assert len(titulos) == 7, f"esperava sete seções, vi {len(titulos)}"
-    for titulo in titulos:
-        assert 'class="obrigatorio"' in titulo, titulo[:60]
+    # So os titulos de secao do Plano de Ensino, e nao todo `<h2>` da tela: a
+    # pagina tem outros (o "Materiais" do bloco de anexos, por exemplo), e a
+    # legenda "* Campo obrigatório." tambem casaria numa busca pela pagina
+    # inteira. O filtro e o proprio asterisco, que e do que o teste trata.
+    #
+    # O nivel deixou de ser `h3` quando os titulos de secao do sistema todo
+    # foram unificados em `h2`; o `7` continua vindo da lista que cria as
+    # secoes, e nao da contagem que a tela devolveu.
+    # As duas contas em separado, e nao um filtro que junta as duas: filtrando
+    # `<h2>` marcado e conferindo que sao sete, uma OITAVA secao sem asterisco
+    # passaria batido, porque as sete continuariam la. Contar as secoes primeiro
+    # e so entao exigir a marca em cada uma pega esse caso.
+    secoes = re.findall(r'<section id="secao-\d+"[^>]*>.*?</section>', html, re.S)
+    assert len(secoes) == 7, f"esperava sete seções, vi {len(secoes)}"
+    for secao in secoes:
+        titulo = re.search(r"<h2>.*?</h2>", secao, re.S)
+        assert titulo, secao[:80]
+        assert 'class="obrigatorio"' in titulo.group(0), titulo.group(0)[:80]
 
 
 @pytest.mark.django_db

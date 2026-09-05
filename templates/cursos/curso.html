@@ -28,7 +28,7 @@
     <div>
       {% if curso.versao > 1 %}
         <section class="bloco">
-          <h3>Versão {{ curso.versao }}</h3>
+          <h2>Versão {{ curso.versao }}</h2>
           <p>{{ curso.motivo_versao }}</p>
         </section>
       {% endif %}
@@ -39,7 +39,7 @@
         descrita de dois jeitos em telas vizinhas.
       {% endcomment %}
       <section class="bloco">
-        <h3>Entregáveis</h3>
+        <h2>Entregáveis</h2>
         <ul class="registros">
           {% for entregavel in entregaveis %}
             <li class="registro entregavel-card etapa-{{ entregavel.numero }}">

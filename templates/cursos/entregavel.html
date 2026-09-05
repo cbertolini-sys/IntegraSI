@@ -39,7 +39,7 @@
   {% endcomment %}
   {% if ultima_revisao and ultima_revisao.decisao != "APROVADO" %}
     <section class="bloco devolutiva">
-      <h3>{% if ultima_revisao.decisao == "REABERTO" %}Reaberto pelo professor{% else %}Devolvido pelo professor{% endif %}</h3>
+      <h2>{% if ultima_revisao.decisao == "REABERTO" %}Reaberto pelo professor{% else %}Devolvido pelo professor{% endif %}</h2>
       {% comment %}
         |safe seguro porque `Revisao.save()` sanitiza com nh3 contra
         TAGS_PERMITIDAS, incondicionalmente. Sem ele o editor do professor seria
@@ -60,7 +60,7 @@
   {% endcomment %}
   {% if entregavel.tipo != "PLANO_ENSINO" %}
   <section class="bloco">
-  <h3>Materiais</h3>
+  <h2>Materiais</h2>
   <ul class="registros">
     {% for anexo in entregavel.anexos.all %}
       {% include "cursos/_anexo_na_lista.html" %}
@@ -73,7 +73,7 @@
   {% if pode_editar %}
     {% if form_anexo %}
     <section class="bloco">
-      <h3>Anexar material</h3>
+      <h2>Anexar material</h2>
       <form method="post" action="{% url 'anexar' entregavel.pk %}" enctype="multipart/form-data">
         {% csrf_token %}
         {% comment %}
@@ -96,7 +96,7 @@
     {% endcomment %}
     {% if entregavel.tipo == "VIDEOS" %}
       <section class="bloco">
-      <h3>Enviar vídeo-aula</h3>
+      <h2>Enviar vídeo-aula</h2>
       {% comment %}
         Upload fatiado e retomavel: e o unico ponto do sistema com JS proprio,
         porque HTMX nao fatia arquivo (spec 8). Tudo o que o JS precisa saber sobre

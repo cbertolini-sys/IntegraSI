@@ -26,6 +26,14 @@
   </div>
 
   <div class="faixa corpo-trabalho">
+    {% comment %}
+      Título oculto, e não decoração: sem ele o `<h1>` da página é seguido
+      direto pelo `<h3>` de cada cartão, e quem navega por títulos ouve o salto
+      como se houvesse uma seção que a tela não carregou. Aqui ele também emparelha com
+      o "Já respondidas" logo abaixo, que é visível: os dois grupos passam a
+      ter título, um de cada tipo.
+    {% endcomment %}
+    <h2 class="visualmente-oculto">Esperando resposta</h2>
     <ul class="registros">
       {% for solicitacao in pendentes %}
         <li class="registro">
