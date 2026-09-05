@@ -22,13 +22,24 @@
       {% for sugestao in pendentes %}
         <li class="registro">
           <div>
-            <h3><a href="{% url 'responder_sugestao' sugestao.pk %}">{{ sugestao.instituicao }}</a></h3>
+            {% comment %}
+              O titulo e a DEMANDA, e nao a instituicao. Quem coordena olha esta
+              tela para decidir qual curso produzir, e para isso precisa ver o que
+              foi pedido; a instituicao e contexto, e desce para a linha de baixo.
+
+              Nao ha campo de titulo no modelo, e nao deve haver: quem sugere
+              descreve uma necessidade, e obrigar a resumi-la antes de contar qual
+              e faria a pessoa inventar um rotulo em vez de explicar o problema.
+            {% endcomment %}
+            <h3><a href="{% url 'responder_sugestao' sugestao.pk %}">{{ sugestao.demanda|truncatewords:12 }}</a></h3>
             <p class="detalhe">
-              <span>{{ sugestao.nome }}</span>
+              <span>{{ sugestao.instituicao }}</span>
               <span class="sep">&middot;</span>
               <span>{{ sugestao.publico_alvo }}</span>
               <span class="sep">&middot;</span>
               <span>Laboratório: {{ sugestao.get_tem_laboratorio_display }}</span>
+              <span class="sep">&middot;</span>
+              <span>{{ sugestao.criado_em|date:"d/m/Y" }}</span>
             </p>
           </div>
           <span class="estado {{ sugestao.situacao.tom }}">{{ sugestao.situacao.rotulo }}</span>
@@ -43,11 +54,22 @@
       {% for sugestao in respondidas %}
         <li class="registro">
           <div>
-            <h3><a href="{% url 'responder_sugestao' sugestao.pk %}">{{ sugestao.instituicao }}</a></h3>
+            {% comment %}
+              O titulo e a DEMANDA, e nao a instituicao. Quem coordena olha esta
+              tela para decidir qual curso produzir, e para isso precisa ver o que
+              foi pedido; a instituicao e contexto, e desce para a linha de baixo.
+
+              Nao ha campo de titulo no modelo, e nao deve haver: quem sugere
+              descreve uma necessidade, e obrigar a resumi-la antes de contar qual
+              e faria a pessoa inventar um rotulo em vez de explicar o problema.
+            {% endcomment %}
+            <h3><a href="{% url 'responder_sugestao' sugestao.pk %}">{{ sugestao.demanda|truncatewords:12 }}</a></h3>
             <p class="detalhe">
-              <span>{{ sugestao.nome }}</span>
+              <span>{{ sugestao.instituicao }}</span>
               <span class="sep">&middot;</span>
               <span>{{ sugestao.publico_alvo }}</span>
+              <span class="sep">&middot;</span>
+              <span>{{ sugestao.criado_em|date:"d/m/Y" }}</span>
             </p>
           </div>
           <span class="estado {{ sugestao.situacao.tom }}">{{ sugestao.situacao.rotulo }}</span>

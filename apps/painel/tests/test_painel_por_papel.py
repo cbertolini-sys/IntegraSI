@@ -29,7 +29,7 @@ DO_PROFESSOR = ["Cursos publicados", "Cursos em desenvolvimento", "Entregáveis 
 DA_COORDENACAO = [
     "Aguardando aprovação",
     "Solicitações a responder",
-    "Sugestões a responder",
+    "Sugestões recebidas",
     "Cursos no catálogo",
 ]
 

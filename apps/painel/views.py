@@ -94,10 +94,14 @@ def _coordenacao(usuario):
             # Ao lado das solicitacoes, e nao no lugar delas: sao decisoes
             # diferentes (agendar um curso pronto contra decidir produzir um
             # curso novo), e quem coordena precisa ver as duas filas separadas.
-            "rotulo": "Sugestões a responder",
-            "valor": SugestaoDeCurso.objects.filter(
-                status__in=[SugestaoDeCurso.RECEBIDA, SugestaoDeCurso.EM_ANALISE]
-            ).count(),
+            #
+            # Conta TODAS, e nao so as pendentes como o cartao ao lado: a porta
+            # que ele abre e a lista inteira do que a comunidade pediu, e um
+            # numero que zera quando a ultima e respondida esconderia justamente
+            # o historico que da valor a essa tela. Segue o padrao de "Cursos no
+            # catálogo", que tambem e inventario e nao fila.
+            "rotulo": "Sugestões recebidas",
+            "valor": SugestaoDeCurso.objects.count(),
             "url": "sugestoes",
         },
         {
