@@ -64,7 +64,24 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
-DATABASES = {"default": dj_database_url.parse(os.environ["DATABASE_URL"])}
+DATABASES = {
+    "default": dj_database_url.parse(
+        os.environ["DATABASE_URL"],
+        # Sem isto o padrao do Django e ZERO: cada requisicao abria uma conexao
+        # TCP nova com o Postgres, autenticava e a fechava no fim. Com gunicorn
+        # sincrono isso e desperdicio em toda rota, inclusive nos endpoints HTMX
+        # que existem justamente para responder rapido. Nao aparecia em teste de
+        # comportamento nenhum: a tela funcionava igual, so gastava mais.
+        conn_max_age=600,
+        # Obrigatorio junto do de cima, e nao um extra. Uma conexao derrubada do
+        # lado do banco (reinicio do Postgres, timeout do servidor, queda de rede)
+        # volta do pool morta, e sem a checagem a requisicao falha com
+        # `InterfaceError` - um 500 para quem estava no meio de alguma coisa.
+        # Reaproveitar conexao sem conferir troca um custo previsivel por uma
+        # falha imprevisivel, que e pior que o custo.
+        conn_health_checks=True,
+    )
+}
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},

@@ -313,3 +313,36 @@ def test_o_arquivo_de_ambiente_pode_ser_apontado_por_variavel(tmp_path):
 
     assert resultado.returncode == 0, resultado.stderr
     assert resultado.stdout.strip() == "['so.deste.arquivo']"
+
+
+# --- conexao com o banco ------------------------------------------------------
+
+
+def test_a_conexao_com_o_banco_e_reaproveitada():
+    """`CONN_MAX_AGE` maior que zero, senao cada requisicao abre uma conexao TCP
+    nova com o PostgreSQL, autentica e a fecha no fim.
+
+    O padrao do Django e zero, e com Gunicorn sincrono isso e desperdicio puro em
+    TODA rota, inclusive nos endpoints HTMX que existem justamente para responder
+    rapido. Nao aparece em teste de comportamento nenhum: a tela funciona igual, so
+    gasta mais.
+    """
+    from django.conf import settings
+
+    assert settings.DATABASES["default"].get("CONN_MAX_AGE", 0) > 0
+
+
+def test_a_conexao_reaproveitada_vem_com_checagem_de_saude():
+    """`conn_health_checks` nao e opcional junto do `CONN_MAX_AGE`.
+
+    Sem ele, uma conexao derrubada do lado do banco (reinicio do Postgres, timeout
+    do servidor, queda de rede) volta do pool morta e a requisicao falha com
+    `InterfaceError` - um 500 para quem estava no meio de alguma coisa. Com ele, o
+    Django testa a conexao antes de usar e abre outra se preciso.
+
+    Reaproveitar conexao SEM esta checagem troca um custo previsivel por uma falha
+    imprevisivel, que e pior.
+    """
+    from django.conf import settings
+
+    assert settings.DATABASES["default"].get("CONN_HEALTH_CHECKS") is True

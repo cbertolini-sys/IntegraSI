@@ -622,3 +622,38 @@ def test_o_cron_confere_a_entrega_protegida():
     lugar. Sem esta linha no cron, ela depende de alguem lembrar."""
     crontab = (DEPLOY / "crontab").read_text()
     assert "conferir_entrega_protegida" in crontab
+
+
+# --- compressao ---------------------------------------------------------------
+
+
+def test_o_nginx_comprime_javascript_e_css(nginx):
+    """O `gzip on` global do Ubuntu cobre `text/html` e MAIS NADA.
+
+    Medido no servidor no ar antes desta linha existir: 419 KB de estatico na
+    primeira visita, sem um `content-encoding` sequer - 209 KB so de Quill. O
+    publico deste catalogo e escola, e internet de escola e o cenario onde essa
+    diferenca decide entre abrir e desistir.
+
+    A afirmacao e sobre os tipos que faltavam, e nao sobre a diretiva existir: um
+    `gzip on` sem `gzip_types` nao comprime nada alem do HTML, que e exatamente o
+    estado que este teste existe para impedir.
+    """
+    conf = sem_comentarios(nginx)
+    assert re.search(r"(?m)^\s*gzip on;", conf)
+    tipos = re.search(r"gzip_types([^;]+);", conf)
+    assert tipos, "gzip_types ausente: sem ele o gzip cobre so text/html"
+    declarados = tipos.group(1)
+    for tipo in ["application/javascript", "text/css"]:
+        assert tipo in declarados, f"{tipo} fora do gzip_types"
+
+
+def test_a_compressao_avisa_os_caches_intermediarios(nginx):
+    """`gzip_vary on` poe o cabecalho `Vary: Accept-Encoding`.
+
+    Sem ele, um cache no caminho (proxy da instituicao, CDN futura) pode guardar a
+    resposta comprimida e servi-la a um cliente que nao a aceita, que entao recebe
+    bytes ilegiveis. E o tipo de defeito que nao aparece em nenhum teste e so em
+    uma rede especifica.
+    """
+    assert re.search(r"(?m)^\s*gzip_vary on;", sem_comentarios(nginx))
