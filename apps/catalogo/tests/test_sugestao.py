@@ -189,3 +189,23 @@ def test_o_laboratorio_e_uma_lista_com_as_tres_opcoes(client):
     assert "Selecione" in campo
     for rotulo in ["Sim", "Não", "Não sei informar"]:
         assert f">{rotulo}</option>" in campo, rotulo
+
+
+@pytest.mark.django_db
+def test_o_convite_fica_num_cartao_lateral(client):
+    """O texto que explica POR QUE sugerir sai da coluna do formulário.
+
+    Ele não é instrução de preenchimento: é o contexto que convence alguém a
+    escrever. Acima dos campos, empurrava o formulário para baixo e era lido como
+    mais um parágrafo a vencer antes de começar. Ao lado, fica visível enquanto a
+    pessoa preenche.
+
+    O recorte é o `<aside>`: afirmar que a frase está na página passaria verde com
+    ela de volta no topo da coluna, que é exatamente de onde ela saiu.
+    """
+    html = client.get(reverse("sugerir")).content.decode()
+    inicio = html.index("<aside")
+    lateral = html[inicio : html.index("</aside>", inicio)]
+
+    assert "propostas de curso nascem de demandas" in lateral, lateral
+    assert "<form" not in lateral, "o formulário foi parar dentro da lateral"
