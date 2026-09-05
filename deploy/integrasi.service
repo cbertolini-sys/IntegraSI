@@ -7,11 +7,37 @@ User=integrasi
 Group=www-data
 WorkingDirectory=/srv/integrasi
 EnvironmentFile=/srv/integrasi/.env
-# --timeout acompanha o proxy_read_timeout do nginx: um bloco de 5 MB numa
-# conexao ruim leva minutos, e o worker nao pode ser morto antes de o proxy
-# desistir -- o usuario veria 502 no meio do upload.
+# O `--timeout` valia 300s, e o comentario que o justificava dizia que "um bloco
+# de 5 MB numa conexao ruim leva minutos, e o worker nao pode ser morto antes de o
+# proxy desistir". Isso e FALSO: o nginx bufferiza o corpo da requisicao
+# (`proxy_request_buffering` e `on` por padrao e nao esta desligado em lugar
+# nenhum), entao o gunicorn so recebe requisicao ja completa e nunca espera
+# cliente lento. Quem cuida do cliente lento e o `client_body_timeout` do nginx,
+# e agora ele vale so no location de upload.
+#
+# Com 300s valendo para toda rota e tres operarios, TRES requisicoes penduradas
+# derrubavam o site por cinco minutos.
+#
+# Os 60s saem de medicao no proprio servidor, e nao de chute: o trabalho mais
+# pesado que uma requisicao faz e o `concluir_upload`, que calcula SHA-256 do
+# video e o copia para o MEDIA_ROOT. La, 500 MB custam 2,4s; o limite de video do
+# sistema e 1 GB (LIMITE_VIDEO), entao o pior caso real e cerca de 5s. Doze vezes
+# de folga.
+#
+# `--workers 9` pela formula de sempre para operario sincrono (2 x nucleos + 1),
+# com 4 nucleos. Cabe: cada operario consome cerca de 53 MB medidos, entao 9 dao
+# ~480 MB dos 2,6 GB livres, e sao 9 conexoes persistentes contra o
+# max_connections de 100 do Postgres.
+#
+# `--max-requests` recicla o operario e limita o estrago de qualquer vazamento de
+# memoria, que sem isso cresceria ate o proximo deploy. O `jitter` evita que os
+# nove reciclem na mesma hora e deixem o site sem ninguem por um instante.
 ExecStart=/srv/integrasi/.venv/bin/gunicorn config.wsgi:application \
-    --bind 127.0.0.1:8000 --workers 3 --timeout 300
+    --bind 127.0.0.1:8000 \
+    --workers 9 \
+    --timeout 60 \
+    --max-requests 1000 --max-requests-jitter 100 \
+    --access-logfile /var/log/integrasi/acesso.log
 Restart=always
 
 [Install]

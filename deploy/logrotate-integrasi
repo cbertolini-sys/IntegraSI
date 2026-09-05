@@ -23,8 +23,15 @@
 # Log novo que venha a existir precisa de uma decisao: se quem escreve mantem o
 # arquivo aberto, ele nao entra aqui sem `copytruncate` ou sem um `postrotate` que
 # mande o processo reabrir.
+# O `acesso.log` do gunicorn entra aqui, mas com uma diferenca importante: ele e
+# o unico da lista que o processo mantem ABERTO. Renomear sem avisar faria o
+# gunicorn continuar escrevendo no arquivo renomeado e o novo nascer vazio - o
+# mesmo defeito que tirou o `app.log` desta rotacao. La a solucao foi excluir,
+# porque o RotatingFileHandler do Django ja rotaciona sozinho; aqui e reabrir,
+# porque o gunicorn sabe fazer isso ao receber SIGUSR1. Ver o `postrotate`.
 /var/log/integrasi/cron.log
-/var/log/integrasi/backup.log {
+/var/log/integrasi/backup.log
+/var/log/integrasi/acesso.log {
     daily
     rotate 14
     compress
@@ -36,4 +43,13 @@
     # conseguir escrever, em silencio, na primeira rotacao.
     create 0664 integrasi integrasi
     su integrasi integrasi
+    # `sharedscripts` para o bloco rodar UMA vez, e nao uma por arquivo: sao tres
+    # padroes aqui e o sinal so precisa ir uma vez.
+    sharedscripts
+    postrotate
+        # SIGUSR1 faz o gunicorn reabrir os arquivos de log. `|| true` porque o
+        # servico pode estar parado no momento da rotacao, e uma rotacao que falha
+        # por isso interromperia a dos outros arquivos.
+        systemctl kill -s USR1 integrasi.service || true
+    endscript
 }

@@ -117,13 +117,19 @@ def test_nginx_aceita_o_bloco_de_upload(nginx):
     assert int(achado.group(1)) * 1024 * 1024 >= settings.DATA_UPLOAD_MAX_MEMORY_SIZE
 
 
-def test_o_timeout_do_gunicorn_nao_e_menor_que_o_do_nginx(nginx):
-    """Se o worker morre antes de o proxy desistir, o upload de um bloco de 5 MB
-    numa conexão ruim vira 502 no meio."""
-    proxy = int(re.search(r"proxy_read_timeout\s+(\d+)s;", nginx).group(1))
-    servico = (DEPLOY / "integrasi.service").read_text()
-    gunicorn = int(re.search(r"--timeout (\d+)", servico).group(1))
-    assert gunicorn >= proxy
+# Este teste dizia o CONTRARIO, e a inversao foi deliberada. Ele afirmava
+# `gunicorn >= proxy`, com a justificativa de que "se o worker morre antes de o
+# proxy desistir, o upload de um bloco de 5 MB numa conexao ruim vira 502 no
+# meio". A premissa e falsa: o nginx bufferiza o corpo (`proxy_request_buffering`
+# e `on` por padrao e nao esta desligado em lugar nenhum), entao o gunicorn nunca
+# ve o cliente lento - ele recebe requisicao ja completa. Quem cuida do cliente
+# lento e o `client_body_timeout`, e ele agora e generoso so no /uploads/.
+#
+# Com a premissa errada, a regra prendia os dois numeros JUNTOS e para CIMA: o
+# gunicorn precisava ser >= o proxy, e o proxy estava em 300s, entao o gunicorn
+# nao podia baixar. Era o teste que segurava o defeito no lugar.
+#
+# A regra certa esta em `test_o_nginx_desiste_depois_do_gunicorn_e_nao_antes`.
 
 
 def test_o_proxy_sobrescreve_o_x_forwarded_for(nginx):
@@ -657,3 +663,119 @@ def test_a_compressao_avisa_os_caches_intermediarios(nginx):
     uma rede especifica.
     """
     assert re.search(r"(?m)^\s*gzip_vary on;", sem_comentarios(nginx))
+
+
+# --- tempo de espera e operarios ----------------------------------------------
+
+LIMITE_DE_ESPERA = 60
+
+
+def _numero(texto, opcao):
+    achado = re.search(rf"{opcao}[= ](\d+)", texto)
+    return int(achado.group(1)) if achado else None
+
+
+def test_o_gunicorn_nao_espera_cinco_minutos_por_requisicao():
+    """O `--timeout` global valia 300s e cobria TODA rota.
+
+    Com tres operarios, isso significava que tres requisicoes penduradas
+    derrubavam o site por cinco minutos: nao sobra quem atenda ninguem. O
+    comentario que justificava os 300s dizia que "um bloco de 5 MB numa conexao
+    ruim leva minutos, e o worker nao pode ser morto antes de o proxy desistir" -
+    e isso e falso. O nginx BUFFERIZA o corpo da requisicao (`proxy_request_buffering`
+    e `on` por padrao e nao esta desligado em lugar nenhum), entao o gunicorn so
+    recebe requisicao ja completa e nunca espera cliente lento. Quem cuida do
+    cliente lento e o `client_body_timeout`, que e do nginx.
+
+    O numero saiu de medicao no proprio servidor, e nao de chute: o trabalho mais
+    pesado que uma requisicao faz e o `concluir_upload`, que calcula SHA-256 do
+    video e o copia para o MEDIA_ROOT. Medido la, 500 MB custam 2,4s; o limite de
+    video do sistema e 1 GB, entao o pior caso real e cerca de 5s. Sessenta
+    segundos dao doze vezes de folga.
+    """
+    servico = (DEPLOY / "integrasi.service").read_text()
+    espera = _numero(servico, "--timeout")
+
+    assert espera is not None, "o --timeout sumiu do ExecStart"
+    assert espera <= LIMITE_DE_ESPERA, f"--timeout {espera}s: uma rota lenta segura o site"
+
+
+def test_o_gunicorn_recicla_os_operarios():
+    """`--max-requests` com `jitter`.
+
+    Sem ele, um vazamento de memoria em qualquer dependencia cresce ate o fim da
+    vida do processo, que e "ate o proximo deploy". O `jitter` evita que todos os
+    operarios reciclem na mesma requisicao e deixem o site sem ninguem por um
+    instante."""
+    servico = (DEPLOY / "integrasi.service").read_text()
+
+    assert _numero(servico, "--max-requests") is not None
+    assert _numero(servico, "--max-requests-jitter") is not None
+
+
+def test_o_gunicorn_registra_os_acessos():
+    """Nao havia registro de acesso NENHUM da aplicacao: o `cron.log` guarda as
+    rotinas e o `app.log` so os erros. Sem ele, "o site esta lento" e uma
+    afirmacao que ninguem consegue conferir depois."""
+    assert "--access-logfile" in (DEPLOY / "integrasi.service").read_text()
+
+
+def test_o_nginx_desiste_depois_do_gunicorn_e_nao_antes(nginx):
+    """`proxy_read_timeout` acima do `--timeout` do gunicorn.
+
+    A ordem importa e e sutil. Se o nginx desistir primeiro, o visitante leva 504 e
+    o gunicorn CONTINUA trabalhando numa requisicao que ninguem vai mais ler,
+    segurando o operario pelo tempo restante. Com o gunicorn desistindo primeiro, o
+    processo e liberado e a resposta de erro e a dele.
+
+    Esta invariante liga dois arquivos que ninguem edita junto, que e exatamente o
+    tipo de regra que sai de sincronia sem teste.
+    """
+    servico = (DEPLOY / "integrasi.service").read_text()
+    conf = sem_comentarios(nginx)
+    gunicorn = _numero(servico, "--timeout")
+    proxy = int(re.search(r"proxy_read_timeout (\d+)s", conf).group(1))
+
+    assert proxy > gunicorn, (
+        f"nginx desiste em {proxy}s e o gunicorn em {gunicorn}s: "
+        "o visitante levaria 504 com o operário ainda preso"
+    )
+
+
+def test_a_espera_longa_do_corpo_vale_so_para_o_upload(nginx):
+    """`client_body_timeout` generoso APENAS no location das rotas de upload.
+
+    Ele existe para o cliente lento mandando um bloco de 5 MB, e so ali. Solto no
+    `server`, valia para toda rota: uma conexao meia-morta segurava uma conexao do
+    nginx por cinco minutos em qualquer pagina do site.
+    """
+    conf = sem_comentarios(nginx)
+    fora = re.search(r"(?m)^    client_body_timeout (\d+)s;", conf)
+    assert fora is None or int(fora.group(1)) <= 60, (
+        "client_body_timeout longo no nível do server: vale para todas as rotas"
+    )
+    upload = re.search(r"location /uploads/ \{[^}]*client_body_timeout (\d+)s", conf, re.S)
+    assert upload and int(upload.group(1)) >= 120, (
+        "o location /uploads/ precisa da espera longa: é onde o cliente lento manda blocos"
+    )
+
+
+def test_o_log_de_acesso_rotaciona_e_o_gunicorn_reabre():
+    """O `acesso.log` novo precisa de rotacao E de um sinal para o gunicorn.
+
+    Ele nao pode ficar de fora: e o arquivo que mais cresce do sistema, uma linha
+    por requisicao, e o `logrotate` deste projeto lista os arquivos um a um em vez
+    de usar curinga.
+
+    E nao basta acrescentar o nome. O gunicorn MANTEM o arquivo aberto, e o
+    logrotate rotaciona renomeando: sem um `postrotate` que mande `SIGUSR1`, o
+    processo continua escrevendo no arquivo renomeado e o `acesso.log` novo nasce
+    vazio e fica vazio ate o proximo reinicio. E o mesmo defeito que tirou o
+    `app.log` desta rotacao, e la a solucao foi excluir; aqui e reabrir, porque o
+    gunicorn sabe fazer isso e o RotatingFileHandler do Django nao sabia.
+    """
+    lr = (DEPLOY / "logrotate-integrasi").read_text()
+
+    assert "acesso.log" in lr, "o log de acesso ficou de fora da rotação"
+    assert "postrotate" in lr, "sem postrotate o gunicorn escreve no arquivo renomeado"
+    assert "USR1" in lr, "o sinal que faz o gunicorn reabrir o arquivo é o SIGUSR1"
