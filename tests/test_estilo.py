@@ -445,10 +445,18 @@ def test_o_cabecalho_de_pagina_contem_a_faixa_e_nao_o_contrario():
     """
     invertidos = []
     for caminho in sorted(RAIZ.glob("templates/**/*.html")):
-        texto = caminho.read_text(encoding="utf-8")
+        # Comentarios de template fora ANTES de varrer. A primeira versao olhava
+        # os 220 caracteres seguintes no texto cru, e um `{% comment %}` de seis
+        # linhas explicando a propria regra empurrava a `.faixa` para fora da
+        # janela: o teste reprovava um arquivo correto. Teste que reprova o certo
+        # e desligado na primeira vez que atrapalha.
+        texto = re.sub(
+            r"\{%\s*comment\s*%\}.*?\{%\s*endcomment\s*%\}", "", 
+            caminho.read_text(encoding="utf-8"), flags=re.S,
+        )
         for m in re.finditer(r'class="cabecalho-pagina"', texto):
-            depois = texto[m.end() : m.end() + 220]
             # A `.faixa` tem que ser o proximo elemento aberto, e nao um ancestral.
+            depois = texto[m.end() : m.end() + 120]
             if not re.search(r'<div class="faixa\b', depois):
                 invertidos.append(str(caminho.relative_to(RAIZ)))
                 break

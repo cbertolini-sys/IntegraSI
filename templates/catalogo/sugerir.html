@@ -3,7 +3,16 @@
 
 {% block conteudo %}
   <div class="cabecalho-pagina">
-    <div class="faixa pagina-estreita">
+    {% comment %}
+      `faixa` sem `pagina-estreita`: a barra do cabecalho ocupa a largura da
+      pagina, como em todas as outras telas, e e isso que poe o botao na ponta
+      direita. Com `pagina-estreita` aqui, a barra inteira encolhia para 38rem e o
+      botao ficava a direita de uma coluna no meio da tela.
+
+      O `pagina-estreita` continua no corpo, abaixo, que e onde ele serve: coluna
+      de leitura curta para o formulario.
+    {% endcomment %}
+    <div class="faixa">
       <div>
         <h1>Sugerir um curso</h1>
         <p class="abertura">
