@@ -57,8 +57,9 @@
         </li>
         <li>
           <h3>Quem está fora não precisa de conta</h3>
-          <p>A escola navega o catálogo e solicita por formulário. Não cria login,
-             não gerencia nada: a coordenação responde por e-mail.</p>
+          <p>A escola navega o catálogo, solicita um curso ou sugere um que ainda
+             não existe, tudo por formulário. Não cria login, não gerencia nada: a
+             coordenação responde por e-mail.</p>
         </li>
       </ul>
     </section>
@@ -83,10 +84,10 @@
           <p>
             <strong>E se o curso não existir?</strong> Aí ela sugere um: descreve a
             demanda, quem participaria e se o grupo tem laboratório de informática.
-            A sugestão vai para a coordenação, que responde por e-mail. Sugestão
-            aceita não vira curso sozinha: ela entra na fila para um professor
-            abrir a proposta, e daí em diante segue o mesmo caminho de qualquer
-            outro curso do catálogo.
+            A sugestão vai para a coordenação, que responde por e-mail. Aceitar uma
+            sugestão não cria o curso: registra que a demanda foi acolhida. O curso
+            só existe quando um professor abre a proposta, e daí em diante ele segue
+            o mesmo caminho de qualquer outro do catálogo.
           </p>
           <p>
             O pedido chega ao professor responsável e à coordenação por e-mail. Daí
@@ -169,10 +170,16 @@
           <p class="fluxo-quem">Coordenação</p>
           <h3>Quem decide o que entra no catálogo</h3>
           <p>
-            O painel abre com as contagens do que espera decisão. São quatro frentes:
-            aprovar cursos submetidos, responder às solicitações da comunidade,
-            cuidar do que já está no catálogo e administrar quem é professor e quem
-            é coordenador.
+            O painel abre com as contagens do que espera decisão. São cinco frentes:
+            aprovar cursos submetidos, responder às solicitações de cursos que já
+            existem, responder às sugestões de cursos que ainda não existem, cuidar
+            do que está no catálogo e administrar quem é professor e quem é
+            coordenador.
+          </p>
+          <p>
+            Solicitação e sugestão são telas separadas porque são decisões
+            diferentes: responder uma solicitação é agendar uma turma; responder uma
+            sugestão é decidir se a universidade vai produzir um curso novo.
           </p>
           <p>
             Aceitar uma solicitação é o que cria uma turma: a coordenação designa o
@@ -183,13 +190,13 @@
         <ol class="fluxograma coordenacao">
           <li class="etapa limite">
             <span class="etapa-marca" aria-hidden="true"></span>
-            <div class="etapa-corpo"><h4>Entra com e-mail institucional</h4></div>
+            <div class="etapa-corpo"><h4>Entra com e-mail e senha</h4></div>
           </li>
           <li class="etapa">
             <span class="etapa-marca" aria-hidden="true"></span>
             <div class="etapa-corpo"><h4>Painel</h4>
               <p>Quanto espera decisão em cada frente: cursos na fila, solicitações
-                 a responder e cursos no catálogo.</p></div>
+                 a responder, sugestões de curso novo e cursos no catálogo.</p></div>
           </li>
           <li class="etapa decisao">
             <span class="etapa-marca" aria-hidden="true"></span>
@@ -217,6 +224,20 @@
               </div>
             </div>
           </li>
+          <li class="etapa decisao">
+            <span class="etapa-marca" aria-hidden="true"></span>
+            <div class="etapa-corpo">
+              <h4>Sugestão de curso novo</h4>
+              <p>Uma demanda por um curso que o catálogo ainda não tem.</p>
+              <div class="ramos">
+                <div class="ramo sim"><span class="ramo-rotulo">Aceita</span>
+                  <p>Fica registrada como aceita e quem sugeriu é avisado. Ela não
+                     vira curso sozinha: alguém ainda precisa abrir a proposta.</p></div>
+                <div class="ramo nao"><span class="ramo-rotulo">Recusa</span>
+                  <p>Escreve a resposta; ela vai por e-mail a quem sugeriu.</p></div>
+              </div>
+            </div>
+          </li>
           <li class="etapa">
             <span class="etapa-marca" aria-hidden="true"></span>
             <div class="etapa-corpo"><h4>Cuida do catálogo</h4>
@@ -226,8 +247,10 @@
           <li class="etapa">
             <span class="etapa-marca" aria-hidden="true"></span>
             <div class="etapa-corpo"><h4>Administra pessoas</h4>
-              <p>Promove um professor a coordenador ou retira esse acesso. Ninguém
-                 rebaixa a si mesmo.</p></div>
+              <p>Cadastra um professor, promove a coordenador ou retira esse acesso.
+                 Também desliga quem saiu: quem nunca apareceu em curso nenhum é
+                 excluído; quem já produziu ou revisou é desativado, para o histórico
+                 não perder o autor. Ninguém rebaixa nem exclui a si mesmo.</p></div>
           </li>
           <li class="etapa limite">
             <span class="etapa-marca" aria-hidden="true"></span>
@@ -478,33 +501,40 @@
     <section class="bloco-sobre">
       <h2>Com o que ele é feito</h2>
       <p>
-        O IntegraSI é um projeto do curso de Sistemas de Informação, e o código
-        também é material didático: as escolhas abaixo privilegiam ferramentas
-        estáveis, documentadas e que um aluno consegue estudar por inteiro.
+        O código também é material didático do curso: ferramentas estáveis,
+        documentadas, e poucas.
       </p>
 
       <ul class="pilares">
         <li>
           <h3>Servidor</h3>
-          <p>Python 3.13 e Django 5.2, com as telas montadas no servidor. Em
-             produção, Gunicorn atrás de Nginx.</p>
+          <p>Python 3.13 e Django 5.2. Telas montadas no servidor, servidas por
+             Gunicorn atrás de Nginx.</p>
         </li>
         <li>
           <h3>Banco de dados</h3>
-          <p>PostgreSQL, com a busca do catálogo feita pela busca em texto
-             completo do próprio banco, sem serviço de índice à parte.</p>
+          <p>PostgreSQL. A busca do catálogo é do próprio banco, sem serviço de
+             índice à parte.</p>
         </li>
         <li>
           <h3>No navegador</h3>
-          <p>HTMX para as partes que mudam sem recarregar, Quill para os textos
-             formatados e Tippy para as explicações de campo. Nenhuma delas vem
-             de fora: todas moram no repositório.</p>
+          <p>HTMX, Quill e Tippy. Todos ficam no repositório: o sistema não
+             carrega nada de fora.</p>
+        </li>
+        <li>
+          <h3>Segurança</h3>
+          <p>HTTPS em todo o acesso. Todo texto formatado é limpo antes de
+             gravar, para não virar código na tela de quem lê.</p>
+        </li>
+        <li>
+          <h3>Acessibilidade</h3>
+          <p>Navegação inteira por teclado, estrutura de títulos e avisos que
+             leitor de tela anuncia.</p>
         </li>
         <li>
           <h3>Verificação</h3>
-          <p>Suíte de testes automatizados que roda a cada mudança, e sanitização
-             de todo texto formatado antes de gravar, para que o que a equipe
-             escreve não vire código na tela de quem lê.</p>
+          <p>Testes automatizados a cada mudança, incluindo os que protegem as
+             regras acima.</p>
         </li>
       </ul>
     </section>
