@@ -30,6 +30,11 @@
   <script src="{% estatico 'js/quill.min.js' %}" defer></script>
   <script src="{% estatico 'js/editor.js' %}" defer></script>
   <script src="{% estatico 'js/menu.js' %}" defer></script>
+  {% comment %}
+    Um envio por clique, em todo formulário do sistema. `defer` como o resto:
+    ele só precisa existir antes do primeiro clique, e não antes do HTML.
+  {% endcomment %}
+  <script src="{% estatico 'js/envio.js' %}" defer></script>
 </head>
 <body>
   {% comment %}

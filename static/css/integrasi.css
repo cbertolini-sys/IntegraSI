@@ -3782,3 +3782,15 @@ textarea:focus {
   color: var(--cinza);
   font-size: 0.875rem;
 }
+
+/* O botao que ja foi apertado, enquanto o pedido esta a caminho.
+   `aria-disabled`, e nao `disabled`: o par nome/valor de um botao desabilitado
+   nao entra no corpo do POST, que e montado depois do evento `submit`, e
+   formularios como o de `pessoas.html` tem quatro botoes de acao diferentes.
+   O clique repetido e barrado pelo `envio.js`, e nao pelo atributo.
+   `cursor: progress` e nao `not-allowed`: a acao esta acontecendo, e nao
+   recusada. */
+button[aria-disabled="true"] {
+  opacity: 0.62;
+  cursor: progress;
+}
