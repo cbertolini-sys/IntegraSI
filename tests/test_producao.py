@@ -206,6 +206,45 @@ def test_o_servico_sobe_o_gunicorn_com_o_ambiente_do_arquivo():
     assert "Restart=always" in servico
 
 
+def test_o_servico_sabe_recarregar_sem_derrubar_ninguem():
+    """`systemctl reload` precisa existir, e precisa ser HUP.
+
+    Sem `ExecReload`, o unico caminho de deploy e `systemctl restart`, que mata
+    os operarios com pedido em curso. Num deploy com oito sessoes ativas isso
+    derruba quem esta no meio de uma edicao, e a alternativa era mandar o sinal
+    na mao - fora do procedimento, e portanto fora do que qualquer um repete.
+
+    HUP e o sinal que o gunicorn entende como "recarregue os operarios com
+    calma": ele sobe operarios novos, deixa os velhos terminarem o que estao
+    respondendo, e so entao os encerra. `KillMode` fica no padrao (`control-
+    group`), que so importa no restart de verdade.
+
+    Vale para este ExecStart porque ele NAO tem `--preload`: com o app pre-
+    carregado no mestre, o HUP recarregaria operarios sem reler o codigo, e o
+    deploy diria que subiu sem ter subido. O teste abaixo prende as duas metades.
+    """
+    servico = sem_comentarios((DEPLOY / "integrasi.service").read_text())
+    assert "ExecReload=" in servico, "sem ExecReload, todo deploy derruba sessão"
+    assert "-s HUP" in servico or "-HUP" in servico, (
+        "o ExecReload não manda HUP; outro sinal não recarrega com calma"
+    )
+
+
+def test_o_gunicorn_nao_pre_carrega_o_aplicativo():
+    """A outra metade da regra acima, e ela nao esta no mesmo lugar.
+
+    Com `--preload`, o mestre importa o aplicativo uma vez e os operarios saem
+    dele por fork: o HUP levantaria operarios com o codigo VELHO, e o deploy
+    terminaria verde sem ter trocado nada. O defeito nao apareceria em teste
+    nenhum - so na tela, dias depois, com alguem perguntando por que a correcao
+    nao chegou.
+    """
+    servico = sem_comentarios((DEPLOY / "integrasi.service").read_text())
+    assert "--preload" not in servico, (
+        "com --preload o ExecReload recarrega operários sem reler o código"
+    )
+
+
 def test_gunicorn_esta_nas_dependencias():
     """Na lista de dependências, não no comentário ao lado dela."""
     assert re.search(r'^\s*"gunicorn', (RAIZ / "pyproject.toml").read_text(), re.MULTILINE)

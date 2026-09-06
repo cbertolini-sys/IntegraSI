@@ -38,6 +38,25 @@ ExecStart=/srv/integrasi/.venv/bin/gunicorn config.wsgi:application \
     --timeout 60 \
     --max-requests 1000 --max-requests-jitter 100 \
     --access-logfile /var/log/integrasi/acesso.log
+
+# `systemctl reload integrasi` recarrega os operarios sem derrubar quem esta no
+# meio de um pedido: o gunicorn sobe operarios novos, deixa os velhos terminarem
+# o que estao respondendo, e so entao os encerra.
+#
+# Existe porque sem ele o unico caminho de deploy era `systemctl restart`, que
+# mata pedido em curso. Num deploy com oito sessoes ativas isso derruba quem
+# esta editando, e a alternativa era mandar o sinal na mao - fora do
+# procedimento, e portanto fora do que qualquer um repete.
+#
+# Depende de o ExecStart acima NAO ter `--preload`: com o aplicativo
+# pre-carregado no mestre, os operarios sairiam dele por fork e o HUP levantaria
+# operarios com o codigo VELHO. O deploy terminaria dizendo que subiu sem ter
+# subido, e o defeito so apareceria dias depois. `test_producao.py` prende as
+# duas metades, em testes separados.
+#
+# `reload` NAO cobre mudanca nesta unidade nem no proprio .env: as duas exigem
+# `daemon-reload` e `restart`, porque o mestre nao as rele.
+ExecReload=/bin/kill -s HUP $MAINPID
 Restart=always
 
 [Install]
