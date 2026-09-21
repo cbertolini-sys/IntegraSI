@@ -24,7 +24,7 @@
         </p>
         <p class="historico-quem">{{ transicao.usuario.nome_completo }}</p>
         {% if transicao.observacao %}
-          <div class="historico-texto">{{ transicao.observacao|safe }}</div>
+          <div class="historico-texto texto-quill">{{ transicao.observacao|safe }}</div>
         {% endif %}
       </li>
     {% endfor %}

@@ -8,6 +8,31 @@
 (function () {
   'use strict';
 
+  // O bundle vendorizado do Quill faz `.replaceAll(" ", "&nbsp;")` ao serializar
+  // (`getSemanticHTML`), SEM CONDICAO nenhuma - nao so em sequencias de espaco
+  // repetido, qualquer espaco. Um paragrafo inteiro de prosa vira, para o
+  // navegador, uma unica "palavra" sem ponto de quebra: numa caixa mais estreita
+  // que a linha toda (a ficha do curso, o comentario de revisao), o texto
+  // atravessa a caixa e some atras do card vizinho, em vez de dobrar a linha.
+  // Achado numa revisao de verdade, com a suite inteira verde.
+  //
+  // Nao ha como o usuario pedir um espaco que nao quebra de proposito - a barra
+  // nao oferece isso - entao todo `&nbsp;` que sai daqui e espaco comum digitado
+  // e nada mais. Duas trocas seguidas (de um espaco duplo, por exemplo) viram
+  // dois espacos comuns, que o navegador colapsa visualmente num so ao
+  // renderizar: perda aceitavel, e a mesma que aconteceria digitando direto
+  // num campo de texto qualquer.
+  //
+  // Fora da guarda do Quill, de proposito: assim um teste sob node prova esta
+  // funcao sem precisar simular o editor inteiro (tests/js/testa_editor.js).
+  function normalizarEspacos(html) {
+    return html.replace(/&nbsp;/g, ' ');
+  }
+
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { normalizarEspacos: normalizarEspacos };
+  }
+
   if (typeof window.Quill !== 'function') return;
 
   var BARRA = [
@@ -56,7 +81,7 @@
     // que le o valor do campo direto, sem disparar o evento de submit onde um
     // "copiar agora" caberia.
     editor.on('text-change', function () {
-      var html = editor.getSemanticHTML();
+      var html = normalizarEspacos(editor.getSemanticHTML());
       campo.value = html === '<p><br></p>' ? '' : html;
     });
   }

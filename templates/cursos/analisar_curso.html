@@ -37,7 +37,7 @@
               (os outros dois sao revisar.html e _secao.html) - depende dessa
               sanitizacao acontecer antes, nao aqui.
             {% endcomment %}
-            <h3>{{ secao.titulo }}</h3><div>{{ secao.conteudo|safe }}</div>
+            <h3>{{ secao.titulo }}</h3><div class="texto-quill">{{ secao.conteudo|safe }}</div>
           {% endfor %}
           {% if entregavel.anexos.all %}
             <ul class="etiquetas">{% for anexo in entregavel.anexos.all %}<li>{{ anexo.titulo }}</li>{% endfor %}</ul>

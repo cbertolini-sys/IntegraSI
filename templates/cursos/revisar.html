@@ -28,7 +28,7 @@
           do sistema que renderiza HTML vindo do banco sem escape - depende dessa
           sanitizacao acontecer antes, nao aqui.
         {% endcomment %}
-        <section class="bloco"><h2>{{ secao.titulo }}</h2><div>{{ secao.conteudo|safe }}</div></section>
+        <section class="bloco"><h2>{{ secao.titulo }}</h2><div class="texto-quill">{{ secao.conteudo|safe }}</div></section>
       {% endfor %}
 
       {% comment %}

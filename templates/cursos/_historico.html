@@ -17,7 +17,7 @@
           <time datetime="{{ revisao.criado_em|date:'c' }}">{{ revisao.criado_em|date:"d/m/Y" }}</time>
         </p>
         <p class="historico-quem">{{ revisao.revisor.nome_completo }}</p>
-        <div class="historico-texto">{{ revisao.comentario|safe }}</div>
+        <div class="historico-texto texto-quill">{{ revisao.comentario|safe }}</div>
       </li>
     {% endfor %}
   </ol>

@@ -1372,6 +1372,18 @@ textarea:focus {
   margin-bottom: 0;
 }
 
+/* Todo bloco que mostra texto saido do Quill carrega esta classe.
+   `getSemanticHTML()` troca espaco por `&nbsp;` ao serializar, sem condicao
+   nenhuma; ate a normalizacao em static/js/editor.js (normalizarEspacos), o
+   banco ja guardava secoes e comentarios como paragrafos inteiros sem ponto de
+   quebra. Esta regra cobre o que JA esta salvo assim: forca a quebra mesmo
+   dentro de uma sequencia que o navegador, por natureza, trataria como uma
+   palavra so. Sem ela o texto atravessa o cartao e some atras do vizinho -
+   achado numa revisao de verdade, com a suite inteira verde. */
+.texto-quill {
+  overflow-wrap: anywhere;
+}
+
 .registro:hover {
   box-shadow: var(--sombra);
   border-color: #cfdae6;
