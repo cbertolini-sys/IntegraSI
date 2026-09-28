@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block titulo %} - Esqueci minha senha{% endblock %}
+
+{% block conteudo %}
+<div class="trabalho">
+  <div class="faixa pagina-estreita">
+    <h1>Esqueci minha senha</h1>
+    {% if enviado %}
+      {% comment %}
+        A mesma frase para conta que existe e conta que nao existe: dizer
+        "encontramos sua conta" ou "nao ha conta com este e-mail" transformaria
+        este formulario num oraculo de enderecos validos. E o mesmo principio
+        que `LoginComLimite` ja aplica na tela de entrada.
+      {% endcomment %}
+      <div class="cartao">
+        <p>Se esse endereço tiver uma conta ativa, você vai receber um e-mail com
+           um link para escolher uma senha nova. O link vale por 2 horas.</p>
+        <a class="botao botao-largo" href="{% url 'login' %}">Voltar para a tela de entrada</a>
+      </div>
+    {% else %}
+      <p class="abertura">Informe o e-mail com que você entra no sistema. Se ele
+         tiver conta, mandamos um link para você escolher uma senha nova.</p>
+      <div class="cartao">
+        {% if erro %}
+          <p class="erro-acesso">{{ erro }}</p>
+        {% elif form.non_field_errors %}
+          <p class="erro-acesso">{{ form.non_field_errors|join:" " }}</p>
+        {% endif %}
+        <form method="post">
+          {% csrf_token %}
+          {% for campo in form %}
+            {% include "cursos/_campo.html" with campo=campo largo=1 %}
+          {% endfor %}
+          <button type="submit" class="botao botao-largo">Enviar link</button>
+        </form>
+        <p class="rodape-acesso">
+          <a href="{% url 'login' %}">Lembrei a senha, voltar para entrar</a>
+        </p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

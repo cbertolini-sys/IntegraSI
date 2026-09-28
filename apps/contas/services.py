@@ -5,7 +5,7 @@ from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.utils import timezone
 
-from apps.contas.models import ConviteAluno, Usuario
+from apps.contas.models import ConviteAluno, RedefinicaoDeSenha, Usuario
 from apps.notificacoes.services import enfileirar
 
 # Sem saudacao pelo nome: a conta do aluno tambem nasce so com o e-mail, entao
@@ -39,6 +39,25 @@ completar o cadastro com nome, CPF e SIAPE.
 
 O link vale por 7 dias e só pode ser usado uma vez. Se ele vencer, peça a
 {quem} para enviar outro.
+"""
+
+# Sem saudacao pelo nome pelo mesmo motivo do convite: a conta do professor pode
+# nao ter nome ainda (cadastrada so com o e-mail, primeiro acesso pendente) - mas
+# essa conta tambem nao chega a receber este e-mail, ver
+# `solicitar_redefinicao_de_senha`. A frase abaixo continua neutra mesmo assim,
+# porque quem pede a redefinicao pode nao ser o dono do e-mail.
+CORPO_REDEFINICAO = """Olá.
+
+Alguém pediu para redefinir a senha da conta {email} no IntegraSI, o sistema de
+produção de cursos de extensão do curso de Sistemas de Informação da UFSM em
+Frederico Westphalen.
+
+Se foi você, abra o endereço abaixo para escolher uma senha nova.
+
+{url}
+
+Se não foi você, não é preciso fazer nada: sua senha atual continua valendo, e o
+link abaixo vence em 2 horas.
 """
 
 
@@ -131,6 +150,64 @@ def consumir_convite(token, senha, cpf, matricula, telefone, nome=None, siape=No
 
     convite.usado_em = timezone.now()
     convite.save(update_fields=["usado_em"])
+    return usuario
+
+
+@transaction.atomic
+def solicitar_redefinicao_de_senha(email, base_url=""):
+    """Cria o token e enfileira o e-mail -- ou não faz nada, em silêncio.
+
+    Devolve `None` sem levantar erro nenhum quando o e-mail não bate com
+    ninguém, quando a conta está desativada, ou quando ela ainda não tem senha
+    utilizável (convite de primeiro acesso pendente -- é o link de convite que
+    aquela conta precisa, não este). A view mostra a MESMA mensagem nos quatro
+    casos (achado + inexistente + desativada + sem senha); diferenciar aqui
+    tornaria a tela um oráculo de quais e-mails têm conta, e quais delas estão
+    ativas (o mesmo princípio de `LoginComLimite`).
+
+    Invalida os pedidos anteriores da mesma pessoa, como `convidar` já faz com
+    o convite: dois links válidos ao mesmo tempo dobram a janela em que um
+    token vazado ainda serve.
+    """
+    usuario = Usuario.objects.filter(email__iexact=email, is_active=True).first()
+    if usuario is None or not usuario.has_usable_password():
+        return None
+
+    RedefinicaoDeSenha.objects.filter(usuario=usuario, usado_em__isnull=True).update(
+        expira_em=timezone.now()
+    )
+
+    redefinicao = RedefinicaoDeSenha.objects.create(
+        usuario=usuario, expira_em=timezone.now() + RedefinicaoDeSenha.PRAZO
+    )
+    url = f"{base_url}/senha/redefinir/{redefinicao.token}/"
+    enfileirar(
+        evento="REDEFINICAO_DE_SENHA",
+        destinatarios=[usuario.email],
+        assunto="Redefinição de senha no IntegraSI",
+        corpo=CORPO_REDEFINICAO.format(email=usuario.email, url=url),
+    )
+    return redefinicao
+
+
+@transaction.atomic
+def redefinir_senha(token, senha):
+    """Troca a senha e gasta o token. Espelha `consumir_convite`: tudo numa
+    transação, para uma senha fraca não deixar o token marcado como usado -- a
+    pessoa ficaria sem link e sem conta acessível."""
+    redefinicao = (
+        RedefinicaoDeSenha.objects.select_for_update().filter(token=token).first()
+    )
+    if redefinicao is None or not redefinicao.valido:
+        raise ValidationError("Este link não vale mais. Peça a redefinição de novo.")
+
+    usuario = redefinicao.usuario
+    validate_password(senha, usuario)
+    usuario.set_password(senha)
+    usuario.save()
+
+    redefinicao.usado_em = timezone.now()
+    redefinicao.save(update_fields=["usado_em"])
     return usuario
 
 

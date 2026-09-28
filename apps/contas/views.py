@@ -12,7 +12,14 @@ from django.views.decorators.http import require_http_methods
 from apps.contas import services
 from apps.contas.forms import CadastroDeProfessorForm, PerfilForm, TrocaDeSenhaForm
 from apps.contas.forms_convite import PrimeiroAcessoForm
-from apps.contas.models import ConviteAluno, TentativaDeLogin, Usuario
+from apps.contas.forms_redefinicao import EsqueciSenhaForm, RedefinirSenhaForm
+from apps.contas.models import (
+    ConviteAluno,
+    RedefinicaoDeSenha,
+    TentativaDeLogin,
+    TentativaDeRedefinicao,
+    Usuario,
+)
 from apps.contas.paginacao import paginar
 from apps.contas.rede import ip_da_requisicao
 
@@ -24,6 +31,11 @@ from apps.contas.rede import ip_da_requisicao
 # quarenta tentativas por hora nao quebram senha nenhuma.
 LIMITE_DE_TENTATIVAS = 10
 JANELA_DE_TENTATIVAS = datetime.timedelta(minutes=15)
+
+# Cinco por hora, como a solicitacao publica do catalogo (spec 10): e a mesma
+# forma de formulario, gente sem conta preenchendo um e-mail.
+LIMITE_DE_PEDIDOS_POR_HORA = 5
+JANELA_DE_PEDIDOS = datetime.timedelta(hours=1)
 
 
 class LoginComLimite(LoginView):
@@ -106,6 +118,77 @@ def primeiro_acesso(request, token):
 
     return render(
         request, "contas/primeiro_acesso.html", {"form": form, "convite": convite}
+    )
+
+
+def _excedeu_pedidos_de_redefinicao(request):
+    desde = timezone.now() - JANELA_DE_PEDIDOS
+    return (
+        TentativaDeRedefinicao.objects.filter(
+            ip=ip_da_requisicao(request), criado_em__gte=desde
+        ).count()
+        >= LIMITE_DE_PEDIDOS_POR_HORA
+    )
+
+
+@require_http_methods(["GET", "POST"])
+def esqueci_senha(request):
+    """Pede o e-mail e enfileira o link, sem nunca dizer se a conta existe.
+
+    Sem login, como `primeiro_acesso`: quem chega aqui esqueceu a senha, entao
+    nao tem como entrar primeiro. O limite e conferido ANTES do formulario, como
+    em `LoginComLimite` -- a mensagem de bloqueio nao depende do e-mail digitado,
+    entao pode ser diferente da de sucesso sem virar oraculo.
+    """
+    form = EsqueciSenhaForm(request.POST or None)
+
+    if request.method == "POST":
+        if _excedeu_pedidos_de_redefinicao(request):
+            return render(
+                request,
+                "contas/esqueci_senha.html",
+                {
+                    "form": form,
+                    "erro": "Muitas solicitações deste endereço. Tente novamente mais tarde.",
+                },
+            )
+        # Conta TODO pedido, valido ou nao, achando conta ou nao - diferente de
+        # `LoginComLimite`, que so registra a falha. Ali um login CERTO nao e
+        # abuso; aqui um e-mail que BATE tambem precisa contar, senao o limite
+        # nao segura quem tem uma lista de enderecos validos e quer inundar a
+        # fila de notificacoes.
+        TentativaDeRedefinicao.objects.create(ip=ip_da_requisicao(request))
+        if form.is_valid():
+            services.solicitar_redefinicao_de_senha(
+                form.cleaned_data["email"],
+                base_url=request.build_absolute_uri("/").rstrip("/"),
+            )
+            return render(request, "contas/esqueci_senha.html", {"enviado": True})
+
+    return render(request, "contas/esqueci_senha.html", {"form": form})
+
+
+@require_http_methods(["GET", "POST"])
+def redefinir_senha(request, token):
+    """Tela do link: escolhe a senha nova. Espelha `primeiro_acesso`: sem login,
+    o token e a credencial."""
+    redefinicao = RedefinicaoDeSenha.objects.filter(token=token).first()
+    if redefinicao is None or not redefinicao.valido:
+        return render(request, "contas/redefinicao_invalida.html")
+
+    form = RedefinirSenhaForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        try:
+            usuario = services.redefinir_senha(token, form.cleaned_data["senha"])
+        except ValidationError as erro:
+            for mensagem in erro.messages:
+                form.add_error(None, mensagem)
+        else:
+            login(request, usuario, backend="django.contrib.auth.backends.ModelBackend")
+            return redirect("painel")
+
+    return render(
+        request, "contas/redefinir_senha.html", {"form": form, "redefinicao": redefinicao}
     )
 
 

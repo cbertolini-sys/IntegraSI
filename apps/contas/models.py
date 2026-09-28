@@ -211,6 +211,7 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
 
 # Reexportado para que o resto do sistema importe de um lugar so.
 from apps.contas.models_convite import ConviteAluno  # noqa: E402,F401
+from apps.contas.models_redefinicao import RedefinicaoDeSenha  # noqa: E402,F401
 
 
 class TentativaDeLogin(models.Model):
@@ -233,6 +234,29 @@ class TentativaDeLogin(models.Model):
     class Meta:
         verbose_name = "tentativa de login"
         verbose_name_plural = "tentativas de login"
+        indexes = [models.Index(fields=["ip", "criado_em"])]
+
+    def __str__(self):
+        return f"{self.ip} em {self.criado_em:%d/%m/%Y %H:%M}"
+
+
+class TentativaDeRedefinicao(models.Model):
+    """Um pedido de "esqueci minha senha", para o limite por IP.
+
+    Mesmo desenho de `TentativaDeLogin`, e tabela própria, e não a mesma: contar
+    as duas juntas amarraria a janela de tentativa de senha errada à janela de
+    pedido de redefinição, duas políticas que este projeto já decidiu manter
+    separadas (ver `RedefinicaoDeSenha`). Grava mesmo quando o e-mail digitado
+    não bate com ninguém - é justamente esse caso que precisa de limite, porque
+    não sobra nenhuma `RedefinicaoDeSenha` para contar.
+    """
+
+    ip = models.GenericIPAddressField("IP de origem")
+    criado_em = models.DateTimeField("criado em", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "tentativa de redefinição"
+        verbose_name_plural = "tentativas de redefinição"
         indexes = [models.Index(fields=["ip", "criado_em"])]
 
     def __str__(self):

@@ -17,6 +17,8 @@ class PerfilCompletoMiddleware:
     # público para quem está logado.
     LIBERADAS = {
         "primeiro_acesso",
+        "esqueci_senha",
+        "redefinir_senha",
         "logout",
         "login",
         "catalogo",

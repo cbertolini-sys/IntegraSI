@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
 from apps.contas.forms import UsuarioChangeForm, UsuarioCreationForm
-from apps.contas.models import ConviteAluno, Usuario
+from apps.contas.models import ConviteAluno, RedefinicaoDeSenha, Usuario
 
 
 @admin.register(Usuario)
@@ -62,6 +62,24 @@ class ConviteAlunoAdmin(admin.ModelAdmin):
     """
 
     list_display = ["usuario", "criado_por", "criado_em", "expira_em", "usado_em"]
+    list_filter = ["usado_em"]
+    search_fields = ["usuario__nome_completo", "usuario__email"]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(RedefinicaoDeSenha)
+class RedefinicaoDeSenhaAdmin(admin.ModelAdmin):
+    """Mesmo desenho de `ConviteAlunoAdmin`, e pela mesma razão: o registro
+    nasce por `services.solicitar_redefinicao_de_senha` e morre por
+    `redefinir_senha`. Existe no Admin para a coordenação conferir um pedido
+    suspeito, não para editar."""
+
+    list_display = ["usuario", "criado_em", "expira_em", "usado_em"]
     list_filter = ["usado_em"]
     search_fields = ["usuario__nome_completo", "usuario__email"]
 
