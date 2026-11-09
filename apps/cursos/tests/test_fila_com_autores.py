@@ -100,20 +100,33 @@ def test_os_autores_nao_custam_uma_consulta_por_item(client, curso, professor, a
     from django.test.utils import CaptureQueriesContext
 
     from apps.contas.models import Usuario
+    from apps.cursos.models import Secao
 
+    # Dois anexos por item: com um so, uma consulta de pessoa por anexo ainda
+    # cabia no limite de usuarios.
     for tipo in (TipoEntregavel.PLANO_ENSINO, TipoEntregavel.CARDS, TipoEntregavel.VIDEOS):
         e = em_revisao(curso, tipo)
-        anexou(e, aluno)
-        if e.secoes.exists():
-            escreveu(e, aluno)
-    # Sem secao escrita, tirar o prefetch das secoes passaria calado.
-    assert any(e.secoes.filter(atualizado_por=aluno).exists() for e in curso.entregaveis.all())
+        anexou(e, aluno, "Um")
+        anexou(e, aluno, "Dois")
+    # Todas as secoes do Plano, e nao so uma: so o Plano tem secoes, e com uma
+    # so a consulta a mais por secao cabia na folga do limite de usuarios.
+    plano = curso.entregaveis.get(tipo=TipoEntregavel.PLANO_ENSINO)
+    assert plano.secoes.count() > 2
+    for secao in plano.secoes.all():
+        secao.atualizado_por = aluno
+        secao.save()
 
     client.force_login(professor)
     with CaptureQueriesContext(connection) as consultas:
         client.get(reverse("fila_revisao"))
-    tabela = Usuario._meta.db_table
-    batidas = [c for c in consultas if f'FROM "{tabela}"' in c["sql"]]
-    # Uma para a sessao (request.user) e no maximo duas para os autores
-    # (secoes e anexos), seja qual for o numero de itens.
-    assert len(batidas) <= 3, f"{len(batidas)} consultas na tabela de usuários"
+
+    def batidas(model):
+        return [c for c in consultas if f'FROM "{model._meta.db_table}"' in c["sql"]]
+
+    # Uma por grupo da fila (esperando e com a equipe), seja qual for o numero
+    # de itens: cada grupo e uma consulta com o proprio prefetch.
+    assert len(batidas(Secao)) <= 2, f"{len(batidas(Secao))} consultas na tabela de seções"
+    assert len(batidas(Anexo)) <= 2, f"{len(batidas(Anexo))} consultas na tabela de anexos"
+    # Uma para a sessao (request.user) e, por grupo, no maximo duas para os
+    # autores (de secoes e de anexos).
+    assert len(batidas(Usuario)) <= 5, f"{len(batidas(Usuario))} consultas na tabela de usuários"
