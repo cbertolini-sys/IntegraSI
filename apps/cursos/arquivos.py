@@ -63,6 +63,30 @@ EXTENSOES = {
     ".mp4": "video/mp4",
 }
 
+# O tipo com que cada documento de escritorio SAI no download. A validacao grava
+# os tres como `application/zip`, porque e o que a assinatura sabe dizer, e isso
+# basta para recusar executavel renomeado. Para entregar nao basta: com
+# `application/zip` o Safari trata o download como pacote e o descompacta, e a
+# pessoa clica num caderno de exercicios e recebe uma pasta de XML. Toda extensao
+# que `EXTENSOES` manda para zip precisa estar aqui (test_midia prende).
+TIPOS_DE_ESCRITORIO = {
+    ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    ".odp": "application/vnd.oasis.opendocument.presentation",
+}
+
+
+def tipo_de_entrega(nome_original, mime):
+    """O Content-Type do download: o gravado, salvo para o zip de escritorio.
+
+    So reinterpreta o que a validacao ja classificou como zip: a extensao nao tem
+    como transformar um PDF ou um video em outra coisa. E ela e confiavel aqui
+    porque `valida_upload` recusou o upload cuja extensao nao batia com os bytes.
+    """
+    if mime != "application/zip":
+        return mime
+    return TIPOS_DE_ESCRITORIO.get(Path(nome_original).suffix.lower(), mime)
+
 
 def detecta_mime(cabecalho):
     """Devolve o mime pela assinatura do arquivo, ou None se nao reconhecer."""

@@ -16,6 +16,7 @@ from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_GET
 
 from apps.cursos import permissions
+from apps.cursos.arquivos import tipo_de_entrega
 from apps.cursos.models import Arquivo
 
 # Abrir no navegador so o que e seguro renderizar. HTML ou SVG servido inline a
@@ -43,16 +44,17 @@ def baixar(request, identificador):
     # safe="": nem barra nem quebra de linha do nome escolhido pelo usuario podem
     # chegar cruas a um cabecalho de resposta.
     cabecalho = f"{disposicao}; filename*=UTF-8''{quote(arquivo.nome_original, safe='')}"
+    tipo = tipo_de_entrega(arquivo.nome_original, arquivo.mime)
 
     if not settings.USAR_X_ACCEL:
         # Desenvolvimento: sem nginx na frente, o Django entrega mesmo.
-        resposta = FileResponse(arquivo.arquivo.open("rb"), content_type=arquivo.mime)
+        resposta = FileResponse(arquivo.arquivo.open("rb"), content_type=tipo)
         resposta["Content-Disposition"] = cabecalho
         return resposta
 
     # Producao: quem transmite e o nginx. Um GB pelo processo Python prende um
     # worker por dez minutos e tres downloads simultaneos derrubam o servidor.
-    resposta = HttpResponse(content_type=arquivo.mime)
+    resposta = HttpResponse(content_type=tipo)
     resposta["X-Accel-Redirect"] = PREFIXO_INTERNO + quote(arquivo.arquivo.name)
     resposta["Content-Disposition"] = cabecalho
     return resposta

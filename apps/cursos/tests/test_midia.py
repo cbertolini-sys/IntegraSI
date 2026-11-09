@@ -27,6 +27,11 @@ As regras que este arquivo prende, na ordem em que aparecem:
 14. Sem USAR_X_ACCEL (desenvolvimento) o proprio Django entrega os bytes, com o
     mesmo cabecalho de disposicao e passando pelo mesmo portao de permissao.
 15. As telas de entregavel e de revisao linkam o anexo pela rota protegida.
+17. Documento de escritorio (.docx, .pptx, .odp) sai com o tipo DELE, e nao com o
+    `application/zip` que a validacao grava (os tres comecam com a assinatura de
+    zip). Com `application/zip` o Safari trata o download como pacote e o
+    descompacta: a pessoa clica num caderno de exercicios e recebe uma pasta de
+    XML. A extensao vem do `nome_original`, que `valida_upload` ja conferiu.
 
 Regra 16 (`USAR_X_ACCEL` nasce ligado quando `DEBUG` esta desligado) mora em
 `tests/test_configuracao.py`: e uma settings, e o unico jeito de ver o padrao e
@@ -362,3 +367,68 @@ def test_anexo_de_link_continua_apontando_para_fora(client, dados_curso, aluno):
 
     assert "https://exemplo.ufsm.br/aula" in corpo
     assert anexo.titulo in corpo
+
+
+# --- Regra 17: documento de escritorio sai com o tipo dele ------------------
+
+TIPOS_DE_ESCRITORIO = [
+    ("caderno.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
+    ("aula.pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation"),
+    ("aula.odp", "application/vnd.oasis.opendocument.presentation"),
+    # Extensao em maiuscula: `valida_upload` aceita, entao a entrega tambem.
+    ("CADERNO.DOCX", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
+]
+
+
+def _vira_documento(arquivo, nome):
+    arquivo.nome_original = nome
+    arquivo.mime = "application/zip"
+    arquivo.save(update_fields=["nome_original", "mime"])
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("nome,tipo", TIPOS_DE_ESCRITORIO)
+def test_documento_de_escritorio_sai_com_o_tipo_dele(
+    client, anexo, aluno, settings, nome, tipo
+):
+    settings.USAR_X_ACCEL = True
+    _vira_documento(anexo.arquivo, nome)
+    client.force_login(aluno)
+
+    resposta = client.get(reverse("baixar", args=[anexo.arquivo.identificador]))
+
+    assert resposta["Content-Type"] == tipo
+    assert resposta["Content-Disposition"].startswith("attachment")
+
+
+@pytest.mark.django_db
+def test_em_desenvolvimento_o_documento_tambem_sai_com_o_tipo_dele(
+    client, anexo, aluno, settings
+):
+    """O ramo sem nginx monta a resposta por outro caminho (FileResponse): o tipo
+    certo num ramo so deixaria o outro entregando a pasta de XML."""
+    settings.USAR_X_ACCEL = False
+    _vira_documento(anexo.arquivo, "caderno.docx")
+    client.force_login(aluno)
+
+    resposta = client.get(reverse("baixar", args=[anexo.arquivo.identificador]))
+    b"".join(resposta.streaming_content)  # fecha o arquivo aberto pelo FileResponse
+
+    assert resposta["Content-Type"] == TIPOS_DE_ESCRITORIO[0][1]
+
+
+@pytest.mark.django_db
+def test_o_pdf_continua_com_o_tipo_gravado(client, url, aluno, settings):
+    settings.USAR_X_ACCEL = True
+    client.force_login(aluno)
+
+    assert client.get(url)["Content-Type"] == "application/pdf"
+
+
+def test_toda_extensao_de_zip_tem_tipo_de_entrega():
+    """Extensao nova mandada para zip em EXTENSOES, sem tipo de entrega, voltaria a
+    sair como `application/zip` e a virar pasta de XML no Safari."""
+    from apps.cursos.arquivos import EXTENSOES, TIPOS_DE_ESCRITORIO
+
+    de_zip = {ext for ext, mime in EXTENSOES.items() if mime == "application/zip"}
+    assert de_zip <= set(TIPOS_DE_ESCRITORIO)
