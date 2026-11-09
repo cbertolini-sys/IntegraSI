@@ -376,12 +376,13 @@ def test_a_descricao_do_video_tem_editor(client, aluno, entregavel_videos):
     assert 'name="descricao"' in formulario
 
 
-# Regra 12c: a formatacao escrita no editor chega inteira a lista
+# Regra 12c: a formatacao escrita no editor nunca aparece como marca na lista
 @pytest.mark.django_db
-def test_a_formatacao_da_descricao_sobrevive_ate_a_lista(client, aluno, entregavel_videos):
-    """Com escape, o editor seria uma armadilha: a pessoa formata, salva, e a tela
-    mostra `<strong>` como texto. Renderizar como HTML so e seguro porque
-    `Anexo.save()` sanitiza - as duas metades andam juntas."""
+def test_a_formatacao_da_descricao_nao_vira_texto_na_lista(client, aluno, entregavel_videos):
+    """Com escape do HTML cru, o editor seria uma armadilha: a pessoa formata,
+    salva, e a tela mostra `<strong>` como texto. A lista hoje mostra um RESUMO
+    da descricao (test_lista_de_materiais), texto corrido sem a formatacao, e a
+    armadilha continua fechada: as palavras chegam, as marcas nao."""
     from apps.cursos.models import Anexo
     from apps.cursos.choices import TipoMidia
 
@@ -396,5 +397,5 @@ def test_a_formatacao_da_descricao_sobrevive_ate_a_lista(client, aluno, entregav
     )
     client.force_login(aluno)
     conteudo = tela(client, entregavel_videos)
-    assert "<strong>do curso</strong>" in conteudo
+    assert "Abertura do curso." in conteudo
     assert "&lt;strong&gt;" not in conteudo

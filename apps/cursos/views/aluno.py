@@ -118,7 +118,9 @@ def _rotulo_da_revisao(usuario, entregavel):
 
 @login_required
 def entregavel(request, pk):
-    obj = get_object_or_404(Entregavel, pk=pk)
+    # Os arquivos junto com os anexos: a lista de materiais le nome e tamanho de
+    # cada um, e sem isto e uma consulta por material.
+    obj = get_object_or_404(Entregavel.objects.prefetch_related("anexos__arquivo"), pk=pk)
     permissions.garante(permissions.pode_ver_curso(request.user, obj.curso), "Curso de outra equipe.")
     return render(
         request,

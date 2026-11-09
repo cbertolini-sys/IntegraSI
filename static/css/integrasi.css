@@ -1348,26 +1348,77 @@ textarea:focus {
   transition: box-shadow 0.16s ease, border-color 0.16s ease;
 }
 
-/* A descricao do material quebra para a propria linha: `.registro` e um flex de
-   uma linha so, e sem a base de 100% a frase disputaria espaco com o titulo e a
-   duracao no mesmo eixo. */
-.descricao-anexo {
-  flex-basis: 100%;
-  margin: 0;
+/* Um material da lista: selo do formato, o corpo (titulo, arquivo, resumo) e o
+   rotulo de gabarito na ponta. Quebra de linha permitida so para o rotulo: no
+   celular ele desce, e o selo continua ao lado do titulo. */
+.registro.material {
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+.material-formato {
+  flex: none;
+  width: 3.25rem;
+  margin-top: 0.125rem;
+  padding: 0.375rem 0;
+  border-radius: 0.375rem;
+  background: var(--azul-suave);
+  color: var(--azul);
+  font-family: var(--dado);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
+.material-formato.formato-pdf {
+  background: var(--laranja-suave);
+  color: var(--laranja-forte);
+}
+
+.material-formato.formato-mp4 {
+  background: #e3f6f6;
+  color: #13706f;
+}
+
+.material-formato.formato-link {
+  background: #eef1f5;
+  color: var(--cinza);
+}
+
+.material-corpo {
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+
+.material-nome {
+  font-family: var(--dado);
+  font-size: 0.8125rem;
+}
+
+.material-resumo {
+  margin: 0.5rem 0 0;
   color: var(--cinza);
   font-size: 0.9375rem;
   line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.material-fonte {
+  margin: 0.375rem 0 0;
+  color: var(--cinza);
+  font-size: 0.8125rem;
+  font-style: italic;
+  overflow-wrap: anywhere;
 }
 
 /* Texto que vem do editor chega embrulhado em <p> (e pode trazer lista ou
    citação). Sem isto o primeiro paragrafo abre uma margem de navegador dentro do
-   cartao. Vale para a descricao do material e para a devolutiva do professor. */
-.descricao-anexo > :first-child,
+   cartao. */
 .devolutiva-texto > :first-child {
   margin-top: 0;
 }
 
-.descricao-anexo > :last-child,
 .devolutiva-texto > :last-child {
   margin-bottom: 0;
 }

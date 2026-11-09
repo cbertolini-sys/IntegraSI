@@ -329,7 +329,9 @@ def fila_revisao(request):
 
 @login_required
 def revisar(request, pk):
-    entregavel = get_object_or_404(Entregavel, pk=pk)
+    # Os arquivos junto com os anexos: a lista de materiais le nome e tamanho de
+    # cada um, e sem isto e uma consulta por material.
+    entregavel = get_object_or_404(Entregavel.objects.prefetch_related("anexos__arquivo"), pk=pk)
     permissions.garante(permissions.pode_revisar(request.user, entregavel.curso), "Curso de outro professor.")
     # Lista fechada, e nao o endereco que vier no parametro: refletir num `href`
     # um valor de fora e como se abre um redirecionamento para qualquer lugar. O

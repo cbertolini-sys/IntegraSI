@@ -40,7 +40,14 @@
             <h3>{{ secao.titulo }}</h3><div class="texto-quill">{{ secao.conteudo|safe }}</div>
           {% endfor %}
           {% if entregavel.anexos.all %}
-            <ul class="etiquetas">{% for anexo in entregavel.anexos.all %}<li>{{ anexo.titulo }}</li>{% endfor %}</ul>
+            {% comment %}
+              A mesma lista das telas de producao e de revisao. Eram so os titulos,
+              como etiquetas e sem link: a coordenacao publicava sem saber que
+              arquivo era nem conseguir abri-lo.
+            {% endcomment %}
+            <ul class="registros materiais">
+              {% for anexo in entregavel.anexos.all %}{% include "cursos/_anexo_na_lista.html" %}{% endfor %}
+            </ul>
           {% endif %}
         </section>
       {% endfor %}

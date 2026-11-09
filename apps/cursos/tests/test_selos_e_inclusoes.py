@@ -86,7 +86,8 @@ def test_o_despublicado_tem_o_mesmo_tom_nas_duas_telas(
 @pytest.mark.django_db
 def test_quem_revisa_ve_a_descricao_do_material(client, curso, professor, aluno):
     """A lista da revisao nao mostrava a descricao: o professor decidia sobre o
-    material sem ler o que a equipe escreveu sobre ele."""
+    material sem ler o que a equipe escreveu sobre ele. Hoje ela mostra o resumo
+    da descricao, como texto corrido (test_lista_de_materiais)."""
     cards = curso.entregaveis.get(tipo=TipoEntregavel.CARDS)
     cards.status = StatusEntregavel.EM_REVISAO
     cards.save(update_fields=["status", "atualizado_em"])
@@ -97,7 +98,7 @@ def test_quem_revisa_ve_a_descricao_do_material(client, curso, professor, aluno)
     )
     client.force_login(professor)
     html = client.get(reverse("revisar", args=[cards.pk])).content.decode()
-    assert "<strong>senhas fortes</strong>" in html
+    assert "Explica senhas fortes." in html
 
 
 @pytest.mark.django_db
@@ -127,7 +128,7 @@ def test_as_listas_repetidas_viraram_include():
 
     for parcial, usuarios in (
         ("cursos/_curso_na_lista.html", ("cursos/fila_coordenacao.html", "cursos/cursos_no_catalogo.html")),
-        ("cursos/_anexo_na_lista.html", ("cursos/entregavel.html", "cursos/revisar.html")),
+        ("cursos/_anexo_na_lista.html", ("cursos/entregavel.html", "cursos/revisar.html", "cursos/analisar_curso.html")),
         ("cursos/_selo.html", ("cursos/curso.html", "cursos/meus_cursos.html")),
     ):
         assert Path("templates", parcial).exists(), parcial

@@ -1,16 +1,19 @@
 {% comment %}
-  Um material da lista, um arquivo so para as duas telas que o mostram.
+  Um material da lista, um arquivo so para as tres telas que o mostram: a de
+  producao, a de revisao do professor e a de analise da coordenacao.
 
-  As duas marcacoes eram diferentes, e a da revisao nao trazia a DESCRICAO: o
-  professor decidia sobre o material sem ler o que a equipe escreveu sobre ele.
-  Ficou a marcacao mais rica das duas, com a descricao junto.
+  O que cada linha precisa dizer num relance e QUE documento e: o formato no
+  selo, o nome do arquivo com a extensao, o tamanho, e um resumo curto da
+  descricao. A descricao inteira, com os paragrafos do editor, tomava a tela;
+  quem quer o conteudo abre o arquivo.
 
-  O |safe da descricao e seguro porque `Anexo.save()` sanitiza com nh3 contra
-  TAGS_PERMITIDAS, incondicionalmente. Sem ele o editor seria armadilha: a pessoa
-  formata, salva, e a tela mostra <strong> como texto.
+  O resumo e TEXTO, sem |safe: `Anexo.resumo` desfaz as entidades para contar
+  palavras, e passar por |safe transformaria em marcacao o que a pessoa digitou
+  como texto.
 {% endcomment %}
-<li class="registro">
-  <div>
+<li class="registro material">
+  <span class="material-formato formato-{{ anexo.formato|lower }}">{{ anexo.formato }}</span>
+  <div class="material-corpo">
     <h3>
       {% if anexo.arquivo %}
         <a href="{% url 'baixar' anexo.arquivo.identificador %}">{{ anexo.titulo }}</a>
@@ -18,8 +21,21 @@
         <a href="{{ anexo.url }}" rel="noopener noreferrer" target="_blank">{{ anexo.titulo }}</a>
       {% endif %}
     </h3>
-    {% if anexo.referencia_bibliografica %}<p class="detalhe">{{ anexo.referencia_bibliografica }}</p>{% endif %}
-    {% if anexo.descricao %}<div class="descricao-anexo">{{ anexo.descricao|safe }}</div>{% endif %}
+    <p class="detalhe">
+      {% if anexo.arquivo %}
+        <span class="material-nome">{{ anexo.arquivo.nome_original }}</span>
+        <span class="sep">&middot;</span>
+        <span>{{ anexo.arquivo.tamanho|filesizeformat }}</span>
+      {% else %}
+        <span class="material-nome">{{ anexo.dominio }}</span>
+      {% endif %}
+      {% if anexo.duracao_minutos %}
+        <span class="sep">&middot;</span>
+        <span>{{ anexo.duracao_minutos }} min</span>
+      {% endif %}
+    </p>
+    {% with resumo=anexo.resumo %}{% if resumo %}<p class="material-resumo">{{ resumo }}</p>{% endif %}{% endwith %}
+    {% if anexo.referencia_bibliografica %}<p class="material-fonte">Fonte: {{ anexo.referencia_bibliografica }}</p>{% endif %}
   </div>
-  {% if anexo.duracao_minutos %}<span class="estado">{{ anexo.duracao_minutos }} min</span>{% endif %}
+  {% if anexo.rotulo != "NENHUM" %}<span class="estado info">{{ anexo.get_rotulo_display }}</span>{% endif %}
 </li>

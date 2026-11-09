@@ -39,7 +39,7 @@
       {% if entregavel.tipo != "PLANO_ENSINO" %}
       <div class="bloco">
         <h2>Materiais</h2>
-        <ul class="registros">
+        <ul class="registros materiais">
           {% for anexo in entregavel.anexos.all %}
             {% include "cursos/_anexo_na_lista.html" %}
           {% empty %}

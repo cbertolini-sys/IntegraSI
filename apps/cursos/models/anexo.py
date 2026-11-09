@@ -1,13 +1,28 @@
+import html
+import re
 import uuid
+from pathlib import Path
+from urllib.parse import urlsplit
 
 import nh3
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.utils.text import Truncator
 
 from apps.cursos.choices import Rotulo, TipoMidia, TipoPratica
 from apps.cursos.models.producao import TAGS_PERMITIDAS
+
+# Quantas palavras da descricao a lista de materiais mostra. A lista e para
+# reconhecer o documento num relance; a descricao inteira tomava a tela, e tres
+# materiais com texto longo empurravam a decisao do professor para baixo.
+PALAVRAS_DO_RESUMO = 30
+
+# Marca de bloco separa palavras; marca inline nao. `<p>Um.</p><p>Dois.</p>` sem
+# o espaco sairia "Um.Dois.", e `<strong>Dois</strong>.` com ele sairia "Dois .".
+_BLOCO = re.compile(r"</?(?:p|br|li|ul|ol|blockquote|h[1-6]|div)\b[^>]*>", re.IGNORECASE)
+_MARCACAO = re.compile(r"<[^>]+>")
 
 
 def caminho_do_arquivo(instance, filename):
@@ -41,6 +56,15 @@ class Arquivo(models.Model):
 
     def __str__(self):
         return self.nome_original
+
+    @property
+    def extensao(self):
+        """O formato para o selo da lista (DOCX, PDF), lido do nome original.
+
+        Do nome, e nao do mime: a validacao grava docx, pptx e odp como o mesmo
+        `application/zip`, e o selo precisa distinguir os tres.
+        """
+        return Path(self.nome_original).suffix.lstrip(".").upper()
 
 
 class Anexo(models.Model):
@@ -80,6 +104,28 @@ class Anexo(models.Model):
 
     def __str__(self):
         return self.titulo
+
+    @property
+    def formato(self):
+        """O selo da lista: a extensao do arquivo, ou LINK."""
+        return self.arquivo.extensao if self.arquivo_id else "LINK"
+
+    @property
+    def dominio(self):
+        """Para onde o link aponta, sem o endereco inteiro na linha de detalhe."""
+        return (urlsplit(self.url).hostname or "").removeprefix("www.")
+
+    @property
+    def resumo(self):
+        """A descricao como texto corrido e curto, para a lista de materiais.
+
+        Marca de bloco vira espaco e as outras somem (ver `_BLOCO`). As entidades sao desfeitas para que `&lt;` conte como
+        um caractere, e por isso o resultado e TEXTO: a tela precisa escapar de
+        novo, e nunca passar isto por |safe.
+        """
+        texto = _MARCACAO.sub("", _BLOCO.sub(" ", self.descricao or ""))
+        texto = html.unescape(texto)
+        return Truncator(" ".join(texto.split())).words(PALAVRAS_DO_RESUMO, truncate="…")
 
     def clean(self):
         super().clean()

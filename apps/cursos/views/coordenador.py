@@ -76,7 +76,7 @@ def analisar_curso(request, pk):
             "volta_url": volta[0],
             "volta_rotulo": volta[1],
             "transicoes": curso.transicoes.select_related("usuario").order_by("-criado_em"),
-            "entregaveis": curso.entregaveis.prefetch_related("secoes", "anexos"),
+            "entregaveis": curso.entregaveis.prefetch_related("secoes", "anexos__arquivo"),
             # Quais decisoes cabem neste curso agora. Calculado aqui, e nao
             # comparando status por string no template: o valor gravado nao
             # aparece no HTML, e quem manda continua sendo services.py - estes
