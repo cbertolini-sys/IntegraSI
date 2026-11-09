@@ -41,6 +41,10 @@
                 <span>{{ entregavel.curso.titulo }}</span>
                 <span class="sep">&middot;</span>
                 <span>enviado em {{ entregavel.atualizado_em|date:"d/m/Y" }}</span>
+                {% with autores=entregavel.autores %}{% if autores %}
+                  <span class="sep">&middot;</span>
+                  <span>por {% for pessoa in autores %}{{ pessoa.identificacao }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
+                {% endif %}{% endwith %}
               </p>
             </div>
             {% with s=entregavel.situacao %}<span class="estado {{ s.tom }}">{{ s.rotulo }}</span>{% endwith %}

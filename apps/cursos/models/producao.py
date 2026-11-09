@@ -67,7 +67,8 @@ class EntregavelManager(models.Manager):
         base = (
             self.filter(curso__professor_responsavel=usuario)
             .select_related("curso")
-            .prefetch_related("revisoes")
+            # Secoes e anexos com as pessoas: a linha da fila diz quem produziu.
+            .prefetch_related("revisoes", "secoes__atualizado_por", "anexos__enviado_por")
         )
         esperando = list(base.filter(status=StatusEntregavel.EM_REVISAO))
         com_a_equipe = [
@@ -169,6 +170,21 @@ class Entregavel(models.Model):
         if not self.voltou_para_a_equipe:
             return Situacao(self.get_status_display(), "")
         return Situacao(list(self.revisoes.all())[-1].get_decisao_display(), "atencao")
+
+    @property
+    def autores(self):
+        """Quem deixou marca no entregavel: escreveu uma secao ou enviou um anexo.
+
+        Nao e a equipe do curso: membro que nao tocou neste entregavel nao e autor
+        dele. A secao guarda so quem a salvou por ultimo, entao quem escreveu e
+        depois foi sobrescrito sai da conta; e o que o dado sabe dizer.
+
+        Le por `.all()`, como `situacao`, para aproveitar o `prefetch_related` da
+        fila: um filtro aqui desceria ao banco uma vez por linha.
+        """
+        pessoas = {s.atualizado_por for s in self.secoes.all() if s.atualizado_por}
+        pessoas |= {a.enviado_por for a in self.anexos.all()}
+        return sorted(pessoas, key=lambda p: p.identificacao.lower())
 
     @property
     def editavel(self):
