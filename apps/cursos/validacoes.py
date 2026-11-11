@@ -10,7 +10,11 @@ from apps.cursos.choices import (
     TipoPratica,
 )
 
-DURACAO_MINIMA = 5
+# Faixa da duracao de cada video-aula, em minutos. 0 quer dizer "menos de 1
+# minuto": o formulario oferece a opcao, e o campo e inteiro. O roteiro pedia de 5
+# a 10 (spec, entregavel 3); o piso caiu porque aula curta, de um ou dois minutos,
+# e video-aula legitima, e o formulario recusava. O teto continua.
+DURACAO_MINIMA = 0
 DURACAO_MAXIMA = 10
 
 
@@ -154,11 +158,14 @@ def _videos(entregavel):
         faltas.append(f"Envie de 2 a 3 vídeos; há {len(videos)}.")
     fora_da_faixa = [
         v.titulo for v in videos
-        if not (DURACAO_MINIMA <= (v.duracao_minutos or 0) <= DURACAO_MAXIMA)
+        # `is None` explicito, e nao `or 0`: com o piso em 0, `or 0` poria um
+        # video sem duracao DENTRO da faixa.
+        if v.duracao_minutos is None
+        or not (DURACAO_MINIMA <= v.duracao_minutos <= DURACAO_MAXIMA)
     ]
     if fora_da_faixa:
         faltas.append(
-            f"Cada vídeo deve ter de {DURACAO_MINIMA} a {DURACAO_MAXIMA} minutos; "
+            f"Cada vídeo deve ter até {DURACAO_MAXIMA} minutos; "
             f"fora da faixa: {', '.join(fora_da_faixa)}."
         )
     return faltas

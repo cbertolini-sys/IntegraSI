@@ -239,7 +239,7 @@ async function iniciarUpload(form) {
       urls.concluir,
       JSON.stringify({
         titulo: form.querySelector('input[name=titulo]').value,
-        duracao_minutos: form.querySelector('input[name=duracao_minutos]').value,
+        duracao_minutos: form.querySelector('select[name=duracao_minutos]').value,
         descricao: form.querySelector('textarea[name=descricao]').value,
       }),
       'application/json',

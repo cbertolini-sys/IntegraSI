@@ -199,3 +199,26 @@ def test_nenhuma_tela_consulta_por_material(
     client.force_login(quem)
     batidas = consultas_a_arquivos(client, reverse(tela_, args=[alvo]))
     assert len(batidas) <= 1, f"{len(batidas)} consultas na tabela de arquivos"
+
+
+# --- Duracao do video ------------------------------------------------------
+
+
+def anexa_video(entregavel, aluno, duracao):
+    return Anexo.objects.create(
+        entregavel=entregavel, tipo_midia=TipoMidia.VIDEO, titulo="Aula 1",
+        arquivo=arquivo(aluno, "aula.mp4", mime="video/mp4"),
+        duracao_minutos=duracao, enviado_por=aluno,
+    )
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("duracao,texto", [(0, "menos de 1 min"), (1, "1 min"), (7, "7 min")])
+def test_mostra_a_duracao_do_video(client, curso, aluno, duracao, texto):
+    """0 e "menos de 1 minuto". Um `{% if anexo.duracao_minutos %}` esconderia
+    justamente esse, e "0 min" diria que o video nao tem nada."""
+    videos = curso.entregaveis.get(tipo=TipoEntregavel.VIDEOS)
+    anexa_video(videos, aluno, duracao)
+    client.force_login(aluno)
+    lista = tela(client, videos)
+    assert f"<span>{texto}</span>" in lista

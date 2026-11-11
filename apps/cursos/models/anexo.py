@@ -111,6 +111,16 @@ class Anexo(models.Model):
         return self.arquivo.extensao if self.arquivo_id else "LINK"
 
     @property
+    def duracao_legivel(self):
+        """A duracao para a lista: "menos de 1 min" no lugar de 0, que diria que o
+        video nao tem nada. Vazio quando nao ha duracao (anexo que nao e video)."""
+        if self.duracao_minutos is None:
+            return ""
+        if self.duracao_minutos == 0:
+            return "menos de 1 min"
+        return f"{self.duracao_minutos} min"
+
+    @property
     def dominio(self):
         """Para onde o link aponta, sem o endereco inteiro na linha de detalhe."""
         return (urlsplit(self.url).hostname or "").removeprefix("www.")
@@ -140,7 +150,9 @@ class Anexo(models.Model):
                 erros["arquivo"] = "Envie o arquivo."
             if self.url:
                 erros["url"] = "Anexo de arquivo não tem link."
-        if self.tipo_midia == TipoMidia.VIDEO and not self.duracao_minutos:
+        # `is None`, e nao `not`: 0 e a opcao "menos de 1 minuto", e `not 0`
+        # recusaria quem acabou de escolher com a mensagem "Informe a duração".
+        if self.tipo_midia == TipoMidia.VIDEO and self.duracao_minutos is None:
             erros["duracao_minutos"] = "Informe a duração do vídeo em minutos."
         if erros:
             raise ValidationError(erros)

@@ -177,7 +177,7 @@ def test_videos_de_dois_a_tres(curso_criado, aluno, arquivo_qualquer, quantidade
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize("duracao", [4, 11])
+@pytest.mark.parametrize("duracao", [11, 30])
 def test_video_fora_da_faixa_de_duracao(curso_criado, aluno, arquivo_qualquer, duracao):
     videos = curso_criado.entregaveis.get(tipo=TipoEntregavel.VIDEOS)
     for numero in range(2):
@@ -201,8 +201,10 @@ def test_link_nao_conta_como_video(curso_criado, aluno):
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize("duracao", [5, 10])
+@pytest.mark.parametrize("duracao", [0, 1, 4, 10])
 def test_video_no_limite_da_faixa_de_duracao_passa(curso_criado, aluno, arquivo_qualquer, duracao):
+    """0 e "menos de 1 minuto". O roteiro pedia de 5 a 10, e a regra caiu: aula
+    curta, de um ou dois minutos, e vídeo-aula legitima. O teto continua."""
     videos = curso_criado.entregaveis.get(tipo=TipoEntregavel.VIDEOS)
     for numero in range(2):
         anexa(videos, aluno, arquivo_qualquer, tipo_midia=TipoMidia.VIDEO,

@@ -29,10 +29,10 @@
       {% else %}
         <span class="material-nome">{{ anexo.dominio }}</span>
       {% endif %}
-      {% if anexo.duracao_minutos %}
+      {% with duracao=anexo.duracao_legivel %}{% if duracao %}
         <span class="sep">&middot;</span>
-        <span>{{ anexo.duracao_minutos }} min</span>
-      {% endif %}
+        <span>{{ duracao }}</span>
+      {% endif %}{% endwith %}
     </p>
     {% with resumo=anexo.resumo %}{% if resumo %}<p class="material-resumo">{{ resumo }}</p>{% endif %}{% endwith %}
     {% if anexo.referencia_bibliografica %}<p class="material-fonte">Fonte: {{ anexo.referencia_bibliografica }}</p>{% endif %}

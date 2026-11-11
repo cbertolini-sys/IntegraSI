@@ -183,6 +183,22 @@ def test_video_exige_duracao(entregavel_cards, aluno, arquivo_qualquer):
 
 
 @pytest.mark.django_db
+def test_video_de_menos_de_um_minuto_e_valido(entregavel_cards, aluno, arquivo_qualquer):
+    """"Menos de 1 minuto" e gravado como 0. Um `not duracao_minutos` no clean()
+    recusaria justamente essa opcao, com a mensagem "Informe a duração", para quem
+    acabou de informar."""
+    anexo = Anexo(
+        entregavel=entregavel_cards,
+        tipo_midia=TipoMidia.VIDEO,
+        titulo="Aula 1",
+        arquivo=arquivo_qualquer,
+        duracao_minutos=0,
+        enviado_por=aluno,
+    )
+    anexo.full_clean()
+
+
+@pytest.mark.django_db
 def test_anexo_de_arquivo_bem_formado_passa_na_validacao(entregavel_cards, aluno, arquivo_qualquer):
     anexo = Anexo(
         entregavel=entregavel_cards,

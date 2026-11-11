@@ -247,13 +247,20 @@ class EnvioDeVideoForm(forms.Form):
             "e links."
         ),
     )
-    duracao_minutos = forms.IntegerField(
-        label="Duração em minutos",
-        min_value=DURACAO_MINIMA,
-        max_value=DURACAO_MAXIMA,
+    # Lista de opcoes, e nao numero livre: "menos de 1 minuto" nao se digita num
+    # campo inteiro. A primeira opcao e vazia de proposito, para a pessoa escolher
+    # em vez de herdar uma duracao que nao viu. O `upload.js` le este campo como
+    # `select[name=duracao_minutos]` (test_upload_integracao, regra 7c).
+    duracao_minutos = forms.TypedChoiceField(
+        label="Duração",
+        coerce=int,
+        choices=[("", "Escolha a duração")]
+        + [(DURACAO_MINIMA, "Menos de 1 minuto"), (1, "1 minuto")]
+        + [(n, f"{n} minutos") for n in range(2, DURACAO_MAXIMA + 1)],
         help_text=(
-            f"Quanto tempo o vídeo tem, em minutos inteiros. O roteiro pede de "
-            f"{DURACAO_MINIMA} a {DURACAO_MAXIMA} minutos por aula."
+            f"Quanto tempo o vídeo tem. Arredonde para o minuto mais próximo; um "
+            f"vídeo curto pode ficar em \"menos de 1 minuto\". Cada aula vai até "
+            f"{DURACAO_MAXIMA} minutos."
         ),
     )
 

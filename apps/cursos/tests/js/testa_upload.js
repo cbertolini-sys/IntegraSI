@@ -50,7 +50,7 @@ function formulario(arquivo, dataset) {
   const nos = {
     'input[type=file]': { files: arquivo ? [arquivo] : [] },
     'input[name=titulo]': { value: 'Aula 1' },
-    'input[name=duracao_minutos]': { value: '7' },
+    'select[name=duracao_minutos]': { value: '7' },
     'textarea[name=descricao]': { value: 'Abertura do curso.' },
     '[name=csrfmiddlewaretoken]': { value: TOKEN },
     // A barra e permanente e nasce zerada; so o aviso nasce escondido.

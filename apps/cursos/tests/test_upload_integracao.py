@@ -24,7 +24,12 @@ As regras que este arquivo prende:
  6. Um bloco inteiro cabe em `DATA_UPLOAD_MAX_MEMORY_SIZE`: acima disso o Django
     recusa o corpo antes da view, e nenhum teste de view veria o problema.
  7. A faixa de duracao oferecida no formulario e a que `validacoes` cobra; nada de
-    numero inventado no HTML.
+    numero inventado no HTML. E uma lista de opcoes, de "Menos de 1 minuto" (0) ate
+    o teto, comecando vazia: a pessoa escolhe, e nao herda uma duracao sem ver.
+ 7c. Todo campo que o `upload.js` le pelo nome existe no formulario com o MESMO
+    elemento que o seletor pede. O harness de JS responde a string do seletor, nao
+    ao HTML: trocar um `<input>` por `<select>` no template deixava a suite de JS
+    verde e o envio quebrado na tela.
  7b. O `maxlength` do titulo sai do proprio campo do Anexo, pelo mesmo motivo. Sem
     ele o aluno so descobria o limite depois de meia hora de upload, e o servidor
     devolvia um 400 opaco - a UX do vazamento que a revisao de branco achou.
@@ -199,9 +204,37 @@ def test_formulario_oferece_a_faixa_de_duracao_que_as_validacoes_cobram(
     client, aluno, entregavel_videos
 ):
     client.force_login(aluno)
-    conteudo = tela(client, entregavel_videos)
-    assert f'min="{validacoes.DURACAO_MINIMA}"' in conteudo
-    assert f'max="{validacoes.DURACAO_MAXIMA}"' in conteudo
+    formulario = formulario_de_video(tela(client, entregavel_videos))
+    inicio = formulario.index('<select name="duracao_minutos"')
+    campo = formulario[inicio : formulario.index("</select>", inicio)]
+
+    assert '<option value="" selected>' in campo
+    assert '<option value="0">Menos de 1 minuto</option>' in campo
+    assert '<option value="1">1 minuto</option>' in campo
+    assert '<option value="2">2 minutos</option>' in campo
+    maxima = validacoes.DURACAO_MAXIMA
+    assert f'<option value="{maxima}">{maxima} minutos</option>' in campo
+    assert f'<option value="{maxima + 1}">' not in campo
+
+
+# Regra 7c
+@pytest.mark.django_db
+def test_o_js_le_cada_campo_pelo_elemento_que_o_template_desenha(
+    client, aluno, entregavel_videos
+):
+    import re
+    from pathlib import Path
+
+    js = Path("static/js/upload.js").read_text(encoding="utf-8")
+    seletores = re.findall(r"querySelector\('(\w+)\[name=(\w+)\]'\)", js)
+    assert ("select", "duracao_minutos") in seletores or ("input", "duracao_minutos") in seletores
+
+    client.force_login(aluno)
+    formulario = formulario_de_video(tela(client, entregavel_videos))
+    for elemento, nome in seletores:
+        assert re.search(rf'<{elemento}\b[^>]*\bname="{nome}"', formulario), (
+            f"upload.js procura {elemento}[name={nome}], e o formulário não tem"
+        )
 
 
 def formulario_de_video(conteudo):

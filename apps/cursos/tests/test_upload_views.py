@@ -462,19 +462,32 @@ def test_conclusao_reconfere_se_o_entregavel_ainda_esta_aberto(
 
 # Regra 16
 @pytest.mark.django_db
-def test_duracao_zerada_e_recusada_antes_de_copiar_os_bytes(client, aluno, upload_completo):
-    """`Anexo.clean()` exige duracao para video. Se a conclusao so descobrisse
-    isso na ultima linha, o Arquivo ja teria sido copiado para MEDIA_ROOT: a
-    transacao desfaz a linha, nao o arquivo em disco - o mesmo orfao que o
-    Plano 2 teve que consertar em `anexar`."""
+def test_duracao_negativa_e_recusada_antes_de_copiar_os_bytes(client, aluno, upload_completo):
+    """O `Anexo` recusa duracao negativa (o campo e PositiveSmallIntegerField). Se
+    a conclusao so descobrisse isso na ultima linha, o Arquivo ja teria sido
+    copiado para MEDIA_ROOT: a transacao desfaz a linha, nao o arquivo em disco -
+    o mesmo orfao que o Plano 2 teve que consertar em `anexar`.
+
+    Era a duracao ZERADA, ate 0 passar a significar "menos de 1 minuto"
+    (test_duracao_de_menos_de_um_minuto_entra)."""
     client.force_login(aluno)
 
-    resposta = conclui(client, str(upload_completo.identificador), duracao_minutos=0)
+    resposta = conclui(client, str(upload_completo.identificador), duracao_minutos=-1)
 
     assert resposta.status_code == 400
     assert not Anexo.objects.exists()
     assert not Arquivo.objects.exists()
     assert materiais_em_disco() == []
+
+
+@pytest.mark.django_db
+def test_duracao_de_menos_de_um_minuto_entra(client, aluno, upload_completo):
+    client.force_login(aluno)
+
+    resposta = conclui(client, str(upload_completo.identificador), duracao_minutos=0)
+
+    assert resposta.status_code == 200, resposta.content
+    assert Anexo.objects.get().duracao_minutos == 0
 
 
 # Regra 16b
