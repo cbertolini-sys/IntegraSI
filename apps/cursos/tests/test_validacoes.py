@@ -187,6 +187,21 @@ def test_video_fora_da_faixa_de_duracao(curso_criado, aluno, arquivo_qualquer, d
 
 
 @pytest.mark.django_db
+def test_video_sem_duracao_continua_pendente(curso_criado, aluno, arquivo_qualquer):
+    """Com o piso em 0, ler a duracao ausente como 0 a poria DENTRO da faixa. O
+    Anexo recusa video sem duracao no save comum, mas um save com update_fields
+    pula o full_clean, e a pendencia e o portao que sobra."""
+    videos = curso_criado.entregaveis.get(tipo=TipoEntregavel.VIDEOS)
+    for numero in range(2):
+        anexa(videos, aluno, arquivo_qualquer, tipo_midia=TipoMidia.VIDEO,
+              titulo=f"Aula {numero}", duracao_minutos=7)
+    sem_duracao = videos.anexos.first()
+    sem_duracao.duracao_minutos = None
+    sem_duracao.save(update_fields=["duracao_minutos"])
+    assert any("minutos" in f for f in validacoes.pendencias(videos))
+
+
+@pytest.mark.django_db
 def test_link_nao_conta_como_video(curso_criado, aluno):
     videos = curso_criado.entregaveis.get(tipo=TipoEntregavel.VIDEOS)
     # duracao_minutos valida de proposito: se o filtro por tipo_midia=VIDEO sumir,
