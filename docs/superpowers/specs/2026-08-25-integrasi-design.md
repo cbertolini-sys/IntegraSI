@@ -470,7 +470,8 @@ envio do entregável deixaria passar um curso submetido sem carga horária.
 
 **2 - Slides e Apresentações**: ao menos um anexo.
 
-**3 - Vídeo-Aulas**: de 2 a 3 vídeos, cada um com `duracao_minutos` de 0 a 10,
+**3 - Vídeo-Aulas**: de 1 a 10 vídeos (eram de 2 a 3 até novembro de 2026, e o
+quarto vídeo travava o envio para revisão), cada um com `duracao_minutos` de 0 a 10,
 onde 0 quer dizer "menos de 1 minuto". O formulário oferece a duração como lista de
 opções ("Menos de 1 minuto", "1 minuto", "2 minutos", ...). Era de 5 a 10 até
 novembro de 2026: o piso recusava aula curta, de um ou dois minutos, que é

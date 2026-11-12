@@ -17,6 +17,11 @@ from apps.cursos.choices import (
 DURACAO_MINIMA = 0
 DURACAO_MAXIMA = 10
 
+# Quantos videos o entregavel de video-aulas aceita. Era de 2 a 3 (spec,
+# entregavel 3), e o quarto video travava o envio para revisao.
+VIDEOS_MINIMO = 1
+VIDEOS_MAXIMO = 10
+
 
 def pendencias(entregavel):
     """Lista o que falta para o entregavel poder ir a revisao (spec 6).
@@ -154,8 +159,8 @@ def _videos(entregavel):
     # `.all()` pelo mesmo motivo de `_arquivos`: e o unico que o prefetch guarda.
     videos = [a for a in entregavel.anexos.all() if a.tipo_midia == TipoMidia.VIDEO]
     faltas = []
-    if not 2 <= len(videos) <= 3:
-        faltas.append(f"Envie de 2 a 3 vídeos; há {len(videos)}.")
+    if not VIDEOS_MINIMO <= len(videos) <= VIDEOS_MAXIMO:
+        faltas.append(f"Envie de {VIDEOS_MINIMO} a {VIDEOS_MAXIMO} vídeos; há {len(videos)}.")
     fora_da_faixa = [
         v.titulo for v in videos
         # `is None` explicito, e nao `or 0`: com o piso em 0, `or 0` poria um

@@ -167,8 +167,12 @@ def test_link_nao_conta_como_caderno(curso_criado, aluno):
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize("quantidade,tem_falta", [(1, True), (2, False), (3, False), (4, True)])
-def test_videos_de_dois_a_tres(curso_criado, aluno, arquivo_qualquer, quantidade, tem_falta):
+@pytest.mark.parametrize(
+    "quantidade,tem_falta", [(0, True), (1, False), (10, False), (11, True)]
+)
+def test_videos_de_um_a_dez(curso_criado, aluno, arquivo_qualquer, quantidade, tem_falta):
+    """Era de 2 a 3, e o quarto video travava o envio para revisao. As bordas
+    sao as da faixa nova, dos dois lados."""
     videos = curso_criado.entregaveis.get(tipo=TipoEntregavel.VIDEOS)
     for numero in range(quantidade):
         anexa(videos, aluno, arquivo_qualquer, tipo_midia=TipoMidia.VIDEO,
